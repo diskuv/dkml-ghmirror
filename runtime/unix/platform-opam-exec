@@ -186,10 +186,13 @@ if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
 elif [[ -n "${BUILDDIR:-}" ]]; then
     # set --switch only if BUILDTYPE (translated into BUILDDIR) has been set
     install -d "$BUILDDIR"
-    if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
 
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     set_opamrootandswitchdir
+elif [[ -n "$TARGET_OPAMSWITCH" ]]; then
+    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH/_opam"
+    OPAMSWITCHDIR_EXPAND="$TARGET_OPAMSWITCH" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
 fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:

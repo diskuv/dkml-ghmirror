@@ -75,14 +75,14 @@ set_dkmlparenthomedir
 # shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     # shellcheck disable=SC2154
     DISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
     rsync "${RSYNC_OPTS[@]}" \
-        "$DISKUVOCAMLHOME_UNIX/tools/ocaml-opam/$OPAM_PORT_FOR_SWITCHES_IN_WINDOWS-$OPAM_ARCH_IN_WINDOWS"/cygwin64/home/opam/opam-repository/ \
+        "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
         "$OPAMREPOS_UNIX"/fdopen-mingw
     set +x
 else
@@ -120,7 +120,7 @@ set_opamrootdir
 #             is not persistent anyways, so anything else would be useless.
 OPAM_INIT_ARGS=(--yes --disable-sandboxing --no-setup)
 REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.
     # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository
     OPAM_INIT_ARGS+=(--kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL")
@@ -131,7 +131,7 @@ fi
 
 # If and only if we have Windows Opam root we have to configure its global options
 # to tell it to use `wget` instead of `curl`
-if is_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
+if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     WINDOWS_DOWNLOAD_COMMAND=wget
 
     # MSYS curl does not work with Opam. After debugging with `platform-opam-exec ... reinstall ocaml-variants --debug` found it was calling:
@@ -154,7 +154,7 @@ if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" && ! -e "$OPA
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
     "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
-if is_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]]; then
+if is_unixy_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]]; then
     # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
     # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
     OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
@@ -212,12 +212,12 @@ fi
 platform_vcpkg_triplet
 
 VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
-is_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
+is_unixy_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
 
 # shellcheck disable=SC2154
 install -d "$VCPKG_UNIX"
 
-if is_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
+if is_unixy_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
     if [[ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ]]; then
         # Download vcpkg
         if [[ ! -e "$VCPKG_UNIX"/src.tar.gz ]]; then
@@ -241,7 +241,7 @@ if is_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
             # (This clause won't be executed on Windows, and even if it were there is no equivalent of useSystemBinaries)
             UNIX_ARGS+=(-useSystemBinaries)
         fi
-        if is_windows_build_machine; then
+        if is_unixy_windows_build_machine; then
             # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
             #             for command line arguments. Only -disableMetrics is recognized.
             if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
@@ -278,7 +278,7 @@ if [[ -e vcpkg.json ]]; then
     comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
     if [[ -s "$WORK"/vcpkg.missing ]]; then
         ERRFILE=$TOPDIR/vcpkg.json
-        if is_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
+        if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
         echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
         cat "$WORK"/vcpkg.missing >&2
         echo ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"

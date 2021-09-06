@@ -62,9 +62,9 @@ else
 fi
 
 # On Windows ...
-if is_windows_build_machine && [[ -n "${LOCALAPPDATA:-}" ]]; then
+if [[ -x /usr/bin/cygpath ]] && [[ -n "${LOCALAPPDATA:-}" ]]; then
     # Add VS Code to the PATH (if it exists)
-    LOCALAPPDATA_UNIX=$(cygpath -au "$LOCALAPPDATA")
+    LOCALAPPDATA_UNIX=$(/usr/bin/cygpath -au "$LOCALAPPDATA")
     if [[ -e "$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin/code" ]]; then
         PATH="$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin:$PATH"
     fi

@@ -10,7 +10,7 @@ set -euf -o pipefail
 # cat <<EOF
 # DiskuvOCamlVarsVersion=1
 # DiskuvOCamlHome='/c/Users/beckf/AppData/Local/Programs/DiskuvOCaml/2'
-# DiskuvOCamlBinaryPaths='/c/Users/beckf/AppData/Local/Programs/DiskuvOCaml/2/bin:/c/Users/beckf/AppData/Local/Programs/DiskuvOCaml/2/tools/opam'
+# DiskuvOCamlBinaryPaths='/c/Users/beckf/AppData/Local/Programs/DiskuvOCaml/2/bin'
 # EOF
 
 HereDir=$(dirname "$0")

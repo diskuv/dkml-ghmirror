@@ -230,7 +230,7 @@ fi
 OPAM_SWITCH_CREATE_ARGS=( switch create )
 if [[ "$YES" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=( --yes ); fi
 
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
     OPAM_SWITCH_CREATE_ARGS+=(
         --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
@@ -292,7 +292,7 @@ fi
 # Set PLATFORM_VCPKG_TRIPLET
 platform_vcpkg_triplet
 
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST\\vcpkg\\$dkml_root_version\\installed\\$PLATFORM_VCPKG_TRIPLET\\lib\\pkgconfig"
 else
     PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET/lib/pkgconfig"
@@ -318,7 +318,7 @@ PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
     option setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
         option setenv+="LUV_USE_SYSTEM_LIBUV = \"yes\""
 fi
@@ -339,18 +339,14 @@ fi
     # shellcheck disable=2016
     echo '_OPAMSWITCHDIR=$1'
     echo 'shift'
-    if is_windows_build_machine; then
-        # shellcheck disable=2016
-        echo '_CYGPATH=$(which cygpath)'
-    fi
     # shellcheck disable=2016
     echo 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch)'
-    if is_windows_build_machine; then
+    if [[ -x /usr/bin/cygpath ]]; then
         # PATH may be a Windows path. For now we need it to be a UNIX path or else commands
         # like 'opam' will not be found.
         # Always add in standard /usr/bin:/bin paths as well.
         # shellcheck disable=2016
-        echo 'PATH=$($_CYGPATH --path "$PATH"):/usr/bin:/bin'
+        echo 'PATH=$(/usr/bin/cygpath --path "$PATH"):/usr/bin:/bin'
     fi
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
@@ -360,7 +356,7 @@ if [[ "$YES" = ON ]]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
 NEED_TO_PIN=OFF
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
-if is_windows_build_machine; then
+if is_unixy_windows_build_machine; then
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"; then
         echo "opam ${OPAM_PIN_ADD_ARGS[*]} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON

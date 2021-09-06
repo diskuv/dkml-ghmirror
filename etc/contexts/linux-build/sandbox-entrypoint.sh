@@ -38,8 +38,8 @@ if [[ -n "${DKML_TOOLS_DIR:-}" ]]; then
 fi
 
 # On Windows add C:\Windows\System32 to end of PATH
-if is_windows_build_machine; then
-    SYSTEM32=$(cygpath -au "$SYSTEMROOT"\\System32)
+if [[ -x /usr/bin/cygpath ]]; then
+    SYSTEM32=$(/usr/bin/cygpath -S)
     export PATH="$PATH:$SYSTEM32"
 fi
 
@@ -54,7 +54,7 @@ disambiguate_filesystem_paths
 # (TODO: these will need to be mounted into the container and autodetected)
 # (only necessary for Windows at the moment, and we don't support Windows containers yet or perhaps never)
 if [[ "${SANDBOX_COMPILATION:-ON}" = ON ]]; then
-    if is_windows_build_machine; then
+    if is_unixy_windows_build_machine; then
         if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [todo] add compilation tools like vcvars" >&2; fi
     fi
 fi

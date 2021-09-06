@@ -81,10 +81,6 @@
 # Troubleshooting: In Cygwin we can do 'setfacl -b ...' to remove extended ACL entries. (See https://cygwin.com/cygwin-ug-net/ov-new.html#ov-new2.4s)
 # So `find build/ -print0 | xargs -0 --no-run-if-empty setfacl --remove-all --remove-default` would just leave ordinary
 # POSIX permissions in the build/ directory (typically what we want!)
-#
-# Launch Cygwin directly with an appropriate selection below:
-# & $env:DiskuvOCamlHome\tools\cygwin\bin\mintty.exe -
-# & $env:DiskuvOCamlHome\tools\ocaml-opam\msvc-amd64\cygwin64\bin\mintty.exe -
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
     Justification='Conditional block based on Windows 32 vs 64-bit',
@@ -112,6 +108,7 @@ Import-Module Deployers
 Import-Module Project
 Import-Module UnixInvokers
 Import-Module Machine
+Import-Module DeploymentVersion
 
 # Make sure not Run as Administrator
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -140,7 +137,7 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 17
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -285,14 +282,10 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
-$AvailableOpamVersion = "2.1.0.msys2.7" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
-$LibffiVersion = "3.4.2"
-# https://hub.docker.com/layers/ocaml/opam/windows-msvc-20H2-ocaml-4.12/images/sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55?context=explore
-# https://hub.docker.com/layers/ocaml/opam/windows-mingw-20H2-ocaml-4.12/images/sha256-41e095132878dd6a517408cfd47647e522da6c76a67f421931115a586131119f?context=explore
-$WindowsMsvcDockerImage = "ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55"
-$WindowsMinGWDockerImage = "ocaml/opam:windows-mingw-20H2-ocaml-4.12@sha256:41e095132878dd6a517408cfd47647e522da6c76a67f421931115a586131119f"
+$JqVersion = "1.6"
+$InotifyTag = "36d18f3dfe042b21d7136a1479f08f0d8e30e2f9"
 $CygwinPackages = @("curl",
     "diff",
     "diffutils",
@@ -338,11 +331,11 @@ $MSYS2Packages = @(
     # ----
 
     # "mingw-w64-i686-openssl", "mingw-w64-x86_64-openssl",
-    "mingw-w64-i686-gcc", "mingw-w64-x86_64-gcc",
+    # "mingw-w64-i686-gcc", "mingw-w64-x86_64-gcc",
     # "mingw-w64-cross-binutils", "mingw-w64-cross-gcc"
 
     # ----
-    # Needed by ProjectPath/Makefile
+    # Needed by the Local Project's `Makefile`
     # ----
 
     "make",
@@ -353,7 +346,6 @@ $MSYS2Packages = @(
     # Needed by Opam
     # ----
 
-    # "git", # use Git for Windows so can have filesystem cache. Without it Opam can be very slow.
     "patch",
     "rsync",
     # We don't use C:\WINDOWS\System32\tar.exe even if it is available in all Windows SKUs since build
@@ -367,9 +359,6 @@ $MSYS2Packages = @(
     # ----
     # Needed by many OCaml packages during builds
     # ----
-
-    # We use native Windows pkgconf from vcpkg
-    # "pkgconf",
 
     # ----
     # Needed by OCaml package `feather`
@@ -468,10 +457,10 @@ $DistributionBinaries = @(
 # Consolidate the magic constants into a single deployment id
 $CygwinHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
 $MSYS2Hash = Get-Sha256Hex16OfText -Text ($MSYS2PackagesArch -join ',')
-$DockerHash = Get-Sha256Hex16OfText -Text "$WindowsMsvcDockerImage,$WindowsMinGWDockerImage"
+$DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PackagesHash = Get-Sha256Hex16OfText -Text ($DistributionPackages -join ',')
 $BinariesHash = Get-Sha256Hex16OfText -Text ($DistributionBinaries -join ',')
-$DeploymentId = "opam-$AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
+$DeploymentId = "opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
 
 # Check if already deployed
 $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -DeploymentId $DeploymentId
@@ -646,7 +635,7 @@ function Invoke-MSYS2CommandWithProgress {
 # Notes:
 # * Include lots of `TestPath` existence tests to speed up incremental deployments.
 
-$AdditionalDiagnostics = "`n`n"
+$global:AdditionalDiagnostics = "`n`n"
 try {
 
     # ----------------------------------------------------------------
@@ -669,7 +658,7 @@ try {
         if (!(Test-Path -Path $InotifyToolDir)) { New-Item -Path $InotifyToolDir -ItemType Directory | Out-Null }
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
         & "$GitExe" -C $InotifyCacheParentPath clone https://github.com/thekid/inotify-win.git
-        & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout 36d18f3dfe042b21d7136a1479f08f0d8e30e2f9
+        & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout $InotifyTag
         & cmd.exe /c "$Vcvars && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
     }
@@ -730,57 +719,32 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
+    # BEGIN jq
+
+    $global:ProgressActivity = "Install jq"
+    Write-ProgressStep
+
+    $JqExeBasename = "jq.exe"
+    $JqToolDir = "$ProgramPath\tools\jq"
+    $JqExe = "$JqToolDir\$JqExeBasename"
+    if (!(Test-Path -Path $JqExe)) {
+        if (!(Test-Path -Path $JqToolDir)) { New-Item -Path $JqToolDir -ItemType Directory | Out-Null }
+        if ([Environment]::Is64BitOperatingSystem) {
+            $JqDistType = "win64"
+        } else {
+            $JqDistType = "win32"
+        }
+        Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-$JqVersion/jq-$JqDistType.exe" -OutFile "$JqExe.tmp"
+        Rename-Item -Path "$JqExe.tmp" -NewName "$JqExeBasename"
+    }
+
+    # END jq
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
     # BEGIN Cygwin
 
     $CygwinRootPath = "$ProgramPath\tools\cygwin"
-
-    $global:ProgressActivity = "Install Cygwin"
-    Write-ProgressStep
-
-    # Much of the remainder of the 'Cygwin' section is modified from
-    # https://github.com/esy/esy-bash/blob/master/build-cygwin.js
-
-    $CygwinCachePath = "$TempPath\cygwin"
-    if ([Environment]::Is64BitOperatingSystem) {
-        $CygwinSetupExeBasename = "setup-x86_64.exe"
-        $CygwinDistType = "x86_64"
-    } else {
-        $CygwinSetupExeBasename = "setup-x86.exe"
-        $CygwinDistType = "x86"
-    }
-    $CygwinSetupExe = "$CygwinCachePath\$CygwinSetupExeBasename"
-    if (!(Test-Path -Path $CygwinCachePath)) { New-Item -Path $CygwinCachePath -ItemType Directory | Out-Null }
-    if (!(Test-Path -Path $CygwinSetupExe)) {
-        Invoke-WebRequest -Uri "https://cygwin.com/$CygwinSetupExeBasename" -OutFile "$CygwinSetupExe.tmp"
-        Rename-Item -Path "$CygwinSetupExe.tmp" "$CygwinSetupExeBasename"
-    }
-
-    $CygwinSetupCachePath = "$CygwinRootPath\var\cache\setup"
-    if (!(Test-Path -Path $CygwinSetupCachePath)) { New-Item -Path $CygwinSetupCachePath -ItemType Directory | Out-Null }
-
-    $CygwinMirror = "http://cygwin.mirror.constant.com"
-
-    # Skip with ... $global:SkipCygwinSetup = $true ... remove it with ... Remove-Variable SkipCygwinSetup
-    if (!$global:SkipCygwinSetup -or (-not (Test-Path "$CygwinRootPath\bin\mintty.exe"))) {
-        # https://cygwin.com/faq/faq.html#faq.setup.cli
-        $CommonCygwinMSYSOpts = "-qWnNdOfgoB"
-        $proc = Start-Process -FilePath $CygwinSetupExe -Wait -PassThru `
-            -RedirectStandardOutput $AuditCurrentLog `
-            -ArgumentList $CommonCygwinMSYSOpts, "-a", $CygwinDistType, "-R", $CygwinRootPath, "-s", $CygwinMirror, "-l", $CygwinSetupCachePath, "-P", ($CygwinPackagesArch -join ",")
-        # Append $AuditCurrentLog onto $AuditLog
-        Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
-        # Check exit
-        $exitCode = $proc.ExitCode
-        if ($exitCode -ne 0) {
-            Write-Error "Cygwin installation failed! Exited with $exitCode."
-            throw
-        }
-    }
-
-    $AdditionalDiagnostics += "[Advanced] DiskuvOCaml Cygwin commands can be run with: $CygwinRootPath\bin\mintty.exe -`n"
-
-    # Create home directories
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "exit 0"
 
     function Invoke-CygwinSyncScript {
         param (
@@ -796,117 +760,144 @@ try {
         Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/usr/bin/find '$dkmlSetupCygwinAbsMixedPath' -type f | /usr/bin/xargs /usr/bin/dos2unix --quiet"
     }
 
-    # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX
-    Invoke-CygwinSyncScript
+    function Invoke-CygwinInitialization {
+        $global:ProgressActivity = "Install Cygwin"
+        Write-ProgressStep
+    }
+
+    function Install-Cygwin {
+        Invoke-CygwinInitialization
+
+        # Much of the remainder of the 'Cygwin' section is modified from
+        # https://github.com/esy/esy-bash/blob/master/build-cygwin.js
+
+        $CygwinCachePath = "$TempPath\cygwin"
+        if ([Environment]::Is64BitOperatingSystem) {
+            $CygwinSetupExeBasename = "setup-x86_64.exe"
+            $CygwinDistType = "x86_64"
+        } else {
+            $CygwinSetupExeBasename = "setup-x86.exe"
+            $CygwinDistType = "x86"
+        }
+        $CygwinSetupExe = "$CygwinCachePath\$CygwinSetupExeBasename"
+        if (!(Test-Path -Path $CygwinCachePath)) { New-Item -Path $CygwinCachePath -ItemType Directory | Out-Null }
+        if (!(Test-Path -Path $CygwinSetupExe)) {
+            Invoke-WebRequest -Uri "https://cygwin.com/$CygwinSetupExeBasename" -OutFile "$CygwinSetupExe.tmp"
+            Rename-Item -Path "$CygwinSetupExe.tmp" "$CygwinSetupExeBasename"
+        }
+
+        $CygwinSetupCachePath = "$CygwinRootPath\var\cache\setup"
+        if (!(Test-Path -Path $CygwinSetupCachePath)) { New-Item -Path $CygwinSetupCachePath -ItemType Directory | Out-Null }
+
+        $CygwinMirror = "http://cygwin.mirror.constant.com"
+
+        # Skip with ... $global:SkipCygwinSetup = $true ... remove it with ... Remove-Variable SkipCygwinSetup
+        if (!$global:SkipCygwinSetup -or (-not (Test-Path "$CygwinRootPath\bin\mintty.exe"))) {
+            # https://cygwin.com/faq/faq.html#faq.setup.cli
+            $CommonCygwinMSYSOpts = "-qWnNdOfgoB"
+            $proc = Start-Process -FilePath $CygwinSetupExe -Wait -PassThru `
+                -RedirectStandardOutput $AuditCurrentLog `
+                -ArgumentList $CommonCygwinMSYSOpts, "-a", $CygwinDistType, "-R", $CygwinRootPath, "-s", $CygwinMirror, "-l", $CygwinSetupCachePath, "-P", ($CygwinPackagesArch -join ",")
+            # Append $AuditCurrentLog onto $AuditLog
+            Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
+            # Check exit
+            $exitCode = $proc.ExitCode
+            if ($exitCode -ne 0) {
+                Write-Error "Cygwin installation failed! Exited with $exitCode."
+                throw
+            }
+        }
+
+        $global:AdditionalDiagnostics += "[Advanced] DiskuvOCaml Cygwin commands can be run with: $CygwinRootPath\bin\mintty.exe -`n"
+
+        # Create home directories
+        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "exit 0"
+
+        # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX
+        Invoke-CygwinSyncScript
+    }
 
     # END Cygwin
     # ----------------------------------------------------------------
 
-    # ----------------------------------------------------------------
-    # BEGIN Moby scripted Docker downloads
+    if (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") {
+        Invoke-CygwinInitialization
+    } else {
+        Install-Cygwin
 
-    $global:ProgressActivity = "Download ocaml/opam Docker image"
-    Write-ProgressStep
+        # ----------------------------------------------------------------
+        # BEGIN Define temporary dkmlvars for Cygwin only
 
-    $OcamlOpamRootPath = "$ProgramPath\tools\ocaml-opam"
-    $MobyPath = "$TempPath\moby"
-    $OcamlOpamRootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$OcamlOpamRootPath"
-    $MobyCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$MobyPath"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "install -m 755 -d '$OcamlOpamRootCygwinAbsPath' '$MobyCygwinAbsPath'"
+        # dkmlvars.* (DiskuvOCaml variables) are scripts that set variables about the deployment.
+        $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
+        $CygwinVarsArray = @(
+            "DiskuvOCamlVarsVersion=1",
+            "DiskuvOCamlHome='$ProgramCygwinAbsPath'",
+            "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'"
+        )
+        $CygwinVarsContents = $CygwinVarsArray -join [environment]::NewLine
+        $CygwinVarsContentsOnOneLine = $CygwinVarsArray -join " "
 
-    # Download the downloader script
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/download-moby-downloader.sh '$MobyCygwinAbsPath'"
+        # END Define temporary dkmlvars for Cygwin only
+        # ----------------------------------------------------------------
 
-    # Download the latest windows-msvc-20H2-ocaml-4.12 and windows-mingw-20H2-ocaml-4.12.
-    # Q: Why 20H2? Ans:
-    #    1. because it is a single kernel image so it is much smaller than multikernel `windows-msvc`
-    #    2. it is the latest as of 2021-08-05 so it will be a long time before that Windows kernel is no longer built;
-    #       would be nice if we could query https://github.com/avsm/ocaml-dockerfile/blob/ac54d3550159b0450032f0f6a996c2e96d3cafd7/src-opam/dockerfile_distro.ml#L36-L47
-    # Q: Why download with Cygwin rather than MSYS? Ans: The Moby script uses `jq` which has shell quoting failures when run with MSYS `jq`.
-    # Q: Why both mingw and msvc? Ans: Mingw's opam.exe has no runtime dependency on Cygwin, so msvc's opam.exe is unusable in our MSYS2 scripting environment.
-    #    But msvc is needed because dynamic linking of C + OCaml with the same compiler does not expose us to difficult-to-resolve cross-compiler interaction bugs.
-    #
-    # Skip with ... $global:SkipMobyDownload = $true ... remove it with ... Remove-Variable SkipMobyDownload
-    if (!$global:SkipMobyDownload) {
-        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage'  amd64"
-        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64"
-    }
+        # ----------------------------------------------------------------
+        # BEGIN Fetch/install fdopen-based ocaml/opam repository
 
-    # = Extract the tarballs =
-    # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
-    #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
-    #       Definitely not worth the insane troubleshooting that would ensue.
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
+        $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
+        Write-ProgressStep
 
-    foreach ($portAndArch in "msvc-amd64", "mingw-amd64") {
-        $AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
+        $DkmlCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$DkmlPath"
 
-        # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX
-        Invoke-CygwinSyncScript -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64"
+        $OcamlOpamRootPath = "$ProgramPath\tools\ocaml-opam"
+        $MobyPath = "$TempPath\moby"
+        $OcamlOpamRootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$OcamlOpamRootPath"
+        $MobyCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$MobyPath"
+        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "install -m 755 -d '$OcamlOpamRootCygwinAbsPath' '$MobyCygwinAbsPath'"
 
-        # Skip with ... $global:SkipMobyFixup = $true ... remove it with ... Remove-Variable SkipMobyFixup
-        if (!$global:SkipMobyFixup) {
-            # Create home directories
-            Invoke-CygwinCommandWithProgress -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64" -Command "exit 0"
+        # Download the downloader script
+        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/download-moby-downloader.sh '$MobyCygwinAbsPath'"
 
-            # Fix up symlinks pointing to C:\Opam . Not only does that not exist, but we want relative symlinks since we'll be cloning this Opam root!
-            # Also fixes symlinks pointing to C:\Windows if your system drive / Windows installation is different.
-            # Ex. Was:  build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> /cygdrive/c/opam/.opam/4.12/bin/opam-depext.exe
-            #     Want: build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> ../../4.12/bin/opam-depext.exe
-            Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command ("find $OcamlOpamRootCygwinAbsPath/$portAndArch -xtype l | while read linkpath; do /opt/diskuv-ocaml/installtime/idempotent-fix-symlink.sh " + '$linkpath' + " $OcamlOpamRootCygwinAbsPath $portAndArch /cygdrive/c/; done")
+        # Skip with ... $global:SkipMobyDownload = $true ... remove it with ... Remove-Variable SkipMobyDownload
+        # if (!$global:SkipMobyDownload) {
+        #     Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$MobyCygwinAbsPath/download-frozen-image-v2.sh' '$DV_WindowsMsvcDockerImage'  amd64"
+        # }
+
+        # = Extract the tarballs =
+        # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
+        #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
+        #       Definitely not worth the insane troubleshooting that would ensue.
+        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/moby-extract-opam-root.sh '$MobyCygwinAbsPath' OFF '$DV_WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
+
+        # Q: Why download with Cygwin rather than MSYS? Ans: The Moby script uses `jq` which has shell quoting failures when run with MSYS `jq`.
+        #
+        if (!$global:SkipMobyDownload) {
+            Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath `
+                -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$ProgramCygwinAbsPath'"
         }
+
+        # foreach ($portAndArch in "msvc-amd64") {
+        #     $global:AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
+
+        #     # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX
+        #     Invoke-CygwinSyncScript -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64"
+
+        #     # Skip with ... $global:SkipMobyFixup = $true ... remove it with ... Remove-Variable SkipMobyFixup
+        #     if (!$global:SkipMobyFixup) {
+        #         # Create home directories
+        #         Invoke-CygwinCommandWithProgress -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64" -Command "exit 0"
+
+        #         # Fix up symlinks pointing to C:\Opam . Not only does that not exist, but we want relative symlinks since we'll be cloning this Opam root!
+        #         # Also fixes symlinks pointing to C:\Windows if your system drive / Windows installation is different.
+        #         # Ex. Was:  build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> /cygdrive/c/opam/.opam/4.12/bin/opam-depext.exe
+        #         #     Want: build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> ../../4.12/bin/opam-depext.exe
+        #         Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command ("find $OcamlOpamRootCygwinAbsPath/$portAndArch -xtype l | while read linkpath; do /opt/diskuv-ocaml/installtime/idempotent-fix-symlink.sh " + '$linkpath' + " $OcamlOpamRootCygwinAbsPath $portAndArch /cygdrive/c/; done")
+        #     }
+        # }
+
+        # END Fetch/install fdopen-based ocaml/opam repository
+        # ----------------------------------------------------------------
     }
-
-    # END Moby scripted Docker downloads
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN Recompile and install opam.exe
-    #
-    # Note 1
-    # ------
-    #
-    # We sandbox opam into its own `tools/opam` directory so we can minimize DLL hell problems if they
-    # arise.
-    #
-    # Note 2
-    # ------
-    #
-    # The ocaml-opam Docker images use a Cygwin dependent opam.exe. So their opam.exe is unusable in our MSYS2 scripting environment
-    # because of cygwin1.dll conflicts when Cygwin opam.exe spawns curl.exe from the PATH of our MSYS2 environment, for example.
-    #
-    # Since Opam only provides instructions for MinGW based compilation, we use the MinGW ocaml-opam Docker image
-    # for this task.
-
-    $global:ProgressActivity = "Install Native Windows OPAM.EXE"
-    Write-ProgressStep
-
-    $ProgramRelToolDir = "tools\opam"
-    $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
-    $OpamBootstrapDir = "$TempPath\opam-bootstrap"
-
-    # Compile native Windows OPAM.EXE with ocaml/opam's mingw-amd64 Cygwin.
-    # * We do not do `make install` since only OPAM.EXE builds and we don't care about any other Opam artifacts (which we can copy from ocaml/opam)
-    # * We configure OPAM.EXE during compilation to use $ProgramToolOpamDir as the hardcoded install location.
-    $Dkml_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$DkmlPath"
-    $ProgramToolOpam_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$ProgramToolOpamDir"
-    $OpamBootstrap_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$OpamBootstrapDir"
-    Invoke-CygwinCommandWithProgress `
-        -CygwinName "ocaml-opam/mingw-amd64" `
-        -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
-        -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
-
-    # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
-    Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
-    if (!(Test-Path -Path $ProgramToolOpamDir)) { New-Item -Path $ProgramToolOpamDir -ItemType Directory | Out-Null }
-    Copy-Item -Path "$OpamBootstrapDir\bin\*" `
-        -Include @("*.dll", "*.exe", "*.manifest") `
-        -Destination $ProgramToolOpamDir
-
-
-    # END Recompile and install opam.exe
-    # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
     # BEGIN MSYS2
@@ -945,7 +936,7 @@ try {
         }
     }
 
-    $AdditionalDiagnostics += "[Advanced] MSYS2 commands can be run with: $MSYS2Dir\msys2_shell.cmd`n"
+    $global:AdditionalDiagnostics += "[Advanced] MSYS2 commands can be run with: $MSYS2Dir\msys2_shell.cmd`n"
 
     # Create home directories and other files and settings. Use the native MSYS2 launcher for
     # future-proofing this iniitial set rather than Invoke-MSYS2Command
@@ -997,17 +988,32 @@ try {
     $UnixVarsArray = @(
         "DiskuvOCamlVarsVersion=1",
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
-        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin:$ProgramMSYS2AbsPath/tools/opam'"
+        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'"
     )
     $UnixVarsContents = $UnixVarsArray -join [environment]::NewLine
     $UnixVarsContentsOnOneLine = $UnixVarsArray -join " "
     $PowershellVarsContents = @"
 `$env:DiskuvOCamlVarsVersion = 1
 `$env:DiskuvOCamlHome = '$ProgramPath'
-`$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin;$ProgramPath\tools\opam'
+`$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin'
 "@
 
     # END Define dkmlvars
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN Compile/install opam.exe
+
+    $global:ProgressActivity = "Install Native Windows OPAM.EXE"
+    Write-ProgressStep
+
+    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
+    if (!$global:SkipOpamSetup) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-opam.sh '$DkmlMSYS2AbsPath' $DV_AvailableOpamVersion '$ProgramMSYS2AbsPath'"
+    }
+
+    # END Compile/install opam.exe
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
@@ -1172,7 +1178,7 @@ try {
 
     # Add bin\ to the User's PATH if it isn't already
     if (!($userpathentries -contains $ProgramBinDir)) {
-        # remove any old entries, even from old deployments
+        # remove any old deployments
         $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelBinDir
         foreach ($possibleDir in $PossibleDirs) {
             $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
@@ -1182,15 +1188,15 @@ try {
         $PathModified = $true
     }
 
-    # Add tools\opam\ to the User's PATH if it isn't already
-    if (!($userpathentries -contains $ProgramToolOpamDir)) {
-        # remove any old entries, even from old deployments
+    # Remove legacy tools\opam\ from the User's PATH
+    $ProgramRelToolDir = "tools\opam"
+    $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
+    if ($userpathentries -contains $ProgramToolOpamDir) {
+        # remove any old deployments
         $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelToolDir
         foreach ($possibleDir in $PossibleDirs) {
             $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
         }
-        # add new PATH entry
-        $userpathentries = @( $ProgramToolOpamDir ) + $userpathentries
         $PathModified = $true
     }
 
@@ -1206,7 +1212,7 @@ catch {
     $ErrorActionPreference = 'Continue'
     Write-Error (
         "Setup did not complete because an error occurred.`n$_`n`n$($_.ScriptStackTrace)`n`n" +
-        "$AdditionalDiagnostics`n`nLog files available at`n  $AuditLog`n  $AuditCurrentLog`n  $AuditCurrentErr")
+        "$global:AdditionalDiagnostics`n`nLog files available at`n  $AuditLog`n  $AuditCurrentLog`n  $AuditCurrentErr")
     exit 1
 }
 

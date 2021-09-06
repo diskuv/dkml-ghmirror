@@ -1,4 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# ----------------------------
+# Copyright 2021 Diskuv, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ----------------------------
+#
+# @jonahbeckford: 2021-09-07
+# - This file is licensed differently than the rest of the Diskuv OCaml distribution.
+#   Keep the Apache License in this file since this file is part of the reproducible
+#   build files.
+#
 #################################################
 # _common_tool.sh
 #
@@ -59,9 +80,8 @@ export TOPDIR
 # * Use $WORK_EXPAND to communicate the location of a temporary shell script as an argument to `exec_in_platform`
 # * Use $WORK_EXPAND_UNIX to communicate the location of a temporary shell script as a UNIX-path argument to `exec_in_platform`
 TMPPARENTDIR_RELTOP="build/_tmp"
-TMPPARENTDIR_BUILDHOST="$TOPDIR/$TMPPARENTDIR_RELTOP"
+TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TOPDIR/$TMPPARENTDIR_RELTOP}"
 install -d "$TMPPARENTDIR_BUILDHOST"
-if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$TMPPARENTDIR_BUILDHOST"; fi
 WORK=$(env TMPDIR="$TMPPARENTDIR_BUILDHOST" mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 WORK_BASENAME=$(basename "$WORK")
@@ -101,23 +121,12 @@ OPAMROOT_IN_CONTAINER="$TOOLSDIR"/opam-root
 # shellcheck disable=SC2034
 OPAM_ARCH_IN_WINDOWS=amd64
 #
-# shellcheck disable=SC2034
-OPAM_PORT_FOR_OPAM_EXE_IN_WINDOWS=mingw # This should match OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS!
-#
-# The variant used for producing a native Windows opam.exe.
-#
-# Should match the build/_tools/common/ocaml-opam/$OPAM_PORT_FOR_OPAM_EXE_IN_WINDOWS-$OPAM_ARCH_IN_WINDOWS/Dockerfile.ocaml's variant
-# that looks something like: `opam switch create 4.12 --packages=ocaml-variants.4.12.0+msvc64`.
-# Variants were downloaded inside the Docker build for `ocaml-opam` from the repository at https://github.com/fdopen/opam-repository-mingw/tree/opam2/packages/ocaml-variants
-# shellcheck disable=SC2034
-OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS=4.12.0+mingw64c
-#
-# Which port we will use for all the switches in Windows except OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS.
+# Which port we will use for all the switches in Windows.
 #
 # shellcheck disable=SC2034
 OPAM_PORT_FOR_SWITCHES_IN_WINDOWS=msvc
 #
-# Which variant we will use for all the switches in Windows except OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS.
+# Which variant we will use for all the switches in Windows.
 # Pick from a msys2 variant in $DiskuvOCamlHome/etc/opam-repositories/diskuv-opam-repo
 # that aligns with the OPAM_PORT_FOR_SWITCHES_IN_WINDOWS.
 # shellcheck disable=SC2034
@@ -153,13 +162,13 @@ OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+options+dkml+msvc64
 # The text of the arguments $@ and PLATFORM_EXEC_PRE have any macros expanded:
 #
 #   @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing dkmlvars.sh.
-#     Only available when `is_windows_build_machine` is true (return code 0).
+#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
 #   @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@: The directory containing dkmlvars.sh.
-#     Only available when `is_windows_build_machine` is true (return code 0).
+#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #     The directory will always be Unix style (ex. /home/user).
 #   @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@: The directory containing bin/ocaml.
-#     Only available when `is_windows_build_machine` is true (return code 0).
+#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #     The directory will always be mixed style (ex. C:/home/user).
 #   @@EXPAND_TOPDIR@@: The top project directory containing `dune-project`.
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
@@ -182,13 +191,13 @@ function exec_in_platform () {
 #
 # Can do macro replacement of the arguments:
 # @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing bin/ocaml.
-#   Only available when `is_windows_build_machine` is true (return code 0).
+#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
 # @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@: The directory containing bin/ocaml.
-#   Only available when `is_windows_build_machine` is true (return code 0).
+#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #   The directory will always be Unix style (ex. /home/user).
 # @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@: The directory containing bin/ocaml.
-#   Only available when `is_windows_build_machine` is true (return code 0).
+#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #   The directory will always be mixed style (ex. C:/home/user).
 # @@EXPAND_TOPDIR@@: The top directory containing dune-project.
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
@@ -217,18 +226,18 @@ function _exec_dev_or_arch_helper () {
     if is_dev_platform; then
         local ACTUALTOPDIR
         local ACTUALTOPDIR_UNIX
-        if is_windows_build_machine && [[ -z "${DiskuvOCamlHome:-}" ]]; then
+        if is_unixy_windows_build_machine && [[ -z "${DiskuvOCamlHome:-}" ]]; then
             echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
             exit 79
         fi
-        if is_windows_build_machine; then
-            ACTUALTOPDIR=$(cygpath -aw "$TOPDIR")
-            ACTUALTOPDIR_UNIX=$(cygpath -au "$TOPDIR")
-            ACTUALDKMLDIR=$(cygpath -aw "$DKMLDIR")
-            ACTUALDKMLDIR_UNIX=$(cygpath -au "$DKMLDIR")
-            ACTUALDISKUVOCAMLHOME=$(cygpath -aw "$DiskuvOCamlHome")
-            ACTUALDISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-            ACTUALDISKUVOCAMLHOME_MIXED=$(cygpath -am "$DiskuvOCamlHome")
+        if [[ -x /usr/bin/cygpath ]]; then
+            ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
+            ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
+            ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
+            ACTUALDKMLDIR_UNIX=$(/usr/bin/cygpath -au "$DKMLDIR")
+            ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
+            ACTUALDISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
+            ACTUALDISKUVOCAMLHOME_MIXED=$(/usr/bin/cygpath -am "$DiskuvOCamlHome")
         else
             ACTUALTOPDIR="$TOPDIR"
             ACTUALTOPDIR_UNIX="$TOPDIR"
@@ -241,7 +250,7 @@ function _exec_dev_or_arch_helper () {
             ARG="${ARG//@@EXPAND_TOPDIR_UNIX@@/$ACTUALTOPDIR_UNIX}"
             ARG="${ARG//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
             ARG="${ARG//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
-            if is_windows_build_machine; then
+            if is_unixy_windows_build_machine; then
                 ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
                 ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
                 ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
@@ -254,7 +263,7 @@ function _exec_dev_or_arch_helper () {
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@/$ACTUALTOPDIR_UNIX}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
-            if is_windows_build_machine; then
+            if is_unixy_windows_build_machine; then
                 ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
                 ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
                 ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
@@ -309,7 +318,7 @@ function autodetect_dkmlvars () {
     local DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
     local DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
     set_dkmlparenthomedir
-    if is_windows_build_machine; then
+    if is_unixy_windows_build_machine; then
         if [[ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]]; then
             # shellcheck disable=SC1090
             source "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
@@ -342,7 +351,7 @@ function autodetect_dkmlvars () {
 # - env:DKMLPLUGIN_EXPAND - The plugin directory that works as an argument to `exec_in_platform`
 function set_opamrootdir () {
     if is_dev_platform; then
-        if is_windows_build_machine; then
+        if is_unixy_windows_build_machine; then
             if [[ -n "${OPAMROOT:-}" ]]; then
                 # If the developer sets OPAMROOT with an environment variable, then we will respect that
                 # just like `opam` would do.

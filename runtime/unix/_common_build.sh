@@ -57,7 +57,7 @@ function set_opamrootandswitchdir () {
     # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
     set_opamrootdir
 
-    if [[ "$USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS" = ON ]] && is_windows_build_machine; then
+    if [[ "$USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS" = ON ]] && is_unixy_windows_build_machine; then
         local OPAMGLOBALNAME
         OPAMGLOBALNAME=$(echo "$TOPDIR" | sha256sum | cut -c1-16 | awk '{print $1}')$(echo "$TOPDIR" | tr / . |  tr -dc '[:alnum:]-_.')
         OPAMSWITCHISGLOBAL=ON
@@ -69,7 +69,7 @@ function set_opamrootandswitchdir () {
         OPAMSWITCHISGLOBAL=OFF
         # shellcheck disable=SC2034
         OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR/_opam"
-        if is_windows_build_machine; then
+        if is_unixy_windows_build_machine; then
             OPAMSWITCHNAME_BUILDHOST=$(cygpath -aw "$BUILDDIR")
         else
             # shellcheck disable=SC2034

@@ -31,7 +31,7 @@ function usage () {
     echo "    create-diskuv-boot-DO-NOT-DELETE-switch.sh      Create the Opam switch." >&2
 }
 
-while getopts ":h:" opt; do
+while getopts ":h" opt; do
     case ${opt} in
         h )
             usage

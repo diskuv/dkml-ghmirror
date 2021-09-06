@@ -114,13 +114,12 @@ fi
 # Set PATH and run any prehooks
 PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
 if [[ -n "$PREHOOK" ]]; then
-    if is_windows_build_machine; then CYGPATH_LOC=$(which cygpath); else CYGPATH_LOC=; fi
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [eval] $PREHOOK" >&2; fi
     # shellcheck disable=SC1090
     source <(eval "$PREHOOK")
     # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
-    if [[ -n "${CYGPATH_LOC:-}" ]]; then PATH=$($CYGPATH_LOC --path "$PATH"); fi
+    if [[ -x /usr/bin/cygpath ]]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi
     # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
     # `trap 'rm -rf "$WORK"' EXIT` handler can find 'rm'.
     # We use a missing /usr/bin to trigger the PATH mutation since:
@@ -134,7 +133,7 @@ fi
 # shellcheck disable=SC2154
 if [[ -n "${OPAMROOT:-}" ]]; then
     VCPKG_INSTALLED_PACKAGES="$OPAMROOT/plugins/diskuvocaml/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
-    if is_windows_build_machine; then VCPKG_INSTALLED_PACKAGES=$(cygpath -au "$VCPKG_INSTALLED_PACKAGES"); fi
+    if [[ -x /usr/bin/cygpath ]]; then VCPKG_INSTALLED_PACKAGES=$(/usr/bin/cygpath -au "$VCPKG_INSTALLED_PACKAGES"); fi
     PATH="$VCPKG_INSTALLED_PACKAGES/bin:$VCPKG_INSTALLED_PACKAGES/tools/pkgconf:$PATH"
 else
     VCPKG_INSTALLED_PACKAGES=
