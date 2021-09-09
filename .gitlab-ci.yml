@@ -157,7 +157,7 @@ windows:fetch-ocaml-opam-repo:
     - Compress-Archive -Path "$REPODIR\*" -DestinationPath "$EXTRASRC\oorepodist\dist.zip"
 
     # Create public packages
-    - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/reproducible-ocaml-opam-repo/${env:CI_COMMIT_TAG}"
+    - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/${env:CI_COMMIT_TAG}"
     - echo $PACKAGE_REGISTRY_URL
     - cygwin "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.tar.gz"
     - cygwin "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.zip"
@@ -239,11 +239,11 @@ windows:build-opam:
     - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\opamdist\dist.zip"
 
     # Create public packages
-    # - $PACKAGE_REGISTRY_URL = "${env:CI_API_V4_URL}/projects/$DKML_CI_PROJECT_PATH_URLENCODED/packages/generic/reproducible-opam/${env:CI_COMMIT_TAG}"
+    # - $PACKAGE_REGISTRY_URL = "${env:CI_API_V4_URL}/projects/$DKML_CI_PROJECT_PATH_URLENCODED/packages/generic/opam-reproducible/${env:CI_COMMIT_TAG}"
     # - echo $PACKAGE_REGISTRY_URL
     # - curl --header "$GLAB_CURL_HEADER" --upload-file _ci/opamdist/dist.tar.gz "$PACKAGE_REGISTRY_URL"/opam-win${env:BITS}.tar.gz
     # - curl --header "$GLAB_CURL_HEADER" --upload-file _ci/opamdist/dist.zip    "$PACKAGE_REGISTRY_URL"/opam-win${env:BITS}.zip
-    - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/reproducible-opam/${env:CI_COMMIT_TAG}"
+    - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/opam-reproducible/${env:CI_COMMIT_TAG}"
     - echo $PACKAGE_REGISTRY_URL
     - msys "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.tar.gz"
     - msys "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.zip    '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.zip"

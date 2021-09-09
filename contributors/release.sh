@@ -141,15 +141,24 @@ fi
 
 # Upload files to Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 # GITLAB_TARGET_VERSION=$(echo "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
-PACKAGE_REGISTRY_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/portable-distribution/$NEW_VERSION"
+PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
+PACKAGE_REGISTRY_URL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-     --upload-file contributors/_build/portable-distribution.zip \
-     "$PACKAGE_REGISTRY_URL/portable-distribution.zip"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Portable distribution (zip)\",\"url\":\"${PACKAGE_REGISTRY_URL}/portable-distribution.zip\"}")
+     --upload-file contributors/_build/distribution-portable.zip \
+     "$PACKAGE_REGISTRY_URL/distribution-portable.zip"
+CREATE_OPTS+=(--assets-link "{\"name\":\"DKML distribution (zip) [portable]\",\"url\":\"${PACKAGE_REGISTRY_URL}/distribution-portable.zip\"}")
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-     --upload-file contributors/_build/portable-distribution.tar.gz \
-     "$PACKAGE_REGISTRY_URL/portable-distribution.tar.gz"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Portable distribution (tar.gz)\",\"url\":\"${PACKAGE_REGISTRY_URL}/portable-distribution.tar.gz\"}")
+     --upload-file contributors/_build/distribution-portable.tar.gz \
+     "$PACKAGE_REGISTRY_URL/distribution-portable.tar.gz"
+CREATE_OPTS+=(--assets-link "{\"name\":\"DKML distribution (tar.gz) [portable]\",\"url\":\"${PACKAGE_REGISTRY_URL}/distribution-portable.tar.gz\"}")
+
+# Reference the Generic Packages that GitLab automatically creates
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 32-bit Windows (tar.gz) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/$NEW_VERSION/opam-win32.tar.gz\"}")
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 32-bit Windows (zip) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/$NEW_VERSION/opam-win32.zip\"}")
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 64-bit Windows (tar.gz) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/$NEW_VERSION/opam-win64.tar.gz\"}")
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 64-bit Windows (zip) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/$NEW_VERSION/opam-win64.zip\"}")
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam repository of ocaml/opam Docker base image (tar.gz) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$NEW_VERSION/ocaml-opam-repo.tar.gz\"}")
+CREATE_OPTS+=(--assets-link "{\"name\":\"opam repository of ocaml/opam Docker base image (zip) [reproducible]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$NEW_VERSION/ocaml-opam-repo.zip\"}")
 
 # Create the release
 release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"

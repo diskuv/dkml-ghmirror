@@ -88,27 +88,27 @@ release-start-patch:
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
-.PHONY: _build/portable-distribution.zip
-_build/portable-distribution.zip: install-zip
+.PHONY: _build/distribution-portable.zip
+_build/distribution-portable.zip: install-zip
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	set -x && rm -f $(CURDIR)/$@ && install -d _build/release-zip && rm -rf _build/release-zip && install -d _build/release-zip && \
 	cd .. && zip -r $(CURDIR)/$@ $(ARCHIVE_MEMBERS) && \
 	cd $(CURDIR)/_build/release-zip && install -d diskuv-ocaml && cd diskuv-ocaml && unzip $(CURDIR)/$@ && \
 	cd .. && rm -f $(CURDIR)/$@ && zip -r $(CURDIR)/$@ diskuv-ocaml
 
-.PHONY: _build/portable-distribution.tar.gz
-_build/portable-distribution.tar.gz:
+.PHONY: _build/distribution-portable.tar.gz
+_build/distribution-portable.tar.gz:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	install -d _build && rm -f $(CURDIR)/$@ && \
 	tar cvCfz .. $(CURDIR)/$@ --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs $(ARCHIVE_MEMBERS)
 
 .PHONY: release-prerelease
-release-prerelease: auth-gitlab-cli install-gitlab-release-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
+release-prerelease: auth-gitlab-cli install-gitlab-release-cli _build/distribution-portable.zip _build/distribution-portable.tar.gz
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p
 
 .PHONY: release-complete
-release-complete: auth-gitlab-cli install-gitlab-release-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
+release-complete: auth-gitlab-cli install-gitlab-release-cli _build/distribution-portable.zip _build/distribution-portable.tar.gz
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh
 
