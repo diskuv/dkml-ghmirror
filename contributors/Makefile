@@ -64,13 +64,15 @@ auth-gitlab-cli: install-gitlab-cli
 		$$GLAB auth login; \
 	fi
 
+NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n> The *Diskuv OCaml* distribution is available under the\n[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).\nOther assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;\nin particular source code files that prominently display a\n[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).\n\n
+
 .PHONY: release-start-major
 release-start-major:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version major --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
-	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
+	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: release-start-minor
 release-start-minor:
@@ -78,7 +80,7 @@ release-start-minor:
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version minor --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
-	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
+	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: release-start-patch
 release-start-patch:
@@ -86,7 +88,7 @@ release-start-patch:
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version patch --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
-	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
+	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: _build/distribution-portable.zip
 _build/distribution-portable.zip: install-zip
