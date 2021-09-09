@@ -9,8 +9,18 @@ variables:
     - windows
     - windows-1809
 
+.diskuv_windows_runners:
+  # Capabilities:
+  # - Windows 10
+  # - official Git 2.33.0.2+ for Windows
+  tags:
+    - diskuv
+    - windows
+    - windows-1809
+
 .before_windows: &before-windows
   - date
+  - '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' # From https://www.msys2.org/docs/ci/#docker, but useful for everything
   - $DKML_CI_PROJECT_PATH_URLENCODED = [uri]::EscapeDataString($env:CI_PROJECT_PATH) # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
   - $PACKAGE_REGISTRY_GENERIC_URL = "${env:CI_API_V4_URL}/projects/$DKML_CI_PROJECT_PATH_URLENCODED/packages/generic"
   - '$GLAB_CURL_HEADER = "JOB-TOKEN: ${env:CI_JOB_TOKEN}"'
@@ -22,8 +32,28 @@ variables:
   - Import-Module DeploymentVersion # Use the same $DV_ variables as 'installtime' scripts
   - Import-Module UnixInvokers      # Use Invoke-CygwinCommand and Invoke-MSYS2Command
 
-  # ----------- Visual Studio -----------
-  - '$VSPATH = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products ''*'' -latest -property installationPath'
+  # ----------- Chocolatey --------------
+  - |
+    $oldeap = $ErrorActionPreference; $ErrorActionPreference = "SilentlyContinue";
+    & where.exe choco 2> $null;
+    $ErrorActionPreference = oldeap;
+    if ($LastExitCode -ne 0) {
+      if (Test-Path "C:\ProgramData\chocolatey\helpers\chocolateyProfile.psm1") {
+        echo "The GitLab runner has Chocolatey but has not been restarted to reflect the new PATH. Will trigger a PowerShell session refresh until you have restarted it."
+      } else {
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'));
+      }
+      Import-Module "C:\ProgramData\chocolatey\helpers\chocolateyProfile.psm1";
+      refreshenv;
+    }
+
+  # ----------- Visual Studio Locator -----------
+  # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
+  # Due to install location bug (https://github.com/Microsoft/vswhere/wiki/Installing#chocolatey) we may have to add vswhere PATH manually.
+  - $VSWHERE = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+  - if (Test-Path "C:\ProgramData\chocolatey\bin\vswhere.exe") { $env:PATH += ";C:\ProgramData\chocolatey\bin"; $VSWHERE = "vswhere" } elseif (!(Test-Path "$VSWHERE")) { choco upgrade vswhere -y --no-progress --version="'2.8.4'" }
+  - '$VSPATH = & "$VSWHERE" -all -products ''*'' -latest -property installationPath'
   - 'echo Visual Studio: $VSPATH'
 
   # ----------- Curl -----------
@@ -47,13 +77,14 @@ variables:
 
   # Docs: https://www.msys2.org/docs/ci/#docker
   # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
-  - '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12'
-  - Invoke-WebRequest -UseBasicParsing -uri "https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe" -OutFile msys2.exe
-  - .\msys2.exe -y -oC:\
-  - Remove-Item msys2.exe
-  - ((Get-Content -path C:\msys64\etc\\post-install\\07-pacman-key.post -Raw)
-      -replace '--refresh-keys', '--version') |
-      Set-Content -Path C:\msys64\etc\\post-install\\07-pacman-key.post
+  - |
+    if (!(Test-Path -Path C:\msys64)) {
+      Invoke-WebRequest -UseBasicParsing -uri "https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe" -OutFile msys2.exe;
+      .\msys2.exe -y -oC:\;
+      Remove-Item msys2.exe;
+      ((Get-Content -path C:\msys64\etc\post-install\07-pacman-key.post -Raw) -replace '--refresh-keys', '--version') |
+        Set-Content -Path C:\msys64\etc\post-install\07-pacman-key.post;
+    }
   # msys starts a process in the background and waits on it. it also handles quoting.
   # msys_direct calls the shell command synchronously.
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
@@ -164,16 +195,15 @@ windows:fetch-ocaml-opam-repo:
 
 windows:build-opam:
   extends:
-  - .shared_windows_runners
+  - .diskuv_windows_runners
   stage: build
   parallel:
     matrix:
       - BITS: ["32", "64"]
-      # - BITS: ["64"] # TODO: Get 32 bit working
-  # needs: ["windows:fetch-ocaml-opam-repo"]
-  needs: [] # use this until fetch-ocaml-opam-repo is debugged and its rules switched to the same branch
+  needs: []
   rules:
-    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "next"'
   before_script:
     - *before-windows
     - *before-msys2
@@ -181,29 +211,6 @@ windows:build-opam:
     - $env:MSYSTEM = 'MSYS2'       # Start MSYS2 (not MinGW 32 or 64 bit) environments
     - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
-
-    # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
-    # We want `amd64_x86` (x64_x86) and not `64` (x86) for 32-bit since x64_x86 is a cross compiler that has the full 64-bit address space available for the compiler.
-    - |
-      pushd "$VSPATH\VC\Auxiliary\Build"
-      if ("$env:BITS" -eq "32") {
-        cmd /c "vcvars32.bat & set" |
-        foreach {
-          if ($_ -match "=") {
-            $v = $_.split("="); set-item -force -path "ENV:\$($v[0])"  -value "$($v[1])"
-          }
-        }
-      } else {
-        cmd /c "vcvars64.bat & set" |
-        foreach {
-          if ($_ -match "=") {
-            $v = $_.split("="); set-item -force -path "ENV:\$($v[0])"  -value "$($v[1])"
-          }
-        }
-      }
-      popd
-      Write-Host "`nVisual Studio Command Prompt variables set."
-    - where.exe cl.exe
 
     # ================ Prepare ================
     # Theoretically these should go in a separate job. However the GitLab runner takes 5-10 minutes to spin up a Windows container
@@ -239,21 +246,10 @@ windows:build-opam:
     - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\opamdist\dist.zip"
 
     # Create public packages
-    # - $PACKAGE_REGISTRY_URL = "${env:CI_API_V4_URL}/projects/$DKML_CI_PROJECT_PATH_URLENCODED/packages/generic/opam-reproducible/${env:CI_COMMIT_TAG}"
-    # - echo $PACKAGE_REGISTRY_URL
-    # - curl --header "$GLAB_CURL_HEADER" --upload-file _ci/opamdist/dist.tar.gz "$PACKAGE_REGISTRY_URL"/opam-win${env:BITS}.tar.gz
-    # - curl --header "$GLAB_CURL_HEADER" --upload-file _ci/opamdist/dist.zip    "$PACKAGE_REGISTRY_URL"/opam-win${env:BITS}.zip
     - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/opam-reproducible/${env:CI_COMMIT_TAG}"
     - echo $PACKAGE_REGISTRY_URL
     - msys "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.tar.gz"
     - msys "curl --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.zip    '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.zip"
-
-    # Create a public release (DO FROM COMMAND LINE; contributors/Makefile)
-    # - release-cli --server-url "${env:CI_SERVER_URL}" --project-id "${env:CI_PROJECT_ID}"
-    #     create --tag-name "${env:CI_COMMIT_TAG}" --name "Opam DKML Version ${env:CI_COMMIT_TAG}"
-    #     --description "contributors/changes/${env:CI_COMMIT_TAG}.md"
-    #     --assets-link "{`"name`":`"Opam Windows ${env:BITS}-bit tar.gz`",`"url`":`"$PACKAGE_REGISTRY_URL/opam-win${env:BITS}.tar.gz`"}"
-    #     --assets-link "{`"name`":`"Opam Windows ${env:BITS}-bit zip`",`"url`":`"$PACKAGE_REGISTRY_URL/opam-win${env:BITS}.zip`"}"
 
 test:
   stage: test
