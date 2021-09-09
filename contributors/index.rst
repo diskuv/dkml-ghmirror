@@ -218,9 +218,7 @@ TWO. *Run the Install World script.*
 
    .. code-block:: ps1con
 
-     PS> cd ~\DiskuvOCamlProjects\diskuv-ocaml
-
-     PS> installtime\windows\install-world.bat
+     PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
