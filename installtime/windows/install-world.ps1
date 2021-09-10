@@ -11,7 +11,9 @@ param (
     [int]
     $ParentProgressId = -1,
     [switch]
-    $SkipAutoInstallVsBuildTools
+    $SkipAutoInstallVsBuildTools,
+    [switch]
+    $SkipProgress
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,13 +45,13 @@ $global:ProgressActivity = $null
 $ProgressTotalSteps = 2
 $ProgressId = $ParentProgressId + 1
 function Write-ProgressStep {
-    if (!$global:SkipProgress) {
+    if (!$SkipProgress) {
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     } else {
-        Write-Host -ForegroundColor DarkGreen "[$($global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
+        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
     }
     $global:ProgressStep += 1
 }

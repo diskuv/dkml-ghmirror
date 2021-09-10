@@ -30,6 +30,8 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
+OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 1-setup.sh
+
 function usage () {
     echo "Usage:" >&2
     echo "    reproducible-compile-opam-2-build.sh" >&2
@@ -41,13 +43,17 @@ function usage () {
     echo "   -n NUM: Number of CPUs. Autodetected with max of 8." >&2
     echo "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
     echo "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    echo "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
+    echo "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
+    echo "      will not choose a compiler based on environment variables." >&2
+    echo "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
 NUMCPUS=
 export PLATFORM=dev
-while getopts ":d:t:n:a:h" opt; do
+while getopts ":d:t:n:a:b:h" opt; do
     case ${opt} in
         h )
             usage
@@ -64,6 +70,7 @@ while getopts ":d:t:n:a:h" opt; do
         t ) TARGETDIR="$OPTARG";;
         n ) NUMCPUS="$OPTARG";;
         a ) PLATFORM="$OPTARG";;
+        b ) OPT_MSVS_PREFERENCE="$OPTARG";;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -128,10 +135,12 @@ else
     BOOTSTRAP_EXTRA_OPTS=""
 fi
 
-echo -n "cl.exe, if detected: "
-env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" which cl.exe 2>/dev/null || true
-env "${ENV_ARGS[@]}" echo "INCLUDE: ${INCLUDE:-}"
-env "${ENV_ARGS[@]}" echo "LIBS: ${LIBS:-}"
+if is_unixy_windows_build_machine; then
+    echo -n "cl.exe, if detected: "
+    env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" which cl.exe
+    env "${ENV_ARGS[@]}" echo "INCLUDE: ${INCLUDE:-}"
+    env "${ENV_ARGS[@]}" echo "LIBS: ${LIBS:-}"
+fi
 
 # Running through the `make compiler`, `make lib-pkg` + `configure` process should be done
 # as one atomic unit. A failure in an intermediate step can cause subsequent `make compiler`
@@ -173,13 +182,8 @@ if [[ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp"  ]]; then
 
     # Standard autotools ./configure
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.
-    #   Since installtime/windows/Machine/Machine.psm1 has minimum VS14 we only select that version
-    #   or greater. We'll ignore '10.0' (Windows SDK 10) which may bundle Visual Studio 2015, 2017 or 2019.
-    #   Also we do _not_ use the environment (ie. no '@' in MSVS_PREFERENCE) since that isn't reproducible,
-    #   and also because it sets MSVS_* variables to empty if it thinks the environment is correct (but we
-    #   _always_ want MSVS_* set since ./configure script branches on MSVS_* being non-empty).
     pushd "$OPAMSRC_UNIX"
-    env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' ./configure --prefix="$TARGETDIR_MIXED"
+    env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" ./configure --prefix="$TARGETDIR_MIXED"
     popd
 fi
 

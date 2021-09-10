@@ -56,6 +56,8 @@
 
     Even with this switch is selected, Git 2.33.0 will be installed
     if there is no Git available on the PATH.
+.Parameter $SkipProgress
+    Do not use the progress user interface.
 
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
@@ -91,7 +93,9 @@ param (
     [int]
     $ParentProgressId = -1,
     [switch]
-    $SkipAutoUpgradeGitWhenOld
+    $SkipAutoUpgradeGitWhenOld,
+    [switch]
+    $SkipProgress
 )
 
 $ErrorActionPreference = "Stop"
@@ -150,7 +154,7 @@ function Import-DiskuvOCamlAsset {
     try {
         Invoke-WebRequest `
             -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
-            -OutFile "$TmpPath\$ZipFile"        
+            -OutFile "$TmpPath\$ZipFile"
     }
     catch {
         $StatusCode = $_.Exception.Response.StatusCode.value__
@@ -174,13 +178,13 @@ $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
 function Write-ProgressStep {
-    if (!$global:SkipProgress) {
+    if (!$SkipProgress) {
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     } else {
-        Write-Host -ForegroundColor DarkGreen "[$($global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
+        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
     }
     $global:ProgressStep += 1
 }
@@ -188,7 +192,7 @@ function Write-ProgressCurrentOperation {
     param(
         $CurrentOperation
     )
-    if (!$global:SkipProgress) {
+    if (!$SkipProgress) {
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
@@ -205,16 +209,18 @@ $global:ProgressActivity = "Install Visual Studio Setup PowerShell Module"
 Write-ProgressStep
 
 Import-VSSetup -TempPath "$env:TEMP\vssetup"
-$ExistingVisualStudio = Get-CompatibleVisualStudio
-if (($ExistingVisualStudio | Measure-Object).Count -eq 0) {
-    Write-Error "No compatible Visual Studio installation detected. Please run: $HereDir\setup-machine.ps1"
-    exit 1
-}
-$VisualStudioPath = ($ExistingVisualStudio | Select-Object InstallationPath -First 1).InstallationPath
+$CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
+$ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
+$VisualStudioProps = Get-VisualStudioProperties -ChosenVisualStudio $ChosenVisualStudio
 $VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
 $VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
-[System.IO.File]::WriteAllText($VisualStudioDirPath, $VisualStudioPath, $Utf8NoBomEncoding)
-[System.IO.File]::WriteAllText($VisualStudioJsonPath, ($ExistingVisualStudio | ConvertTo-Json), $Utf8NoBomEncoding)
+$VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
+$VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.txt"
+[System.IO.File]::WriteAllText($VisualStudioDirPath, "$($VisualStudioProps.InstallPath)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json), $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
+Add-Content -Path $AuditLog -Value "`nVISUAL_STUDIO_INSTALL_PATH = $VisualStudioInstallPath`nVISUAL_STUDIO_VCVARS_VER = $VisualStudioVcVarsVer`nVISUAL_STUDIO_MSVS_PREFERENCE = $VisualStudioMsvsPreference`n"
 
 # END Visual Studio Setup PowerShell Module
 # ----------------------------------------------------------------
@@ -556,7 +562,7 @@ function Invoke-Win32CommandWithProgress {
     # Truncate current error log
     Set-Content -Path $AuditCurrentErr -Value ''
 
-    if (!$global:SkipProgress) {
+    if (!$SkipProgress) {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
@@ -571,7 +577,7 @@ function Invoke-Win32CommandWithProgress {
         -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
     $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
     while (-not $proc.HasExited) {
-        if (!$global:SkipProgress) {
+        if (!$SkipProgress) {
             $tail = Get-Content -Path $AuditCurrentLog -Tail $InvokerTailLines
             Write-ProgressCurrentOperation $tail
         }
@@ -600,7 +606,7 @@ function Invoke-CygwinCommandWithProgress {
     $what = "[$CygwinName] $Command"
     Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
-    if (!$global:SkipProgress) {
+    if (!$SkipProgress) {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
@@ -638,11 +644,11 @@ function Invoke-MSYS2CommandWithProgress {
     Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
     if ($ClearProgress) {
-        if (!$global:SkipProgress) {
+        if (!$SkipProgress) {
             Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
         }
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir -IgnoreErrors:$IgnoreErrors
-    } elseif (!$global:SkipProgress -and !$ClearProgress) {
+    } elseif (!$SkipProgress -and !$ClearProgress) {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `

@@ -34,6 +34,13 @@ SETUP_ARGS=()
 BUILD_ARGS=()
 TRIM_ARGS=()
 
+# Since installtime/windows/Machine/Machine.psm1 has minimum VS14 we only select that version
+# or greater. We'll ignore '10.0' (Windows SDK 10) which may bundle Visual Studio 2015, 2017 or 2019.
+# Also we do _not_ use the environment (ie. no '@' in MSVS_PREFERENCE) since that isn't reproducible,
+# and also because it sets MSVS_* variables to empty if it thinks the environment is correct (but we
+# _always_ want MSVS_* set since ./configure script branches on MSVS_* being non-empty).
+OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 2-build.sh
+
 function usage () {
     echo "Usage:" >&2
     echo "    reproducible-compile-opam-1-setup.sh" >&2
@@ -45,12 +52,16 @@ function usage () {
     echo "   -v TAG: Git tag" >&2
     echo "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
     echo "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    echo "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
+    echo "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
+    echo "      will not choose a compiler based on environment variables." >&2
+    echo "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
 }
 
 DKMLDIR=
 GIT_TAG=
 TARGETDIR=
-while getopts ":d:v:t:a:h" opt; do
+while getopts ":d:v:t:a:b:h" opt; do
     case ${opt} in
         h )
             usage
@@ -77,6 +88,10 @@ while getopts ":d:v:t:a:h" opt; do
         a )
             BUILD_ARGS+=( -a "$OPTARG" )
             SETUP_ARGS+=( -a "$OPTARG" )
+        ;;
+        b )
+            BUILD_ARGS+=( -b "$OPTARG" )
+            SETUP_ARGS+=( -b "$OPTARG" )
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2

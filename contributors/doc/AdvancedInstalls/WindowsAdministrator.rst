@@ -34,7 +34,7 @@ If you have **all** three (3) of the following:
    * Visual Studio Enterprise
    * Visual Studio Build Tools (the compilers without the IDE)
 
-2. VS C++ x64/x86 build tools (``Microsoft.VisualStudio.Component.VC.Tools.x86.x64``)
+2. MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``)
 3. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
    which is also known as the 19H1 SDK or May 2019 Update SDK.
 

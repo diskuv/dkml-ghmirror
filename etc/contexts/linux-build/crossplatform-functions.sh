@@ -411,14 +411,27 @@ function autodetect_vsdev () {
     set_dkmlparenthomedir
 
     local VSSTUDIODIR
-    if [[ -n "${DKML_VSSTUDIO_DIR:-}" ]]; then
+    local VSSTUDIOVCVARSVER
+    if [[ -n "${DKML_VSSTUDIO_DIR:-}" && -n "${DKML_VSSTUDIO_VCVARSVER:-}" && -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]]; then
         VSSTUDIODIR=$DKML_VSSTUDIO_DIR
+        VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
+        VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
     else
         local VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
         if [[ ! -e "$VSSTUDIO_DIRFILE" ]]; then
             return 2
         fi
+        local VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
+        if [[ ! -e "$VSSTUDIO_VCVARSVERFILE" ]]; then
+            return 2
+        fi
+        local VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
+        if [[ ! -e "$VSSTUDIO_MSVSPREFERENCEFILE" ]]; then
+            return 2
+        fi
         VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_DIRFILE")
+        VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_VCVARSVERFILE")
+        VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_MSVSPREFERENCEFILE")
     fi
     if [[ -x /usr/bin/cygpath ]]; then
         VSSTUDIODIR=$(/usr/bin/cygpath -au "$VSSTUDIODIR")
@@ -442,8 +455,8 @@ function autodetect_vsdev () {
         fi
     fi
 
-    VSDEV_ARGS=(-no_logo)
-    VCVARS_ARGS=()
+    VSDEV_ARGS=(-no_logo -vcvars_ver="$VSSTUDIOVCVARSVER")
+    VCVARS_ARGS=(-vcvars_ver="$VSSTUDIOVCVARSVER")
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
     if [[ "$BUILDHOST_ARCH" = windows_x86 ]]; then
         # The build host machine is 32-bit ...
@@ -487,9 +500,11 @@ function autodetect_vsdev () {
     # to the bottom of it so we can inspect the environment variables.
     # (Less hacky version of https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell)
     VSDEVCMDFILE_WIN=$(cygpath -aw "$VSDEVCMD")
-    echo '@call "'"$VSDEVCMDFILE_WIN"'" %*' > "$TEMPDIR"/vsdevcmd-and-printenv.bat
-    # shellcheck disable=SC2046
-    echo 'set > "'$(cygpath -aw "$TEMPDIR")'\vcvars.txt"' >> "$TEMPDIR"/vsdevcmd-and-printenv.bat
+    {
+        echo '@call "'"$VSDEVCMDFILE_WIN"'" %*'
+        # shellcheck disable=SC2046
+        echo 'set > "'$(cygpath -aw "$TEMPDIR")'\vcvars.txt"'
+    } > "$TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, we run the batch file
     PATH_UNIX=$(cygpath -au --path "$PATH")
@@ -507,8 +522,9 @@ function autodetect_vsdev () {
 
     # THIRD, we add everything to the environment except:
     # - PATH (we need to cygpath this, and we need to replace any existing PATH)
-    # - INCLUDE (we will add our own vcpkg include path)
-    # - LIB (we will add our own vcpkg library path)
+    # - MSVS_PREFERENCE (we will add our own)
+    # - INCLUDE (we actually add this, but we also add our own vcpkg include path)
+    # - LIB (we actually add this, but we also add our own vcpkg library path)
     # - _
     # - !ExitCode
     # - TEMP, TMP
@@ -534,6 +550,7 @@ function autodetect_vsdev () {
     BEGIN{FS="="}
 
     $1 != "PATH" &&
+    $1 != "MSVS_PREFERENCE" &&
     $1 != "INCLUDE" &&
     $1 != "LIB" &&
     $1 !~ /^!ExitCode/ &&
@@ -547,8 +564,11 @@ function autodetect_vsdev () {
     $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_LIB value}
     ' "$TEMPDIR"/vcvars.txt > "$TEMPDIR"/mostvars.eval.sh
 
-    # Add all but PATH, INCLUDE and LIB to ENV_ARGS
+    # Add all but PATH and MSVS_PREFERENCE to ENV_ARGS
     while IFS='' read -r line; do ENV_ARGS+=("$line"); done < "$TEMPDIR"/mostvars.eval.sh
+
+    # Add MSVS_PREFERENCE
+    ENV_ARGS+=(MSVS_PREFERENCE="VS$VSSTUDIOMSVSPREFERENCE")
 
     # FOURTH, set VSDEV_PATH to the provided PATH
     awk '
