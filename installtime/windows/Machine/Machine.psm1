@@ -57,7 +57,7 @@ function Get-CompatibleVisualStudio {
     if ($ErrorIfNotFound -and ($instances | Measure-Object).Count -eq 0) {
         $err = ("There is no Visual Studio 2015 Update 3 or later with both " +
             "a) VS C++ x64/x86 build tools (Microsoft.VisualStudio.Component.VC.Tools.x86.x64) " +
-            "B) Windows 10 SDK 18362 (Microsoft.VisualStudio.Component.Windows10SDK.18362)"
+            "B) Windows 10 SDK $Windows10SdkVer (Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer)"
         )
         Write-Error $err
         exit 1

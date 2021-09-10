@@ -147,6 +147,8 @@ function Write-ProgressStep {
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    } else {
+        Write-Host -ForegroundColor DarkGreen "[$($global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
     }
     $global:ProgressStep += 1
 }

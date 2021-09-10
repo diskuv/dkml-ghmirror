@@ -24,6 +24,7 @@ variables:
   - $DKML_CI_PROJECT_PATH_URLENCODED = [uri]::EscapeDataString($env:CI_PROJECT_PATH) # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
   - $PACKAGE_REGISTRY_GENERIC_URL = "${env:CI_API_V4_URL}/projects/$DKML_CI_PROJECT_PATH_URLENCODED/packages/generic"
   - '$GLAB_CURL_HEADER = "JOB-TOKEN: ${env:CI_JOB_TOKEN}"'
+  - $global:SkipProgress = $true # disable progress bar in all Diskuv OCaml PowerShell scripts
 
   - $ErrorActionPreference = 'Stop'
   - $ProgressPreference = 'SilentlyContinue'
@@ -46,15 +47,26 @@ variables:
       }
       Import-Module "C:\ProgramData\chocolatey\helpers\chocolateyProfile.psm1";
       refreshenv;
+    } else {
+      echo "Found Chocolatey";
     }
 
   # ----------- Visual Studio Locator -----------
   # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
   # Due to install location bug (https://github.com/Microsoft/vswhere/wiki/Installing#chocolatey) we may have to add vswhere PATH manually.
   - $VSWHERE = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-  - if (Test-Path "C:\ProgramData\chocolatey\bin\vswhere.exe") { $env:PATH += ";C:\ProgramData\chocolatey\bin"; $VSWHERE = "vswhere" } elseif (!(Test-Path "$VSWHERE")) { choco upgrade vswhere -y --no-progress --version="'2.8.4'" }
+  - if (Test-Path "C:\ProgramData\chocolatey\bin\vswhere.exe") { $env:PATH += ";C:\ProgramData\chocolatey\bin"; $VSWHERE = "vswhere" } elseif (!(Test-Path "$VSWHERE")) { choco upgrade vswhere -y --no-progress --version="'2.8.4'"; refreshenv }
   - '$VSPATH = & "$VSWHERE" -all -products ''*'' -latest -property installationPath'
-  - 'echo Visual Studio: $VSPATH'
+
+  # ----------- setup-machine.ps1 -----------
+
+  # - if ("$VSPATH" -eq "") { choco upgrade visualstudio2019buildtools -y --no-progress --version="'16.11.2.0'"; refreshenv }
+  # automatically install Diskuv OCaml's Build Tools unless there is already Visual Studio
+  - if ("$VSPATH" -eq "") { echo "Installing Diskuv OCaml's Build Tools ..." }
+  - installtime\windows\setup-machine.ps1 -AllowRunAsAdmin
+  - '$VSPATH = & "$VSWHERE" -all -products ''*'' -latest -property installationPath'
+  - if ("$VSPATH" -eq "") { throw "No Visual Studio found, even after installation" }
+  - 'echo "Visual Studio: $VSPATH"'
 
   # ----------- Curl -----------
 
@@ -65,10 +77,10 @@ variables:
 
   # https://docs.gitlab.com/ee/ci/yaml/index.html#release-cli-for-shell-executors
   - $EXTRASRC = "$PWD\_ci"
-  - New-Item -Path "$EXTRASRC" -ItemType Directory
+  - if (!(Test-Path "$EXTRASRC")) { New-Item -Path "$EXTRASRC" -ItemType Directory }
   - $RELCLI = "$EXTRASRC\releasecli"
-  - New-Item -Path "$RELCLI" -ItemType Directory
-  - Invoke-WebRequest -Uri "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-windows-amd64.exe" -OutFile "$RELCLI\release-cli.exe"
+  - if (!(Test-Path "$RELCLI")) { New-Item -Path "$RELCLI" -ItemType Directory }
+  - if (!(Test-Path "$RELCLI\release-cli.exe")) { Invoke-WebRequest -Uri "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-windows-amd64.exe" -OutFile "$RELCLI\release-cli.exe" }
   - $env:PATH += ";$RELCLI"
   - release-cli -v
 
@@ -218,8 +230,8 @@ windows:build-opam:
 
     # ----------- Chocolatey -----------
 
-    # Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide
-    # 1. Git
+    # Git (not part of GitLab Windows Shared Runner images)
+    # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
     - choco upgrade git.install -y --no-progress --version="'2.33.0.2'" --package-parameters "'/GitOnlyOnPath /NoGitLfs /SChannel /NoAutoCrlf'"
     - refreshenv
     - where.exe git.exe

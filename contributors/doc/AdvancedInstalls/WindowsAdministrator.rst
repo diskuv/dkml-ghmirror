@@ -12,12 +12,11 @@ as everybody else.
 
 .. code-block:: ps1con
 
-    PS> Set-ExecutionPolicy `
-        -ExecutionPolicy Unrestricted `
-        -Scope Process `
-        -Force
+    PS> installtime\windows\setup-machine.bat -AllowRunAsAdmin
 
-    PS> installtime\windows\setup-machine.ps1
+.. note::
+
+    You can use the ``-SilentInstall`` switch if you need to automate the installation.
 
 The Administrator portion takes 2GB of disk space while each user can take up to 25GB of disk space in their User
 Profiles (``$env:LOCALAPPDATA\Programs\DiskuvOCaml`` and ``$env:LOCALAPPDATA\opam``) just for the basic *Diskuv OCaml*
@@ -58,7 +57,7 @@ including the correct Windows 10 SDK:
 
 After you have installed all the required components of Visual Studio, you can run
 `setup-machine.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/setup-machine.ps1>`_
-with the switch ``-SkipAutoInstallMsBuild`` to verify you have a correct Visual Studio installation:
+with the switch ``-SkipAutoInstallVsBuildTools`` to verify you have a correct Visual Studio installation:
 
 .. code-block:: ps1con
 
@@ -67,6 +66,6 @@ with the switch ``-SkipAutoInstallMsBuild`` to verify you have a correct Visual 
         -Scope Process `
         -Force
 
-    PS> installtime\windows\setup-machine.ps1 -SkipAutoInstallMsBuild
+    PS> installtime\windows\setup-machine.ps1 -SkipAutoInstallVsBuildTools
 
 The ``setup-machine.ps1`` script will error out if you are missing any required components.

@@ -11,7 +11,7 @@ param (
     [int]
     $ParentProgressId = -1,
     [switch]
-    $SkipAutoInstallMsBuild
+    $SkipAutoInstallVsBuildTools
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,6 +48,8 @@ function Write-ProgressStep {
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    } else {
+        Write-Host -ForegroundColor DarkGreen "[$($global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
     }
     $global:ProgressStep += 1
 }
@@ -58,7 +60,7 @@ function Write-ProgressStep {
 $global:ProgressActivity = "Setup machine"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipAutoInstallMsBuild:`$$SkipAutoInstallMsBuild"
+Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools"
 
 # END Setup machine
 # ----------------------------------------------------------------
