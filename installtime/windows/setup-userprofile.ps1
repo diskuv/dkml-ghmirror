@@ -102,6 +102,8 @@ $DkmlPath = $HereDir.Parent.Parent.FullName
 if (!(Test-Path -Path $DkmlPath\.dkmlroot)) {
     throw "Could not locate where this script was in the project. Thought DkmlPath was $DkmlPath"
 }
+$DkmlProps = ConvertFrom-StringData (Get-Content $DkmlPath\.dkmlroot -Raw)
+$dkml_root_version = $DkmlProps.dkml_root_version
 
 $env:PSModulePath += ";$HereDir"
 Import-Module Deployers
@@ -130,6 +132,36 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
     # This might work on 32-bit Windows, but that hasn't been tested.
     # One missing item is whether there are 32-bit Windows ocaml/opam Docker images
     throw "DiskuvOCaml is only supported on 64-bit Windows"
+}
+
+# ASSET_URL="https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-reproducible/v$dkml_root_version/ocaml-opam-repo.tar.gz"
+
+function Import-DiskuvOCamlAsset {
+    param (
+        [Parameter(Mandatory)]
+        $PackageName,
+        [Parameter(Mandatory)]
+        $ZipFile,
+        [Parameter(Mandatory)]
+        $TmpPath,
+        [Parameter(Mandatory)]
+        $DestinationPath
+    )
+    try {
+        Invoke-WebRequest `
+            -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
+            -OutFile "$TmpPath\$ZipFile"        
+    }
+    catch {
+        $StatusCode = $_.Exception.Response.StatusCode.value__
+        if ($StatusCode -eq 404) {
+            # 404 Not Found
+            return $false
+        }
+        throw
+    }
+    Expand-Archive -Path "$TmpPath\$ZipFile" -DestinationPath $DestinationPath -Force
+    $true
 }
 
 # ----------------------------------------------------------------
@@ -824,6 +856,12 @@ try {
 
     if (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") {
         Invoke-CygwinInitialization
+    } elseif (Import-DiskuvOCamlAsset `
+            -PackageName "ocaml_opam_repo-reproducible" `
+            -ZipFile "ocaml-opam-repo.zip" `
+            -TmpPath "$TempPath" `
+            -DestinationPath "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo") {
+        Invoke-CygwinInitialization
     } else {
         Install-Cygwin
 
@@ -855,21 +893,6 @@ try {
         $MobyPath = "$TempPath\moby"
         $OcamlOpamRootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$OcamlOpamRootPath"
         $MobyCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$MobyPath"
-        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "install -m 755 -d '$OcamlOpamRootCygwinAbsPath' '$MobyCygwinAbsPath'"
-
-        # Download the downloader script
-        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/download-moby-downloader.sh '$MobyCygwinAbsPath'"
-
-        # Skip with ... $global:SkipMobyDownload = $true ... remove it with ... Remove-Variable SkipMobyDownload
-        # if (!$global:SkipMobyDownload) {
-        #     Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$MobyCygwinAbsPath/download-frozen-image-v2.sh' '$DV_WindowsMsvcDockerImage'  amd64"
-        # }
-
-        # = Extract the tarballs =
-        # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
-        #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
-        #       Definitely not worth the insane troubleshooting that would ensue.
-        # Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/private/moby-extract-opam-root.sh '$MobyCygwinAbsPath' OFF '$DV_WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
 
         # Q: Why download with Cygwin rather than MSYS? Ans: The Moby script uses `jq` which has shell quoting failures when run with MSYS `jq`.
         #
@@ -877,25 +900,6 @@ try {
             Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath `
                 -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$ProgramCygwinAbsPath'"
         }
-
-        # foreach ($portAndArch in "msvc-amd64") {
-        #     $global:AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
-
-        #     # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX
-        #     Invoke-CygwinSyncScript -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64"
-
-        #     # Skip with ... $global:SkipMobyFixup = $true ... remove it with ... Remove-Variable SkipMobyFixup
-        #     if (!$global:SkipMobyFixup) {
-        #         # Create home directories
-        #         Invoke-CygwinCommandWithProgress -CygwinDir "$OcamlOpamRootPath\$portAndArch\cygwin64" -Command "exit 0"
-
-        #         # Fix up symlinks pointing to C:\Opam . Not only does that not exist, but we want relative symlinks since we'll be cloning this Opam root!
-        #         # Also fixes symlinks pointing to C:\Windows if your system drive / Windows installation is different.
-        #         # Ex. Was:  build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> /cygdrive/c/opam/.opam/4.12/bin/opam-depext.exe
-        #         #     Want: build/_tools/common/ocaml-opam/msvc-amd64/opam/.opam/plugins/bin/opam-depext.exe -> ../../4.12/bin/opam-depext.exe
-        #         Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command ("find $OcamlOpamRootCygwinAbsPath/$portAndArch -xtype l | while read linkpath; do /opt/diskuv-ocaml/installtime/idempotent-fix-symlink.sh " + '$linkpath' + " $OcamlOpamRootCygwinAbsPath $portAndArch /cygdrive/c/; done")
-        #     }
-        # }
 
         # END Fetch/install fdopen-based ocaml/opam repository
         # ----------------------------------------------------------------
@@ -1011,8 +1015,23 @@ try {
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-opam.sh '$DkmlMSYS2AbsPath' $DV_AvailableOpamVersion '$ProgramMSYS2AbsPath'"
+        if ([Environment]::Is64BitOperatingSystem) {
+            $OpamBasenameArch = "win64"
+        } else {
+            $OpamBasenameArch = "win32"
+        }
+        if (Test-Path -Path "$ProgramPath\bin\opam.exe") {
+            # okay. already installed
+        } elseif (Import-DiskuvOCamlAsset `
+                -PackageName "opam-reproducible" `
+                -ZipFile "opam-$OpamBasenameArch.zip" `
+                -TmpPath "$TempPath" `
+                -DestinationPath "$ProgramPath") {
+            # okay. just imported
+        } else {
+            Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+                -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-opam.sh '$DkmlMSYS2AbsPath' $DV_AvailableOpamVersion '$ProgramMSYS2AbsPath'"
+        }
     }
 
     # END Compile/install opam.exe
