@@ -64,10 +64,12 @@ The preview versions 0.1.x run on **64-bit Windows** and:
 
 As a developer there is:
 - a [Fair Source 5 (v0.9)](https://fair.io/) license to use the *Diskuv OCaml* distribution for **free personal use** and limited commercial use for up to 5 developers, with **broad exceptions for OCaml package maintainers**.
-  See [LICENSE.txt](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt) for the Fair Source license terms
+  See the [diskuv-ocaml LICENSE](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt) for the Fair Source license terms
 - one or more licenses covering the distribution of your final product. Those licenses
   depend on which Opam packages you choose to include in your
   final product. Read our [documentation](https://diskuv.gitlab.io/diskuv-ocaml/#about-ocaml) for the best way to explore those packages.
+
+School teachers and college professors may redistribute the *Diskuv OCaml* distribution to their students under the [diskuv-ocaml LICENSE](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt); each student is covered for **free personal use**.
 
 > Are you an OCaml package maintainer?
 > * Any patches we introduce will be released back to you under your existing license. If your project does not
