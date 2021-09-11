@@ -37,7 +37,7 @@ and on Windows you can run:
 cd contributors/ # if you are not already in this directory
 conda activate ./envs
 & $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe html
-wslview _build/html/index.html
+explorer .\_build\html\index.html
 ```
 
 ## Release Lifecycle

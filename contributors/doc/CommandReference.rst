@@ -13,6 +13,8 @@ flavors (ex. ``./makeit shell-dev``) within a Local Project.
     use and may change at any time. Only the ones that are documented here
     are for your use.
 
+.. _Command-create-opam-switch:
+
 ``/opt/diskuv-ocaml/installtime/create-opam-switch.sh``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
