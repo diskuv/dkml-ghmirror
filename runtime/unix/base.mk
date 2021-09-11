@@ -1,7 +1,7 @@
 #######################################
 # base.mk
 
-DKML_BASE_VERSION = 0.2.0-prerel1
+DKML_BASE_VERSION = 0.2.0-prerel2
 
 ifdef COMSPEC
 DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS = ON
