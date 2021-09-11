@@ -160,9 +160,9 @@ function Get-CompatibleVisualStudios {
         -Latest
     if ($ErrorIfNotFound -and ($instances | Measure-Object).Count -eq 0) {
         $ErrorActionPreference = "Continue"
-        Write-Warning "`n`nBEGIN Dump all incompatible Visual Studio(s)"
-        if ($null -ne $allinstance) { Write-Warning ($allinstances | ConvertTo-Json) }
-        Write-Warning "END Dump all incompatible Visual Studio(s)`n`n"
+        Write-Warning "`n`nBEGIN Dump all incompatible Visual Studio(s)`n`n"
+        if ($null -ne $allinstances) { Write-Host ($allinstances | ConvertTo-Json) }
+        Write-Warning "`n`nEND Dump all incompatible Visual Studio(s)`n`n"
         $err = "There is no $VsDescribeVerMin with the following:`n$VsDescribeComponents"
         Write-Error $err
         exit 1

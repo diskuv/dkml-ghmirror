@@ -54,12 +54,24 @@ variables:
       echo "Found Chocolatey";
     }
 
+  # ----------- Curl -----------
+
+  # curl is a built-in Powershell Alias. Want real curl.exe!
+  - Remove-Item Alias:curl
+
+  # ----------- release-cli -----------
+
+  # https://docs.gitlab.com/ee/ci/yaml/index.html#release-cli-for-shell-executors
+  - $EXTRASRC = "$PWD\_ci"
+  - if (!(Test-Path "$EXTRASRC")) { New-Item -Path "$EXTRASRC" -ItemType Directory }
+  - $RELCLI = "$EXTRASRC\releasecli"
+  - if (!(Test-Path "$RELCLI")) { New-Item -Path "$RELCLI" -ItemType Directory }
+  - if (!(Test-Path "$RELCLI\release-cli.exe")) { Invoke-WebRequest -Uri "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-windows-amd64.exe" -OutFile "$RELCLI\release-cli.exe" }
+  - $env:PATH += ";$RELCLI"
+  - release-cli -v
+
+.before_msys2_and_compiler: &before-msys2-and-compiler
   # ----------- Visual Studio Detection -----------
-  # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
-  # Due to install location bug (https://github.com/Microsoft/vswhere/wiki/Installing#chocolatey) we may have to add vswhere PATH manually.
-  # - $VSWHERE = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-  # - if (Test-Path "C:\ProgramData\chocolatey\bin\vswhere.exe") { $env:PATH += ";C:\ProgramData\chocolatey\bin"; $VSWHERE = "vswhere" } elseif (!(Test-Path "$VSWHERE")) { choco upgrade vswhere -y --no-progress --version="'2.8.4'"; refreshenv }
-  # - '$VS_INSTALLDIR = & "$VSWHERE" -all -products ''*'' -latest -property installationPath'
 
   - Import-VSSetup -TempPath "$env:TEMP\vssetup"
   - $ExtraSetupMachineOpts = ""
@@ -77,24 +89,7 @@ variables:
   - $MsvsPreference = "$($VisualStudioProps.MsvsPreference)"
   - $VS_EXPORT_CMDS = "export DKML_VSSTUDIO_DIR='$($VisualStudioProps.InstallPath)'; export DKML_VSSTUDIO_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_VSSTUDIO_MSVSPREFERENCE='$MsvsPreference'"
 
-  # ----------- Curl -----------
-
-  # curl is a built-in Powershell Alias. Want real curl.exe!
-  - Remove-Item Alias:curl
-
-  # ----------- release-cli -----------
-
-  # https://docs.gitlab.com/ee/ci/yaml/index.html#release-cli-for-shell-executors
-  - $EXTRASRC = "$PWD\_ci"
-  - if (!(Test-Path "$EXTRASRC")) { New-Item -Path "$EXTRASRC" -ItemType Directory }
-  - $RELCLI = "$EXTRASRC\releasecli"
-  - if (!(Test-Path "$RELCLI")) { New-Item -Path "$RELCLI" -ItemType Directory }
-  - if (!(Test-Path "$RELCLI\release-cli.exe")) { Invoke-WebRequest -Uri "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-windows-amd64.exe" -OutFile "$RELCLI\release-cli.exe" }
-  - $env:PATH += ";$RELCLI"
-  - release-cli -v
-
-.before_msys2: &before-msys2
-  # ----------- MSYS -----------
+  # ----------- MSYS2 -----------
 
   # Docs: https://www.msys2.org/docs/ci/#docker
   # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
@@ -152,7 +147,7 @@ variables:
   - |
     function cygwin() {
       $path_unix = c:\tools\cygwin\bin\cygpath --path "$env:PATH" ;
-      Invoke-CygwinCommand -CygwinDir c:\tools\cygwin -Command ("cd '$PWD'; set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
+      Invoke-CygwinCommand -CygwinDir c:\tools\cygwin -Command ("cd '$PWD'; set -eufx -o pipefail; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
     }
 
 default:
@@ -196,7 +191,7 @@ windows:fetch-ocaml-opam-repo:
         'pwd && env TOPDIR=$PWD/installtime/none/emptytop installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
         + " -d '" + "$PWD" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
-        + " -v " + $DV_WindowsMsvcDockerImage
+        + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         + " -b"
         )
@@ -227,7 +222,7 @@ windows:build-opam:
     # - if: '$CI_COMMIT_BRANCH == "next"'
   before_script:
     - *before-windows
-    - *before-msys2
+    - *before-msys2-and-compiler
   script:
     - $env:MSYSTEM = 'MSYS2'       # Start MSYS2 (not MinGW 32 or 64 bit) environments
     - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
