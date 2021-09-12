@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = "Stop"
 $InvokerTailRefreshSeconds = 0.25
-$InvokerTailLines = 5
+$InvokerTailLines = 1
 Export-ModuleMember -Variable InvokerTailLines
 Export-ModuleMember -Variable InvokerTailRefreshSeconds
 
