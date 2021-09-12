@@ -287,8 +287,15 @@ if [[ -e vcpkg.json ]]; then
 else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
+    # For some reason vcpkg stalls (Windows Server VM; Paris Locale). There are older bug reports of vcpkg hanging
+    # because of non-English installs (probably Yes/No versus Oui/Non prompting); not sure what it is. Timeout
+    # provides a little protection.
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"
+    if ! timeout 10m "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"; then
+        for PKG in "${VCPKG_PKGS[@]}"; do
+            timeout 5m "$VCPKG_UNIX"/vcpkg install "$PKG"
+        done
+    fi
     set +x
 fi
 
