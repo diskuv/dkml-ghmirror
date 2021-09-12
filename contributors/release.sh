@@ -108,6 +108,29 @@ if [[ "$PRERELEASE" = OFF ]]; then
     NEW_VERSION="$TARGET_VERSION"
 fi
 
+# Make _build/distribution-portable.zip
+ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore)
+FILE="$DKMLDIR/contributors/_build/distribution-portable.zip"
+rm -f "$FILE"
+install -d contributors/_build/release-zip
+rm -rf contributors/_build/release-zip
+install -d contributors/_build/release-zip
+zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}"
+pushd contributors/_build/release-zip
+install -d diskuv-ocaml
+cd diskuv-ocaml
+unzip "$FILE"
+cd ..
+rm -f "$FILE"
+zip -r "$FILE" diskuv-ocaml
+popd
+
+# Make _build/distribution-portable.tar.gz
+FILE="$DKMLDIR/contributors/_build/distribution-portable.tar.gz"
+install -d contributors/_build
+rm -f "$FILE"
+tar cvfz "$FILE" --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+
 # Push
 git push --atomic origin main "v$NEW_VERSION" # git push && git push --tags
 
