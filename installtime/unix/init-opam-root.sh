@@ -288,14 +288,11 @@ else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
     # For some reason vcpkg stalls (Windows Server VM; Paris Locale). There are older bug reports of vcpkg hanging
-    # because of non-English installs (probably Yes/No versus Oui/Non prompting); not sure what it is. Timeout
-    # provides a little protection.
+    # because of non-English installs (probably "Y" [Yes/No] versus "O" [Oui/Non] prompting); not sure what it is. Use
+    # undocumented vcpkg hack to stop stalling on user input. https://github.com/Microsoft/vcpkg/issues/645
+    touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    if ! timeout 10m "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"; then
-        for PKG in "${VCPKG_PKGS[@]}"; do
-            timeout 5m "$VCPKG_UNIX"/vcpkg install "$PKG"
-        done
-    fi
+    "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"
     set +x
 fi
 
