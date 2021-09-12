@@ -514,7 +514,7 @@ function autodetect_vsdev () {
     else
         VSCMD_ARGS=("${VCVARS_ARGS[@]}")
     fi
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]] && [[ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]]; then
         env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" VSCMD_DEBUG=1 "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" >&2 # use stderr to not mess up stdout which calling script may care about.
     else
         env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" > /dev/null
