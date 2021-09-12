@@ -211,7 +211,7 @@ Write-ProgressStep
 Import-VSSetup -TempPath "$env:TEMP\vssetup"
 $CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
 $ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
-$VisualStudioProps = Get-VisualStudioProperties -ChosenVisualStudio $ChosenVisualStudio
+$VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
 $VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
 $VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
 $VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
@@ -220,7 +220,6 @@ $VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.t
 [System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json), $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
-Add-Content -Path $AuditLog -Value "`nVISUAL_STUDIO_INSTALL_PATH = $VisualStudioInstallPath`nVISUAL_STUDIO_VCVARS_VER = $VisualStudioVcVarsVer`nVISUAL_STUDIO_MSVS_PREFERENCE = $VisualStudioMsvsPreference`n"
 
 # END Visual Studio Setup PowerShell Module
 # ----------------------------------------------------------------
@@ -684,11 +683,7 @@ try {
     $global:ProgressActivity = "Install inotify-win"
     Write-ProgressStep
 
-    if ([Environment]::Is64BitOperatingSystem) {
-        $Vcvars = "$env:SystemDrive\DiskuvOCaml\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-    } else {
-        $Vcvars = "$env:SystemDrive\DiskuvOCaml\BuildTools\VC\Auxiliary\Build\vcvars32.bat"
-    }
+    $Vcvars = "$VisualStudioDirPath\Common7\Tools\vsdevcmd.bat"
     $InotifyCacheParentPath = "$TempPath"
     $InotifyCachePath = "$InotifyCacheParentPath\inotify-win"
     $InotifyExeBasename = "inotifywait.exe"
@@ -699,7 +694,7 @@ try {
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
         & "$GitExe" -C $InotifyCacheParentPath clone https://github.com/thekid/inotify-win.git
         & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout $InotifyTag
-        & cmd.exe /c "$Vcvars && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
+        & cmd.exe /c "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
     }
 
