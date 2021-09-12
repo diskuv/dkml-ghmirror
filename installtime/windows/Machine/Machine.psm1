@@ -92,6 +92,8 @@ $VsBuildToolsInstallChannel = "https://aka.ms/vs/16/release/channel" # use 'inst
 #  visualstudio2019-workload-vctools 1.0.0 (https://chocolatey.org/packages/visualstudio2019-workload-vctools)
 $VcVarsVer = "14.26"
 $VsComponents = @(
+    # We include VC.Tools.x86.x64 because vcpkg needs it! All OCaml stuff will use $VcVarsVer though
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
     # Verbatim (except variable replacement) from vsconfig.json that was "Export configuration" from the
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
     "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64",
@@ -99,8 +101,9 @@ $VsComponents = @(
 )
 $VsAddComponents = $VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }
 $VsDescribeComponents = (
-    "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
-    "`tb) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
+    "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
+    "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
+    "`tc) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
