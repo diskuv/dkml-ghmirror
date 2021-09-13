@@ -72,26 +72,31 @@ set_dkmlparenthomedir
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
 
-# shellcheck disable=SC2154
-install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
 if is_unixy_windows_build_machine; then
+    # shellcheck disable=SC2154
     OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     # shellcheck disable=SC2154
     DISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    rsync "${RSYNC_OPTS[@]}" \
-        "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
-        "$OPAMREPOS_UNIX"/fdopen-mingw
-    set +x
 else
     OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
     OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
 fi
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
-set +x
+if [[ ! -e "$OPAMREPOS_UNIX".complete ]]; then
+    install -d "$OPAMREPOS_UNIX"
+    if is_unixy_windows_build_machine; then
+        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+        rsync "${RSYNC_OPTS[@]}" \
+            "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
+            "$OPAMREPOS_UNIX"/fdopen-mingw
+        set +x
+    fi
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    touch "$OPAMREPOS_UNIX".complete
+    set +x
+fi
 
 # END install opam repositories
 # -----------------------
