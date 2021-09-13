@@ -916,16 +916,22 @@ try {
     $MSYS2CachePath = "$TempPath\MSYS2"
     if ([Environment]::Is64BitOperatingSystem) {
         $MSYS2SetupExeBasename = "msys2-x86_64-20210725.exe"
-        $MSYS2DistType = "x86_64"
+        $MSYS2UrlPath = "2021-07-25/msys2-x86_64-20210725.exe"
+        $MSYS2Sha256 = "7e055b71306e64192e2612f959f54ae99a5cf57186206ac702d113ef00ba35c0"
     } else {
         $MSYS2SetupExeBasename = "msys2-i686-20200517.exe"
-        $MSYS2DistType = "i686"
+        $MSYS2UrlPath = "2020-05-17/msys2-i686-20200517.exe"
+        $MSYS2Sha256 = "e478c521d4849c0e96cf6b4a0e59fe512b6a96aa2eb00388e77f8f4bc8886794"
     }
-    $MSYS2Setup64Exe = "$MSYS2CachePath\$MSYS2SetupExeBasename"
+    $MSYS2SetupExe = "$MSYS2CachePath\$MSYS2SetupExeBasename"
     if (!(Test-Path -Path $MSYS2CachePath)) { New-Item -Path $MSYS2CachePath -ItemType Directory | Out-Null }
-    if (!(Test-Path -Path $MSYS2Setup64Exe)) {
-        Invoke-WebRequest -Uri "http://repo.msys2.org/distrib/$MSYS2DistType/$MSYS2SetupExeBasename" -OutFile "$MSYS2Setup64Exe.tmp"
-        Rename-Item -Path "$MSYS2Setup64Exe.tmp" "$MSYS2SetupExeBasename"
+    if (!(Test-Path -Path $MSYS2SetupExe)) {
+        Invoke-WebRequest -Uri "http://repo.msys2.org/distrib/$MSYS2DistType/$MSYS2SetupExeBasename" -OutFile "$MSYS2SetupExe.tmp"
+        $MSYS2ActualHash = (Get-FileHash -Algorithm SHA256 "$MSYS2SetupExe.tmp").Hash
+        if ("$MSYS2Sha256" -ne "$MSYS2ActualHash") {
+            throw "The MSYS2 installer was corrupted. You will need to retry the installation. If this repeatedly occurs, please send an email to support@diskuv.com"
+        }
+        Rename-Item -Path "$MSYS2SetupExe.tmp" "$MSYS2SetupExeBasename"
     }
 
     # Skip with ... $global:SkipMSYS2Setup = $true ... remove it with ... Remove-Variable SkipMSYS2Setup
@@ -934,11 +940,10 @@ try {
         if (!(Test-Path "$MSYS2Dir\msys2.exe")) {
             if (!(Test-Path -Path $MSYS2Dir)) { New-Item -Path $MSYS2Dir -ItemType Directory | Out-Null }
 
-            $proc = Start-Process -NoNewWindow -FilePath $MSYS2Setup64Exe -Wait -PassThru -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
+            $proc = Start-Process -NoNewWindow -FilePath $MSYS2SetupExe -Wait -PassThru -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
             $exitCode = $proc.ExitCode
             if ($exitCode -ne 0) {
-                Write-Error "MSYS2 installation failed! Exited with $exitCode."
-                throw
+                throw "MSYS2 installation failed! Exited with code $exitCode."
             }
         }
     }
