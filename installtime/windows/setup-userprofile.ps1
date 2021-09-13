@@ -696,6 +696,7 @@ try {
         & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout $InotifyTag
         & cmd.exe /c "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
+        Clear-Host
     }
 
     # END inotify-win
@@ -926,7 +927,7 @@ try {
     $MSYS2SetupExe = "$MSYS2CachePath\$MSYS2SetupExeBasename"
     if (!(Test-Path -Path $MSYS2CachePath)) { New-Item -Path $MSYS2CachePath -ItemType Directory | Out-Null }
     if (!(Test-Path -Path $MSYS2SetupExe)) {
-        Invoke-WebRequest -Uri "http://repo.msys2.org/distrib/$MSYS2DistType/$MSYS2SetupExeBasename" -OutFile "$MSYS2SetupExe.tmp"
+        Invoke-WebRequest -Uri "https://github.com/msys2/msys2-installer/releases/download/$MSYS2UrlPath" -OutFile "$MSYS2SetupExe.tmp"
         $MSYS2ActualHash = (Get-FileHash -Algorithm SHA256 "$MSYS2SetupExe.tmp").Hash
         if ("$MSYS2Sha256" -ne "$MSYS2ActualHash") {
             throw "The MSYS2 installer was corrupted. You will need to retry the installation. If this repeatedly occurs, please send an email to support@diskuv.com"
@@ -1056,6 +1057,7 @@ try {
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
+        # & "$MSYS2Dir\usr\bin\env" 'VCPKG_VISUAL_STUDIO_PATH=C:\DiskuvOCaml\BuildTools' "$env:LOCALAPPDATA\opam\plugins\diskuvocaml\vcpkg\0.2.0-prerel6\vcpkg.exe" install pkgconf libffi libuv --triplet=x64-windows
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
