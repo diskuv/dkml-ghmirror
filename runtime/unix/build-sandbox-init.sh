@@ -45,7 +45,7 @@ if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-defaul
 # BEGIN opam init
 
 if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-"$DKMLDIR"/installtime/unix/init-opam-root.sh "$PLATFORM"
+"$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
 
 # END opam init
 # -----------------------

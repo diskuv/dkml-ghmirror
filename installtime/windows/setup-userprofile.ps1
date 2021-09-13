@@ -1062,6 +1062,9 @@ try {
     $global:ProgressActivity = "Initialize Opam Package Manager"
     Write-ProgressStep
 
+    $OpamInitTempPath = "$TempPath\opaminit"
+    $OpamInitTempMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$OpamInitTempPath"
+
     # Upgrades. Possibly ask questions to delete thins, so no progress indicator
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -ClearProgress `
@@ -1069,9 +1072,14 @@ try {
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
-        # & "$MSYS2Dir\usr\bin\env" 'VCPKG_VISUAL_STUDIO_PATH=C:\DiskuvOCaml\BuildTools' "$env:LOCALAPPDATA\opam\plugins\diskuvocaml\vcpkg\0.2.0-prerel6\vcpkg.exe" install pkgconf libffi libuv --triplet=x64-windows
+        if (!(Test-Path -Path $OpamInitTempPath)) { New-Item -Path $OpamInitTempPath -ItemType Directory | Out-Null }
+        # The first time vcpkg installs can stall on Windows (on a Windows VM set to Paris Locale). So we execute the problematic
+        # portion in Command Prompt since running from the command line always seems to work.
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev -o '$OpamInitTempMSYS2AbsPath'/run.cmd"
+        Invoke-Win32CommandWithProgress -FilePath "$OpamInitTempPath\run.cmd"
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev"
     }
 
     # END opam init

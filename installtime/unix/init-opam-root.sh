@@ -21,9 +21,52 @@ set -euf -o pipefail
 VCPKG_VER="2021.05.12"
 VCPKG_PKGS=(pkgconf libffi libuv)
 
-# shellcheck disable=SC2034
-PLATFORM=$1
-shift
+# ------------------
+# BEGIN Command line processing
+
+function usage () {
+    echo "Usage:" >&2
+    echo "    init-opam-root.sh -h                   Display this help message" >&2
+    echo "    init-opam-root.sh -p PLATFORM          Initialize the Opam root" >&2
+    echo "    init-opam-root.sh -o FILE -p PLATFORM  Initialize the Opam root and write a Command Line batch file" >&2
+    echo "                                           that the caller must execute to do more initialization." >&2
+    echo "                                           The caller must finally run init-opam-root.sh without -o to">&2
+    echo "                                           complete the initialization." >&2
+    echo "Options:" >&2
+    echo "    -p PLATFORM: The target platform or 'dev'" >&2
+    echo "    -o FILE: The output Command Line batch file" >&2
+}
+
+PLATFORM=
+CMDOUT=
+while getopts ":h:p:o:" opt; do
+    case ${opt} in
+        h )
+            usage
+            exit 0
+        ;;
+        p )
+            PLATFORM=$OPTARG
+        ;;
+        o )
+            CMDOUT=$OPTARG
+        ;;
+        \? )
+            echo "This is not an option: -$OPTARG" >&2
+            usage
+            exit 1
+        ;;
+    esac
+done
+shift $((OPTIND -1))
+
+if [[ -z "$PLATFORM" ]]; then
+    usage
+    exit 1
+fi
+
+# END Command line processing
+# ------------------
 
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
@@ -72,7 +115,6 @@ set_dkmlparenthomedir
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
 
-RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
 if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
     OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
@@ -85,6 +127,7 @@ else
 fi
 if [[ ! -e "$OPAMREPOS_UNIX".complete ]]; then
     install -d "$OPAMREPOS_UNIX"
+    RSYNC_OPTS=(-avp)
     if is_unixy_windows_build_machine; then
         if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
         rsync "${RSYNC_OPTS[@]}" \
@@ -265,17 +308,24 @@ fi
 # -----------------------
 # BEGIN install vcpkg packages
 
+if [[ -n "$CMDOUT" ]]; then
+    true > "$CMDOUT"
+fi
+
 # For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
 # There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
 # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
 # https://github.com/Microsoft/vcpkg/issues/645 . Note: This doesn't fix the stalling but keeping it!
-# install -d "$VCPKG_UNIX"/downloads
-# touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
+install -d "$VCPKG_UNIX"/downloads
+touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
 # Autodetect VCVARS on Windows; do nothing on Unix.
 autodetect_vsdev
 if is_unixy_windows_build_machine; then
     VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}")
+    if [[ -n "$CMDOUT" ]]; then
+        echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
+    fi
 else
     VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_UNIX:-}")
 fi
@@ -286,9 +336,13 @@ if [[ -n "${DiskuvOCamlHome:-}" ]]; then
     # We don't want vcpkg installing cmake again if we have a modern one
     if is_unixy_windows_build_machine; then
         DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
+        DOCH_WINDOWS=$(cygpath -aw "$DiskuvOCamlHome")
         # SYSWIN=$(cygpath -Sw) # ex. C:\Windows\System32
         # VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$SYSWIN")
         VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH")
+        if [[ -n "$CMDOUT" ]]; then
+            printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
+        fi
     else
         DOCH_UNIX="$DiskuvOCamlHome"
         VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$PATH")
@@ -302,7 +356,26 @@ function install_vcpkg_pkgs {
     if is_unixy_windows_build_machine; then
         # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
         # stalls when running vcpkg directly in MSYS2.
-        env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command '& {$proc = Start-Process -NoNewWindow -FilePath "'$VCPKG_WINDOWS'\vcpkg.exe" -Wait -PassThru -ArgumentList (@("install") + ( "'$*'".split().Where({ "" -ne $_ }) ) + @("--triplet='$PLATFORM_VCPKG_TRIPLET'")); if ($proc.ExitCode -ne 0) { throw "vcpkg failed" } }'
+        local COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+        if [[ -n "$CMDOUT" ]]; then
+            {
+                echo '@echo.'
+                echo '@echo.'
+                echo '@echo.'
+                echo '@echo KNOWN ISSUE'
+                echo '@echo -----------'
+                echo '@echo.'
+                echo '@echo This window may take a very long time (perhaps an hour) to get through its next command.'
+                echo '@echo The bug is with first-time installs of vcpkg on some machines, and seems related to'
+                echo '@echo https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890'
+                echo '@echo and other "slowness" issues that have been closed without adequate explanations.'
+                echo '@echo.'
+                echo '@echo.'
+                echo "powershell -ExecutionPolicy Bypass -Command \"$COMMAND_AND_ARGS\""
+            } >> "$CMDOUT"
+            exit 0
+        fi
+        env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$COMMAND_AND_ARGS"
     else
         env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
     fi
