@@ -127,6 +127,7 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
 # We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
 $ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
 $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+if (!(Test-Path -Path $ProgramParentPath)) { New-Item -Path $ProgramParentPath -ItemType Directory | Out-Null }
 
 # ----------------------------------------------------------------
 # Prerequisite Check
