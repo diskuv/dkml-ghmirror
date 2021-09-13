@@ -555,7 +555,11 @@ function Invoke-Win32CommandWithProgress {
         $ArgumentList
     )
     # Append what we will do into $AuditLog
-    $Command = "$FilePath $($ArgumentList -join ' ')"
+    if ($null -eq $ArgumentList) {
+        $Command = "$FilePath"
+    } else {
+        $Command = "$FilePath $($ArgumentList -join ' ')"
+    }
     $what = "[Win32] $Command"
     Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
@@ -570,11 +574,18 @@ function Invoke-Win32CommandWithProgress {
             -Status $what `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     }
-    $proc = Start-Process -FilePath $FilePath `
-        -NoNewWindow `
-        -ArgumentList $ArgumentList `
-        -PassThru `
-        -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
+    if ($null -eq $ArgumentList) {
+        $proc = Start-Process -FilePath $FilePath `
+            -NoNewWindow `
+            -PassThru `
+            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
+    } else {
+        $proc = Start-Process -FilePath $FilePath `
+            -NoNewWindow `
+            -ArgumentList $ArgumentList `
+            -PassThru `
+            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
+    }
     $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
     while (-not $proc.HasExited) {
         if (!$SkipProgress) {
