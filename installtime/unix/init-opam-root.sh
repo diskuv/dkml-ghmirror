@@ -264,8 +264,14 @@ fi
 # -----------------------
 # BEGIN install vcpkg packages
 
-# Install vcpkg packages
+# For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
+# There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
+# "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
+# https://github.com/Microsoft/vcpkg/issues/645
+install -d "$VCPKG_UNIX"/downloads
+touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
+# Install vcpkg packages
 if [[ -e vcpkg.json ]]; then
     # https://vcpkg.io/en/docs/users/manifests.html
     # The project in $TOPDIR is a vcpkg manifest project; these are now recommended
@@ -292,10 +298,6 @@ if [[ -e vcpkg.json ]]; then
 else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
-    # For some reason vcpkg stalls (Windows Server VM; Paris Locale). There are older bug reports of vcpkg hanging
-    # because of non-English installs (probably "Y" [Yes/No] versus "O" [Oui/Non] prompting); not sure what it is. Use
-    # undocumented vcpkg hack to stop stalling on user input. https://github.com/Microsoft/vcpkg/issues/645
-    touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
     "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"
     set +x
