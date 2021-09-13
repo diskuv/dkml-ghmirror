@@ -9,17 +9,17 @@ Repositories
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
-1. diskuv-0.2.0
-2. fdopen-mingw-0.2.0 *only for Windows*
+1. diskuv-0.1.1
+2. fdopen-mingw-0.1.1 *only for Windows*
 3. default
 
-The ``diskuv-0.2.0`` repository has all the patches required for third-party OCaml packages
+The ``diskuv-0.1.1`` repository has all the patches required for third-party OCaml packages
 to support the Microsoft compiler. Any switch that is created by *Diskuv OCaml* will have
 pinned versions for each package in this repository. That means you will always get the
 *Diskuv OCaml* patched versions and reproducible behavior.
 
-The ``fdopen-mingw-0.2.0`` repository has all the MinGW patches for _many_ third-party OCaml packages
-to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.2.0`` the packages
+The ``fdopen-mingw-0.1.1`` repository has all the MinGW patches for _many_ third-party OCaml packages
+to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.1.1`` the packages
 are not pinned, so it is possible that a newer package version is introduced into your switch
 that has no MinGW patches.
 
@@ -76,13 +76,6 @@ The global variables that will be present in a Diskuv OCaml installation are:
     sys-ocaml-libc    msvc                                                       # Host C Runtime Library type of the OCaml compiler present on your system
     sys-ocaml-version 4.12.0                                                     # OCaml version present on your system independently of opam, if any
 
-.. note::
-
-    Stay tuned; we need a consult with the Opam team to figure out what to put into ``os-distribution`` (``msys2`` or ``diskuvocaml``?).
-    Apparently ``cygwinports`` is a thing and used a filter in
-    `ctypes-foreign <https://github.com/ocamllabs/ocaml-ctypes/blob/261fe071fad17ab323d8d2b82df2aec593e64e3f/ctypes-foreign.opam#L13>`_.
-    Something similar may be good for you.
-
 C Compiler
 ----------
 
@@ -90,7 +83,7 @@ The Microsoft compiler and linker environment variables must be setup before use
 a ``vcvarsall.bat`` and ``vsdevcmd.bat`` scripts to set environment variables.
 
 We also want to include vcpkg C headers and C libraries by default, so the Microsoft
-provided environment variables ``INCLUDE`` and ``LIBPATH`` are adjusted to include vcpkg.
+provided environment variables ``INCLUDE`` and ``LIBS`` are adjusted to include vcpkg.
 
 In *Diskuv OCaml* most targets (``./makeit shell-dev``, ``./makeit build-dev``, etc.)
 have their environment variables automatically set for Microsoft C compilation inside MSYS2 in a manner
@@ -100,8 +93,8 @@ similar to the following:
 
     ENV_ARGS=()
     source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x86-windows" # if 64-bit
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x64-windows" # if 32-bit
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.1.1/installed/x86-windows" # if 64-bit
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.1.1/installed/x64-windows" # if 32-bit
 
     env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" bash
 
