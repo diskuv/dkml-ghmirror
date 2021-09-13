@@ -4,7 +4,7 @@ Copyright © 2021 Diskuv, Inc.
 
 Licensor: Diskuv, Inc.
 
-Software: Diskuv OCaml 0.2.0-prerel6
+Software: Diskuv OCaml 0.2.0-prerel7
 
 Use Limitation: 5 users, except when the recipient of the Software is either
  * a corporation or institute employing an individual who both co-authored an OCaml Package Manager (“Opam”) published package before August 17, 2021 and whose name, username or email address is in Appendix A, the Use Limitation is 25 users, or
