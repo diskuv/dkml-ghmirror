@@ -218,6 +218,7 @@ platform_vcpkg_triplet
 
 VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
 is_unixy_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
+is_unixy_windows_build_machine && VCPKG_WINDOWS=$(cygpath -aw "$VCPKG_UNIX")
 
 # shellcheck disable=SC2154
 install -d "$VCPKG_UNIX"
@@ -267,9 +268,46 @@ fi
 # For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
 # There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
 # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
-# https://github.com/Microsoft/vcpkg/issues/645
-install -d "$VCPKG_UNIX"/downloads
-touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
+# https://github.com/Microsoft/vcpkg/issues/645 . Note: This doesn't fix the stalling but keeping it!
+# install -d "$VCPKG_UNIX"/downloads
+# touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
+
+# Autodetect VCVARS on Windows; do nothing on Unix.
+autodetect_vsdev
+if is_unixy_windows_build_machine; then
+    VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}")
+else
+    VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_UNIX:-}")
+fi
+
+# Set DiskuvOCamlHome
+autodetect_dkmlvars
+if [[ -n "${DiskuvOCamlHome:-}" ]]; then
+    # We don't want vcpkg installing cmake again if we have a modern one
+    if is_unixy_windows_build_machine; then
+        DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
+        # SYSWIN=$(cygpath -Sw) # ex. C:\Windows\System32
+        # VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$SYSWIN")
+        VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH")
+    else
+        DOCH_UNIX="$DiskuvOCamlHome"
+        VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$PATH")
+    fi
+else
+    VCPKG_ENV+=(PATH="$PATH")
+fi
+
+function install_vcpkg_pkgs {
+    set +u # workaround bash bug on empty arrays
+    if is_unixy_windows_build_machine; then
+        # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
+        # stalls when running vcpkg directly in MSYS2.
+        env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command '& {$proc = Start-Process -NoNewWindow -FilePath "'$VCPKG_WINDOWS'\vcpkg.exe" -Wait -PassThru -ArgumentList (@("install") + ( "'$*'".split().Where({ "" -ne $_ }) ) + @("--triplet='$PLATFORM_VCPKG_TRIPLET'")); if ($proc.ExitCode -ne 0) { throw "vcpkg failed" } }'
+    else
+        env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+    fi
+    set -u
+}
 
 # Install vcpkg packages
 if [[ -e vcpkg.json ]]; then
@@ -279,7 +317,7 @@ if [[ -e vcpkg.json ]]; then
 
     # 1. Install the project dependencies using the triplet we need.
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    "$VCPKG_UNIX"/vcpkg install --triplet="$PLATFORM_VCPKG_TRIPLET"
+    install_vcpkg_pkgs
     set +x
 
     # 2. Validate we have all necessary dependencies
@@ -299,7 +337,7 @@ else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"
+    install_vcpkg_pkgs "${VCPKG_PKGS[@]}"
     set +x
 fi
 

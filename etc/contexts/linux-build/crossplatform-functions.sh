@@ -364,6 +364,8 @@ function autodetect_cpus () {
 # - array:ENV_ARGS - Optional. An array of environment variables which will be modified by this function
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
+# - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Empty otherwise
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 # - env:OCAML_HOST_TRIPLET is non-empty if `--host OCAML_HOST_TRIPLET` should be passed to OCaml's ./configure script when
 #   compiling OCaml. Aligns with the PLATFORM variable that was specified, especially for cross-compilation.
@@ -385,6 +387,8 @@ function autodetect_vsdev () {
     export VSDEV_UNIQ_PATH=
     export VSDEV_PATH="$PATH"
     [[ -v ENV_ARGS[@] ]] || ENV_ARGS=() # initialize array if not exist
+    export VSDEV_HOME_UNIX=
+    export VSDEV_HOME_WINDOWS=
 
     # Host triplet:
     #   (TODO: Better link)
@@ -435,6 +439,12 @@ function autodetect_vsdev () {
     fi
     if [[ -x /usr/bin/cygpath ]]; then
         VSSTUDIODIR=$(/usr/bin/cygpath -au "$VSSTUDIODIR")
+    fi
+    VSDEV_HOME_UNIX="$VSSTUDIODIR"
+    if [[ -x /usr/bin/cygpath ]]; then
+        VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
+    else
+        VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
     fi
 
     # MSYS2 detection. Path is /c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build/vcvarsall.bat.

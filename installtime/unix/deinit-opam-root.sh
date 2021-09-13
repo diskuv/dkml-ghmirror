@@ -45,6 +45,7 @@ function uninstall_opam_root () {
         clear
         echo "The OPAM root has changed to $LOCALAPPDATA/opam in 0.2.x." >&2
         echo "    >>> All Diskuv OCaml switches must be deleted and recreated. <<<" >&2
+        echo "    >>> Even critical switches like 'diskuv-boot-DO-NOT-DELETE' must be deleted. <<<" >&2
         echo "After the upgrade use './makeit prepare-dev' to recreate each of your Local Projects (if any)." >&2
         echo "Full instructions are at https://gitlab.com/diskuv/diskuv-ocaml/-/blob/main/contributors/changes/v0.2.0.md#upgrading-from-v010-or-v011-to-v020" >&2
         echo "" >&2
