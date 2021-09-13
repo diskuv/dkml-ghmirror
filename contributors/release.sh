@@ -132,7 +132,10 @@ rm -f "$FILE"
 tar cvfz "$FILE" --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 
 # Push
-git push --atomic origin main "v$NEW_VERSION" # git push && git push --tags
+git push
+git push --tags
+# `git push --atomic origin main "v$NEW_VERSION"` is similar but we don't have to hardcode the branch, and GitLab
+# can trigger both its CI_COMMIT_TAG rules and its CI_COMMIT_BRANCH rules.
 
 # Set GitLab options
 CI_SERVER_URL=https://gitlab.com
