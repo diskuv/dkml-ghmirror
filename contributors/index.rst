@@ -193,16 +193,16 @@ ONE. *Download the distribution.*
 
   .. code-block:: ps1con
 
-    PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory)
+    PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
 
     PS> iwr `
       "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.1.1/distribution-portable.zip" `
-      -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"
+      -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
 
     PS> Expand-Archive `
       -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
       -DestinationPath ~\DiskuvOCamlProjects `
-      -Force
+      -Force;
 
 TWO. *Run the Install World script.*
 """"""""""""""""""""""""""""""""""""
@@ -218,7 +218,7 @@ TWO. *Run the Install World script.*
 
    .. code-block:: ps1con
 
-     PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat
+     PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
