@@ -16,3 +16,155 @@ Bug fixes:
 License changes:
 
 * Add Eduardo Rafael (maintainer of Esy)
+
+## 0.2.0 (2021-09-13)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different
+licenses; in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+### Backwards incompatible changes
+
+Backwards incompatible changes requiring the equivalent of a major version bump
+(*using semver minor bump since version is still less than 1.0.0*):
+
+* [Windows only] Changed OPAMROOT from `$env:USERPROFILE/.opam` to `$env:LOCALAPPDATA/opam`
+  New and upgraded local projects will automatically use the new OPAMROOT after you have
+  run `./makeit prepare-dev` (or `./makeit build-dev`)
+* [Windows only] Renamed `make.cmd` to `makeit.cmd` so no PATH collision with GNU/BSD Make
+
+### Critical security fixes
+
+* [Windows only] Download MSYS2 installer with HTTPS rather than HTTP, and SHA256 verify the installer.
+
+### Upgrading from v0.1.0 or v0.1.1 to v0.2.0
+
+You will need to:
+* *(Windows only)* upgrade your *Diskuv OCaml* system
+* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+  which can be done at your leisure **before** the next system upgrade
+
+FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
+
+```powershell
+(Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+
+iwr `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.0/distribution-portable.zip" `
+  -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+
+Expand-Archive `
+  -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+  -DestinationPath ~\DiskuvOCamlProjects `
+  -Force;
+
+~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+```
+
+SECOND, in each of your Local Project directories (both Windows + Linux/macOS), do the following:
+
+```bash
+git -C vendor/diskuv-ocaml fetch
+git -C vendor/diskuv-ocaml reset --hard v0.2.0
+git mv make.cmd makeit.cmd
+git commit -m "Upgrade diskuv-ocaml to 0.2.0" vendor/diskuv-ocaml make.cmd makeit.cmd
+./makeit prepare-dev
+```
+
+### Public Changes
+
+New features:
+
+* [Windows only] Auto-detect existing Visual Studio installations so that no automatic
+  installation of Visual Studio Build Tools is performed. That means Administrator
+  privileges are not needed if you have Visual Studio with the components that *Diskuv OCaml*
+  needs. See `Windows Administrator Installation <https://diskuv.gitlab.io/diskuv-ocaml/doc/AdvancedInstalls/WindowsAdministrator.html>`
+  for more details.
+* [Windows only] Installs an internal copy of `vcpkg`, which in future releases will act
+  as a Windows package manager to supply missing OCaml `depext` external dependencies.
+  Limited support is available for Local Projects that have vcpkg manifests.
+* Introduce `makeit` for Unix systems so that the same `./makeit` command can be
+  communicated for both Windows and Unix users
+* [Windows only] OCaml compiler now uses `+options` which enables AFL fuzzing among other things
+* [Windows only] Distribute 'opam package manager for 32/bit + 64-bit Windows' as a zip and tar.gz on [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases). They are compiled with Microsoft Visual Studio which means no GNU-licensed DLLs need to be distributed with your applications.
+* [Windows only] Distribute 'opam repository of ocaml/opam Docker base image' as a zip and tar.gz on [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases). This
+  is currently a clone of fdopen's original MinGW repository, but will track whichever repository the Docker images use in the future
+* [Windows only] Remove restriction on spaces in directory names
+
+Security enhancements:
+* [Windows only] The 'opam package manager for 32/bit + 64-bit Windows' and 'opam repository of ocaml/opam Docker base image' packages on [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases) include reproducible build scripts for auditing and validation. Much of the reproducibility is already provided by Opam; other pieces include downloading from Git tags and Docker checksum image tags. Since Git tags is a weak form of reproducibility, and since the reproducible build scripts are missing SHA2 checksum validation at each build step, please checksum the artifacts yourself if you need this feature.
+
+Productivity improvements:
+* Speed up creating switches by not auto-installing pinned packages simply because
+  they have *Diskuv OCaml* patches
+* [Windows only] Speed up *Diskuv OCaml* installation by removing the automatic download of ocaml/opam Docker images and instead using recompiled, much smaller [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases). More details in *Removed* section below
+* [Windows only] Removed two of six commands needed to install *Diskuv OCaml* on Windows from scratch.
+
+Known issues:
+* During `opam install` the local fdopen-mingw repository ~20MB tarball may be repackaged. If you have several packages and their dependencies to install, this disk I/O may significantly slow down your installation. Some of the performance degradation will be improved with the future trimming of that repository; see the *Deprecated* section below for more details.
+* The initial `vcpkg install` may take more than an hour to complete its commands; on most machines it should initially only take a couple minutes. The problem looks related to https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890 which were prematurely closed without adequate explanation.
+
+New additions for the C language:
+
+* `vcpkg` the C/C++ package manager for native Windows libraries
+* `libffi` from vcpkg lets OCaml packages like `conf-libffi` and `ctypes` (currently unstable) use a standardized, cross-platform foreign function interface
+* `libuv` from vcpkg supplies the Windows implementation for an upcoming patch of the OCaml bindings package `luv`
+* [Windows only] To work around a LINK.EXE bug during 32-bit builds, two
+  compiler versions are installed rather than one. The
+  `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` ("MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)")
+  compiler used in *Diskuv OCaml* 0.1.x is necessary for vcpkg and as such is still installed in 0.2.x, but there is now a second compiler `Microsoft.VisualStudio.Component.VC.14.26.x86.x64` ("MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26)") used for C compiling in Opam packages.
+
+New patches:
+
+* `ocamlbuild.0.14.0` has fdopen@'s patches for MinGW, plus a new patch to let `ocamlbuild -where`
+  pass through Windows backslashed paths from `ocamlc -config` without interpreting the backslashes
+  as OCaml escape sequences
+* `core_kernel.v0.14.2` is not new, but now it is pinned so that the MSYS2 compatible version is
+  used consistently
+
+MSYS2 changes:
+* `pkg-config` was removed from MSYS2 and replaced with the native Windows `pkgconf` from vcpkg.
+  `pkgconf` supplies C headers and libraries to the Microsoft compiler and linker with Windows paths.
+
+### Patches only for OCaml package maintainers
+
+> The packages listed below are patched in *Diskuv OCaml* and are available in any
+> [*Diskuv OCaml* created switch](https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html#opt-diskuv-ocaml-installtime-create-opam-switch-sh)
+> and in any Local Project.
+> They either have open PRs or have not been released to Opam, so they are **highly unstable**
+> and _not_ meant for public consumption. They have been provided so that downstream OCaml packages
+> (packages that consume *Diskuv OCaml* patched packages) can be tested by
+> downstream OCaml package maintainers.
+
+* `ctypes.0.19.2-windowssupport-r3` which is a few commits past `ctypes.0.19.1`
+  with a patch to work with Microsoft compiler toolchain.
+  Thanks for substantial review and code contributions from @fdopen and @nojb.
+  [ctypes PR685](https://github.com/ocamllabs/ocaml-ctypes/pull/685)
+* `mirage-crypto.0.10.4-windowssupport` which is a few commits past `mirage-crypto.0.10.3`
+  with a patch to make it work with the Microsoft compiler toolchain.
+  [mirage-crypto PR137](https://github.com/mirage/mirage-crypto/pull/137)
+* `feather.0.3.0` patched to work with native Windows.
+  [feather PR23](https://github.com/charlesetc/feather/pull/23)
+
+### Deprecated
+
+* The **fdopen-mingw** repository will be trimmed greatly in a future release. Currently it has multiple versions
+  of many packages and its size causes many Opam commands to be slow. A future release will trim each package to
+  only one version, and pin that version for reproducible behavior.
+
+### Removed
+
+* The ocaml/opam Docker images have been removed.
+  * The MinGW ocaml/opam Docker image was present only to compile Opam
+    into a native Windows executable, but that compilation is done separately with the Microsoft compiler
+    and prebundled as a separate tarball.
+  * The MSVC ocaml/opam Docker image was present for the fdopen-mingw repository, but as of this release the repository
+    is prebundled as a separate `ocaml/opam` tarball.
+  * The Docker images will still be downloaded on the rare occasion where the packages are not yet released on Diskuv's
+    GitLab release page.
+  * In the future, if anything is needed from MinGW, MSYS2 has a MinGW subsytem that is simple to manage.
+* Cygwin is no longer automatically installed.
+  * Cygwin will still be downloaded on the rare occasion where the `ocaml/opam` package has not yet released on Diskuv's
+    GitLab release page.

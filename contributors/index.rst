@@ -196,7 +196,7 @@ ONE. *Download the distribution.*
     PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
 
     PS> iwr `
-      "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.1.1/distribution-portable.zip" `
+      "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.0/distribution-portable.zip" `
       -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
 
     PS> Expand-Archive `
