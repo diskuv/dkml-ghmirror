@@ -32,10 +32,10 @@ $VsSetupVer = "2.2.14-87a8a69eef"
 # * https://docs.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers
 # * https://github.com/jberezanski/ChocolateyPackages/commits/master/visualstudio2017buildtools/tools/ChocolateyInstall.ps1
 #
-# However VS 2017 + VS 2019 Build Tools can install the 2015 compiler component;
+# However VS 2017 + VS 2019 Build Tools can install even the 2015 compiler component;
 # confer https://devblogs.microsoft.com/cppblog/announcing-visual-c-build-tools-2015-standalone-c-tools-for-build-environments/.
 #
-# Below is
+# Below the installer is
 #   >> VS 2019 Build Tools 16.11.2 <<
 $VsBuildToolsMajorVer = "16" # Either 16 for Visual Studio 2019 or 15 for Visual Studio 2017 Build Tools
 $VsBuildToolsInstaller = "https://download.visualstudio.microsoft.com/download/pr/bacf7555-1a20-4bf4-ae4d-1003bbc25da8/e6cfafe7eb84fe7f6cfbb10ff239902951f131363231ba0cfcd1b7f0677e6398/vs_BuildTools.exe"
@@ -90,20 +90,31 @@ $VsBuildToolsInstallChannel = "https://aka.ms/vs/16/release/channel" # use 'inst
 # by:
 #  visualstudio2019buildtools 16.6.5.0 (no version 16.6.4!) (https://chocolatey.org/packages/visualstudio2019buildtools)
 #  visualstudio2019-workload-vctools 1.0.0 (https://chocolatey.org/packages/visualstudio2019-workload-vctools)
+#
+# So we either want the "Latest" VC Tools for the old VS 2019 Studio 16.6:
+#   >> VS 2019 Studio (Build Tools, etc.) 16.6.* <<
+#   >> Microsoft.VisualStudio.Component.VC.Tools.x86.x64 (MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)) <<
+# or the specific compiler selected:
+#   >> Microsoft.VisualStudio.Component.VC.14.26.x86.x64 <<
+# Either of those will give use 14.26 compiler tools.
 $VcVarsVer = "14.26"
+$VcStudioVcToolsMajorVer = 16
+$VcStudioVcToolsMinorVer = 6
 $VsComponents = @(
+    # (no longer true; we use `VCPKG_VISUAL_STUDIO_PATH` environment var to control vcpkg)
     # We include VC.Tools.x86.x64 because vcpkg needs it! All OCaml stuff will use $VcVarsVer though
-    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    # "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+
     # Verbatim (except variable replacement) from vsconfig.json that was "Export configuration" from the
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
-    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64",
+    # And we do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
+    # we need special logic in Get-CompatibleVisualStudios to detect it.
     "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer"
 )
 $VsAddComponents = $VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }
 $VsDescribeComponents = (
-    "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
-    "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
-    "`tc) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
+    "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
+    "`tb) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
@@ -145,7 +156,7 @@ function Import-VSSetup {
 Export-ModuleMember -Function Import-VSSetup
 
 # Get zero or more Visual Studio installations that are compatible with Diskuv OCaml.
-# The "latest" is chosen so theoretically should be zero or one installations returned,
+# The latest install date is chosen so theoretically should be zero or one installations returned,
 # but for safety you should pick only the first given back (ex. Select-Object -First 1)
 # and for troubleshooting you should dump what is given back (ex. Get-CompatibleVisualStudios | ConvertTo-Json)
 function Get-CompatibleVisualStudios {
@@ -156,11 +167,23 @@ function Get-CompatibleVisualStudios {
     )
     # Some examples of the related `vswhere` product: https://github.com/Microsoft/vswhere/wiki/Examples
     $allinstances = Get-VSSetupInstance
+    # Filter on minimum Visual Studio version and required components
     $instances = $allinstances | Select-VSSetupInstance `
         -Product * `
         -Require $VsComponents `
-        -Version "[$VsVerMin,)" `
-        -Latest
+        -Version "[$VsVerMin,)"
+    # select installations that have `VC.Tools (Latest)` from an old Visual Studio version -or-
+    # the exact `VC.MM.NN (vMM.NN)` from any Visual Studio version
+    $instances = $instances | Where-Object {
+        $VCTools = $_.Packages | Where-Object {
+            $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -and $_.Version.Major -eq $VcStudioVcToolsMajorVer -and $_.Version.Minor -eq $VcStudioVcToolsMinorVer
+        };
+        $VCExact = $_.Packages | Where-Object {
+            $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
+        };
+        ($VCTools.Count -gt 0) -or ($VCExact.Count -gt 0)
+    }
+    # give troubleshooting and exit if no more compatible installations remain
     if ($ErrorIfNotFound -and ($instances | Measure-Object).Count -eq 0) {
         $ErrorActionPreference = "Continue"
         Write-Warning "`n`nBEGIN Dump all incompatible Visual Studio(s)`n`n"
@@ -168,16 +191,20 @@ function Get-CompatibleVisualStudios {
         Write-Warning "`n`nEND Dump all incompatible Visual Studio(s)`n`n"
         $err = "There is no $VsDescribeVerMin with the following:`n$VsDescribeComponents"
         Write-Error $err
+        # flush for GitLab CI
+        [Console]::Out.Flush()
+        [Console]::Error.Flush()
         exit 1
     }
-    $instances
+    # sort by install date (newest first) and give back to caller
+    $instances | Sort-Object -Property InstallDate -Descending
 }
 Export-ModuleMember -Function Get-CompatibleVisualStudios
 
 function Get-VisualStudioProperties {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]        
+        [Parameter(Mandatory = $true)]
         $VisualStudioInstallation
     )
     $MsvsPreference = ("" + $VisualStudioInstallation.InstallationVersion.Major + "." + $VisualStudioInstallation.InstallationVersion.Minor)

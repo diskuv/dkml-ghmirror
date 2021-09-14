@@ -34,7 +34,11 @@ If you have **all** three (3) of the following:
    * Visual Studio Enterprise
    * Visual Studio Build Tools (the compilers without the IDE)
 
-2. MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``)
+2. Either of the following:
+
+   * MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest) (``Microsoft.VisualStudio.Component.VC.Tools.x86.x64``) installed with `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_
+   * MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``) installed with any Visual Studio 2022/2019/2017/2015 version
+
 3. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
    which is also known as the 19H1 SDK or May 2019 Update SDK.
 
@@ -42,6 +46,30 @@ then the *Diskuv OCaml* distribution will not automatically try to install its o
 That means when your users run `install-world.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/install-world.ps1>`_
 or `setup-machine.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/setup-machine.ps1>`_
 they will not need Administrator privileges.
+
+.. note::
+
+    If you use `Chocolatey <https://chocolatey.org/>`_ to manage Windows software on your machines or in your CI build, then one of the following
+    code blocks will satisfy all the requirements:
+
+    .. code-block:: powershell
+
+        # Any 16.6.x.x will work. This code block is recommended if you do not already install Visual Studio on your machines
+        choco install visualstudio2019buildtools --version=16.6.5.0 --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.18362"
+
+        # This will also work, and is recommended if you already install the latest Visual Studio 2019
+        choco install visualstudio2019buildtools
+        choco install visualstudio2019-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
+
+        # This will also work, and is recommended if you already install the latest Visual Studio 2017
+        choco install visualstudio2017buildtools
+        choco install visualstudio2017-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
+
+        # This will also work with any 16.6.x.x version, although it will install more packages than are strictly required.
+        # This code block is not recommended, although GitLab CI, as of September 2021, already includes the first line in its shared GitLab Windows Runners.
+        # But the shared GitLab CI may update the version at any time.
+        choco install visualstudio2019buildtools --version=16.6.5.0
+        choco install visualstudio2019-workload-vctools
 
 The following installers allow you to add several
 `optional components <https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools>`_
