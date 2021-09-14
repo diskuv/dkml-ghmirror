@@ -166,15 +166,7 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     if (Test-Path -Path $VsInstallTempPath) { Remove-Item -Path $VsInstallTempPath -Recurse -Force }
     New-Item -Path $VsInstallTempPath -ItemType Directory | Out-Null
 
-    # Download tools we need to install MSBuild
-    if ([Environment]::Is64BitOperatingSystem) {
-        $VsArch = "x64"
-    } else {
-        $VsArch = "x86"
-    }
-    # Invoke-WebRequest -Uri "https://aka.ms/vs/$VsBuildToolsMajorVer/release/vc_redist.$VsArch.exe" -OutFile $VsInstallTempPath\vc_redist.$VsArch.exe
     Invoke-WebRequest -Uri https://aka.ms/vscollect.exe   -OutFile $VsInstallTempPath\collect.exe
-    # Invoke-WebRequest -Uri "https://aka.ms/vs/$VsBuildToolsMajorVer/release/channel"           -OutFile $VsInstallTempPath\VisualStudio.chman
     Invoke-WebRequest -Uri "$VsBuildToolsInstallChannel"  -OutFile $VsInstallTempPath\VisualStudio.chman
     Invoke-WebRequest -Uri "$VsBuildToolsInstaller"       -OutFile $VsInstallTempPath\vs_buildtools.exe
     Invoke-WebRequest -Uri https://raw.githubusercontent.com/MisterDA/Windows-OCaml-Docker/d3a107132f24c05140ad84f85f187e74e83e819b/Install.cmd -OutFile $VsInstallTempPath\Install.orig.cmd

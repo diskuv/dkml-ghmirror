@@ -58,6 +58,9 @@
     if there is no Git available on the PATH.
 .Parameter $SkipProgress
     Do not use the progress user interface.
+.Parameter $OnlyOutputCacheKey
+    Only output the userprofile cache key. The cache key is 1-to-1 with
+    the version of the Diskuv OCaml distribution.
 
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
@@ -95,7 +98,9 @@ param (
     [switch]
     $SkipAutoUpgradeGitWhenOld,
     [switch]
-    $SkipProgress
+    $SkipProgress,
+    [switch]
+    $OnlyOutputCacheKey
 )
 
 $ErrorActionPreference = "Stop"
@@ -139,186 +144,9 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
     throw "DiskuvOCaml is only supported on 64-bit Windows"
 }
 
-# ASSET_URL="https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-reproducible/v$dkml_root_version/ocaml-opam-repo.tar.gz"
-
-function Import-DiskuvOCamlAsset {
-    param (
-        [Parameter(Mandatory)]
-        $PackageName,
-        [Parameter(Mandatory)]
-        $ZipFile,
-        [Parameter(Mandatory)]
-        $TmpPath,
-        [Parameter(Mandatory)]
-        $DestinationPath
-    )
-    try {
-        Invoke-WebRequest `
-            -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
-            -OutFile "$TmpPath\$ZipFile"
-    }
-    catch {
-        $StatusCode = $_.Exception.Response.StatusCode.value__
-        if ($StatusCode -eq 404) {
-            # 404 Not Found
-            return $false
-        }
-        throw
-    }
-    Expand-Archive -Path "$TmpPath\$ZipFile" -DestinationPath $DestinationPath -Force
-    $true
-}
 
 # ----------------------------------------------------------------
-# Progress declarations
-
-$global:ProgressStep = 0
-$global:ProgressActivity = $null
-$ProgressTotalSteps = 18
-$ProgressId = $ParentProgressId + 1
-$global:ProgressStatus = $null
-
-function Write-ProgressStep {
-    if (!$SkipProgress) {
-        Write-Progress -Id $ProgressId `
-            -ParentId $ParentProgressId `
-            -Activity $global:ProgressActivity `
-            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
-    } else {
-        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
-    }
-    $global:ProgressStep += 1
-}
-function Write-ProgressCurrentOperation {
-    param(
-        $CurrentOperation
-    )
-    if (!$SkipProgress) {
-        Write-Progress -Id $ProgressId `
-            -ParentId $ParentProgressId `
-            -Activity $global:ProgressActivity `
-            -Status $global:ProgressStatus `
-            -CurrentOperation $CurrentOperation `
-            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
-    }
-}
-
-# ----------------------------------------------------------------
-# BEGIN Visual Studio Setup PowerShell Module
-
-$global:ProgressActivity = "Install Visual Studio Setup PowerShell Module"
-Write-ProgressStep
-
-Import-VSSetup -TempPath "$env:TEMP\vssetup"
-$CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
-$ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
-$VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
-$VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
-$VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
-$VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
-$VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.txt"
-[System.IO.File]::WriteAllText($VisualStudioDirPath, "$($VisualStudioProps.InstallPath)", $Utf8NoBomEncoding)
-[System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json), $Utf8NoBomEncoding)
-[System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
-[System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
-
-# END Visual Studio Setup PowerShell Module
-# ----------------------------------------------------------------
-
-# ----------------------------------------------------------------
-# BEGIN Git for Windows
-
-# Git is _not_ part of the Diskuv OCaml distribution per se; it is
-# is a prerequisite that gets auto-installed. Said another way,
-# it does not get a versioned installation like the rest of Diskuv
-# OCaml. So we explicitly do version checks during the installation of
-# Git.
-
-$global:ProgressActivity = "Install Git for Windows"
-Write-ProgressStep
-
-$GitWindowsSetupAbsPath = "$env:TEMP\gitwindows"
-
-$GitOriginalVersion = @(0, 0, 0)
-$SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $false
-$GitExists = $false
-
-$oldeap = $ErrorActionPreference
-$ErrorActionPreference = "SilentlyContinue"
-$GitExe = & where.exe git 2> $null
-$ErrorActionPreference = oldeap
-
-if ($LastExitCode -eq 0) {
-    $GitExists = $true
-    $GitResponse = & $GitExe --version
-    if ($LastExitCode -eq 0) {
-        # git version 2.32.0.windows.2 -> 2.32.0.windows.2
-        $GitResponseLast = $GitResponse.Split(" ")[-1]
-        # 2.32.0.windows.2 -> 2 32 0
-        $GitOriginalVersion = $GitResponseLast.Split(".")[0, 1, 2]
-        # check for '.windows.'
-        $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $GitResponse -notlike "*.windows.*"
-    }
-}
-if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
-    # Less than 1.7.2?
-    $GitTooOld = ($GitOriginalVersion[0] -lt 1 -or
-        ($GitOriginalVersion[0] -eq 1 -and $GitOriginalVersion[1] -lt 7) -or
-        ($GitOriginalVersion[0] -eq 1 -and $GitOriginalVersion[1] -eq 7 -and $GitOriginalVersion[2] -lt 2))
-    if ((-not $GitExists) -or ($GitTooOld -and -not $SkipAutoUpgradeGitWhenOld)) {
-        # Install Git for Windows 2.33.0
-
-        if ([Environment]::Is64BitOperatingSystem) {
-            $GitWindowsBits = "64"
-        } else {
-            $GitWindowsBits = "32"
-        }
-        if (!(Test-Path -Path $GitWindowsSetupAbsPath)) { New-Item -Path $GitWindowsSetupAbsPath -ItemType Directory | Out-Null }
-        if (!(Test-Path -Path $GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe)) { Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.33.0.windows.1/Git-2.33.0-$GitWindowsBits-bit.exe -OutFile $GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe }
-
-        # You can see the arguments if you run: Git-2.33.0-$GitWindowsArch-bit.exe /?
-        # https://jrsoftware.org/ishelp/index.php?topic=setupcmdline has command line options.
-        # https://github.com/git-for-windows/build-extra/tree/main/installer has installer source code.
-        $proc = Start-Process -FilePath "$GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe" -NoNewWindow -Wait -PassThru `
-            -ArgumentList @("/SP-", "/SILENT", "/SUPPRESSMSGBOXES", "/CURRENTUSER", "/NORESTART")
-        $exitCode = $proc.ExitCode
-        if ($exitCode -ne 0) {
-            Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
-            $ErrorActionPreference = "Continue"
-            Write-Error "Git installer failed"
-            Remove-Item "$GitWindowsSetupAbsPath" -Recurse -Force
-            Start-Sleep 5
-            Write-Host ''
-            Write-Host 'One reason why the Git installer will fail is because you did not'
-            Write-Host 'click "Yes" when it asks you to allow the installation.'
-            Write-Host 'You can try to rerun the script.'
-            Write-Host ''
-            Write-Host 'Press any key to exit this script...';
-            $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
-            throw
-        }
-
-        # Get new PATH so we can locate the new Git
-        $OldPath = $env:PATH
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        $GitExe = & where.exe git
-        if ($LastExitCode -ne 0) {
-            throw "DiskuvOCaml requires that Git is installed in the PATH. The Git installer failed to do so. Please install it manually from https://gitforwindows.org/"
-        }
-        $env:PATH = $OldPath
-    }
-}
-if (Test-Path -Path "$GitWindowsSetupAbsPath") {
-    Remove-Item -Path "$GitWindowsSetupAbsPath" -Recurse -Force
-}
-
-$GitPath = (get-item "$GitExe").Directory.FullName
-
-# END Git for Windows
-# ----------------------------------------------------------------
-
-# ----------------------------------------------------------------
-# QUICK EXIT if already current version already deployed
+# QUICK EXIT if already current version already deployed, or if -OnlyOutputCacheKey switch
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
@@ -502,6 +330,11 @@ $PackagesHash = Get-Sha256Hex16OfText -Text ($DistributionPackages -join ',')
 $BinariesHash = Get-Sha256Hex16OfText -Text ($DistributionBinaries -join ',')
 $DeploymentId = "opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
 
+if ($OnlyOutputCacheKey) {
+    Write-Output $DeploymentId
+    return
+}
+
 # Check if already deployed
 $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -DeploymentId $DeploymentId
 # Advanced. Skip check with ... $global:RedeployIfExists = $true ... remove it with ... Remove-Variable RedeployIfExists
@@ -510,6 +343,185 @@ if (!$global:RedeployIfExists -and $finished) {
     Write-Host "Enjoy Diskuv OCaml!"
     return
 }
+
+# ----------------------------------------------------------------
+# Utilities
+
+function Import-DiskuvOCamlAsset {
+    param (
+        [Parameter(Mandatory)]
+        $PackageName,
+        [Parameter(Mandatory)]
+        $ZipFile,
+        [Parameter(Mandatory)]
+        $TmpPath,
+        [Parameter(Mandatory)]
+        $DestinationPath
+    )
+    try {
+        Invoke-WebRequest `
+            -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
+            -OutFile "$TmpPath\$ZipFile"
+    }
+    catch {
+        $StatusCode = $_.Exception.Response.StatusCode.value__
+        if ($StatusCode -eq 404) {
+            # 404 Not Found
+            return $false
+        }
+        throw
+    }
+    Expand-Archive -Path "$TmpPath\$ZipFile" -DestinationPath $DestinationPath -Force
+    $true
+}
+
+# ----------------------------------------------------------------
+# Progress declarations
+
+$global:ProgressStep = 0
+$global:ProgressActivity = $null
+$ProgressTotalSteps = 18
+$ProgressId = $ParentProgressId + 1
+$global:ProgressStatus = $null
+
+function Write-ProgressStep {
+    if (!$SkipProgress) {
+        Write-Progress -Id $ProgressId `
+            -ParentId $ParentProgressId `
+            -Activity $global:ProgressActivity `
+            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    } else {
+        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
+    }
+    $global:ProgressStep += 1
+}
+function Write-ProgressCurrentOperation {
+    param(
+        $CurrentOperation
+    )
+    if (!$SkipProgress) {
+        Write-Progress -Id $ProgressId `
+            -ParentId $ParentProgressId `
+            -Activity $global:ProgressActivity `
+            -Status $global:ProgressStatus `
+            -CurrentOperation $CurrentOperation `
+            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    }
+}
+
+# ----------------------------------------------------------------
+# BEGIN Visual Studio Setup PowerShell Module
+
+$global:ProgressActivity = "Install Visual Studio Setup PowerShell Module"
+Write-ProgressStep
+
+Import-VSSetup -TempPath "$env:TEMP\vssetup"
+$CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
+$ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
+$VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
+$VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
+$VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
+$VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
+$VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.txt"
+[System.IO.File]::WriteAllText($VisualStudioDirPath, "$($VisualStudioProps.InstallPath)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json), $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
+
+# END Visual Studio Setup PowerShell Module
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# BEGIN Git for Windows
+
+# Git is _not_ part of the Diskuv OCaml distribution per se; it is
+# is a prerequisite that gets auto-installed. Said another way,
+# it does not get a versioned installation like the rest of Diskuv
+# OCaml. So we explicitly do version checks during the installation of
+# Git.
+
+$global:ProgressActivity = "Install Git for Windows"
+Write-ProgressStep
+
+$GitWindowsSetupAbsPath = "$env:TEMP\gitwindows"
+
+$GitOriginalVersion = @(0, 0, 0)
+$SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $false
+$GitExists = $false
+
+$oldeap = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+$GitExe = & where.exe git 2> $null
+$ErrorActionPreference = oldeap
+
+if ($LastExitCode -eq 0) {
+    $GitExists = $true
+    $GitResponse = & $GitExe --version
+    if ($LastExitCode -eq 0) {
+        # git version 2.32.0.windows.2 -> 2.32.0.windows.2
+        $GitResponseLast = $GitResponse.Split(" ")[-1]
+        # 2.32.0.windows.2 -> 2 32 0
+        $GitOriginalVersion = $GitResponseLast.Split(".")[0, 1, 2]
+        # check for '.windows.'
+        $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $GitResponse -notlike "*.windows.*"
+    }
+}
+if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
+    # Less than 1.7.2?
+    $GitTooOld = ($GitOriginalVersion[0] -lt 1 -or
+        ($GitOriginalVersion[0] -eq 1 -and $GitOriginalVersion[1] -lt 7) -or
+        ($GitOriginalVersion[0] -eq 1 -and $GitOriginalVersion[1] -eq 7 -and $GitOriginalVersion[2] -lt 2))
+    if ((-not $GitExists) -or ($GitTooOld -and -not $SkipAutoUpgradeGitWhenOld)) {
+        # Install Git for Windows 2.33.0
+
+        if ([Environment]::Is64BitOperatingSystem) {
+            $GitWindowsBits = "64"
+        } else {
+            $GitWindowsBits = "32"
+        }
+        if (!(Test-Path -Path $GitWindowsSetupAbsPath)) { New-Item -Path $GitWindowsSetupAbsPath -ItemType Directory | Out-Null }
+        if (!(Test-Path -Path $GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe)) { Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.33.0.windows.1/Git-2.33.0-$GitWindowsBits-bit.exe -OutFile $GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe }
+
+        # You can see the arguments if you run: Git-2.33.0-$GitWindowsArch-bit.exe /?
+        # https://jrsoftware.org/ishelp/index.php?topic=setupcmdline has command line options.
+        # https://github.com/git-for-windows/build-extra/tree/main/installer has installer source code.
+        $proc = Start-Process -FilePath "$GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe" -NoNewWindow -Wait -PassThru `
+            -ArgumentList @("/SP-", "/SILENT", "/SUPPRESSMSGBOXES", "/CURRENTUSER", "/NORESTART")
+        $exitCode = $proc.ExitCode
+        if ($exitCode -ne 0) {
+            Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+            $ErrorActionPreference = "Continue"
+            Write-Error "Git installer failed"
+            Remove-Item "$GitWindowsSetupAbsPath" -Recurse -Force
+            Start-Sleep 5
+            Write-Host ''
+            Write-Host 'One reason why the Git installer will fail is because you did not'
+            Write-Host 'click "Yes" when it asks you to allow the installation.'
+            Write-Host 'You can try to rerun the script.'
+            Write-Host ''
+            Write-Host 'Press any key to exit this script...';
+            $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+            throw
+        }
+
+        # Get new PATH so we can locate the new Git
+        $OldPath = $env:PATH
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $GitExe = & where.exe git
+        if ($LastExitCode -ne 0) {
+            throw "DiskuvOCaml requires that Git is installed in the PATH. The Git installer failed to do so. Please install it manually from https://gitforwindows.org/"
+        }
+        $env:PATH = $OldPath
+    }
+}
+if (Test-Path -Path "$GitWindowsSetupAbsPath") {
+    Remove-Item -Path "$GitWindowsSetupAbsPath" -Recurse -Force
+}
+
+$GitPath = (get-item "$GitExe").Directory.FullName
+
+# END Git for Windows
+# ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
 # BEGIN Start deployment

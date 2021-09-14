@@ -1,0 +1,7 @@
+test:
+  stage: test
+  script:
+  - echo Building Sphinx html twice so that Sphinx cross-references work ...
+  - make -C contributors html ; make -C contributors html O="-W"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
