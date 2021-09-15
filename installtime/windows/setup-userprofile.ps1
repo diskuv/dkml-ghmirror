@@ -980,20 +980,22 @@ try {
         $MSYS2IsBase = $false
     }
     $MSYS2SetupExe = "$MSYS2CachePath\$MSYS2SetupExeBasename"
-    if (!(Test-Path -Path $MSYS2CachePath)) { New-Item -Path $MSYS2CachePath -ItemType Directory | Out-Null }
-    if (!(Test-Path -Path $MSYS2SetupExe)) {
-        Invoke-WebRequest -Uri "https://github.com/msys2/msys2-installer/releases/download/$MSYS2UrlPath" -OutFile "$MSYS2SetupExe.tmp"
-        $MSYS2ActualHash = (Get-FileHash -Algorithm SHA256 "$MSYS2SetupExe.tmp").Hash
-        if ("$MSYS2Sha256" -ne "$MSYS2ActualHash") {
-            throw "The MSYS2 installer was corrupted. You will need to retry the installation. If this repeatedly occurs, please send an email to support@diskuv.com"
-        }
-        Rename-Item -Path "$MSYS2SetupExe.tmp" "$MSYS2SetupExeBasename"
-    }
 
     # Skip with ... $global:SkipMSYS2Setup = $true ... remove it with ... Remove-Variable SkipMSYS2Setup
     if (!$global:SkipMSYS2Setup) {
         # https://github.com/msys2/msys2-installer#cli-usage-examples
         if (!(Test-Path "$MSYS2Dir\msys2.exe")) {
+            # download and verify installer
+            if (!(Test-Path -Path $MSYS2CachePath)) { New-Item -Path $MSYS2CachePath -ItemType Directory | Out-Null }
+            if (!(Test-Path -Path $MSYS2SetupExe)) {
+                Invoke-WebRequest -Uri "https://github.com/msys2/msys2-installer/releases/download/$MSYS2UrlPath" -OutFile "$MSYS2SetupExe.tmp"
+                $MSYS2ActualHash = (Get-FileHash -Algorithm SHA256 "$MSYS2SetupExe.tmp").Hash
+                if ("$MSYS2Sha256" -ne "$MSYS2ActualHash") {
+                    throw "The MSYS2 installer was corrupted. You will need to retry the installation. If this repeatedly occurs, please send an email to support@diskuv.com"
+                }
+                Rename-Item -Path "$MSYS2SetupExe.tmp" "$MSYS2SetupExeBasename"
+            }
+
             # remove directory, especially important so possible subsequent Rename-Item to work
             if (Test-Path -Path $MSYS2Dir) { Remove-Item -Path $MSYS2Dir -Recurse -Force }
 
