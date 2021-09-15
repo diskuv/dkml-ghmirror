@@ -19,6 +19,13 @@ ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlr
 clean:
 	$(CMAKE) -E remove_directory _build || $(CMAKE) -E rm -rf _build
 
+.PHONY: install-release-script-dependencies
+install-release-script-dependencies:
+	@PATH="$$PATH:/usr/bin:/bin"; \
+	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then \
+		pacman --sync --needed --noconfirm zip; \
+	fi
+
 .PHONY: install-github-cli
 install-github-cli:
 	@PATH="$$PATH:/usr/bin:/bin"; \
@@ -99,12 +106,12 @@ release-start-patch:
 	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: release-prerelease
-release-prerelease: auth-gitlab-cli install-gitlab-release-cli
+release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p
 
 .PHONY: release-complete
-release-complete: auth-gitlab-cli install-gitlab-release-cli
+release-complete: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh
 
