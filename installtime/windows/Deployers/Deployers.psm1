@@ -130,6 +130,7 @@ function Start-BlueGreenDeploy {
         [Parameter(Mandatory = $true)]
         $DeploymentId,
         [switch]$KeepOldDeploymentWhenSameDeploymentId,
+        $FixedSlotIdx,
         $LogFunction
     )
 
@@ -138,7 +139,11 @@ function Start-BlueGreenDeploy {
 
     # move to the next deploy slot
     $state = Get-BlueGreenDeployState -ParentPath $ParentPath | ConvertFrom-Json
-    $slotIdx = Step-BlueGreenDeploySlot -ParentPath $ParentPath -DeploymentId $DeploymentId -DeployState $state
+    if ($null -eq $FixedSlotIdx) {
+        $slotIdx = Step-BlueGreenDeploySlot -ParentPath $ParentPath -DeploymentId $DeploymentId -DeployState $state
+    } else {
+        $slotIdx = $FixedSlotIdx
+    }
 
     # recreate the directory with no content but only if
     # a) the deployment id has changed or
@@ -478,6 +483,7 @@ function Get-CurrentEpochMillis {
     $timestamp
 }
 
+# Tested as part of CI .gitlab\ci\windows-test-setupuserprofile.gitlab-ci.yml
 function Invoke-BlueGreenDeploySlotTest {
     # test1:
     #   given $DeployStateInitValue

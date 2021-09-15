@@ -66,6 +66,8 @@
 .Parameter $OnlyOutputCacheKey
     Only output the userprofile cache key. The cache key is 1-to-1 with
     the version of the Diskuv OCaml distribution.
+.Parameter $ForceDeploymentSlot0
+    Forces the blue-green deployer to use slot 0. Useful in CI situations.
 
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
@@ -107,7 +109,9 @@ param (
     [switch]
     $SkipProgress,
     [switch]
-    $OnlyOutputCacheKey
+    $OnlyOutputCacheKey,
+    [switch]
+    $ForceDeploymentSlot0
 )
 
 $ErrorActionPreference = "Stop"
@@ -553,8 +557,10 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 $EnableIncrementalDeployment = $global:IncrementalDiskuvOcamlDeployment -and $true
 
 $global:ProgressStatus = "Starting Deployment"
+if ($ForceDeploymentSlot0) { $FixedSlotIdx = 0 } else { $FixedSlotIdx = $null }
 $ProgramPath = Start-BlueGreenDeploy -ParentPath $ProgramParentPath `
     -DeploymentId $DeploymentId `
+    -FixedSlotIdx:$FixedSlotIdx `
     -KeepOldDeploymentWhenSameDeploymentId:$EnableIncrementalDeployment `
     -LogFunction ${function:\Write-ProgressCurrentOperation}
 $DeploymentMark = "[$DeploymentId]"

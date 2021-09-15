@@ -27,18 +27,15 @@ windows:test-setupuserprofile:
     # Call setup-userprofile.bat
     # --------------------------
 
-    # Reset DKML deploy state so the first slot is always populated
-    - if (Test-Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\deploy-state-v1.json") { Remove-Item "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\deploy-state-v1.json" }
-
     # Pretend to setup-userprofile.bat that LOCALAPPDATA is part of the project so we can cache DiskuvOCaml installations without modification
     - $OldLocalAppData = "$env:LOCALAPPDATA"
     - $env:LOCALAPPDATA = "$env:CI_PROJECT_DIR\_ci\LocalAppData"
     - if (!(Test-Path "$env:LOCALAPPDATA")) { New-Item -Path "$env:LOCALAPPDATA" -ItemType Directory }
 
     # Call batch script and unpop LOCALAPPDATA
-    # Use incremental deployments so cache can be re-used.
+    # Use incremental deployments and slot 0 so cache can be re-used.
     - $global:IncrementalDiskuvOcamlDeployment = $true
-    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin
+    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0
     - $env:LOCALAPPDATA = "$OldLocalAppData"
     - msys_direct 'tree -L 5 _ci/LocalAppData'
 
