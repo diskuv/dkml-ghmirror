@@ -114,6 +114,8 @@ if (!(Test-Path -Path $DkmlPath\.dkmlroot)) {
 $DkmlProps = ConvertFrom-StringData (Get-Content $DkmlPath\.dkmlroot -Raw)
 $dkml_root_version = $DkmlProps.dkml_root_version
 
+$PSDefaultParameterValues = @{'Out-File:Encoding' = 'utf8'} # for Tee-Object. https://stackoverflow.com/a/58920518
+
 $env:PSModulePath += ";$HereDir"
 Import-Module Deployers
 Import-Module Project
@@ -359,12 +361,15 @@ function Import-DiskuvOCamlAsset {
         $DestinationPath
     )
     try {
+        $uri = "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile"
+        Write-ProgressCurrentOperation -CurrentOperation "Downloading asset $uri"
         Invoke-WebRequest `
             -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
             -OutFile "$TmpPath\$ZipFile"
     }
     catch {
         $StatusCode = $_.Exception.Response.StatusCode.value__
+        Write-ProgressCurrentOperation -CurrentOperation "HTTP ${StatusCode}: $uri"
         if ($StatusCode -eq 404) {
             # 404 Not Found
             return $false
@@ -384,14 +389,17 @@ $ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
+function Get-CurrentTimestamp {
+    (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffK")
+}
 function Write-ProgressStep {
-    if (!$SkipProgress) {
+    if (-not $SkipProgress) {
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     } else {
-        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $($global:ProgressActivity)"
+        Write-Host -ForegroundColor DarkGreen "[$(1 + $global:ProgressStep) of $ProgressTotalSteps]: $(Get-CurrentTimestamp) $($global:ProgressActivity)"
     }
     $global:ProgressStep += 1
 }
@@ -399,7 +407,9 @@ function Write-ProgressCurrentOperation {
     param(
         $CurrentOperation
     )
-    if (!$SkipProgress) {
+    if ($SkipProgress) {
+        Write-Host "$(Get-CurrentTimestamp) $CurrentOperation"
+    } else {
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
@@ -507,7 +517,10 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
         # Get new PATH so we can locate the new Git
         $OldPath = $env:PATH
         $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $oldeap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
         $GitExe = & where.exe git
+        $ErrorActionPreference = $oldeap
         if ($LastExitCode -ne 0) {
             throw "DiskuvOCaml requires that Git is installed in the PATH. The Git installer failed to do so. Please install it manually from https://gitforwindows.org/"
         }
@@ -555,67 +568,76 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
 # Enhanced Progress Reporting
 
 $AuditLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.full.log"
-$AuditCurrentLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.current.log"
-$AuditCurrentErr = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.current-error.log"
-function Get-CurrentTimestamp {
-    (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffK")
+if (Test-Path -Path $AuditLog) {
+    # backup the original
+    Rename-Item -Path $AuditLog -NewName "setup-userprofile.backup.log"
 }
+
 function Invoke-Win32CommandWithProgress {
     param (
         [Parameter(Mandatory=$true)]
         $FilePath,
         $ArgumentList
     )
+    if ($null -eq $ArgumentList) {  $ArgumentList = @() }
     # Append what we will do into $AuditLog
-    if ($null -eq $ArgumentList) {
-        $Command = "$FilePath"
-    } else {
-        $Command = "$FilePath $($ArgumentList -join ' ')"
-    }
+    $Command = "$FilePath $($ArgumentList -join ' ')"
     $what = "[Win32] $Command"
-    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what" -Encoding UTF8
 
-    # Truncate current error log
-    Set-Content -Path $AuditCurrentErr -Value ''
-
-    if (!$SkipProgress) {
+    if ($SkipProgress) {
+        Write-ProgressCurrentOperation -CurrentOperation $what
+        $oldeap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        # `ForEach-Object ToString` so that System.Management.Automation.ErrorRecord are sent to Tee-Object as well
+        & $FilePath @ArgumentList 2>&1 | ForEach-Object ToString | Tee-Object -FilePath $AuditLog -Append
+        $ErrorActionPreference = $oldeap
+        if ($LastExitCode -ne 0) {
+            throw "Win32 command failed! Exited with $LastExitCode. Command was: $Command."
+        }
+    } else {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
             -Activity $global:ProgressActivity `
             -Status $what `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
-    }
-    if ($null -eq $ArgumentList) {
-        $proc = Start-Process -FilePath $FilePath `
-            -NoNewWindow `
-            -PassThru `
-            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
-    } else {
-        $proc = Start-Process -FilePath $FilePath `
-            -NoNewWindow `
-            -ArgumentList $ArgumentList `
-            -PassThru `
-            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
-    }
-    $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
-    while (-not $proc.HasExited) {
-        if (!$SkipProgress) {
-            $tail = Get-Content -Path $AuditCurrentLog -Tail $InvokerTailLines
-            Write-ProgressCurrentOperation $tail
+
+        $RedirectStandardOutput = New-TemporaryFile
+        $RedirectStandardError = New-TemporaryFile
+        try {
+            $proc = Start-Process -FilePath $FilePath `
+                -NoNewWindow `
+                -RedirectStandardOutput $RedirectStandardOutput `
+                -RedirectStandardError $RedirectStandardError `
+                -ArgumentList $ArgumentList `
+                -PassThru
+            $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
+            while (-not $proc.HasExited) {
+                if (-not $SkipProgress) {
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    Write-ProgressCurrentOperation $tail
+                }
+                Start-Sleep -Seconds $InvokerTailRefreshSeconds
+            }
+            $proc.WaitForExit()
+            $exitCode = $proc.ExitCode
+            if ($exitCode -ne 0) {
+                $err = Get-Content -Path $RedirectStandardError
+                throw "Win32 command failed! Exited with $exitCode. Command was: $Command.`nError was: $err"
+            }
         }
-        Start-Sleep -Seconds $InvokerTailRefreshSeconds
+        finally {
+            if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
+            }
+            if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                Remove-Item $RedirectStandardError -Force -ErrorAction Continue
+            }
+        }
     }
-    $proc.WaitForExit()
-    $exitCode = $proc.ExitCode
-    if ($exitCode -ne 0) {
-        $err = Get-Content -Path $AuditCurrentErr
-        Write-Error "Win32 command failed! Exited with $exitCode. Command was: $Command.`nError was: $err"
-        throw
-    }
-    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
 }
 function Invoke-CygwinCommandWithProgress {
     param (
@@ -627,9 +649,13 @@ function Invoke-CygwinCommandWithProgress {
     )
     # Append what we will do into $AuditLog
     $what = "[$CygwinName] $Command"
-    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what" -Encoding UTF8
 
-    if (!$SkipProgress) {
+    if ($SkipProgress) {
+        Write-ProgressCurrentOperation -CurrentOperation "$what"
+        Invoke-CygwinCommand -Command $Command -CygwinDir $CygwinDir `
+            -AuditLog $AuditLog
+    } else {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
@@ -637,15 +663,9 @@ function Invoke-CygwinCommandWithProgress {
             -Status $what `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
         Invoke-CygwinCommand -Command $Command -CygwinDir $CygwinDir `
-            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr `
+            -AuditLog $AuditLog `
             -TailFunction ${function:\Write-ProgressCurrentOperation}
-    } else {
-        Invoke-CygwinCommand -Command $Command -CygwinDir $CygwinDir `
-            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
     }
-    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
 }
 function Invoke-MSYS2CommandWithProgress {
     param (
@@ -654,7 +674,7 @@ function Invoke-MSYS2CommandWithProgress {
         [Parameter(Mandatory=$true)]
         $MSYS2Dir,
         [switch]
-        $ClearProgress,
+        $ForceConsole,
         [switch]
         $IgnoreErrors
     )
@@ -664,14 +684,18 @@ function Invoke-MSYS2CommandWithProgress {
 
     # Append what we will do into $AuditLog
     $what = "[MSYS2] $Command"
-    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what" -Encoding UTF8
 
-    if ($ClearProgress) {
-        if (!$SkipProgress) {
+    if ($ForceConsole) {
+        if (-not $SkipProgress) {
             Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
         }
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir -IgnoreErrors:$IgnoreErrors
-    } elseif (!$SkipProgress -and !$ClearProgress) {
+    } elseif ($SkipProgress) {
+        Write-ProgressCurrentOperation -CurrentOperation "$what"
+        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
+            -AuditLog $AuditLog
+    } else {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
@@ -680,16 +704,10 @@ function Invoke-MSYS2CommandWithProgress {
             -CurrentOperation $Command `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
-            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr `
+            -AuditLog $AuditLog `
             -IgnoreErrors:$IgnoreErrors `
             -TailFunction ${function:\Write-ProgressCurrentOperation}
-    } else {
-        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
-        -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
     }
-    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
-    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
 }
 
 # From here on we need to stuff $ProgramPath with all the binaries for the distribution
@@ -716,11 +734,11 @@ try {
     if (!(Test-Path -Path $InotifyExe)) {
         if (!(Test-Path -Path $InotifyToolDir)) { New-Item -Path $InotifyToolDir -ItemType Directory | Out-Null }
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
-        & "$GitExe" -C $InotifyCacheParentPath clone https://github.com/thekid/inotify-win.git
-        & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout $InotifyTag
-        & cmd.exe /c "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
+        Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "clone", "https://github.com/thekid/inotify-win.git")
+        Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
+        Invoke-Win32CommandWithProgress -FilePath cmd.exe -ArgumentList @("/c", "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`"")
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
-        Clear-Host
+        # if (-not $SkipProgress) { Clear-Host }
     }
 
     # END inotify-win
@@ -855,17 +873,8 @@ try {
         if (!$global:SkipCygwinSetup -or (-not (Test-Path "$CygwinRootPath\bin\mintty.exe"))) {
             # https://cygwin.com/faq/faq.html#faq.setup.cli
             $CommonCygwinMSYSOpts = "-qWnNdOfgoB"
-            $proc = Start-Process -FilePath $CygwinSetupExe -Wait -PassThru `
-                -RedirectStandardOutput $AuditCurrentLog `
+            Invoke-Win32CommandWithProgress -FilePath $CygwinSetupExe `
                 -ArgumentList $CommonCygwinMSYSOpts, "-a", $CygwinDistType, "-R", $CygwinRootPath, "-s", $CygwinMirror, "-l", $CygwinSetupCachePath, "-P", ($CygwinPackagesArch -join ",")
-            # Append $AuditCurrentLog onto $AuditLog
-            Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
-            # Check exit
-            $exitCode = $proc.ExitCode
-            if ($exitCode -ne 0) {
-                Write-Error "Cygwin installation failed! Exited with $exitCode."
-                throw
-            }
         }
 
         $global:AdditionalDiagnostics += "[Advanced] DiskuvOCaml Cygwin commands can be run with: $CygwinRootPath\bin\mintty.exe -`n"
@@ -965,11 +974,7 @@ try {
         if (!(Test-Path "$MSYS2Dir\msys2.exe")) {
             if (!(Test-Path -Path $MSYS2Dir)) { New-Item -Path $MSYS2Dir -ItemType Directory | Out-Null }
 
-            $proc = Start-Process -NoNewWindow -FilePath $MSYS2SetupExe -Wait -PassThru -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
-            $exitCode = $proc.ExitCode
-            if ($exitCode -ne 0) {
-                throw "MSYS2 installation failed! Exited with code $exitCode."
-            }
+            Invoke-Win32CommandWithProgress -FilePath $MSYS2SetupExe -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
         }
     }
 
@@ -1077,9 +1082,9 @@ try {
     $OpamInitTempPath = "$TempPath\opaminit"
     $OpamInitTempMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$OpamInitTempPath"
 
-    # Upgrades. Possibly ask questions to delete thins, so no progress indicator
+    # Upgrades. Possibly ask questions to delete things, so no progress indicator
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -ClearProgress `
+        -ForceConsole `
         -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\deinit-opam-root.sh' dev"
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
@@ -1273,7 +1278,7 @@ catch {
     $ErrorActionPreference = 'Continue'
     Write-Error (
         "Setup did not complete because an error occurred.`n$_`n`n$($_.ScriptStackTrace)`n`n" +
-        "$global:AdditionalDiagnostics`n`nLog files available at`n  $AuditLog`n  $AuditCurrentLog`n  $AuditCurrentErr")
+        "$global:AdditionalDiagnostics`n`nLog files available at`n  $AuditLog")
     exit 1
 }
 

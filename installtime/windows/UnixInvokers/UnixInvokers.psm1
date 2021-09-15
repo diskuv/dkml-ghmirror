@@ -10,6 +10,8 @@ $InvokerTailLines = 1
 Export-ModuleMember -Variable InvokerTailLines
 Export-ModuleMember -Variable InvokerTailRefreshSeconds
 
+$PSDefaultParameterValues = @{'Out-File:Encoding' = 'utf8'} # for Tee-Object. https://stackoverflow.com/a/58920518
+
 function Invoke-CygwinCommand {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
     Justification='Unread $handle is a fix to a Powershell bug')]
@@ -18,35 +20,57 @@ function Invoke-CygwinCommand {
         $Command,
         [Parameter(Mandatory=$true)]
         $CygwinDir,
-        $RedirectStandardOutput,
-        $RedirectStandardError,
+        $AuditLog,
         $TailFunction
     )
     $arglist = @("-l",
         "-c",
         ('" { ' + ($Command -replace '"', '\"') + '; } 2>&1 "'))
-    if ($RedirectStandardOutput -and $RedirectStandardError) {
-        $proc = Start-Process -NoNewWindow -FilePath $CygwinDir\bin\bash.exe -PassThru `
-            -RedirectStandardOutput $RedirectStandardOutput `
-            -RedirectStandardError $RedirectStandardError `
-            -ArgumentList $arglist
-    } else {
-        $proc = Start-Process -NoNewWindow -FilePath $CygwinDir\bin\bash.exe -PassThru `
-            -ArgumentList $arglist
-    }
-    $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
-    while (-not $proc.HasExited) {
-        if ($RedirectStandardOutput -and $TailFunction) {
-            $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
-            Invoke-Command $TailFunction -ArgumentList @($tail)
+    if ($TailFunction) {
+        $RedirectStandardOutput = New-TemporaryFile
+        $RedirectStandardError = New-TemporaryFile
+        try {
+            $proc = Start-Process -NoNewWindow -FilePath $CygwinDir\bin\bash.exe -PassThru `
+                -RedirectStandardOutput $RedirectStandardOutput `
+                -RedirectStandardError $RedirectStandardError `
+                -ArgumentList $arglist
+            $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
+            while (-not $proc.HasExited) {
+                if ($AuditLog) {
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    Invoke-Command $TailFunction -ArgumentList @($tail)
+                }
+                Start-Sleep -Seconds $InvokerTailRefreshSeconds
+            }
+            $proc.WaitForExit()
+            $exitCode = $proc.ExitCode
+            if ($exitCode -ne 0) {
+                $err = Get-Content -Path $RedirectStandardError
+                throw "Cygwin command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
+            }
         }
-        Start-Sleep -Seconds $InvokerTailRefreshSeconds
-    }
-    $proc.WaitForExit()
-    $exitCode = $proc.ExitCode
-    if ($exitCode -ne 0) {
-        Write-Error "Cygwin command failed! Exited with $exitCode. Command was: $Command"
-        throw
+        finally {
+            if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
+            }
+            if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                Remove-Item $RedirectStandardError -Force -ErrorAction Continue
+            }
+        }
+    } else {
+        $oldeap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        if ($AuditLog) {
+            & $CygwinDir\bin\bash.exe @arglist 2>&1 | ForEach-Object ToString | Tee-Object -Append -FilePath $AuditLog
+        } else {
+            & $CygwinDir\bin\bash.exe @arglist
+        }
+        $ErrorActionPreference = $oldeap
+        if ($LastExitCode -ne 0) {
+            throw "Cygwin command failed! Exited with $LastExitCode. Command was: $Command"
+        }
     }
 }
 Export-ModuleMember -Function Invoke-CygwinCommand
@@ -59,8 +83,7 @@ function Invoke-MSYS2Command {
         $Command,
         [Parameter(Mandatory=$true)]
         $MSYS2Dir,
-        $RedirectStandardOutput,
-        $RedirectStandardError,
+        $AuditLog,
         $TailFunction,
         [switch]
         $IgnoreErrors
@@ -76,28 +99,50 @@ function Invoke-MSYS2Command {
         "; { " +
         ($Command -replace '"', '\"') +
         '; } 2>&1 "'))
-    if ($RedirectStandardOutput) {
-        $proc = Start-Process -NoNewWindow -FilePath $MSYS2Dir\usr\bin\env.exe -PassThru `
-            -RedirectStandardOutput $RedirectStandardOutput `
-            -RedirectStandardError $RedirectStandardError `
-            -ArgumentList $arglist
-    } else {
-        $proc = Start-Process -NoNewWindow -FilePath $MSYS2Dir\usr\bin\env.exe -PassThru `
-            -ArgumentList $arglist
-    }
-    $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
-    while (-not $proc.HasExited) {
-        if ($RedirectStandardOutput -and $TailFunction) {
-            $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
-            Invoke-Command $TailFunction -ArgumentList @($tail)
+    if ($TailFunction) {
+        $RedirectStandardOutput = New-TemporaryFile
+        $RedirectStandardError = New-TemporaryFile
+        try {
+            $proc = Start-Process -NoNewWindow -FilePath $MSYS2Dir\usr\bin\env.exe -PassThru `
+                -RedirectStandardOutput $RedirectStandardOutput `
+                -RedirectStandardError $RedirectStandardError `
+                -ArgumentList $arglist
+            $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
+            while (-not $proc.HasExited) {
+                if ($AuditLog) {
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    Invoke-Command $TailFunction -ArgumentList @($tail)
+                }
+                Start-Sleep -Seconds $InvokerTailRefreshSeconds
+            }
+            $proc.WaitForExit()
+            $exitCode = $proc.ExitCode
+            if (-not $IgnoreErrors -and $exitCode -ne 0) {
+                $err = Get-Content -Path $RedirectStandardError
+                throw "MSYS2 command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
+            }
+        } finally {
+            if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
+            }
+            if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                Remove-Item $RedirectStandardError -Force -ErrorAction Continue
+            }
         }
-        Start-Sleep -Seconds $InvokerTailRefreshSeconds
-    }
-    $proc.WaitForExit()
-    $exitCode = $proc.ExitCode
-    if (!$IgnoreErrors -and $exitCode -ne 0) {
-        Write-Error "MSYS2 command failed! Exited with $exitCode. Command was: $Command"
-        throw
+    } else {
+        $oldeap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        if ($AuditLog) {
+            & $MSYS2Dir\usr\bin\env.exe @arglist 2>&1 | ForEach-Object ToString | Tee-Object -Append -FilePath $AuditLog
+        } else {
+            & $MSYS2Dir\usr\bin\env.exe @arglist
+        }
+        $ErrorActionPreference = $oldeap
+        if (-not $IgnoreErrors -and $LastExitCode -ne 0) {
+            throw "MSYS2 command failed! Exited with $LastExitCode. Command was: $Command"
+        }
     }
 }
 Export-ModuleMember -Function Invoke-MSYS2Command
