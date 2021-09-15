@@ -64,7 +64,7 @@
   - release-cli -v
   - date
 
-.before_msys2_and_setupmachine: &before-msys2-and-setupmachine
+.before_setupmachine: &before-setupmachine
   # ----------- Visual Studio Detection -----------
 
   - Import-VSSetup -TempPath "$env:TEMP\vssetup"
@@ -82,11 +82,13 @@
   - $ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
   - $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
   - $VisualStudioProps
-  - $MsvsPreference = "$($VisualStudioProps.MsvsPreference)"
-  - $VS_EXPORT_CMDS = "export DKML_VSSTUDIO_DIR='$($VisualStudioProps.InstallPath)'; export DKML_VSSTUDIO_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_VSSTUDIO_MSVSPREFERENCE='$MsvsPreference'"
+  - $VS_EXPORT_CMDS = "export DKML_VSSTUDIO_DIR='$($VisualStudioProps.InstallPath)'; export DKML_VSSTUDIO_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_VSSTUDIO_MSVSPREFERENCE='$($VisualStudioProps.MsvsPreference)'"
 
+.before_msys2: &before-msys2
   # ----------- MSYS2 -----------
   # Timing: 5 minutes if MSYS2 needs to be installed
+  # Inputs:
+  #  $VS_EXPORT_CMDS - Optional. A string with `export DKML_VSSTUDIO_DIR='...'; export DKML_VSSTUDIO_VCVARSVER='...'; export DKML_VSSTUDIO_MSVSPREFERENCE='...'`
 
   # Docs: https://www.msys2.org/docs/ci/#docker
   # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
@@ -101,6 +103,7 @@
   # msys starts a process in the background and waits on it. it also handles quoting.
   # msys_direct calls the shell command synchronously.
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
+  - if ($null -eq "$VS_EXPORT_CMDS" -or "" -eq "$VS_EXPORT_CMDS") { $VS_EXPORT_CMDS = "echo" }
   - |
     function msys_direct() {
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
@@ -122,6 +125,7 @@
       patch
       rsync
       tar
+      tree
       unzip
       wget
       zip'
@@ -154,16 +158,17 @@
     - *before-windows
     - *before-cygwin
 
-.windows:before-script-shared-msys2-setupmachine:
+.windows:before-script-shared-setupmachine:
   extends:
   - .shared_windows_runners
   before_script:
     - *before-windows
-    - *before-msys2-and-setupmachine
+    - *before-setupmachine
 
 .windows:before-script-diskuv-msys2-setupmachine:
   extends:
   - .diskuv_windows_runners
   before_script:
     - *before-windows
-    - *before-msys2-and-setupmachine
+    - *before-setupmachine
+    - *before-msys2

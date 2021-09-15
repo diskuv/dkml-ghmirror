@@ -2,12 +2,47 @@ windows:test-setupuserprofile:
   variables:
     SKIP_VISUAL_STUDIO_INSTALL: 'ON'
   extends:
-  - .windows:before-script-shared-msys2-setupmachine
+  - .windows:before-script-shared-setupmachine
   stage: build
   needs: []
   rules:
     # - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "next"'
+  cache:
+    key:
+      files:
+        - contributors\.userprofile.cachekey
+    paths:
+      - _ci\LocalAppData\Programs\DiskuvOCaml
+
   script:
     - $env:MSYSTEM = 'MSYS2'       # Start MSYS2 (not MinGW 32 or 64 bit) environments
+    - date
+
+    # Test Deployers module
+    - $env:PSModulePath += ";$env:CI_PROJECT_DIR\installtime\windows"
+    - Import-Module Deployers
+    - Invoke-BlueGreenDeployTests
+
+    # Call setup-userprofile.bat
+    # --------------------------
+
+    # Reset DKML deploy state so the first slot is always populated
+    - if (Test-Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\deploy-state-v1.json") { Remove-Item "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\deploy-state-v1.json" }
+
+    # Pretend to setup-userprofile.bat that LOCALAPPDATA is part of the project so we can cache DiskuvOCaml installations without modification
+    - $OldLocalAppData = "$env:LOCALAPPDATA"
+    - $env:LOCALAPPDATA = "$env:CI_PROJECT_DIR\_ci\LocalAppData"
+    - if (!(Test-Path "$env:LOCALAPPDATA")) { New-Item -Path "$env:LOCALAPPDATA" -ItemType Directory }
+
+    # Call batch script and unpop LOCALAPPDATA
+    # Use incremental deployments so cache can be re-used.
+    - $global:IncrementalDiskuvOcamlDeployment = $true
+    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin
+    - $env:LOCALAPPDATA = "$OldLocalAppData"
+    - msys_direct 'tree -L 5 _ci/LocalAppData'
+
+    # Remove Cygwin if present since not needed for cache (it is only an intermediate tool for downloading ocaml-opam Docker repository)
+    - msys_direct 'rm -rf _ci/LocalAppData/Programs/DiskuvOCaml/0/tools/cygwin'
+
     - date

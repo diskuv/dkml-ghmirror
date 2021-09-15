@@ -56,6 +56,11 @@
 
     Even with this switch is selected, Git 2.33.0 will be installed
     if there is no Git available on the PATH.
+.Parameter $AllowRunAsAdmin
+    When specified you will be allowed to run this script using
+    Run as Administrator.
+    We do not recommend you do this unless you are in continuous
+    integration (CI) scenarios.
 .Parameter $SkipProgress
     Do not use the progress user interface.
 .Parameter $OnlyOutputCacheKey
@@ -98,6 +103,8 @@ param (
     [switch]
     $SkipAutoUpgradeGitWhenOld,
     [switch]
+    $AllowRunAsAdmin,
+    [switch]
     $SkipProgress,
     [switch]
     $OnlyOutputCacheKey
@@ -125,7 +132,7 @@ Import-Module DeploymentVersion
 
 # Make sure not Run as Administrator
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if ((-not $AllowRunAsAdmin) -and $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Error -Category SecurityError `
         -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
     exit 1
@@ -735,7 +742,7 @@ try {
         if (!(Test-Path -Path $InotifyToolDir)) { New-Item -Path $InotifyToolDir -ItemType Directory | Out-Null }
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "clone", "https://github.com/thekid/inotify-win.git")
-        Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
+        Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCachePath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
         Invoke-Win32CommandWithProgress -FilePath cmd.exe -ArgumentList @("/c", "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`"")
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
         # if (-not $SkipProgress) { Clear-Host }
