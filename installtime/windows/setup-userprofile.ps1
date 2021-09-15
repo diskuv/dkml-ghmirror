@@ -706,7 +706,7 @@ function Invoke-MSYS2CommandWithProgress {
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir -IgnoreErrors:$IgnoreErrors
     } elseif ($SkipProgress) {
         Write-ProgressCurrentOperation -CurrentOperation "$what"
-        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
+        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir -IgnoreErrors:$IgnoreErrors `
             -AuditLog $AuditLog
     } else {
         $global:ProgressStatus = $what
@@ -959,16 +959,25 @@ try {
     $global:ProgressActivity = "Install MSYS2"
     Write-ProgressStep
 
-    $MSYS2Dir = "$ProgramPath\tools\MSYS2"
+    $MSYS2ParentDir = "$ProgramPath\tools"
+    $MSYS2Dir = "$MSYS2ParentDir\MSYS2"
     $MSYS2CachePath = "$TempPath\MSYS2"
     if ([Environment]::Is64BitOperatingSystem) {
-        $MSYS2SetupExeBasename = "msys2-x86_64-20210725.exe"
-        $MSYS2UrlPath = "2021-07-25/msys2-x86_64-20210725.exe"
-        $MSYS2Sha256 = "7e055b71306e64192e2612f959f54ae99a5cf57186206ac702d113ef00ba35c0"
+        # The "base" installer is friendly for CI (ex. GitLab CI).
+        # The non-base installer will not work in CI. Will get exit code -1073741515 (0xFFFFFFFFC0000135)
+        # which is STATUS_DLL_NOT_FOUND; likely a graphical DLL is linked that is not present in headless
+        # Windows Server based CI systems.
+        $MSYS2SetupExeBasename = "msys2-base-x86_64-20210725.sfx.exe"
+        $MSYS2UrlPath = "2021-07-25/msys2-base-x86_64-20210725.sfx.exe"
+        $MSYS2Sha256 = "43c09824def2b626ff187c5b8a0c3e68c1063e7f7053cf20854137dc58f08592"
+        $MSYS2BaseSubdir = "msys64"
+        $MSYS2IsBase = $true
     } else {
+        # There is no 32-bit base installer, so have to use the automated but graphical installer.
         $MSYS2SetupExeBasename = "msys2-i686-20200517.exe"
         $MSYS2UrlPath = "2020-05-17/msys2-i686-20200517.exe"
         $MSYS2Sha256 = "e478c521d4849c0e96cf6b4a0e59fe512b6a96aa2eb00388e77f8f4bc8886794"
+        $MSYS2IsBase = $false
     }
     $MSYS2SetupExe = "$MSYS2CachePath\$MSYS2SetupExeBasename"
     if (!(Test-Path -Path $MSYS2CachePath)) { New-Item -Path $MSYS2CachePath -ItemType Directory | Out-Null }
@@ -985,17 +994,34 @@ try {
     if (!$global:SkipMSYS2Setup) {
         # https://github.com/msys2/msys2-installer#cli-usage-examples
         if (!(Test-Path "$MSYS2Dir\msys2.exe")) {
-            if (!(Test-Path -Path $MSYS2Dir)) { New-Item -Path $MSYS2Dir -ItemType Directory | Out-Null }
+            # remove directory, especially important so possible subsequent Rename-Item to work
+            if (Test-Path -Path $MSYS2Dir) { Remove-Item -Path $MSYS2Dir -Recurse -Force }
 
-            Invoke-Win32CommandWithProgress -FilePath $MSYS2SetupExe -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
+            if ($MSYS2IsBase) {
+                # extract
+                if ($null -eq $MSYS2BaseSubdir) { throw "check_state MSYS2BaseSubdir is not null"}
+                if (Test-Path -Path "$MSYS2ParentDir\$MSYS2BaseSubdir") { Remove-Item -Path "$MSYS2ParentDir\$MSYS2BaseSubdir" -Recurse -Force }
+                Invoke-Win32CommandWithProgress -FilePath $MSYS2SetupExe -ArgumentList "-y", "-o$MSYS2ParentDir"
+
+                # rename to MSYS2
+                Rename-Item -Path "$MSYS2ParentDir\$MSYS2BaseSubdir" -NewName "MSYS2"
+            } else {
+                if (!(Test-Path -Path $MSYS2Dir)) { New-Item -Path $MSYS2Dir -ItemType Directory | Out-Null }
+                Invoke-Win32CommandWithProgress -FilePath $MSYS2SetupExe -ArgumentList "in", "--confirm-command", "--accept-messages", "--root", $MSYS2Dir
+            }
         }
     }
 
     $global:AdditionalDiagnostics += "[Advanced] MSYS2 commands can be run with: $MSYS2Dir\msys2_shell.cmd`n"
 
-    # Create home directories and other files and settings. Use the native MSYS2 launcher for
-    # future-proofing this iniitial set rather than Invoke-MSYS2Command
-    & $MSYS2Dir\msys2_shell.cmd -l -c "exit 0"
+    # Create home directories and other files and settings
+    # A: Use patches from https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
+    ((Get-Content -path $MSYS2Dir\etc\post-install\07-pacman-key.post -Raw) -replace '--refresh-keys', '--version') |
+        Set-Content -Path $MSYS2Dir\etc\post-install\07-pacman-key.post # A
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir -IgnoreErrors `
+        -Command ("true") # the first time will exit with `mkdir: cannot change permissions of /dev/shm` but will otherwise set all the directories correctly
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("sed -i 's/^CheckSpace/#CheckSpace/g' /etc/pacman.conf") # A
 
     # Synchronize packages
     #
@@ -1243,7 +1269,7 @@ try {
     # ----------------------------------------------------------------
     # BEGIN Modify User's environment variables
 
-    Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Modify environment variables"
+    $global:ProgressActivity = "Modify environment variables"
     Write-ProgressStep
 
     $splitter = [System.IO.Path]::PathSeparator # should be ';' if we are running on Windows (yes, you can run Powershell on other operating systems)

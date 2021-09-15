@@ -92,7 +92,7 @@ function Invoke-MSYS2Command {
     $arglist = @("MSYSTEM=MSYS",
         "HOME=/home/$env:USERNAME",
         "$MSYS2Dir\usr\bin\bash.exe",
-        "-c",
+        "-lc",
         ('"' +
         "export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:" +
         '\"$PATH\"' +

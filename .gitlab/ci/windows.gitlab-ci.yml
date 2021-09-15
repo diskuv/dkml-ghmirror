@@ -114,7 +114,7 @@
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
       Invoke-MSYS2Command -MSYS2Dir C:\msys64 -Command ("set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
     }
-  - msys_direct 'echo' # https://www.msys2.org/docs/ci/#docker has a blank space; auto-create home directory
+  - msys_direct 'true' # https://www.msys2.org/docs/ci/#docker has a blank space; auto-create home directory
   - msys_direct "sed -i 's/^CheckSpace/#CheckSpace/g' /etc/pacman.conf"
   - msys_direct 'pacman --noconfirm -Syuu' # Core update
   - msys_direct 'pacman --noconfirm -Syuu' # Normal update
