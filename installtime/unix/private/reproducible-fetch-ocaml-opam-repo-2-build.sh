@@ -40,16 +40,13 @@ function usage () {
     echo "   -t DIR: Target directory" >&2
     echo "   -v IMAGE: Docker image" >&2
     echo "   -a ARCH: Docker architecture to download. Ex. amd64" >&2
-    echo "   -b: If specified then Administrator is allowed to run this script." >&2
-    echo "      This is rarely desirable as it can mess up file permissions." >&2
 }
 
 DKMLDIR=
 DOCKER_IMAGE=
 DOCKER_ARCH=
 TARGETDIR=
-ALLOW_ADMIN_INSTALL=OFF
-while getopts ":d:v:t:a:bh" opt; do
+while getopts ":d:v:t:a:h" opt; do
     case ${opt} in
         h )
             usage
@@ -72,7 +69,6 @@ while getopts ":d:v:t:a:bh" opt; do
         a )
             DOCKER_ARCH="$OPTARG"
         ;;
-        b ) ALLOW_ADMIN_INSTALL=ON ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -118,7 +114,7 @@ TMPOPAMROOT=$WORK/opamroot
 if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
 
 installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
-installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$ALLOW_ADMIN_INSTALL" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
+installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
 
 DESIRED="$TMPOPAMROOT"/msvc-"$DOCKER_ARCH"
 

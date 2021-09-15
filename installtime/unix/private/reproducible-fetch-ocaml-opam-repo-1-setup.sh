@@ -43,15 +43,13 @@ function usage () {
     echo "   -t DIR: Target directory" >&2
     echo "   -v IMAGE: Docker image" >&2
     echo "   -a ARCH: Docker architecture. Ex. amd64" >&2
-    echo "   -b: If specified then Administrator is allowed to run this script." >&2
-    echo "      This is rarely desirable as it can mess up file permissions." >&2
 }
 
 DKMLDIR=
 DOCKER_IMAGE=
 DOCKER_ARCH=
 TARGETDIR=
-while getopts ":d:v:t:a:bh" opt; do
+while getopts ":d:v:t:a:h" opt; do
     case ${opt} in
         h )
             usage
@@ -79,10 +77,6 @@ while getopts ":d:v:t:a:bh" opt; do
             DOCKER_ARCH="$OPTARG"
             SETUP_ARGS+=( -a "$DOCKER_ARCH" )
             BUILD_ARGS+=( -a "$DOCKER_ARCH" )
-        ;;
-        b )
-            SETUP_ARGS+=( -b )
-            BUILD_ARGS+=( -b )
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2

@@ -21,16 +21,13 @@
 #   build files.
 #
 ######################################
-# moby-extract-opam-root.sh MOBYDIR ALLOW_ADMIN_INSTALL DOCKER_IMAGE DOCKER_TARGET_ARCH OCAML_OPAM_PORT DESTINATION_OPAM_ROOT
+# moby-extract-opam-root.sh MOBYDIR DOCKER_IMAGE DOCKER_TARGET_ARCH OCAML_OPAM_PORT DESTINATION_OPAM_ROOT
 #
 # OCAML_OPAM_PORT is either msvc or mingw. Confer https://discuss.ocaml.org/t/ann-ocaml-opam-images-for-docker-for-windows/8179
 
 set -euf -o pipefail
 
 MOBYDIR=$1
-shift
-
-ALLOW_ADMIN_INSTALL=$1
 shift
 
 DOCKER_IMAGE=$1
@@ -44,16 +41,6 @@ shift
 
 DESTINATION_OPAM_ROOT=$1
 shift
-
-# SAFETY CHECK. DO NOT RUN AS ADMINISTRATOR IN MSYS OR CYGWIN!
-# From https://superuser.com/a/874615, with fix for wrong GROUPS[@] syntax.
-if [[ ! "$ALLOW_ADMIN_INSTALL" = ON ]] && [[ "${GROUPS[*]}" =~ (^| )(114|544)( |$) ]]; then
-    echo "FATAL: Do not run this as an Administrator!" >&2
-    echo "FATAL:   File permissions when running 'tar' typically come from Docker images that were running" >&2
-    echo "FATAL:   as the 'Administrators' user. That may seriously mess up Windows permissions if the" >&2; exit 1
-    echo "FATAL:   permissions are replicated to your machine, and you would need an Administrator Cygwin" >&2; exit 1
-    echo "FATAL:   console to fix permissions." >&2; exit 1
-fi
 
 # DOCKER_IMAGE=ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55, DOCKER_TARGET_ARCH=arm64
 # -> SIMPLE_NAME=ocaml-opam-windows-msvc-20H2-ocaml-4-12-sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55-arm64
