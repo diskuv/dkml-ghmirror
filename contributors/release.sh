@@ -62,7 +62,7 @@ cd "$DKMLDIR"
 
 # Add .userprofile.cachekey which is used by CI.
 if [[ -n "${COMSPEC:-}" ]]; then
-    installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey > contributors/.userprofile.cachekey
+    installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | dos2unix > contributors/.userprofile.cachekey
 else
     true > contributors/.userprofile.cachekey
 fi
