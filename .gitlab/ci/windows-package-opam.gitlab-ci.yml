@@ -35,7 +35,7 @@ windows:build-opam:
         + ' installtime/unix/private/reproducible-compile-opam-1-setup.sh'
         + " -d '" + "$PWD" + "'"
         + " -a " + "$PLATFORM"
-        + " -b " + "$MsvsPreference"
+        + " -b " + "$($VisualStudioProps.MsvsPreference)"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v " + $DV_AvailableOpamVersion
         )
