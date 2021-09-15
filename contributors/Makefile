@@ -4,6 +4,14 @@ else
 CMAKE = cmake
 endif
 
+.PHONY: .userprofile.cachekey # always rerun
+.userprofile.cachekey:
+ifdef COMSPEC
+	../installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | /usr/bin/dos2unix > $@
+else
+	true > $@
+endif
+
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
 
