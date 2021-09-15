@@ -725,7 +725,7 @@ try {
     $global:ProgressActivity = "Install inotify-win"
     Write-ProgressStep
 
-    $Vcvars = "$VisualStudioDirPath\Common7\Tools\vsdevcmd.bat"
+    $Vcvars = "$($VisualStudioProps.InstallPath)\Common7\Tools\vsdevcmd.bat"
     $InotifyCacheParentPath = "$TempPath"
     $InotifyCachePath = "$InotifyCacheParentPath\inotify-win"
     $InotifyExeBasename = "inotifywait.exe"
