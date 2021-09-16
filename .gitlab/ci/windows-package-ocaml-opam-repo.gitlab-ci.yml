@@ -20,7 +20,6 @@ windows:fetch-ocaml-opam-repo:
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
-        + " -b"
         )
     - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
