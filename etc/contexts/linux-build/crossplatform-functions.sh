@@ -613,3 +613,12 @@ function autodetect_vsdev () {
 
     return 0
 }
+
+function log_trace () {
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then
+        echo "+ $*" >&2
+        time "$@"
+    else
+        "$@"
+    fi
+}
