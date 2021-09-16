@@ -111,7 +111,9 @@ param (
     [switch]
     $OnlyOutputCacheKey,
     [switch]
-    $ForceDeploymentSlot0
+    $ForceDeploymentSlot0,
+    [switch]
+    $StopBeforeCreateSystemSwitch
 )
 
 $ErrorActionPreference = "Stop"
@@ -1114,6 +1116,9 @@ try {
     # END Compile/install opam.exe
     # ----------------------------------------------------------------
 
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command "if [[ -e /usr/bin/tree ]]; then tree -F -L 5 '$env:LOCALAPPDATA'; fi"
+
     # ----------------------------------------------------------------
     # BEGIN opam init
 
@@ -1160,6 +1165,11 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam switch create diskuv-system
+
+    if ($StopBeforeCreateSystemSwitch) {
+        Write-Host "Stopping before being completed finished due to -StopBeforeCreateSystemSwitch switch"
+        exit 0
+    }
 
     $global:ProgressActivity = "Create diskuv-system local Opam switch"
     Write-ProgressStep
