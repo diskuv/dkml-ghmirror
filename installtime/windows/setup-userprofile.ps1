@@ -111,7 +111,9 @@ param (
     [switch]
     $OnlyOutputCacheKey,
     [switch]
-    $ForceDeploymentSlot0
+    $ForceDeploymentSlot0,
+    [switch]
+    $StopBeforeCreateSystemSwitch
 )
 
 $ErrorActionPreference = "Stop"
@@ -1160,6 +1162,11 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam switch create diskuv-system
+
+    if ($StopBeforeCreateSystemSwitch) {
+        Write-Host "Stopping before being completed finished due to -StopBeforeCreateSystemSwitch switch"
+        exit 0
+    }
 
     $global:ProgressActivity = "Create diskuv-system local Opam switch"
     Write-ProgressStep
