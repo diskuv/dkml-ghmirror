@@ -1136,7 +1136,7 @@ try {
         # The first time vcpkg installs can stall on Windows (on a Windows VM set to Paris Locale). So we execute the problematic
         # portion in Command Prompt since running from the command line always seems to work.
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev -o '$OpamInitTempMSYS2AbsPath'/run.cmd"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev -o '$OpamInitTempMSYS2AbsPath'/run.cmd"
         Invoke-Win32CommandWithProgress -FilePath "$OpamInitTempPath\run.cmd"
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev"
