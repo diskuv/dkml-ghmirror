@@ -38,8 +38,8 @@ PINNED_PACKAGES+=(
     "ocamlbuild,0.14.0"
     "core_kernel,v0.14.2"
     "feather,0.3.0"
-    "ctypes,0.19.2-windowssupport-r3"
-    "ctypes-foreign,0.19.2-windowssupport-r3"
+    "ctypes,0.19.2-windowssupport-r4"
+    "ctypes-foreign,0.19.2-windowssupport-r4"
 )
 
 # These incorrectly did not use a major version bump and caused major breaking changes to downstream packages
