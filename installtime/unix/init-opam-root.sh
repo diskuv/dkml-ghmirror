@@ -129,16 +129,12 @@ if [[ ! -e "$OPAMREPOS_UNIX".complete ]]; then
     install -d "$OPAMREPOS_UNIX"
     RSYNC_OPTS=(-avp)
     if is_unixy_windows_build_machine; then
-        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-        rsync "${RSYNC_OPTS[@]}" \
+        log_trace rsync "${RSYNC_OPTS[@]}" \
             "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
             "$OPAMREPOS_UNIX"/fdopen-mingw
-        set +x
     fi
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    log_trace rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
     touch "$OPAMREPOS_UNIX".complete
-    set +x
 fi
 
 # END install opam repositories
@@ -174,7 +170,7 @@ if is_unixy_windows_build_machine; then
     OPAM_INIT_ARGS+=(--kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL")
 fi
 if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init "${OPAM_INIT_ARGS[@]}"
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init "${OPAM_INIT_ARGS[@]}"
 fi
 
 # If and only if we have Windows Opam root we have to configure its global options
@@ -190,7 +186,7 @@ if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_
     # Goes away with wget!! With wget has no funny symbols ... it is like:
     #   C:\source\...\build\_tools\common\MSYS2\usr\bin\wget.exe --content-disposition -t 3 -O C:\Users\...\AppData\Local\Temp\opam-29232-cc6ec1\inline-flexdll.patch.part -U opam/2.1.0 -- https://gist.githubusercontent.com/fdopen/fdc645a61a208552ebac76a67eafd3ee/raw/9f521e91c8f0e9490652651ccdbfae88da701919/inline-flexdll.patch
     if ! grep -q '^download-command: wget' "$OPAMROOTDIR_BUILDHOST/config"; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
     fi
 fi
 
@@ -200,13 +196,13 @@ fi
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
 if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]]; then
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
 if is_unixy_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]]; then
     # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
     # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
     OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.
@@ -226,12 +222,12 @@ if [[ -e "$OPAMROOTDIR_BUILDHOST/repo/default" || -e "$OPAMROOTDIR_BUILDHOST/rep
     fi
     if grep -q "/$REPONAME_PENDINGREMOVAL"$ "$WORK"/default; then
         # ok. is like file://C:/source/xxx/etc/opam-repositories/pendingremoval-opam-repo
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository remove default --yes --all --dont-select
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository remove default --yes --all --dont-select
     fi
 fi
 # add back the default we want if a default is not there
 if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]]; then
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
 fi
 
 # END opam init
@@ -270,14 +266,12 @@ if is_unixy_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; the
     if [[ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh || ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]]; then
         # Download vcpkg
         if [[ ! -e "$VCPKG_UNIX"/src.tar.gz ]]; then
-            if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-            wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
+            log_trace wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
             mv "$VCPKG_UNIX"/src.tar.gz.tmp "$VCPKG_UNIX"/src.tar.gz
-            set +x
         fi
 
         # Expand archive
-        tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
+        log_trace tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
         rm -f "$VCPKG_UNIX"/src.tar.gz
     fi
 
@@ -293,9 +287,7 @@ if is_unixy_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; the
         if is_unixy_windows_build_machine; then
             # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
             #             for command line arguments. Only -disableMetrics is recognized.
-            if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-            "$VCPKG_UNIX/bootstrap-vcpkg.bat" "${WIN_ARGS[@]}"
-            set +x
+            log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" "${WIN_ARGS[@]}"
         else
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" "${UNIX_ARGS[@]}"
         fi
@@ -375,9 +367,9 @@ function install_vcpkg_pkgs {
             } >> "$CMDOUT"
             exit 0
         fi
-        env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$COMMAND_AND_ARGS"
+        log_trace env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$COMMAND_AND_ARGS"
     else
-        env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+        log_trace env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
     fi
     set -u
 }
@@ -389,9 +381,7 @@ if [[ -e vcpkg.json ]]; then
     # by vcpkg. The dependencies are listed in vcpkg.json, with no tool to edit it.
 
     # 1. Install the project dependencies using the triplet we need.
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
     install_vcpkg_pkgs
-    set +x
 
     # 2. Validate we have all necessary dependencies
     # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
@@ -409,9 +399,7 @@ if [[ -e vcpkg.json ]]; then
 else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
     install_vcpkg_pkgs "${VCPKG_PKGS[@]}"
-    set +x
 fi
 
 # ---fixup pkgconf----
