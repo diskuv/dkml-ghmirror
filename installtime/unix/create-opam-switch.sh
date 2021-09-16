@@ -14,8 +14,16 @@
 # -------------------------------------------------------
 set -euf -o pipefail
 
-PINNED_PACKAGES=(
-    # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
+# ------
+# pinned
+# ------
+#
+# The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
+
+PINNED_PACKAGES=()
+
+# DKML provides patches for these
+PINNED_PACKAGES+=(
     "dune-configurator,2.9.0"
     "bigstringaf,0.8.0"
     "ppx_expect,v0.14.1"
@@ -32,6 +40,15 @@ PINNED_PACKAGES=(
     "feather,0.3.0"
     "ctypes,0.19.2-windowssupport-r3"
     "ctypes-foreign,0.19.2-windowssupport-r3"
+)
+
+# These incorrectly did not use a major version bump and caused major breaking changes to downstream packages
+PINNED_PACKAGES+=(
+    "ppxlib,0.22.0" # ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
+)
+
+# Security fixes
+PINNED_PACKAGES+=(
 )
 
 # ------------------
