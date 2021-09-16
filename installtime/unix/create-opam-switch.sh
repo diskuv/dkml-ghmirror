@@ -144,6 +144,14 @@ cd "$TOPDIR"
 # --------------------------------
 # BEGIN opam switch create
 
+# Set BUILDHOST_ARCH
+build_machine_arch
+if [[ $PLATFORM = dev ]]; then
+    TARGET_ARCH=$BUILDHOST_ARCH
+else
+    TARGET_ARCH=$PLATFORM
+fi
+
 if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
     # Set $DiskuvOCamlHome and other vars
     autodetect_dkmlvars
@@ -211,17 +219,23 @@ OPAM_SWITCH_AS=
 #     # NOTE 2021/08/03: `ocaml-option-static` seems to do nothing. No difference when running `dune printenv --verbose`
 #     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-static
 # fi
+if [[ $BUILDTYPE = Debug* ]] && [[ $TARGET_ARCH != windows_* ]]; then
+    # Frame pointer is always on in Debug mode.
+    # Windows does not support frame pointers.
+    # On Linux we need it for `perf`.
+    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
+fi
 if [[ $BUILDTYPE = Release* ]]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
 fi
-if [[ $PLATFORM = linux_arm32* ]]; then
+if [[ $TARGET_ARCH = linux_arm32* ]]; then
     # -Os optimizes for size. Useful for CPUs with small cache sizes. Confer https://wiki.gentoo.org/wiki/GCC_optimization
     OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
 fi
-if [[ $PLATFORM = *_x86 ]] || [[ $PLATFORM = linux_arm32* ]]; then
+if [[ $TARGET_ARCH = *_x86 ]] || [[ $TARGET_ARCH = linux_arm32* ]]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-32bit
 fi
-if [[ $BUILDTYPE = ReleaseCompatPerf ]]; then
+if [[ $BUILDTYPE = ReleaseCompatPerf ]] && [[ $TARGET_ARCH != windows_* ]]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
 elif [[ $BUILDTYPE = ReleaseCompatFuzz ]]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
