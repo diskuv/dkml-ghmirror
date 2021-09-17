@@ -1,4 +1,4 @@
-# Diskuv OCaml 0.2.0
+# Diskuv OCaml 0.2.1
 
 *Diskuv OCaml* is an OCaml distribution focused on a) secure, cross-platform software development and b) ease of use for language learners and professional developers.
 

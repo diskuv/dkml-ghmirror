@@ -9,17 +9,17 @@ Repositories
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
-1. diskuv-0.2.0
-2. fdopen-mingw-0.2.0 *only for Windows*
+1. diskuv-0.2.1
+2. fdopen-mingw-0.2.1 *only for Windows*
 3. default
 
-The ``diskuv-0.2.0`` repository has all the patches required for third-party OCaml packages
+The ``diskuv-0.2.1`` repository has all the patches required for third-party OCaml packages
 to support the Microsoft compiler. Any switch that is created by *Diskuv OCaml* will have
 pinned versions for each package in this repository. That means you will always get the
 *Diskuv OCaml* patched versions and reproducible behavior.
 
-The ``fdopen-mingw-0.2.0`` repository has all the MinGW patches for _many_ third-party OCaml packages
-to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.2.0`` the packages
+The ``fdopen-mingw-0.2.1`` repository has all the MinGW patches for _many_ third-party OCaml packages
+to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.2.1`` the packages
 are not pinned, so it is possible that a newer package version is introduced into your switch
 that has no MinGW patches.
 
@@ -93,8 +93,8 @@ similar to the following:
 
     ENV_ARGS=()
     source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x86-windows" # if 64-bit
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x64-windows" # if 32-bit
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x86-windows" # if 64-bit
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x64-windows" # if 32-bit
 
     env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" bash
 

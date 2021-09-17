@@ -1,3 +1,20 @@
+## 0.2.1 (2021-09-17)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+
+* Improve detection of Visual Studio. Now you can have `VS 2019 C++ x64/x86 build tools (Latest)` from a
+  [Visual Studio 2019 version 16.6](https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6)
+  installation or `Microsoft.VisualStudio.Component.VC.14.26.x86.x64` from any Visual Studio 2015 Update 3 or later
+  installation.
+* Fix inotify-win not being compiled, which is used by `./makeit dkml-devmode`
+* Pin `ppxlib` to `0.22.0` to remove the need for https://github.com/janestreet/ppx_variants_conv/pull/9
+* `ctypes.0.19.2-windowssupport-r3` -> `ctypes.0.19.2-windowssupport-r4` fixes thread local storage
 # Changes
 
 
