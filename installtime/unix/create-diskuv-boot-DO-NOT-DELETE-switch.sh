@@ -25,7 +25,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    create-diskuv-boot-DO-NOT-DELETE-switch.sh -h   Display this help message." >&2
     echo "    create-diskuv-boot-DO-NOT-DELETE-switch.sh      Create the Opam switch." >&2

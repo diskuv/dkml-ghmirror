@@ -30,7 +30,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    reproducible-fetch-ocaml-opam-repo-2-build.sh" >&2
     echo "        -h                              Display this help message." >&2

@@ -28,7 +28,7 @@ ProgressStep=0
 ProgressActivity=
 ProgressTotalSteps=2
 ProgressId=$((ParentProgressId + 1))
-function WriteProgressStep () {
+WriteProgressStep() {
     # TODO: Would be nice to have a progress bar!
     local PercentComplete=$((100 * ProgressStep / ProgressTotalSteps))
     echo "($PercentComplete%) $ProgressActivity"

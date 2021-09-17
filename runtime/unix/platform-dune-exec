@@ -28,7 +28,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    platform-dune-exec -h                                                  Display this help message." >&2
     echo "    platform-dune-exec -b BUILDTYPE -p PLATFORM [--] build|clean|help|...  Run the dune command." >&2

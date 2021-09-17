@@ -105,12 +105,12 @@
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
   - if ($null -eq "$VS_EXPORT_CMDS" -or "" -eq "$VS_EXPORT_CMDS") { $VS_EXPORT_CMDS = "echo" }
   - |
-    function msys_direct() {
+    msys_direct() {
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
       C:\msys64\usr\bin\bash.exe @('-lc') + ("set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0]);
     }
   - |
-    function msys() {
+    msys() {
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
       Invoke-MSYS2Command -MSYS2Dir C:\msys64 -Command ("set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
     }
@@ -146,7 +146,7 @@
   - Get-ItemProperty HKLM:\SOFTWARE\Cygwin\setup -Name rootdir
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
   - |
-    function cygwin() {
+    cygwin() {
       $path_unix = c:\tools\cygwin\bin\cygpath --path "$env:PATH" ;
       Invoke-CygwinCommand -CygwinDir c:\tools\cygwin -Command ("cd '$PWD'; set -eufx -o pipefail; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
     }

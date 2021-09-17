@@ -54,7 +54,7 @@ PINNED_PACKAGES+=(
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    create-opam-switch.sh -h                          Display this help message" >&2
     echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    Create the Opam switch" >&2

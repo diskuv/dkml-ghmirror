@@ -10,7 +10,7 @@ DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    release.sh -h  Display this help message." >&2
     echo "    release.sh -p  Create a prerelease." >&2

@@ -19,7 +19,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    platform-opam-exec -h                                                         Display this help message" >&2
     echo "    platform-opam-exec [-1] -p PLATFORM [--] init|help|switch remove|...          Run the opam command" >&2

@@ -33,7 +33,7 @@ set -euf -o pipefail
 SETUP_ARGS=()
 BUILD_ARGS=()
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    reproducible-fetch-ocaml-opam-repo-1-setup.sh" >&2
     echo "        -h                              Display this help message." >&2

@@ -53,7 +53,7 @@ USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS=OFF
 #     The path to the switch **not including any _opam subfolder** that works as an argument to `exec_in_platform` -OR-
 #     The name of a global switch that represents the build directory.
 #     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
-function set_opamrootandswitchdir () {
+set_opamrootandswitchdir() {
     # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
     set_opamrootdir
 

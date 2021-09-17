@@ -33,7 +33,7 @@ cd "$TOPDIR"
 # ---------------------
 # BEGIN Version Cleanup
 
-function uninstall_opam_root () {
+uninstall_opam_root() {
     local OLDOPAMROOT="$1"
     opam switch list --root "$OLDOPAMROOT" --short > "$WORK"/list
     for sw in $(< "$WORK"/list); do

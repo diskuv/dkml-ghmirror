@@ -16,7 +16,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    within-sandbox -h                                 Display this help message." >&2
     echo "    within-sandbox [-b] [-1] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2

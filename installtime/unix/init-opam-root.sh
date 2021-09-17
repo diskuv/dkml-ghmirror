@@ -24,7 +24,7 @@ VCPKG_PKGS=(pkgconf libffi libuv)
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    init-opam-root.sh -h                   Display this help message" >&2
     echo "    init-opam-root.sh -p PLATFORM          Initialize the Opam root" >&2

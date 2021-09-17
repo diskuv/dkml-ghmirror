@@ -41,7 +41,7 @@ TRIM_ARGS=()
 # _always_ want MSVS_* set since ./configure script branches on MSVS_* being non-empty).
 OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 2-build.sh
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    reproducible-compile-opam-1-setup.sh" >&2
     echo "        -h                     Display this help message." >&2

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ----------------------------
 # Copyright 2021 Diskuv, Inc.
 #
@@ -43,7 +43,7 @@ export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
 #       fi
 #    This clearly guards what you are about to do (cygpath) with what you will
 #    need (cygpath).
-function is_unixy_windows_build_machine () {
+is_unixy_windows_build_machine() {
     if is_msys2_msys_build_machine || is_cygwin_build_machine; then
         return 0
     fi
@@ -52,14 +52,14 @@ function is_unixy_windows_build_machine () {
 
 # Is a MSYS2 environment with the MSYS subsystem? (MSYS2 can also do MinGW 32-bit
 # and 64-bit subsystems)
-function is_msys2_msys_build_machine () {
+is_msys2_msys_build_machine() {
     if [[ -e /usr/bin/msys-2.0.dll && "${MSYSTEM:-}" = "MSYS" ]]; then
         return 0
     fi
     return 1
 }
 
-function is_cygwin_build_machine () {
+is_cygwin_build_machine() {
     if [[ -e /usr/bin/cygwin1.dll ]]; then
         return 0
     fi
@@ -72,7 +72,7 @@ function is_cygwin_build_machine () {
 #  env:DEPLOYDIR_UNIX - The deployment directory
 #  env:BOOTSTRAPNAME - Examples include: 100-compile-opam
 #  env:DKMLDIR - The directory with .dkmlroot
-function install_reproducible_common () {
+install_reproducible_common() {
     local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
     install -d "$BOOTSTRAPDIR"
     install_reproducible_file .dkmlroot
@@ -90,7 +90,7 @@ function install_reproducible_common () {
 #  $1 - The path of the script that will be installed.
 #       It will be deployed relative to $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
-function install_reproducible_file () {
+install_reproducible_file() {
     local RELFILE="$1"
     shift
     local RELDIR
@@ -110,7 +110,7 @@ function install_reproducible_file () {
 #  $1 - The path to the generated script.
 #  $2 - The location of the script that will be installed.
 #       It must be specified relative to $DEPLOYDIR_UNIX.
-function install_reproducible_generated_file () {
+install_reproducible_generated_file() {
     local SRCFILE="$1"
     shift
     local RELFILE="$1"
@@ -136,7 +136,7 @@ function install_reproducible_generated_file () {
 #  $1 - The path of the .md file that will be installed.
 #       It will be deployed as 'README.md' in the bootstrap folder of $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
-function install_reproducible_readme () {
+install_reproducible_readme() {
     local RELFILE="$1"
     shift
     local RELDIR
@@ -155,7 +155,7 @@ function install_reproducible_readme () {
 #  $1 - The path of the script that will be created, relative to $DEPLOYDIR_UNIX.
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
-function install_reproducible_system_packages () {
+install_reproducible_system_packages() {
     local SCRIPTFILE="$1"
     shift
     local PACKAGEFILE="${SCRIPTFILE//.sh/.packagelist.txt}"
@@ -201,7 +201,7 @@ function install_reproducible_system_packages () {
 #       must be specified as an existing relative path to $DKMLDIR.
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
-function install_reproducible_script_with_args () {
+install_reproducible_script_with_args() {
     local SCRIPTFILE="$1"
     shift
     local RECREATEFILE="${SCRIPTFILE//.sh/-noargs.sh}"
@@ -227,7 +227,7 @@ function install_reproducible_script_with_args () {
 # For now only tested in Linux/Windows x86/x86_64.
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
-function build_machine_arch () {
+build_machine_arch() {
     local MACHINE
     MACHINE=$(uname -m)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
@@ -267,7 +267,7 @@ function build_machine_arch () {
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 # - env:PLATFORM_VCPKG_TRIPLET will contain the correct vcpkg triplet
-function platform_vcpkg_triplet () {
+platform_vcpkg_triplet() {
     build_machine_arch
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
@@ -294,7 +294,7 @@ function platform_vcpkg_triplet () {
 #
 # This is described in Automatic Unix ⟶ Windows Path Conversion
 # at https://www.msys2.org/docs/filesystem-paths/
-function disambiguate_filesystem_paths () {
+disambiguate_filesystem_paths() {
     if is_msys2_msys_build_machine; then
         export MSYS2_ARG_CONV_EXCL='*'
     fi
@@ -306,7 +306,7 @@ function disambiguate_filesystem_paths () {
 #
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
-function set_dkmlparenthomedir () {
+set_dkmlparenthomedir() {
     if [[ -n "${LOCALAPPDATA:-}" ]]; then
         DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
     else
@@ -322,7 +322,7 @@ function set_dkmlparenthomedir () {
 # Outputs:
 # - env:NUMCPUS . Maximum of 8 if detectable; otherwise 1. Always a number from 1 to 8, even
 #   if on input env:NUMCPUS was set to text.
-function autodetect_cpus () {
+autodetect_cpus() {
     # type cast to a number (in case user gave a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
     if (( NUMCPUS == 0 )); then
@@ -379,7 +379,7 @@ function autodetect_cpus () {
 # - 0: Success
 # - 1: Not a Windows machine
 # - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit)
-function autodetect_vsdev () {
+autodetect_vsdev() {
     local TEMPDIR=${WORK:-$TMP}
     local PLATFORM_ARCH=${PLATFORM:-dev}
 
@@ -614,7 +614,7 @@ function autodetect_vsdev () {
     return 0
 }
 
-function log_trace () {
+log_trace() {
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then
         echo "+ $*" >&2
         time "$@"

@@ -30,7 +30,7 @@ set -euf -o pipefail
 # ------------------
 # BEGIN Command line processing
 
-function usage () {
+usage() {
     echo "Usage:" >&2
     echo "    reproducible-compile-opam-9-trim.sh" >&2
     echo "        -h                     Display this help message." >&2

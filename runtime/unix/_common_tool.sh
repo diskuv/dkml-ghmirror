@@ -31,14 +31,14 @@
 #
 #################################################
 
-function is_dev_platform () {
+is_dev_platform() {
     if [[ "$PLATFORM" = "dev" ]]; then
         return 0
     fi
     return 1
 }
 
-function is_reproducible_platform () {
+is_reproducible_platform() {
     if [[ "$PLATFORM" = "dev" ]]; then
         return 1
     fi
@@ -178,7 +178,7 @@ OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+options+dkml+msvc64
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
 #   @@EXPAND_DKMLDIR_UNIX@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
 #     The directory will always be Unix style (ex. /home/user).
-function exec_in_platform () {
+exec_in_platform() {
     _exec_dev_or_arch_helper "$PLATFORM" "$@"
 }
 
@@ -207,12 +207,12 @@ function exec_in_platform () {
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
 # @@EXPAND_DKMLDIR_UNIX@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
 #   The directory will always be Unix style (ex. /home/user).
-function exec_dev_or_multiarch () {
+exec_dev_or_multiarch() {
     build_machine_arch
     _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
 }
 
-function _exec_dev_or_arch_helper () {
+_exec_dev_or_arch_helper() {
     local SANDBOX_PLATFORM
     SANDBOX_PLATFORM=$1
     shift
@@ -313,7 +313,7 @@ function _exec_dev_or_arch_helper () {
 # - env:DiskuvOCamlBinaryPaths - set if DiskuvOCaml installed
 # Exit Code:
 # - 1 if DiskuvOCaml is not installed
-function autodetect_dkmlvars () {
+autodetect_dkmlvars() {
     local DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
     local DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
     local DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
@@ -349,7 +349,7 @@ function autodetect_dkmlvars () {
 #     argument to `exec_in_platform`
 # - env:DKMLPLUGIN_BUILDHOST - Plugin directory for config/installations connected to the Opam root
 # - env:DKMLPLUGIN_EXPAND - The plugin directory that works as an argument to `exec_in_platform`
-function set_opamrootdir () {
+set_opamrootdir() {
     if is_dev_platform; then
         if is_unixy_windows_build_machine; then
             if [[ -n "${OPAMROOT:-}" ]]; then
@@ -397,7 +397,7 @@ function set_opamrootdir () {
 #     The path to the switch **not including any _opam subfolder** that works as an argument to `exec_in_platform` -OR-
 #     The name of a global switch that represents the build directory.
 #     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
-function set_opamswitchdir_of_system () {
+set_opamswitchdir_of_system() {
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
     # shellcheck disable=SC2034
     OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/system/_opam"
@@ -413,7 +413,7 @@ function set_opamswitchdir_of_system () {
 #
 # Returns: True (0) if and only if the switch exists and is at least an `opam switch create --empty` switch.
 #          False (1) otherwise.
-function is_empty_opam_switch_present () {
+is_empty_opam_switch_present() {
     local switchdir_buildhost=$1
     shift
     if [[ -s "$switchdir_buildhost/.opam-switch/switch-config" ]]
@@ -432,7 +432,7 @@ function is_empty_opam_switch_present () {
 #
 # Returns: True (0) if and only if the switch exists and has at least an OCaml system compiler.
 #          False (1) otherwise.
-function is_minimal_opam_switch_present () {
+is_minimal_opam_switch_present() {
     local switchdir_buildhost=$1
     shift
     if [[ -e "$switchdir_buildhost/bin/ocamlc" || -e "$switchdir_buildhost/bin/ocamlc.exe" ]]
@@ -449,7 +449,7 @@ function is_minimal_opam_switch_present () {
 #
 # Returns: True (0) if and only if the root exists and has an Opam configuration file.
 #          False (1) otherwise.
-function is_minimal_opam_root_present () {
+is_minimal_opam_root_present() {
     local rootdir_buildhost=$1
     shift
     if [[ -e "$rootdir_buildhost/config" ]]
@@ -502,7 +502,7 @@ function is_minimal_opam_root_present () {
 #          "ppx_expect.v0.14.1"
 #          "utop.2.8.0"
 #        ]
-function get_opam_switch_state_toplevelsection () {
+get_opam_switch_state_toplevelsection() {
     local switchdir_buildhost=$1
     shift
     local toplevel_section_name=$1
