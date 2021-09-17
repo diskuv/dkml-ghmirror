@@ -4,9 +4,9 @@ set -euf -o pipefail
 # Passthrough environment variables
 ENV_CMD=(env)
 OPAMROOT=${OPAMROOT:-}
-if [[ -n "$OPAMROOT" ]]; then ENV_CMD+=(OPAMROOT="$OPAMROOT"); fi
+if [ -n "$OPAMROOT" ]; then ENV_CMD+=(OPAMROOT="$OPAMROOT"); fi
 OPAMSWITCH=${OPAMSWITCH:-}
-if [[ -n "$OPAMSWITCH" ]]; then ENV_CMD+=(OPAMSWITCH="$OPAMSWITCH"); fi
+if [ -n "$OPAMSWITCH" ]; then ENV_CMD+=(OPAMSWITCH="$OPAMSWITCH"); fi
 
 # Passthrough or enable DKML_BUILD_TRACE
 DKML_BUILD_TRACE=${DKML_BUILD_TRACE:-ON}
@@ -17,7 +17,7 @@ ENV_CMD+=(DKML_BUILD_TRACE="$DKML_BUILD_TRACE")
 # https://wiki.alpinelinux.org/wiki/Alpine_Linux_in_a_chroot
 
 # shellcheck disable=SC2154
-if [[ ! -e $chroot_dir/usr/bin/npm ]]; then
+if [ ! -e $chroot_dir/usr/bin/npm ]; then
     echo "FATAL: Did you set the \$chroot_dir environment variable to the Build Sandbox chroot directory? It is missing the npm binary"
     exit 1
 fi
@@ -40,5 +40,5 @@ chroot "$chroot_dir" addgroup -g "$BUILDER_GID" "$BUILDER_GROUP"
 chroot "$chroot_dir" adduser -D -G "$BUILDER_GROUP" -u "$BUILDER_UID" "$BUILDER_USER"
 
 # Enter chroot
-if [[ "$DKML_BUILD_TRACE" = ON ]]; then set -x; fi
+if [ "$DKML_BUILD_TRACE" = ON ]; then set -x; fi
 exec chroot "$chroot_dir" su-exec "$BUILDER_USER" "${ENV_CMD[@]}" bash -l /opt/build-sandbox/sandbox-entrypoint.sh "$@"

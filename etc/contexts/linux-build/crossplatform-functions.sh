@@ -38,7 +38,7 @@ export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
 #
 # 1. If you are checking to see if you should do a cygpath, then just guard it
 #    like so:
-#       if [[ -x /usr/bin/cygpath ]]; then
+#       if [ -x /usr/bin/cygpath ]; then
 #           do_something $(/usr/bin/cygpath ...) ...
 #       fi
 #    This clearly guards what you are about to do (cygpath) with what you will
@@ -53,14 +53,14 @@ is_unixy_windows_build_machine() {
 # Is a MSYS2 environment with the MSYS subsystem? (MSYS2 can also do MinGW 32-bit
 # and 64-bit subsystems)
 is_msys2_msys_build_machine() {
-    if [[ -e /usr/bin/msys-2.0.dll && "${MSYSTEM:-}" = "MSYS" ]]; then
+    if [ -e /usr/bin/msys-2.0.dll ] && [ "${MSYSTEM:-}" = "MSYS" ]; then
         return 0
     fi
     return 1
 }
 
 is_cygwin_build_machine() {
-    if [[ -e /usr/bin/cygwin1.dll ]]; then
+    if [ -e /usr/bin/cygwin1.dll ]; then
         return 0
     fi
     return 1
@@ -159,7 +159,7 @@ install_reproducible_system_packages() {
     local SCRIPTFILE="$1"
     shift
     local PACKAGEFILE="${SCRIPTFILE//.sh/.packagelist.txt}"
-    if [[ "$PACKAGEFILE" = "$SCRIPTFILE" ]]; then
+    if [ "$PACKAGEFILE" = "$SCRIPTFILE" ]; then
         echo "FATAL: The run script $SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
@@ -177,8 +177,8 @@ install_reproducible_system_packages() {
         cygcheck.exe -c -d > "$BOOTSTRAPDIR"/"$PACKAGEFILE"
         {
             echo "#!/usr/bin/env bash"
-            echo "if [[ ! -e /usr/local/bin/cyg-get ]]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
-            echo "if [[ ! -x /usr/local/bin/cyg-get ]]; then chmod +x /usr/local/bin/cyg-get; fi"
+            echo "if [ ! -e /usr/local/bin/cyg-get ]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
+            echo "if [ ! -x /usr/local/bin/cyg-get ]; then chmod +x /usr/local/bin/cyg-get; fi"
             printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$BOOTSTRAPRELDIR/$PACKAGEFILE"
             # shellcheck disable=SC2016
             echo 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
@@ -205,7 +205,7 @@ install_reproducible_script_with_args() {
     local SCRIPTFILE="$1"
     shift
     local RECREATEFILE="${SCRIPTFILE//.sh/-noargs.sh}"
-    if [[ "$RECREATEFILE" = "$SCRIPTFILE" ]]; then
+    if [ "$RECREATEFILE" = "$SCRIPTFILE" ]; then
         echo "FATAL: The run script $SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
@@ -307,7 +307,7 @@ disambiguate_filesystem_paths() {
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 set_dkmlparenthomedir() {
-    if [[ -n "${LOCALAPPDATA:-}" ]]; then
+    if [ -n "${LOCALAPPDATA:-}" ]; then
         DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
     else
         # shellcheck disable=SC2034
@@ -327,10 +327,10 @@ autodetect_cpus() {
     NUMCPUS=$(( NUMCPUS + 0 ))
     if (( NUMCPUS == 0 )); then
         NUMCPUS=1
-        if [[ -n "${NUMBER_OF_PROCESSORS:-}" ]]; then
+        if [ -n "${NUMBER_OF_PROCESSORS:-}" ]; then
             # Windows usually has NUMBER_OF_PROCESSORS
             NUMCPUS="$NUMBER_OF_PROCESSORS"
-        elif nproc --all > "$WORK"/numcpus 2>/dev/null && [[ -s "$WORK"/numcpus ]]; then
+        elif nproc --all > "$WORK"/numcpus 2>/dev/null && [ -s "$WORK"/numcpus ]; then
             NUMCPUS=$(< "$WORK"/numcpus)
         fi
     fi
@@ -396,7 +396,7 @@ autodetect_vsdev() {
     export OCAML_HOST_TRIPLET=
 
     # Get the extra prefix with backslashes escaped for Awk, if specified
-    if [[ "$#" -ge 1 ]]; then
+    if [ "$#" -ge 1 ]; then
         local EXTRA_PREFIX_ESCAPED="$1"
         if is_unixy_windows_build_machine; then EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$EXTRA_PREFIX_ESCAPED"); fi
         EXTRA_PREFIX_ESCAPED=${EXTRA_PREFIX_ESCAPED//\\/\\\\}
@@ -407,7 +407,7 @@ autodetect_vsdev() {
 
     # Autodetect BUILDHOST_ARCH
     build_machine_arch
-    if [[ ! "$BUILDHOST_ARCH" = windows_* ]]; then
+    if [ "$BUILDHOST_ARCH" != windows_x86 ] && [ "$BUILDHOST_ARCH" != windows_x86_64 ]; then
         return 1
     fi
 
@@ -416,32 +416,32 @@ autodetect_vsdev() {
 
     local VSSTUDIODIR
     local VSSTUDIOVCVARSVER
-    if [[ -n "${DKML_VSSTUDIO_DIR:-}" && -n "${DKML_VSSTUDIO_VCVARSVER:-}" && -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]]; then
+    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
         VSSTUDIODIR=$DKML_VSSTUDIO_DIR
         VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
         VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
     else
         local VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
-        if [[ ! -e "$VSSTUDIO_DIRFILE" ]]; then
+        if [ ! -e "$VSSTUDIO_DIRFILE" ]; then
             return 2
         fi
         local VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
-        if [[ ! -e "$VSSTUDIO_VCVARSVERFILE" ]]; then
+        if [ ! -e "$VSSTUDIO_VCVARSVERFILE" ]; then
             return 2
         fi
         local VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
-        if [[ ! -e "$VSSTUDIO_MSVSPREFERENCEFILE" ]]; then
+        if [ ! -e "$VSSTUDIO_MSVSPREFERENCEFILE" ]; then
             return 2
         fi
         VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_DIRFILE")
         VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_VCVARSVERFILE")
         VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_MSVSPREFERENCEFILE")
     fi
-    if [[ -x /usr/bin/cygpath ]]; then
+    if [ -x /usr/bin/cygpath ]; then
         VSSTUDIODIR=$(/usr/bin/cygpath -au "$VSSTUDIODIR")
     fi
     VSDEV_HOME_UNIX="$VSSTUDIODIR"
-    if [[ -x /usr/bin/cygpath ]]; then
+    if [ -x /usr/bin/cygpath ]; then
         VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
     else
         VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
@@ -452,13 +452,13 @@ autodetect_vsdev() {
     # can't select cross-compilation for some reason.
     local USE_VSDEV=1
     if (( USE_VSDEV == 1 )); then
-        if [[ -e "$VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]]; then
+        if [ -e "$VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
             VSDEVCMD="$VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
         else
             return 2
         fi
     else
-        if [[ -e "$VSSTUDIODIR"/VC/Auxiliary/Build/vcvarsall.bat ]]; then
+        if [ -e "$VSSTUDIODIR"/VC/Auxiliary/Build/vcvarsall.bat ]; then
             VSDEVCMD="$VSSTUDIODIR/VC/Auxiliary/Build/vcvarsall.bat"
         else
             return 2
@@ -468,13 +468,13 @@ autodetect_vsdev() {
     VSDEV_ARGS=(-no_logo -vcvars_ver="$VSSTUDIOVCVARSVER")
     VCVARS_ARGS=(-vcvars_ver="$VSSTUDIOVCVARSVER")
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
-    if [[ "$BUILDHOST_ARCH" = windows_x86 ]]; then
+    if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
-        if [[ "$PLATFORM_ARCH" = dev || "$PLATFORM_ARCH" = windows_x86 ]]; then
+        if [ "$PLATFORM_ARCH" = dev ] || [ "$PLATFORM_ARCH" = windows_x86 ]; then
             VSDEV_ARGS+=(-arch=x86)
             VCVARS_ARGS+=(x86)
             OCAML_HOST_TRIPLET=i686-pc-windows
-        elif [[ "$PLATFORM_ARCH" = windows_x86_64 ]]; then
+        elif [ "$PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             VSDEV_ARGS+=(-host_arch=x86 -arch=x64)
             VCVARS_ARGS+=(-arch=x86_amd64)
@@ -483,13 +483,13 @@ autodetect_vsdev() {
             echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH PLATFORM_ARCH=$PLATFORM_ARCH" >&2
             exit 1
         fi
-    elif [[ "$BUILDHOST_ARCH" = windows_x86_64 ]]; then
+    elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
         # The build host machine is 64-bit ...
-        if [[ "$PLATFORM_ARCH" = dev || "$PLATFORM_ARCH" = windows_x86_64 ]]; then
+        if [ "$PLATFORM_ARCH" = dev ] || [ "$PLATFORM_ARCH" = windows_x86_64 ]; then
             VSDEV_ARGS+=(-arch=x64)
             VCVARS_ARGS+=(x64)
             OCAML_HOST_TRIPLET=x86_64-pc-windows
-        elif [[ "$PLATFORM_ARCH" = windows_x86 ]]; then
+        elif [ "$PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             VSDEV_ARGS+=(-host_arch=x64 -arch=x86)
             VCVARS_ARGS+=(amd64_x86)
@@ -524,7 +524,7 @@ autodetect_vsdev() {
     else
         VSCMD_ARGS=("${VCVARS_ARGS[@]}")
     fi
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]] && [[ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
         env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" VSCMD_DEBUG=1 "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" >&2 # use stderr to not mess up stdout which calling script may care about.
     else
         env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" > /dev/null
@@ -547,7 +547,7 @@ autodetect_vsdev() {
     # - CYGPATH
     # - HOME* (HOME, HOMEDRIVE, HOMEPATH)
     # - USER* (USERNAME, USERPROFILE, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE)
-    if [[ -n "${EXTRA_PREFIX_ESCAPED:-}" ]]; then
+    if [ -n "${EXTRA_PREFIX_ESCAPED:-}" ]; then
         local VCPKG_PREFIX_INCLUDE_ESCAPED="$EXTRA_PREFIX_ESCAPED\\\\include;"
         local VCPKG_PREFIX_LIB_ESCAPED="$EXTRA_PREFIX_ESCAPED\\\\lib;"
     else
@@ -603,7 +603,7 @@ autodetect_vsdev() {
     while IFS='' read -r line; do
         # if and only if the $line matches one of the lines in vcvars_uniq.txt
         if ! echo "$line" | comm -12 - "$TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
-            if [[ -z "$VSDEV_UNIQ_PATH" ]]; then
+            if [ -z "$VSDEV_UNIQ_PATH" ]; then
                 VSDEV_UNIQ_PATH="$line"
             else
                 VSDEV_UNIQ_PATH="$VSDEV_UNIQ_PATH:$line"
@@ -615,7 +615,7 @@ autodetect_vsdev() {
 }
 
 log_trace() {
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         echo "+ $*" >&2
         time "$@"
     else

@@ -29,7 +29,7 @@ usage() {
 }
 
 # no arguments should display usage
-if [[ "$#" -eq 0 ]]; then
+if [ $# -eq 0 ]; then
     usage
     exit 1
 fi
@@ -70,7 +70,7 @@ shift $((OPTIND -1))
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -99,7 +99,7 @@ ENV_PATH_SUFFIX=
 disambiguate_filesystem_paths
 
 # If and only if [-b BUILDDIR] specified
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ]; then
     ENV_ARGS+=(
         DK_BUILD_DIR="$TOPDIR/$BUILDDIR"
     )
@@ -107,69 +107,74 @@ fi
 
 # Autodetect DKMLVARS and add to PATH
 autodetect_dkmlvars || true
-if [[ -n "${DiskuvOCamlBinaryPaths:-}" ]]; then
+if [ -n "${DiskuvOCamlBinaryPaths:-}" ]; then
     ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths:$ENV_PATH_PREFIX"
 fi
 
 # Set PATH and run any prehooks
 PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
-if [[ -n "$PREHOOK" ]]; then
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [eval] $PREHOOK" >&2; fi
+if [ -n "$PREHOOK" ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
     # shellcheck disable=SC1090
     source <(eval "$PREHOOK")
     # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
-    if [[ -x /usr/bin/cygpath ]]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi
+    if [ -x /usr/bin/cygpath ]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi
     # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
     # `trap 'rm -rf "$WORK"' EXIT` handler can find 'rm'.
     # We use a missing /usr/bin to trigger the PATH mutation since:
     # - MSYS2 mounts /usr/bin as /bin (so /bin is automatically converted to /usr/bin in MSYS2 PATH)
-    if [[ ! "$PATH" = /usr/bin ]] && [[ ! "$PATH" = *:/usr/bin ]] && [[ ! "$PATH" = /usr/bin:* ]] && [[ ! "$PATH" = *:/usr/bin:* ]]; then
-        PATH="$PATH":/usr/bin:/bin
-    fi
+    case "$PATH" in
+        /usr/bin) ;;
+        *:/usr/bin) ;;
+        /usr/bin:*) ;;
+        *:/usr/bin:*) ;;
+        *)
+            PATH="$PATH":/usr/bin:/bin
+    esac        
 fi
 
 # Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
 # shellcheck disable=SC2154
-if [[ -n "${OPAMROOT:-}" ]]; then
+if [ -n "${OPAMROOT:-}" ]; then
     VCPKG_INSTALLED_PACKAGES="$OPAMROOT/plugins/diskuvocaml/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
-    if [[ -x /usr/bin/cygpath ]]; then VCPKG_INSTALLED_PACKAGES=$(/usr/bin/cygpath -au "$VCPKG_INSTALLED_PACKAGES"); fi
+    if [ -x /usr/bin/cygpath ]; then VCPKG_INSTALLED_PACKAGES=$(/usr/bin/cygpath -au "$VCPKG_INSTALLED_PACKAGES"); fi
     PATH="$VCPKG_INSTALLED_PACKAGES/bin:$VCPKG_INSTALLED_PACKAGES/tools/pkgconf:$PATH"
 else
     VCPKG_INSTALLED_PACKAGES=
 fi
 
 # Autodetect VCVARS on Windows; do nothing on Unix.
-if [[ "$COMPILATION" = ON ]]; then
+if [ "$COMPILATION" = ON ]; then
     set +e
-    if [[ -n "$VCPKG_INSTALLED_PACKAGES" ]]; then
+    if [ -n "$VCPKG_INSTALLED_PACKAGES" ]; then
         autodetect_vsdev "$VCPKG_INSTALLED_PACKAGES"
     else
         autodetect_vsdev
     fi
     EXITCODE=$? # 1 is not a Windows machine but is OK
     set -e
-    if [[ "$EXITCODE" -eq 2 ]]; then
+    if [ $EXITCODE -eq 2 ]; then
         echo "FATAL: Did not detect a completed Diskuv OCaml installation"
         exit 1
-    elif [[ "$EXITCODE" -eq 0 ]]; then
+    elif [ $EXITCODE -eq 0 ]; then
         # Add unique path entries from vcvars (vsdevcmd) to front of PATH.
         PATH="$VSDEV_UNIQ_PATH:$PATH"
     fi
 fi
 
 # print PATH for troubleshooting
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [PATH] $PATH" >&2; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
 # We are about to `exec` so we are responsible for cleaning up the temporary directories
 rm -rf "$WORK"
 
 # run the requested command
-if [[ "$#" -eq 0 ]]; then
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ $# -eq 0 ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
     # shellcheck disable=SC2016
     exec env "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
 else
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
     exec env "${ENV_ARGS[@]}" "$@"
 fi

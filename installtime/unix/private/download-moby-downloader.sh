@@ -30,7 +30,7 @@ set -euf -o pipefail
 MOBYDIR=$1
 shift
 
-if [[ -x "$MOBYDIR"/download-frozen-image-v2.sh ]]; then
+if [ -x "$MOBYDIR"/download-frozen-image-v2.sh ]; then
     exit 0
 fi
 

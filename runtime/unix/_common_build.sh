@@ -17,7 +17,7 @@
 # shellcheck disable=SC1091
 source "$DKMLDIR"/runtime/unix/_common_tool.sh
 
-if [[ -z "${BUILDDIR:-}" ]]; then
+if [ -z "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC2034
     BUILDDIR="build/$PLATFORM/$BUILDTYPE"
 fi
@@ -57,7 +57,7 @@ set_opamrootandswitchdir() {
     # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
     set_opamrootdir
 
-    if [[ "$USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS" = ON ]] && is_unixy_windows_build_machine; then
+    if [ "$USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS" = ON ] && is_unixy_windows_build_machine; then
         local OPAMGLOBALNAME
         OPAMGLOBALNAME=$(echo "$TOPDIR" | sha256sum | cut -c1-16 | awk '{print $1}')$(echo "$TOPDIR" | tr / . |  tr -dc '[:alnum:]-_.')
         OPAMSWITCHISGLOBAL=ON

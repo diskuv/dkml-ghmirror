@@ -61,7 +61,7 @@ while getopts ":d:t:n:a:b:h" opt; do
         ;;
         d )
             DKMLDIR="$OPTARG"
-            if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then
+            if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
                 echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
@@ -80,7 +80,7 @@ while getopts ":d:t:n:a:b:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$DKMLDIR" || -z "$TARGETDIR" ]]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -97,7 +97,7 @@ disambiguate_filesystem_paths
 # Bootstrapping vars
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
 OPAMSRC_UNIX=$TARGETDIR_UNIX/src/opam
-if [[ -x /usr/bin/cygpath ]]; then
+if [ -x /usr/bin/cygpath ]; then
     TARGETDIR_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX")
 else
     TARGETDIR_MIXED="$TARGETDIR_UNIX"
@@ -112,7 +112,7 @@ cd "$DKMLDIR"
 # we don't want a prior DiskuvOCamlHome installation to be used (ex.
 # if `flexlink` is in the PATH then `make compiler / ./shell/bootstrap-ocaml.sh` will fail
 # because it won't include the boostrap/ocaml-x.y.z/flexdll/ headers).
-if [[ -x /usr/bin/cygpath ]]; then
+if [ -x /usr/bin/cygpath ]; then
     # include /c/Windows/System32 at end which is necessary for (at minimum) OCaml's shell/msvs-detect
     PATH=/usr/bin:/bin:$(/usr/bin/cygpath -S)
 else
@@ -121,15 +121,15 @@ fi
 POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
 
 # Autodetect CPUs
-if [[ -z "$NUMCPUS" ]]; then
+if [ -z "$NUMCPUS" ]; then
     autodetect_cpus
 fi
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
 # Autodetect VCVARS on Windows; do nothing on Unix.
 autodetect_vsdev
-if [[ -n "$OCAML_HOST_TRIPLET" ]]; then
+if [ -n "$OCAML_HOST_TRIPLET" ]; then
     BOOTSTRAP_EXTRA_OPTS="--host=$OCAML_HOST_TRIPLET"
 else
     BOOTSTRAP_EXTRA_OPTS=""
@@ -146,7 +146,7 @@ fi
 # as one atomic unit. A failure in an intermediate step can cause subsequent `make compiler`
 # or `make lib-pkg` or `configure` to fail. So we completely clean (`distclean`) until
 # we have successfully completed a single run all the way to `configure`.
-if [[ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp"  ]]; then
+if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # Clear out all intermediate build files
     installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX"
 

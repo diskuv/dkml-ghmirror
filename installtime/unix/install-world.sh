@@ -17,7 +17,7 @@ HereDir=$(dirname "$0")
 HereDir=$(cd "$HereDir" && pwd)
 
 DkmlDir=$(cd "$HereDir/../.." && pwd)
-if [[ ! -e "$DkmlDir/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
+if [ ! -e "$DkmlDir/.dkmlroot" ]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
 
 ParentProgressId=${ParentProgressId:--1}
 

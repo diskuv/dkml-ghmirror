@@ -35,7 +35,7 @@ usage() {
 }
 
 # no arguments should display usage
-if [[ "$#" -eq 0 ]]; then
+if [ "$#" -eq 0 ]; then
     usage
     exit 1
 fi
@@ -82,12 +82,12 @@ while getopts ":hb:p:" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$PLATFORM" ]] || [[ -z "$BUILDTYPE" ]]; then
+if [ -z "$PLATFORM" ] || [ -z "$BUILDTYPE" ]; then
     usage
     exit 1
 fi
 
-if [[ "${1:-}" = "--" ]]; then # support `platform-dune-exec ... -- --version`
+if [ "${1:-}" = "--" ]; then # support `platform-dune-exec ... -- --version`
     shift
 fi
 
@@ -109,10 +109,10 @@ cd "$TOPDIR"
 # >>>>>>>>>
 
 install -d "$BUILDDIR"
-if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
+if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
 
 # no subcommand should display help
-if [[ "$#" -eq 0 ]]; then
+if [ $# -eq 0 ]; then
     subcommand="help"
 else
     subcommand=$1; shift
@@ -122,27 +122,31 @@ fi
 # BEGIN DUNE_OPTS
 
 DUNE_OPTS=(--profile "$PLATFORM-$BUILDTYPE")
-if [[ $BUILDTYPE = Release* ]]; then
-    # If a Release build then mimic all the same options that `dune --release` does
-    # except do not do:
-    # * `--profile release` (we have multilpe Release* profiles)
-    # * `--default-target @install` (we can and should supply our own targets)
-    DUNE_OPTS+=(
-        --root .
-        --no-config
-        --ignore-promoted-rules
-        --always-show-command-line
-        --promote-install-files
-    )
-elif is_reproducible_platform; then
-    # Never promote source code from, for example, a CI system. Instead only the developers
-    # (aka the dev platform) should be able to change source code and possibly check it in.
-    DUNE_OPTS+=(
-        --root .
-        --no-config
-        --ignore-promoted-rules
-    )
-fi
+case "$BUILDTYPE" in
+    Release*)
+        # If a Release build then mimic all the same options that `dune --release` does
+        # except do not do:
+        # * `--profile release` (we have multilpe Release* profiles)
+        # * `--default-target @install` (we can and should supply our own targets)
+        DUNE_OPTS+=(
+            --root .
+            --no-config
+            --ignore-promoted-rules
+            --always-show-command-line
+            --promote-install-files
+        )
+        ;;
+    *)
+        if is_reproducible_platform; then
+            # Never promote source code from, for example, a CI system. Instead only the developers
+            # (aka the dev platform) should be able to change source code and possibly check it in.
+            DUNE_OPTS+=(
+                --root .
+                --no-config
+                --ignore-promoted-rules
+            )
+        fi    
+esac
 
 # END DUNE_OPTS
 # ------------
@@ -155,7 +159,7 @@ case "$subcommand" in
         exec_in_platform dune help "$@"
     ;;
     *)
-        if is_dev_platform && [[ "$BUILDTYPE" = Debug ]]; then
+        if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
             DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
         else
             DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$BUILDDIR/_dune")

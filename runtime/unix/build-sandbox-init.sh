@@ -39,12 +39,12 @@ cd "$TOPDIR"
 
 BINDIR="$TOOLSDIR/local/bin" # executables placed here are automatically added to build's PATH
 install -d "$BINDIR"
-if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$BINDIR"; fi
+if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BINDIR"; fi
 
 # -----------------------
 # BEGIN opam init
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 "$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
 
 # END opam init

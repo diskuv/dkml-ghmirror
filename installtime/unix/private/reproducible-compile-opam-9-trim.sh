@@ -50,7 +50,7 @@ while getopts ":d:t:h" opt; do
         ;;
         d )
             DKMLDIR="$OPTARG"
-            if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then
+            if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
                 echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
@@ -66,7 +66,7 @@ while getopts ":d:t:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$DKMLDIR" || -z "$TARGETDIR" ]]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -92,14 +92,14 @@ OPAMSRC="$TARGETDIR_UNIX/src/opam"
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
 # Opam already includes a command to get rid of all build files
-if [[ -e "$OPAMSRC/Makefile"  ]]; then
+if [ -e "$OPAMSRC/Makefile" ]; then
     make -C "$OPAMSRC" distclean
 fi
 
 # Also get rid of Git files
-if [[ -e "$OPAMSRC/.git" ]]; then
+if [ -e "$OPAMSRC/.git" ]; then
     rm -rf "$OPAMSRC/.git"
 fi

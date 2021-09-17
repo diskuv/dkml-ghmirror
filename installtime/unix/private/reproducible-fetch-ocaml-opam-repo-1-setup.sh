@@ -57,7 +57,7 @@ while getopts ":d:v:t:a:h" opt; do
         ;;
         d )
             DKMLDIR="$OPTARG"
-            if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then
+            if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
                 echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
@@ -87,7 +87,7 @@ while getopts ":d:v:t:a:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$DKMLDIR" || -z "$DOCKER_IMAGE" || -z "$TARGETDIR" || -z "$DOCKER_ARCH" ]]; then
+if [ -z "$DKMLDIR" ] || [ -z "$DOCKER_IMAGE" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ]; then
     echo "Missing required options" >&2
     usage
     exit 1

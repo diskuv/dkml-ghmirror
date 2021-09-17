@@ -45,7 +45,7 @@ usage() {
 }
 
 # no arguments should display usage
-if [[ "$#" -eq 0 ]]; then
+if [ "$#" -eq 0 ]; then
     usage
     exit 1
 fi
@@ -106,12 +106,12 @@ while getopts ":h1:b:sp:t:" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+if [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
     usage
     exit 1
 fi
 
-if [[ "${1:-}" = "--" ]]; then # supports `platform-opam-exec ... -- --version`
+if [ "${1:-}" = "--" ]; then # supports `platform-opam-exec ... -- --version`
     shift
 fi
 
@@ -122,11 +122,11 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
-if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     PLATFORM=dev
 fi
 
-if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -143,7 +143,7 @@ cd "$TOPDIR"
 # >>>>>>>>>
 
 # no subcommand should display help
-if [[ "$#" -eq 0 ]]; then
+if [ $# -eq 0 ]; then
     subcommand="help"
 else
     subcommand=$1; shift
@@ -177,19 +177,19 @@ fi
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
 
 # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
-if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set $DiskuvOCamlHome and other vars
     autodetect_dkmlvars
 
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
-elif [[ -n "${BUILDDIR:-}" ]]; then
+elif [ -n "${BUILDDIR:-}" ]; then
     # set --switch only if BUILDTYPE (translated into BUILDDIR) has been set
     install -d "$BUILDDIR"
 
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     set_opamrootandswitchdir
-elif [[ -n "$TARGET_OPAMSWITCH" ]]; then
+elif [ -n "$TARGET_OPAMSWITCH" ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH/_opam"
     OPAMSWITCHDIR_EXPAND="$TARGET_OPAMSWITCH" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
@@ -197,8 +197,8 @@ fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:
 #   [ERROR] The selected switch C:/source/xxx/build/dev/Debug is not installed.
-if [[ "$ADD_SWITCH_OPTS" = ON ]] &&
-   [[ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" && -n "${OPAMSWITCHDIR_EXPAND:-}" ]] &&
+if [ "$ADD_SWITCH_OPTS" = ON ] &&
+   [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
    is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
     OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
@@ -209,7 +209,7 @@ fi
 
 # We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
 # We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
-if [[ -n "${PLATFORM_EXEC_PRE:-}" ]]; then PLATFORM_EXEC_PRE="; $PLATFORM_EXEC_PRE"; fi
+if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then PLATFORM_EXEC_PRE="; $PLATFORM_EXEC_PRE"; fi
 # shellcheck disable=SC2034 disable=SC2016
 PLATFORM_EXEC_PRE="${OPAM_ENV_STMT} ${PLATFORM_EXEC_PRE:-}"
 

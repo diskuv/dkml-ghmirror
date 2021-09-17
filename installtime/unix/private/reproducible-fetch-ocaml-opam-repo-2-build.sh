@@ -54,7 +54,7 @@ while getopts ":d:v:t:a:h" opt; do
         ;;
         d )
             DKMLDIR="$OPTARG"
-            if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then
+            if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
                 echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
@@ -78,7 +78,7 @@ while getopts ":d:v:t:a:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$DKMLDIR" || -z "$DOCKER_IMAGE" || -z "$TARGETDIR" || -z "$DOCKER_ARCH" ]]; then
+if [ -z "$DKMLDIR" ] || [ -z "$DOCKER_IMAGE" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -97,7 +97,7 @@ disambiguate_filesystem_paths
 
 # Bootstrapping vars
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
-if [[ -x /usr/bin/cygpath ]]; then
+if [ -x /usr/bin/cygpath ]; then
     OOREPO_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH")
 else
     OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"
@@ -111,7 +111,7 @@ cd "$DKMLDIR"
 MOBYDIR=$WORK/moby
 TMPOPAMROOT=$WORK/opamroot
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
 installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
 installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"

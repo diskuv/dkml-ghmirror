@@ -107,13 +107,13 @@ while getopts ":h:b:p:st:y" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$TARGET_OPAMSWITCH" && -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+if [ -z "$TARGET_OPAMSWITCH" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
     usage
     exit 1
-elif [[ -n "$TARGET_OPAMSWITCH" && -z "$BUILDTYPE" ]]; then
+elif [ -n "$TARGET_OPAMSWITCH" ] && [ -z "$BUILDTYPE" ]; then
     usage
     exit 1
-elif [[ -n "$PLATFORM" && -z "$BUILDTYPE" ]]; then
+elif [ -n "$PLATFORM" ] && [ -z "$BUILDTYPE" ]; then
     usage
     exit 1
 fi
@@ -121,17 +121,17 @@ fi
 # END Command line processing
 # ------------------
 
-if [[ -z "${DKMLDIR:-}" ]]; then
+if [ -z "${DKMLDIR:-}" ]; then
     DKMLDIR=$(dirname "$0")
     DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 fi
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
-if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     PLATFORM=dev
 fi
-if [[ -n "$TARGET_OPAMSWITCH" ]]; then
+if [ -n "$TARGET_OPAMSWITCH" ]; then
     PLATFORM=dev
     # shellcheck disable=SC2034
     BUILDDIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
@@ -140,7 +140,7 @@ if [[ -n "$TARGET_OPAMSWITCH" ]]; then
 fi
 
 # shellcheck disable=SC1091
-if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -163,13 +163,13 @@ cd "$TOPDIR"
 
 # Set BUILDHOST_ARCH
 build_machine_arch
-if [[ $PLATFORM = dev ]]; then
+if [ $PLATFORM = dev ]; then
     TARGET_ARCH=$BUILDHOST_ARCH
 else
     TARGET_ARCH=$PLATFORM
 fi
 
-if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set $DiskuvOCamlHome and other vars
     autodetect_dkmlvars
 
@@ -181,12 +181,12 @@ if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
 
     OPAM_NONSWITCHCREATE_PREOPTS=(-s)
 else
-    if [[ -z "${BUILDTYPE:-}" ]]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
+    if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
     set_opamrootandswitchdir
 
     OPAM_NONSWITCHCREATE_PREOPTS=(-p "$PLATFORM")
-    if [[ -n "$TARGET_OPAMSWITCH" ]]; then
+    if [ -n "$TARGET_OPAMSWITCH" ]; then
         OPAM_NONSWITCHCREATE_PREOPTS+=(-t "$TARGET_OPAMSWITCH")
     else
         OPAM_NONSWITCHCREATE_PREOPTS+=(-b "$BUILDTYPE")
@@ -217,7 +217,7 @@ OPAM_SWITCH_CFLAGS=
 OPAM_SWITCH_CC=
 OPAM_SWITCH_ASPP=
 OPAM_SWITCH_AS=
-# if is_reproducible_platform && [[ $PLATFORM = linux* ]]; then
+# `is_reproducible_platform && case "$PLATFORM" in linux*) ... ;;` then
 #     # NOTE 2021/08/04: When this block is enabled we get the following error, which means the config is doing something that we don't know how to inspect ...
 #
 #     # === ERROR while compiling capnp.3.4.0 ========================================#
@@ -236,30 +236,44 @@ OPAM_SWITCH_AS=
 #     # NOTE 2021/08/03: `ocaml-option-static` seems to do nothing. No difference when running `dune printenv --verbose`
 #     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-static
 # fi
-if [[ $BUILDTYPE = Debug* ]] && [[ $TARGET_ARCH != windows_* ]]; then
+case "$TARGET_ARCH" in
+    windows_*)    TARGET_LINUXARM32=OFF; TARGET_WINDOWS=ON ;;
+    linux_arm32*) TARGET_LINUXARM32=ON; TARGET_WINDOWS=OFF ;;
+    *)            TARGET_LINUXARM32=OFF; TARGET_WINDOWS=OFF
+esac
+case "$BUILDTYPE" in
+    Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
+    Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
+    *) BUILD_DEBUG=OFF; BUILD_RELEASE=OFF
+esac
+case "$TARGET_ARCH" in
+    *_x86 | linux_arm32*) TARGET_32BIT=ON ;;
+    *) TARGET_32BIT=OFF
+esac
+if [ $BUILD_DEBUG = ON ] && [ $TARGET_WINDOWS = OFF ]; then
     # Frame pointer is always on in Debug mode.
     # Windows does not support frame pointers.
     # On Linux we need it for `perf`.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
 fi
-if [[ $BUILDTYPE = Release* ]]; then
+if [ $BUILD_RELEASE = ON ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
 fi
-if [[ $TARGET_ARCH = linux_arm32* ]]; then
+if [ $TARGET_LINUXARM32 = ON ]; then
     # -Os optimizes for size. Useful for CPUs with small cache sizes. Confer https://wiki.gentoo.org/wiki/GCC_optimization
     OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
 fi
-if [[ $TARGET_ARCH = *_x86 ]] || [[ $TARGET_ARCH = linux_arm32* ]]; then
+if [ $TARGET_32BIT = ON ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-32bit
 fi
-if [[ $BUILDTYPE = ReleaseCompatPerf ]] && [[ $TARGET_ARCH != windows_* ]]; then
+if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_WINDOWS = OFF ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-elif [[ $BUILDTYPE = ReleaseCompatFuzz ]]; then
+elif [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
 fi
 
 OPAM_SWITCH_CREATE_ARGS=( switch create )
-if [[ "$YES" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=( --yes ); fi
+if [ "$YES" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=( --yes ); fi
 
 if is_unixy_windows_build_machine; then
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
@@ -274,20 +288,20 @@ else
         --packages="ocaml-variants.4.12.0+options$OCAML_OPTIONS"
     )
 fi
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
 
 # We'll use the bash builtin `set` which quotes spaces correctly.
 OPAM_SWITCH_CREATE_PREHOOK="echo OPAMSWITCH=; echo OPAM_SWITCH_PREFIX=" # Ignore any switch the developer gave. We are creating our own.
-if [[ -n "${OPAM_SWITCH_CFLAGS:-}" ]]; then OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';'; CFLAGS='$OPAM_SWITCH_CFLAGS'; set | grep ^CFLAGS="; fi
-if [[ -n "${OPAM_SWITCH_CC:-}" ]]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     CC='$OPAM_SWITCH_CC'    ; set | grep ^CC="; fi
-if [[ -n "${OPAM_SWITCH_ASPP:-}" ]]; then   OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
-if [[ -n "${OPAM_SWITCH_AS:-}" ]]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
+if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';'; CFLAGS='$OPAM_SWITCH_CFLAGS'; set | grep ^CFLAGS="; fi
+if [ -n "${OPAM_SWITCH_CC:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     CC='$OPAM_SWITCH_CC'    ; set | grep ^CC="; fi
+if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
+if [ -n "${OPAM_SWITCH_AS:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
     OPAM_SWITCH_REMOVE_ARGS=( switch remove )
-    if [[ "$YES" = ON ]]; then OPAM_SWITCH_REMOVE_ARGS+=( --yes ); fi
+    if [ "$YES" = ON ]; then OPAM_SWITCH_REMOVE_ARGS+=( --yes ); fi
     "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "${OPAM_SWITCH_REMOVE_ARGS[@]}" "$OPAMSWITCHDIR_EXPAND" || \
         rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
     # do real install
@@ -305,7 +319,7 @@ else
         # do a `opam update` so the switch has the latest repository definitions.
         set +u
         OPAM_REPO_UPGRADE_OPTS=()
-        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_REPO_UPGRADE_OPTS+=(--debug-level 2); fi
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_REPO_UPGRADE_OPTS+=(--debug-level 2); fi
         "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
             repository set-repos "${OPAM_REPO_UPGRADE_OPTS[@]}" "${OPAMREPOS_CHOICE[@]}"
         "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
@@ -372,18 +386,18 @@ fi
     echo 'shift'
     # shellcheck disable=2016
     echo 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch)'
-    if [[ -x /usr/bin/cygpath ]]; then
+    if [ -x /usr/bin/cygpath ]; then
         # PATH may be a Windows path. For now we need it to be a UNIX path or else commands
         # like 'opam' will not be found.
         # Always add in standard /usr/bin:/bin paths as well.
         # shellcheck disable=2016
         echo 'PATH=$(/usr/bin/cygpath --path "$PATH"):/usr/bin:/bin'
     fi
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo 'set -x'; fi
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 
 OPAM_PIN_ADD_ARGS=( pin add )
-if [[ "$YES" = ON ]]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
+if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
 NEED_TO_PIN=OFF
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
@@ -409,8 +423,8 @@ for package_tuple in "${PINNED_PACKAGES[@]}"; do
 done
 
 # Execute all of the accumulated `opam pin add` at once
-if [[ "$NEED_TO_PIN" = ON ]]; then
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "$NEED_TO_PIN" = ON ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
     "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
         exec -- bash "$WORK_EXPAND"/pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
 fi

@@ -6,7 +6,7 @@ set -euf -o pipefail
 
 DKMLDIR=$1
 shift
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
 
 DOCKER_IMAGE=$1
 shift
@@ -31,12 +31,12 @@ cd "$DKMLDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-if [[ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ]]; then
+if [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ]; then
     echo 'SUCCESS. Already installed'
     exit 0
 fi
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
 # Install the source code
 "$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh \

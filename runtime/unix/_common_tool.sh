@@ -32,39 +32,39 @@
 #################################################
 
 is_dev_platform() {
-    if [[ "$PLATFORM" = "dev" ]]; then
+    if [ "$PLATFORM" = "dev" ]; then
         return 0
     fi
     return 1
 }
 
 is_reproducible_platform() {
-    if [[ "$PLATFORM" = "dev" ]]; then
+    if [ "$PLATFORM" = "dev" ]; then
         return 1
     fi
     return 0
 }
 
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
-if [[ -z "${TOPDIR:-}" ]]; then
+if [ -z "${TOPDIR:-}" ]; then
     # Check at most 10 ancestors
-    if [[ -n "${TOPDIR_CANDIDATE:-}" ]]; then
+    if [ -n "${TOPDIR_CANDIDATE:-}" ]; then
         TOPDIR=$(cd "$TOPDIR_CANDIDATE" && pwd)
     else
         TOPDIR=$(cd "$DKMLDIR" && cd .. && pwd) # `cd ..` works if DKMLDIR is a Windows path
     fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Dune-based project with a 'dune-project' file" >&2 ; exit 1; fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ]; then echo "FATAL: Not embedded in a Dune-based project with a 'dune-project' file" >&2 ; exit 1; fi
 fi
 
 # TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
@@ -217,20 +217,20 @@ _exec_dev_or_arch_helper() {
     SANDBOX_PLATFORM=$1
     shift
     local ARGS=()
-    if [[ -n "${BUILDTYPE:-}" ]]; then
+    if [ -n "${BUILDTYPE:-}" ]; then
         ARGS+=(-b "$BUILDTYPE")
     fi
-    if [[ "${COMPILATION:-}" = OFF ]]; then
+    if [ "${COMPILATION:-}" = OFF ]; then
         ARGS+=(-n)
     fi
     if is_dev_platform; then
         local ACTUALTOPDIR
         local ACTUALTOPDIR_UNIX
-        if is_unixy_windows_build_machine && [[ -z "${DiskuvOCamlHome:-}" ]]; then
+        if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
             echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
             exit 79
         fi
-        if [[ -x /usr/bin/cygpath ]]; then
+        if [ -x /usr/bin/cygpath ]; then
             ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
             ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
             ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
@@ -257,7 +257,7 @@ _exec_dev_or_arch_helper() {
             fi
             ARGS+=("$ARG")
         done
-        if [[ -n "${PLATFORM_EXEC_PRE:-}" ]]; then
+        if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@/$ACTUALTOPDIR}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@/$ACTUALTOPDIR_UNIX}"
@@ -269,7 +269,7 @@ _exec_dev_or_arch_helper() {
                 ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
             fi
         fi
-        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
         "$DKMLDIR"/runtime/unix/within-dev -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
         set +x
     else
@@ -282,7 +282,7 @@ _exec_dev_or_arch_helper() {
             ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
             ARGS+=("$ARG")
         done
-        if [[ -n "${PLATFORM_EXEC_PRE:-}" ]]; then
+        if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@//work}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@//work}"
@@ -290,7 +290,7 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@//opt/diskuv-ocaml}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
         fi
-        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
         "$DKMLDIR"/runtime/unix/within-sandbox -p "$SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
         set +x
     fi
@@ -319,24 +319,24 @@ autodetect_dkmlvars() {
     local DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
     set_dkmlparenthomedir
     if is_unixy_windows_build_machine; then
-        if [[ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]]; then
+        if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
             # shellcheck disable=SC1090
             source "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
         fi
     else
-        if [[ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]]; then
+        if [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]; then
             # shellcheck disable=SC1091
             source "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
         fi
     fi
     # Overrides
-    if [[ -n "${DiskuvOCamlVarsVersion_Override:-}" ]]; then DiskuvOCamlVarsVersion="$DiskuvOCamlVarsVersion_Override"; fi
-    if [[ -n "${DiskuvOCamlHome_Override:-}" ]]; then DiskuvOCamlHome="$DiskuvOCamlHome_Override"; fi
-    if [[ -n "${DiskuvOCamlBinaryPaths_Override:-}" ]]; then DiskuvOCamlBinaryPaths="$DiskuvOCamlBinaryPaths_Override"; fi
+    if [ -n "${DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$DiskuvOCamlVarsVersion_Override"; fi
+    if [ -n "${DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$DiskuvOCamlHome_Override"; fi
+    if [ -n "${DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$DiskuvOCamlBinaryPaths_Override"; fi
     # Check if any vars are still unset
-    if [[ -z "${DiskuvOCamlVarsVersion:-}" ]]; then return 1; fi
-    if [[ -z "${DiskuvOCamlHome:-}" ]]; then return 1; fi
-    if [[ -z "${DiskuvOCamlBinaryPaths:-}" ]]; then return 1; fi
+    if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
     return 0
 }
 
@@ -352,7 +352,7 @@ autodetect_dkmlvars() {
 set_opamrootdir() {
     if is_dev_platform; then
         if is_unixy_windows_build_machine; then
-            if [[ -n "${OPAMROOT:-}" ]]; then
+            if [ -n "${OPAMROOT:-}" ]; then
                 # If the developer sets OPAMROOT with an environment variable, then we will respect that
                 # just like `opam` would do.
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
@@ -362,7 +362,7 @@ set_opamrootdir() {
             fi
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
         else
-            if [[ -n "${OPAMROOT:-}" ]]; then
+            if [ -n "${OPAMROOT:-}" ]; then
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
             else
                 # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
@@ -416,7 +416,7 @@ set_opamswitchdir_of_system() {
 is_empty_opam_switch_present() {
     local switchdir_buildhost=$1
     shift
-    if [[ -s "$switchdir_buildhost/.opam-switch/switch-config" ]]
+    if [ -s "$switchdir_buildhost/.opam-switch/switch-config" ]
     then
         return 0
     else
@@ -435,7 +435,7 @@ is_empty_opam_switch_present() {
 is_minimal_opam_switch_present() {
     local switchdir_buildhost=$1
     shift
-    if [[ -e "$switchdir_buildhost/bin/ocamlc" || -e "$switchdir_buildhost/bin/ocamlc.exe" ]]
+    if [ -e "$switchdir_buildhost/bin/ocamlc" ] || [ -e "$switchdir_buildhost/bin/ocamlc.exe" ]
     then
         return 0
     else
@@ -452,7 +452,7 @@ is_minimal_opam_switch_present() {
 is_minimal_opam_root_present() {
     local rootdir_buildhost=$1
     shift
-    if [[ -e "$rootdir_buildhost/config" ]]
+    if [ -e "$rootdir_buildhost/config" ]
     then
         return 0
     else
@@ -507,7 +507,7 @@ get_opam_switch_state_toplevelsection() {
     shift
     local toplevel_section_name=$1
     shift
-    if [[ ! -e "${switchdir_buildhost}/.opam-switch/switch-state" ]]; then
+    if [ ! -e "${switchdir_buildhost}/.opam-switch/switch-state" ]; then
         echo "FATAL: There is no Opam switch at ${switchdir_buildhost}" >&2
         exit 71
     fi

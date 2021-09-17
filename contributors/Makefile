@@ -61,7 +61,7 @@ auth-gitlab-cli: install-gitlab-cli
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; if which glab.exe >/dev/null 2>&1; then GLAB=glab.exe; else GLAB=glab; fi; \
 	$$GLAB auth status; \
 	if ! $$GLAB auth status 2>&1 | grep -q "Token:"; then \
-        if [[ -n "$(DiskuvOCamlHome)" ]]; then SUFFIX=" DiskuvOCamlHome/`basename '$(DiskuvOCamlHome)'`"; else SUFFIX=; fi; \
+        if [ -n "$(DiskuvOCamlHome)" ]; then SUFFIX=" DiskuvOCamlHome/`basename '$(DiskuvOCamlHome)'`"; else SUFFIX=; fi; \
 		echo "Suggested Personal Access Token name: glab.exe `hostname` $(USERNAME)$$SUFFIX"; \
 		echo "* Choose default git protocol HTTPS"; \
 		echo "* Authenticate Git with your GitLab credentials? Yes"; \

@@ -60,7 +60,7 @@ while getopts ":h:p:o:" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$PLATFORM" ]]; then
+if [ -z "$PLATFORM" ]; then
     usage
     exit 1
 fi
@@ -125,7 +125,7 @@ else
     OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
     OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
 fi
-if [[ ! -e "$OPAMREPOS_UNIX".complete ]]; then
+if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
     RSYNC_OPTS=(-avp)
     if is_unixy_windows_build_machine; then
@@ -194,11 +194,11 @@ fi
 # If we don't we get make a repo named "default" in opam 2.1.0 the following will happen:
 #     #=== ERROR while compiling ocamlbuild.0.14.0 ==================================#
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
-if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]]; then
+if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]; then
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
     log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
-if is_unixy_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]]; then
+if is_unixy_windows_build_machine && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]; then
     # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
     # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
     OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
@@ -206,11 +206,11 @@ if is_unixy_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.
-if [[ -e "$OPAMROOTDIR_BUILDHOST/repo/default" || -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]]; then
+if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
     DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository list --all > "$WORK"/list
     awk '$1=="default" {print $2}' "$WORK"/list > "$WORK"/default
     _NUMLINES=$(awk 'END{print NR}' "$WORK"/default)
-    if [[ "$_NUMLINES" -ne 1 ]]; then
+    if [ "$_NUMLINES" -ne 1 ]; then
         echo "FATAL: build-sandbox-init.sh does not understand the Opam repo format used at $OPAMROOTDIR_BUILDHOST/repo/default" >&2
         echo "FATAL: Details A:" >&2
         ls "$OPAMROOTDIR_BUILDHOST"/repo >&2
@@ -226,7 +226,7 @@ if [[ -e "$OPAMROOTDIR_BUILDHOST/repo/default" || -e "$OPAMROOTDIR_BUILDHOST/rep
     fi
 fi
 # add back the default we want if a default is not there
-if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]]; then
+if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
     log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
 fi
 
@@ -262,10 +262,10 @@ is_unixy_windows_build_machine && VCPKG_WINDOWS=$(cygpath -aw "$VCPKG_UNIX")
 # shellcheck disable=SC2154
 install -d "$VCPKG_UNIX"
 
-if is_unixy_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
-    if [[ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh || ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]]; then
+if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
+    if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
         # Download vcpkg
-        if [[ ! -e "$VCPKG_UNIX"/src.tar.gz ]]; then
+        if [ ! -e "$VCPKG_UNIX"/src.tar.gz ]; then
             log_trace wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
             mv "$VCPKG_UNIX"/src.tar.gz.tmp "$VCPKG_UNIX"/src.tar.gz
         fi
@@ -275,7 +275,7 @@ if is_unixy_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; the
         rm -f "$VCPKG_UNIX"/src.tar.gz
     fi
 
-    if [[ ! -e "$VCPKG_UNIX"/vcpkg ]] && [[ ! -e "$VCPKG_UNIX"/vcpkg.exe ]]; then
+    if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
         # We don't need to send telemetry to Microsoft
         UNIX_ARGS=(-disableMetrics)
         WIN_ARGS=(-disableMetrics)
@@ -300,7 +300,7 @@ fi
 # -----------------------
 # BEGIN install vcpkg packages
 
-if [[ -n "$CMDOUT" ]]; then
+if [ -n "$CMDOUT" ]; then
     true > "$CMDOUT"
 fi
 
@@ -315,7 +315,7 @@ touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 autodetect_vsdev
 if is_unixy_windows_build_machine; then
     VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}")
-    if [[ -n "$CMDOUT" ]]; then
+    if [ -n "$CMDOUT" ]; then
         echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
     fi
 else
@@ -324,7 +324,7 @@ fi
 
 # Set DiskuvOCamlHome
 autodetect_dkmlvars
-if [[ -n "${DiskuvOCamlHome:-}" ]]; then
+if [ -n "${DiskuvOCamlHome:-}" ]; then
     # We don't want vcpkg installing cmake again if we have a modern one
     if is_unixy_windows_build_machine; then
         DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
@@ -332,7 +332,7 @@ if [[ -n "${DiskuvOCamlHome:-}" ]]; then
         # SYSWIN=$(cygpath -Sw) # ex. C:\Windows\System32
         # VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$SYSWIN")
         VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH")
-        if [[ -n "$CMDOUT" ]]; then
+        if [ -n "$CMDOUT" ]; then
             printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
         fi
     else
@@ -349,7 +349,7 @@ function install_vcpkg_pkgs {
         # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
         # stalls when running vcpkg directly in MSYS2.
         local COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
-        if [[ -n "$CMDOUT" ]]; then
+        if [ -n "$CMDOUT" ]; then
             {
                 echo '@echo.'
                 echo '@echo.'
@@ -375,7 +375,7 @@ function install_vcpkg_pkgs {
 }
 
 # Install vcpkg packages
-if [[ -e vcpkg.json ]]; then
+if [ -e vcpkg.json ]; then
     # https://vcpkg.io/en/docs/users/manifests.html
     # The project in $TOPDIR is a vcpkg manifest project; these are now recommended
     # by vcpkg. The dependencies are listed in vcpkg.json, with no tool to edit it.
@@ -388,7 +388,7 @@ if [[ -e vcpkg.json ]]; then
     "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
     echo "${VCPKG_PKGS[@]}" | xargs -n1 | sort -u > "$WORK"/vcpkg.need
     comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
-    if [[ -s "$WORK"/vcpkg.missing ]]; then
+    if [ -s "$WORK"/vcpkg.missing ]; then
         ERRFILE=$TOPDIR/vcpkg.json
         if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
         echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2

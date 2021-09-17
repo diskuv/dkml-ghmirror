@@ -38,7 +38,7 @@ uninstall_opam_root() {
     opam switch list --root "$OLDOPAMROOT" --short > "$WORK"/list
     for sw in $(< "$WORK"/list); do
         trimmed_switch=$(echo "$sw" | awk 'NF>0{print $1}')
-        if [[ -z "$trimmed_switch" ]] || [[ "$trimmed_switch" = "/" ]]; then
+        if [ -z "$trimmed_switch" ] || [ "$trimmed_switch" = "/" ]; then
             echo "Unsafe switch deletion: $trimmed_switch" >&2
             exit 2
         fi
@@ -65,18 +65,20 @@ uninstall_opam_root() {
 }
 
 # shellcheck disable=SC2154
-if [[ "$dkml_root_version" = 0.2.0* ]]; then
-    # $env:USERPROFILE/.opam is no longer used
-    if [[ -n "${USERPROFILE:-}" ]] && [[ -e "${USERPROFILE:-}/.opam/diskuv-boot-DO-NOT-DELETE" ]]; then
-        uninstall_opam_root "${USERPROFILE:-}"/.opam
-        clear
-    fi
-    # $env:LOCALAPPDATA/.opam is no longer used
-    if [[ -n "${LOCALAPPDATA:-}" ]] && [[ -e "${LOCALAPPDATA:-}/.opam/diskuv-boot-DO-NOT-DELETE" ]]; then
-        uninstall_opam_root "${LOCALAPPDATA:-}"/.opam
-        clear
-    fi
-fi
+case "$dkml_root_version" in
+    0.2.0*)
+        # $env:USERPROFILE/.opam is no longer used
+        if [ -n "${USERPROFILE:-}" ] && [ -e "${USERPROFILE:-}/.opam/diskuv-boot-DO-NOT-DELETE" ]; then
+            uninstall_opam_root "${USERPROFILE:-}"/.opam
+            clear
+        fi
+        # $env:LOCALAPPDATA/.opam is no longer used
+        if [ -n "${LOCALAPPDATA:-}" ] && [ -e "${LOCALAPPDATA:-}/.opam/diskuv-boot-DO-NOT-DELETE" ]; then
+            uninstall_opam_root "${LOCALAPPDATA:-}"/.opam
+            clear
+        fi
+        ;;
+esac
 
 # END Version Cleanup
 # ---------------------

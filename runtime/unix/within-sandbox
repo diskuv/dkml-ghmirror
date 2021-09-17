@@ -37,7 +37,7 @@ usage() {
 }
 
 # no arguments should display usage
-if [[ "$#" -eq 0 ]]; then
+if [ $# -eq 0 ]; then
     usage
     exit 1
 fi
@@ -73,7 +73,7 @@ while getopts ":hp:b:1:n" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$PLATFORM" ]]; then
+if [ -z "$PLATFORM" ]; then
     usage
     exit 1
 fi
@@ -84,7 +84,7 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -117,23 +117,23 @@ DOCKER_ARGS=(
 )
 
 # Save bash history if user is not root
-if [[ "$BUILDER_UID" -ne 0 ]]; then
+if [ "$BUILDER_UID" -ne 0 ]; then
     BH="$HOME"/.diskuv-ocaml.bash_history
-    if [[ ! -e $BH ]]; then
+    if [ ! -e $BH ]; then
         touch "$BH"
     fi
     DOCKER_ARGS+=(-v "$BH":/opt/diskuv-ocaml-build-chroot/mnt/bash_history)
 fi
 
 # Autodetect OPAMROOT and mount it if present
-if [[ -e "$TOPDIR/$OPAMROOT_IN_CONTAINER" ]]; then
+if [ -e "$TOPDIR/$OPAMROOT_IN_CONTAINER" ]; then
     DOCKER_ARGS+=(
         -v "$TOPDIR/$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
     )
 fi
 
 # If and only if [-b BUILDDIR] specified
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ]; then
     DOCKER_ARGS+=(
         --env DK_BUILD_DIR="/work/$BUILDDIR"
     )
@@ -146,14 +146,14 @@ DOCKER_ARGS+=(
 )
 
 # Pass through any prehooks
-if [[ -n "$PREHOOK" ]]; then
+if [ -n "$PREHOOK" ]; then
     # sandbox-entrypoint.sh will pick up the SANDBOX_PRE_HOOK and do `eval <(eval "$SANDBOX_PRE_HOOK")`.
     DOCKER_ARGS+=(
         --env SANDBOX_PRE_HOOK="$PREHOOK"
     )
 fi
 
-if [[ "$DKML_BUILD_TRACE" = ON ]]; then set -x; fi
+if [ "$DKML_BUILD_TRACE" = ON ]; then set -x; fi
 exec docker run -it \
     "${USER_IDS[@]}" \
     "${DOCKER_ARGS[@]}" \

@@ -73,34 +73,36 @@ REFEREE_DIRNAME=$(dirname "$REFEREE")
 shopt -s nocasematch # Windows is case insensitive! Could be /cygdrive/c/windows/ or /cygdrive/c/WINDOWS/
 
 ABSOLUTE_REFERENT=$(readlink "$REFEREE")
-# echo "ABSOLUTE_REFERENT = $ABSOLUTE_REFERENT"
-if [[ "$ABSOLUTE_REFERENT" = "/cygdrive/c/windows/"* ]]; then
-    # Example 2
-    ###########
+case "$ABSOLUTE_REFERENT" in
+    /cygdrive/c/windows/*)
+        # Example 2
+        ###########
 
-    # Only proceed if the referent is not dangling (idempotency, and edge case if
-    # $env:SYSTEMROOT were C:\Windows\NonStandardSubDirectory instead of customary C:\Windows).
-    if [[ -e $ABSOLUTE_REFERENT ]]; then #TODO
-        exit 0
-    fi
-    # manual testing 20210807: both cygpath -a 'Z:\Windows\' and cygpath -a 'Z:\Windows\\' gave /cygdrive/z/Windows/
-    DESIRED_SYSTEMROOT=$(cygpath -a "$SYSTEMROOT\\")
-    # Tricky thing is getting quoting correct while only replacing the first /cygdrive/c.
-    # we delegate to Bash to do it right.
-    # shellcheck disable=SC1090
-    source <(set | grep ^ABSOLUTE_REFERENT= | sed "s,/cygdrive/c/windows/,$DESIRED_SYSTEMROOT,i")
+        # Only proceed if the referent is not dangling (idempotency, and edge case if
+        # $env:SYSTEMROOT were C:\Windows\NonStandardSubDirectory instead of customary C:\Windows).
+        if [ -e $ABSOLUTE_REFERENT ]; then #TODO
+            exit 0
+        fi
+        # manual testing 20210807: both cygpath -a 'Z:\Windows\' and cygpath -a 'Z:\Windows\\' gave /cygdrive/z/Windows/
+        DESIRED_SYSTEMROOT=$(cygpath -a "$SYSTEMROOT\\")
+        # Tricky thing is getting quoting correct while only replacing the first /cygdrive/c.
+        # we delegate to Bash to do it right.
+        # shellcheck disable=SC1090
+        source <(set | grep ^ABSOLUTE_REFERENT= | sed "s,/cygdrive/c/windows/,$DESIRED_SYSTEMROOT,i")
 
-    ln -sf "$ABSOLUTE_REFERENT" "$REFEREE"
-elif [[ "$ABSOLUTE_REFERENT" = "$ABSOLUTE_CLONEDIR"* ]]; then
-    # Example 1
-    ###########
+        ln -sf "$ABSOLUTE_REFERENT" "$REFEREE"
+        ;;
+    "$ABSOLUTE_CLONEDIR"*)
+        # Example 1
+        ###########
 
-    RELATIVE_REFERENT="${BASE_MOVEDIR}/${RELATIVE_MOVEDIR}/${ABSOLUTE_REFERENT#$ABSOLUTE_CLONEDIR}"
-    # echo "RELATIVE_REFERENT = $RELATIVE_REFERENT"
+        RELATIVE_REFERENT="${BASE_MOVEDIR}/${RELATIVE_MOVEDIR}/${ABSOLUTE_REFERENT#$ABSOLUTE_CLONEDIR}"
+        # echo "RELATIVE_REFERENT = $RELATIVE_REFERENT"
 
-    SYMLINK_PATH=$(realpath --no-symlinks --relative-to="$REFEREE_DIRNAME" "$RELATIVE_REFERENT")
-    # echo "SYMLINK_PATH = $SYMLINK_PATH"
+        SYMLINK_PATH=$(realpath --no-symlinks --relative-to="$REFEREE_DIRNAME" "$RELATIVE_REFERENT")
+        # echo "SYMLINK_PATH = $SYMLINK_PATH"
 
-    ln -sf "$SYMLINK_PATH" "$REFEREE"
-fi
+        ln -sf "$SYMLINK_PATH" "$REFEREE"
+        ;;
+esac
 

@@ -6,16 +6,16 @@ shift
 BUILDTYPE=$1 # may be empty
 shift
 
-if [[ -z "${DKMLDIR:-}" ]]; then
+if [ -z "${DKMLDIR:-}" ]; then
     DKMLDIR=$(dirname "$0")
     DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 fi
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
-if [[ -z "${TOPDIR:-}" ]]; then
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
+if [ -z "${TOPDIR:-}" ]; then
     TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
     TOPDIR=$(cd "$TOPDIR" && pwd)
 fi
-if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: $TOPDIR is not a Dune project" >&2 ; exit 1; fi
+if [ ! -e "$TOPDIR/dune-project" ]; then echo "FATAL: $TOPDIR is not a Dune project" >&2 ; exit 1; fi
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -41,7 +41,7 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_vsdev
     # * the TOPDIR tools since platform-opam-exec -> within-dev
     SHELL_WINDOWS=$(cygpath -aw "$SHELL")
-    if [[ -n "${BUILDTYPE:-}" ]]; then
+    if [ -n "${BUILDTYPE:-}" ]; then
         "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
     else
         "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
@@ -62,16 +62,16 @@ else
 fi
 
 # On Windows ...
-if [[ -x /usr/bin/cygpath ]] && [[ -n "${LOCALAPPDATA:-}" ]]; then
+if [ -x /usr/bin/cygpath ] && [ -n "${LOCALAPPDATA:-}" ]; then
     # Add VS Code to the PATH (if it exists)
     LOCALAPPDATA_UNIX=$(/usr/bin/cygpath -au "$LOCALAPPDATA")
-    if [[ -e "$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin/code" ]]; then
+    if [ -e "$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin/code" ]; then
         PATH="$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin:$PATH"
     fi
 fi
 
 # Basic command prompt
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [ -n "${BUILDTYPE:-}" ]; then
     LABEL="$PLATFORM-$BUILDTYPE"
 else
     LABEL="$PLATFORM"
@@ -80,7 +80,7 @@ PS1='\[\e]0;\[\033[01;32m\]'$LABEL'@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]
 export PS1
 
 # Change directory to where we were invoked
-if [[ -n "${DKMAKE_CALLING_DIR:-}" ]]; then
+if [ -n "${DKMAKE_CALLING_DIR:-}" ]; then
     cd "$DKMAKE_CALLING_DIR"
 fi
 

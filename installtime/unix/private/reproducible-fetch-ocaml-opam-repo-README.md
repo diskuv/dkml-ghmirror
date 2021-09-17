@@ -7,7 +7,7 @@ Prerequisites:
 Then run the following in Bash (for Windows use `bin\mintty.exe -` in your Cygwin installation folder):
 
 ```bash
-if [[ ! -e @@BOOTSTRAPDIR_UNIX@@README.md ]]; then
+if [ ! -e @@BOOTSTRAPDIR_UNIX@@README.md ]; then
     echo "You are not in a reproducible target directory" >&2
     exit 1
 fi

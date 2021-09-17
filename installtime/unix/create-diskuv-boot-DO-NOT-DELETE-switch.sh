@@ -49,11 +49,11 @@ shift $((OPTIND -1))
 # END Command line processing
 # ------------------
 
-if [[ -z "${DKMLDIR:-}" ]]; then
+if [ -z "${DKMLDIR:-}" ]; then
     DKMLDIR=$(dirname "$0")
     DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 fi
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
 
@@ -83,7 +83,7 @@ OPAM_SWITCH_CREATE_ARGS=(
     --yes
 )
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
 
 if ! is_empty_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install

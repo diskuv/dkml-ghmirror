@@ -46,7 +46,7 @@ cd "$TOPDIR"
 # >>>>>>>>>
 
 install -d "$BUILDDIR"
-if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
+if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
 
 # -----------------------
 # BEGIN opam switch create
@@ -60,7 +60,7 @@ if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-defaul
 # BEGIN OPAM_INSTALL_OPTS and OPAM_INSTALL_DEPS_OPTS
 
 OPAM_INSTALL_OPTS=(--yes)
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_INSTALL_OPTS+=(--debug-level 2); fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_INSTALL_OPTS+=(--debug-level 2); fi
 
 OPAM_INSTALL_DEPS_OPTS=(--deps-only --with-test)
 

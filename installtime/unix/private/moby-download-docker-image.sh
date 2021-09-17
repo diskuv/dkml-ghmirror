@@ -51,7 +51,7 @@ SIMPLE_NAME=${SIMPLE_NAME//./-}
 SIMPLE_NAME=$SIMPLE_NAME-$DOCKER_TARGET_ARCH
 
 # Quick exit if we already have a Docker image downloaded. They are huge!
-if [[ -e "$MOBYDIR"/layers-"$SIMPLE_NAME".txt ]]; then
+if [ -e "$MOBYDIR"/layers-"$SIMPLE_NAME".txt ]; then
     exit 0
 fi
 
@@ -61,13 +61,13 @@ which jq >&2
 env TARGETARCH="$DOCKER_TARGET_ARCH" MSYS2_ARG_CONV_EXCL='json' "$FROZEN_SCRIPT" "$MOBYDIR" "$DOCKER_IMAGE"
 
 # dump out the layers in order
-if [[ -x /usr/bin/cygpath ]]; then
+if [ -x /usr/bin/cygpath ]; then
     JQ_MANIFEST_JSON=$(/usr/bin/cygpath -aw "$MOBYDIR"/manifest.json)
 else
     JQ_MANIFEST_JSON="$MOBYDIR"/manifest.json
 fi
-[[ ! -e "$MOBYDIR"/manifest.json ]] || jq -r '.[].Layers | .[]' "$JQ_MANIFEST_JSON" > "$MOBYDIR"/layers-"$SIMPLE_NAME".txt
+[ ! -e "$MOBYDIR"/manifest.json ] || jq -r '.[].Layers | .[]' "$JQ_MANIFEST_JSON" > "$MOBYDIR"/layers-"$SIMPLE_NAME".txt
 
 # we need to rename manifest.json and repositories so that multiple images can live in the same directory
-[[ ! -e "$MOBYDIR"/manifest.json ]] || mv "$MOBYDIR"/manifest.json "$MOBYDIR"/manifest-"$SIMPLE_NAME".json
-[[ ! -e "$MOBYDIR"/repositories  ]] || mv "$MOBYDIR"/repositories  "$MOBYDIR"/repositories-"$SIMPLE_NAME"
+[ ! -e "$MOBYDIR"/manifest.json ] || mv "$MOBYDIR"/manifest.json "$MOBYDIR"/manifest-"$SIMPLE_NAME".json
+[ ! -e "$MOBYDIR"/repositories ] || mv "$MOBYDIR"/repositories  "$MOBYDIR"/repositories-"$SIMPLE_NAME"

@@ -83,7 +83,7 @@ First we replicated the problem we had during compilation by following the boile
     [diskuv-ocaml-starter]$ cd /tmp
     [tmp]$ opam source core_kernel.v0.14.2
     [tmp]$ cd core_kernel.v0.14.2
-    [core_kernel.v0.14.2]$ [[ -z "$USERPROFILE" ]] || HOME=$(cygpath -au "$USERPROFILE")
+    [core_kernel.v0.14.2]$ [ -z "$USERPROFILE" ] || HOME=$(cygpath -au "$USERPROFILE")
     [core_kernel.v0.14.2]$ git init && git config core.safecrlf false && git add -A
     [core_kernel.v0.14.2]$ git commit -m "Baseline for patch"
     [core_kernel.v0.14.2]$ git tag baseline-patch
@@ -405,7 +405,7 @@ our patch:
 .. code:: bash
 
     cd PACKAGE_NAME.PACKAGE_VERSION
-    [[ -z "$USERPROFILE" ]] || HOME=$(cygpath -au "$USERPROFILE")
+    [ -z "$USERPROFILE" ] || HOME=$(cygpath -au "$USERPROFILE")
     git init && git config core.safecrlf false && git add -A
     git commit -m "Baseline for patch"
     git tag baseline-patch

@@ -61,21 +61,21 @@ if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$US
 cd "$DKMLDIR"
 
 # Add .userprofile.cachekey which is used by CI.
-if [[ -n "${COMSPEC:-}" ]]; then
+if [ -n "${COMSPEC:-}" ]; then
     installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | dos2unix > contributors/.userprofile.cachekey.tmp
 else
     pwsh installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > contributors/.userprofile.cachekey.tmp
 fi
 mv contributors/.userprofile.cachekey.tmp contributors/.userprofile.cachekey
 CACHESTATUS=$(git status --porcelain contributors/.userprofile.cachekey)
-if [[ -n "$CACHESTATUS" ]]; then
+if [ -n "$CACHESTATUS" ]; then
     git commit -m "Update userprofile cache key" contributors/.userprofile.cachekey
 fi
 
 # Capture which version will be the release version when the prereleases are finished
 TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg | sed 's/[-+].*//')
 
-if [[ "$PRERELEASE" = ON ]]; then
+if [ "$PRERELEASE" = ON ]; then
     # Increment the prerelease
     bump2version prerelease \
         --config-file .bumpversion.prerelease.cfg \
@@ -116,8 +116,8 @@ fi
 
 # Safety check version for a release
 NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg)
-if [[ "$PRERELEASE" = OFF ]]; then
-    if [[ ! "$NEW_VERSION" = "$TARGET_VERSION" ]]; then
+if [ "$PRERELEASE" = OFF ]; then
+    if [ ! "$NEW_VERSION" = "$TARGET_VERSION" ]; then
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
         exit 1
     fi
@@ -146,7 +146,7 @@ FILE="$DKMLDIR/contributors/_build/distribution-portable.tar.gz"
 install -d contributors/_build
 rm -f "$FILE"
 if tar -cf _build/probe.tar --no-xattrs --owner root /dev/null >/dev/null 2>/dev/null; then GNUTAR=ON; fi # test to see if GNU tar
-if [[ "${GNUTAR:-}" = ON ]]; then
+if [ "${GNUTAR:-}" = ON ]; then
     # GNU tar
     tar cvfz "$FILE" --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 else
@@ -168,7 +168,7 @@ GLOBAL_OPTS=(--server-url "$CI_SERVER_URL" --project-id "$CI_PROJECT_ID")
 CREATE_OPTS=(
     --tag-name "v$NEW_VERSION"
 )
-if [[ "$PRERELEASE" = OFF ]]; then
+if [ "$PRERELEASE" = OFF ]; then
     CREATE_OPTS+=(
         --name "Version $NEW_VERSION"
         --description "contributors/changes/v$NEW_VERSION.md"

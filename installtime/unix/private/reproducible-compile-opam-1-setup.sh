@@ -69,7 +69,7 @@ while getopts ":d:v:t:a:b:h" opt; do
         ;;
         d )
             DKMLDIR="$OPTARG"
-            if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then
+            if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
                 echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
@@ -102,7 +102,7 @@ while getopts ":d:v:t:a:b:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$DKMLDIR" || -z "$GIT_TAG" || -z "$TARGETDIR" ]]; then
+if [ -z "$DKMLDIR" ] || [ -z "$GIT_TAG" ] || [ -z "$TARGETDIR" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -121,7 +121,7 @@ disambiguate_filesystem_paths
 
 # Bootstrapping vars
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
-if [[ -x /usr/bin/cygpath ]]; then
+if [ -x /usr/bin/cygpath ]; then
     OPAMSRC_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/src/opam")
     OPAMSRC_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX/src/opam")
 else
@@ -135,7 +135,7 @@ fi
 cd "$DKMLDIR"
 
 # Get Diskuv's Opam if not present already
-if [[ ! -e "$OPAMSRC_UNIX/Makefile" ]] || [[ ! -e "$OPAMSRC_UNIX/.git" ]]; then
+if [ ! -e "$OPAMSRC_UNIX/Makefile" ] || [ ! -e "$OPAMSRC_UNIX/.git" ]; then
     install -d "$OPAMSRC_UNIX"
     rm -rf "$OPAMSRC_UNIX" # clean any partial downloads
     git clone -b "$GIT_TAG" https://github.com/diskuv/opam "$OPAMSRC_MIXED"

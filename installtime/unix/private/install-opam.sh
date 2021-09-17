@@ -6,7 +6,7 @@ set -euf -o pipefail
 
 DKMLDIR=$1
 shift
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
 
 GIT_TAG=$1
 shift
@@ -31,12 +31,12 @@ cd "$DKMLDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-if [[ -e "$INSTALLDIR"/bin/opam.exe ]]; then
+if [ -e "$INSTALLDIR"/bin/opam.exe ]; then
     echo 'SUCCESS. Already installed'
     exit 0
 fi
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
 # Install the source code
 bash -x "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \
