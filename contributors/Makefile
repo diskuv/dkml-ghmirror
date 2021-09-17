@@ -1,3 +1,27 @@
+# -----------------------
+
+# Installers of build utilities
+
+.PHONY: install-github-cli
+.PHONY: install-gitlab-cli
+.PHONY: install-gitlab-release-cli
+.PHONY: install-zip
+.PHONY: install-powershell
+.PHONY: install-shellcheck
+
+ifdef COMSPEC
+include os-windows.mk
+else
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+include os-darwin.mk
+else
+$(error We currently do not support doing contributions on '$(UNAME_S)')
+endif
+endif
+
+# -----------------------
+
 ifdef DiskuvOCamlHome
 CMAKE = '$(DiskuvOCamlHome)'/tools/cmake/bin/cmake.exe
 else
@@ -5,12 +29,13 @@ CMAKE = cmake
 endif
 
 .PHONY: .userprofile.cachekey # always rerun
-.userprofile.cachekey:
+.userprofile.cachekey: install-powershell
 ifdef COMSPEC
-	../installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | /usr/bin/dos2unix > $@
+	../installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | /usr/bin/dos2unix > $@.tmp
 else
-	true > $@
+	pwsh ../installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > $@.tmp
 endif
+	mv $@.tmp $@
 
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
@@ -26,43 +51,6 @@ install-release-script-dependencies:
 		pacman --sync --needed --noconfirm zip; \
 	fi
 
-.PHONY: install-github-cli
-install-github-cli:
-	@PATH="$$PATH:/usr/bin:/bin"; \
-	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then \
-		pacman --sync --needed --noconfirm mingw64/mingw-w64-x86_64-github-cli; \
-	fi
-	@PATH="/usr/bin:/bin:/mingw64/bin:$$PATH"; if ! which gh >/dev/null 2>&1; then \
-		echo "FATAL: GitHub CLI was not installed, and the Makefile does not know how to install it." >&2; exit 1; \
-	fi
-
-.PHONY: install-gitlab-cli
-install-gitlab-cli:
-	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
-	if ! which glab >/dev/null 2>&1; then \
-		wget https://github.com/profclems/glab/releases/download/v1.20.0/glab_1.20.0_Windows_x86_64.zip -O /tmp/glab.zip && \
-		rm -rf /tmp/glab && \
-		unzip -d /tmp/glab /tmp/glab.zip && install -d /usr/local/bin && install /tmp/glab/bin/glab.exe /usr/local/bin/; \
-	fi
-
-.PHONY: install-gitlab-release-cli
-install-gitlab-release-cli:
-	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
-	if ! which release-cli >/dev/null 2>&1; then \
-		wget "https://gitlab.com/api/v4/projects/gitlab-org%2Frelease-cli/packages/generic/release-cli/latest/release-cli-windows-amd64.exe" -O /tmp/release-cli.exe && \
-		mv /tmp/release-cli.exe /usr/local/bin; \
-	fi
-
-.PHONY: install-zip
-install-zip:
-	@PATH="$$PATH:/usr/bin:/bin"; \
-	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then \
-		pacman --sync --needed --noconfirm zip; \
-	fi
-	@PATH="/usr/bin:/bin:/mingw64/bin:$$PATH"; if ! which zip >/dev/null 2>&1; then \
-		echo "FATAL: 'zip' was not installed, and the Makefile does not know how to install it." >&2; exit 1; \
-	fi
-
 .PHONY: auth-github-cli
 auth-github-cli: install-github-cli
 	@PATH="/usr/bin:/bin:/mingw64/bin:$$PATH" ; if which gh.exe >/dev/null 2>&1; then GH=gh.exe; else GH=gh; fi; \
@@ -73,7 +61,8 @@ auth-gitlab-cli: install-gitlab-cli
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; if which glab.exe >/dev/null 2>&1; then GLAB=glab.exe; else GLAB=glab; fi; \
 	$$GLAB auth status; \
 	if ! $$GLAB auth status 2>&1 | grep -q "Token:"; then \
-		echo "Suggested Personal Access Token name: glab.exe `hostname` $(USERNAME) DiskuvOCamlHome/`basename '$(DiskuvOCamlHome)'`"; \
+        if [[ -n "$(DiskuvOCamlHome)" ]]; then SUFFIX=" DiskuvOCamlHome/`basename '$(DiskuvOCamlHome)'`"; else SUFFIX=; fi; \
+		echo "Suggested Personal Access Token name: glab.exe `hostname` $(USERNAME)$$SUFFIX"; \
 		echo "* Choose default git protocol HTTPS"; \
 		echo "* Authenticate Git with your GitLab credentials? Yes"; \
 		$$GLAB auth login; \

@@ -1,5 +1,7 @@
 {
     "recommendations": [
-        "lextudio.restructuredtext"
+        "lextudio.restructuredtext",
+        "timonwong.shellcheck",
+        "ms-vscode.powershell"
     ]
 }

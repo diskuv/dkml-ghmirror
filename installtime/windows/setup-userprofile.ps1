@@ -131,7 +131,7 @@ $dkml_root_version = $DkmlProps.dkml_root_version
 
 $PSDefaultParameterValues = @{'Out-File:Encoding' = 'utf8'} # for Tee-Object. https://stackoverflow.com/a/58920518
 
-$env:PSModulePath += ";$HereDir"
+$env:PSModulePath += "$([System.IO.Path]::PathSeparator)$HereDir"
 Import-Module Deployers
 Import-Module Project
 Import-Module UnixInvokers
@@ -139,17 +139,14 @@ Import-Module Machine
 Import-Module DeploymentVersion
 
 # Make sure not Run as Administrator
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if ((-not $AllowRunAsAdmin) -and $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error -Category SecurityError `
-        -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
-    exit 1
+if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    if ((-not $AllowRunAsAdmin) -and $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Error -Category SecurityError `
+            -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
+        exit 1
+    }
 }
-
-# We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
-$ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
-$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-if (!(Test-Path -Path $ProgramParentPath)) { New-Item -Path $ProgramParentPath -ItemType Directory | Out-Null }
 
 # ----------------------------------------------------------------
 # Prerequisite Check
@@ -161,9 +158,8 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
     throw "DiskuvOCaml is only supported on 64-bit Windows"
 }
 
-
 # ----------------------------------------------------------------
-# QUICK EXIT if already current version already deployed, or if -OnlyOutputCacheKey switch
+# Calculate deployment id, and exit if -OnlyOutputCacheKey switch
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
@@ -352,6 +348,13 @@ if ($OnlyOutputCacheKey) {
     return
 }
 
+# ----------------------------------------------------------------
+# Set path to DiskuvOCaml; exit if already current version already deployed
+
+# We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
+$ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
+if (!(Test-Path -Path $ProgramParentPath)) { New-Item -Path $ProgramParentPath -ItemType Directory | Out-Null }
+
 # Check if already deployed
 $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -DeploymentId $DeploymentId
 # Advanced. Skip check with ... $global:RedeployIfExists = $true ... remove it with ... Remove-Variable RedeployIfExists
@@ -363,6 +366,8 @@ if (!$global:RedeployIfExists -and $finished) {
 
 # ----------------------------------------------------------------
 # Utilities
+
+$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 
 function Import-DiskuvOCamlAsset {
     param (

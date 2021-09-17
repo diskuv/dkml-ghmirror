@@ -62,10 +62,11 @@ cd "$DKMLDIR"
 
 # Add .userprofile.cachekey which is used by CI.
 if [[ -n "${COMSPEC:-}" ]]; then
-    installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | dos2unix > contributors/.userprofile.cachekey
+    installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | dos2unix > contributors/.userprofile.cachekey.tmp
 else
-    true > contributors/.userprofile.cachekey
+    pwsh installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > contributors/.userprofile.cachekey.tmp
 fi
+mv contributors/.userprofile.cachekey.tmp contributors/.userprofile.cachekey
 CACHESTATUS=$(git status --porcelain contributors/.userprofile.cachekey)
 if [[ -n "$CACHESTATUS" ]]; then
     git commit -m "Update userprofile cache key" contributors/.userprofile.cachekey

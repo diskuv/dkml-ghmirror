@@ -134,7 +134,7 @@ Export-ModuleMember -Variable VsDescribeComponents
 
 $MachineDeploymentHash = Get-Sha256Hex16OfText -Text $MachineDeploymentId
 $DkmlPowerShellModules = "$env:SystemDrive\DiskuvOCaml\PowerShell\$MachineDeploymentHash\Modules"
-$env:PSModulePath += ";$DkmlPowerShellModules"
+$env:PSModulePath += "$([System.IO.Path]::PathSeparator)$DkmlPowerShellModules"
 
 function Import-VSSetup {
     param (

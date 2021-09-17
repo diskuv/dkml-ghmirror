@@ -52,17 +52,19 @@ if (!(Test-Path -Path $DkmlPath\.dkmlroot)) {
     throw "Could not locate where this script was in the project. Thought DkmlPath was $DkmlPath"
 }
 
-$env:PSModulePath += ";$HereDir"
+$env:PSModulePath += "$([System.IO.Path]::PathSeparator)$HereDir"
 Import-Module Deployers
 Import-Module Project
 Import-Module Machine
 
 # Make sure not Run as Administrator
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if ((-not $AllowRunAsAdmin) -and $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error -Category SecurityError `
-        -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
-    exit 1
+if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    if ((-not $AllowRunAsAdmin) -and $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Error -Category SecurityError `
+            -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
+        exit 1
+    }
 }
 
 # ----------------------------------------------------------------

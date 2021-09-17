@@ -38,7 +38,7 @@ windows:test-setupuserprofile-1-before-create-system-switch:
     - *test-before
 
     # Test Deployers module
-    - $env:PSModulePath += ";$env:CI_PROJECT_DIR\installtime\windows"
+    - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)$env:CI_PROJECT_DIR\installtime\windows"
     - Import-Module Deployers
     - Invoke-BlueGreenDeployTests
 
