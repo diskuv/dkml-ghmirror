@@ -93,8 +93,12 @@ else
 
     # 2. Assemble the change log
     RELEASEDATE=$(date +%Y-%m-%d)
-	sed -i "s/@@YYYYMMDD@@/$RELEASEDATE/" "contributors/changes/v$TARGET_VERSION.md"
-	echo >> CHANGES.md && cat "contributors/changes/v$TARGET_VERSION.md" >> CHANGES.md
+    sed "s/@@YYYYMMDD@@/$RELEASEDATE/" "contributors/changes/v$TARGET_VERSION.md" > /tmp/v.md
+    mv /tmp/v.md "contributors/changes/v$TARGET_VERSION.md"
+    cp CHANGES.md /tmp/
+    cp "contributors/changes/v$TARGET_VERSION.md" CHANGES.md
+	echo >> CHANGES.md
+    cat /tmp/CHANGES.md >> CHANGES.md
     git add CHANGES.md "contributors/changes/v$TARGET_VERSION.md"
 
     # 3. Make a release commit
