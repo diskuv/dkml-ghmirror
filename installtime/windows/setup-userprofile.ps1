@@ -113,7 +113,9 @@ param (
     [switch]
     $ForceDeploymentSlot0,
     [switch]
-    $StopBeforeCreateSystemSwitch
+    $StopBeforeCreateSystemSwitch,
+    [switch]
+    $StopBeforeInstallSystemSwitch
 )
 
 $ErrorActionPreference = "Stop"
@@ -1185,6 +1187,11 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam install required `diskuv-system` packages
+
+    if ($StopBeforeInstallSystemSwitch) {
+        Write-Host "Stopping before being completed finished due to -StopBeforeCreateSystemSwitch switch"
+        exit 0
+    }
 
     $global:ProgressActivity = "Install packages in diskuv-system local Opam Switch"
     Write-ProgressStep
