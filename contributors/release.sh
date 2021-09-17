@@ -145,7 +145,14 @@ popd
 FILE="$DKMLDIR/contributors/_build/distribution-portable.tar.gz"
 install -d contributors/_build
 rm -f "$FILE"
-tar cvfz "$FILE" --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+if tar -cf _build/probe.tar --no-xattrs --owner root /dev/null >/dev/null 2>/dev/null; then GNUTAR=ON; fi # test to see if GNU tar
+if [[ "${GNUTAR:-}" = ON ]]; then
+    # GNU tar
+    tar cvfz "$FILE" --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+else
+    # BSD tar
+    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+fi
 
 # Push
 git push
