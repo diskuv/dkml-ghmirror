@@ -1,7 +1,45 @@
 #######################################
 # base.mk
 
+# Version numbers
+
 DKML_BASE_VERSION = 0.2.1-prerel2
+
+# Troubleshooting
+
+dkml-dump-%: ; @echo $*=$($*) # print any Makefile variable
+
+# Version Checking
+
+ifndef MAKE_VERSION
+$(error Diskuv OCaml Local Projects must be built with GNU Make. Other 'make' flavors like BSD Make and nmake are not supported.)
+endif
+ifneq ($(findstring xxx3.,xxx$(MAKE_VERSION)),)
+# GNU Make 3.81 and GNU Make 3.82 (the last two versions in GNU Make 3.x) are safe.
+# We need 3.81 so that $(eval) works, even though it has some bugs
+# like in https://stackoverflow.com/questions/13260396/gnu-make-3-81-eval-function-not-working .
+# We are forced to use 3.81 because OS/X still ships with it as of 2021-09-16
+ifneq ($(findstring .81,$(MAKE_VERSION)),)
+GNU_MAKE3_81PLUS=1
+endif
+ifneq ($(findstring .82,$(MAKE_VERSION)),)
+GNU_MAKE3_81PLUS=1
+endif
+ifneq ($(GNU_MAKE3_81PLUS),1)
+$(error Diskuv OCaml Local Projects must be built with GNU Make 3.81 or higher)
+endif
+endif
+ifneq ($(findstring xxx4.,xxx$(MAKE_VERSION)),)
+# GNU Make 4.x is safe to use
+GNU_MAKE3_81PLUS=1
+endif
+ifneq ($(findstring xxx5.,xxx$(MAKE_VERSION)),)
+# GNU Make 5.x will exist someday
+GNU_MAKE3_81PLUS=1
+endif
+ifneq ($(GNU_MAKE3_81PLUS),1)
+$(error Diskuv OCaml Local Projects must be built with GNU Make 3.81 or higher)
+endif
 
 ifdef COMSPEC
 DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS = ON
