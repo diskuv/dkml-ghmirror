@@ -177,13 +177,13 @@ HORIZONTAL_RULE_80COLS = "======================================================
 
 # Very useful for developing on Windows with `./makeit shell-dev`
 
-define SHELL_platform_template =
+define SHELL_platform_template
 .PHONY: shell-$(1)
 shell-$(1): shell-$(1)-Debug
 endef
 $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call SHELL_platform_template,$(platform))))
 
-define SHELL_platform_buildtype_template =
+define SHELL_platform_buildtype_template
 .PHONY: shell-$(1)-$(2)
 shell-$(1)-$(2):
 	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
@@ -222,7 +222,7 @@ init-dev: buildconfig/dune
 .PHONY: prepare-dev
 prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
 
-define PREPARE_buildtype_template =
+define PREPARE_buildtype_template
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
 	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
@@ -236,7 +236,7 @@ define PREPARE_buildtype_template =
 endef
 $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call PREPARE_buildtype_template,$(buildtype))))
 
-define PREPARE_platform_template =
+define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	'$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"
@@ -247,7 +247,7 @@ define PREPARE_platform_template =
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call PREPARE_platform_template,$(platform))))
 
-define PREPARE_platform_buildtype_template =
+define PREPARE_platform_buildtype_template
   .PHONY: prepare-$(1)-$(2)
   prepare-$(1)-$(2): init-$(1)
 	'$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(LINUX_OPAMS_CSV);
@@ -272,7 +272,7 @@ prepare-all: $(foreach platform,$(DKML_PLATFORMS),prepare-$(platform))
 # .PHONY: clean-dev
 # clean-dev: clean-dev-$(BUILDTYPE_DEFAULT)
 
-define CLEAN_buildtype_template =
+define CLEAN_buildtype_template
   .PHONY: clean-dev-$(1) clean-all-$(1)
   clean-dev-$(1):
 	rm -rf build/dev/$(1)
@@ -287,7 +287,7 @@ clean-dev-all:
 	rm -rf build/dev
 	rm -rf _build
 
-define CLEAN_platform_template =
+define CLEAN_platform_template
   .PHONY: clean-$(1)-all
   clean-$(1)-all:
 	rm -rf build/_tools/$(1)
@@ -295,7 +295,7 @@ define CLEAN_platform_template =
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call CLEAN_platform_template,$(platform))))
 
-define CLEAN_platform_buildtype_template =
+define CLEAN_platform_buildtype_template
   .PHONY: clean-$(1)-$(2)
   clean-$(1)-$(2):
 	rm -rf build/$(1)/$(2)
@@ -346,7 +346,7 @@ quickbuild-dev: quickbuild-dev-Debug
 build-dev: build-dev-Debug
 test-dev: test-dev-Debug
 
-define BUILD_buildtype_template =
+define BUILD_buildtype_template
   .PHONY: build-all-$(1) quickbuild-all-$(1) test-all-$(1)
   quickbuild-all-$(1): $(foreach platform,$(DKML_PLATFORMS),quickbuild-$(platform)-$(1))
   build-all-$(1): $(foreach platform,$(DKML_PLATFORMS),build-$(platform)-$(1))
@@ -354,7 +354,7 @@ define BUILD_buildtype_template =
 endef
 $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call BUILD_buildtype_template,$(buildtype))))
 
-define BUILD_platform_template =
+define BUILD_platform_template
   .PHONY: build-$(1) quickbuild-$(1) test-$(1)
   build-$(1): build-$(1)-$(BUILDTYPE_DEFAULT)
   quickbuild-$(1): quickbuild-$(1)-$(BUILDTYPE_DEFAULT)
@@ -362,7 +362,7 @@ define BUILD_platform_template =
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call BUILD_platform_template,$(platform))))
 
-define BUILD_platform_buildtype_template =
+define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
 	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
@@ -401,7 +401,7 @@ update-dev: prepare-dev
 	opam update --switch build/dev
 
 # update-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
-define UPDATE_template =
+define UPDATE_template
   .PHONY: update-$(1)
   update-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
@@ -422,7 +422,7 @@ upgrade-dev: prepare-dev
 	)
 
 # upgrade-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
-define UPGRADE_template =
+define UPGRADE_template
   .PHONY: upgrade-$(1)
   upgrade-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
@@ -482,26 +482,26 @@ buildconfig/dune/dune.env.workspace.inc: $(DKML_DIR)/etc/dune/dune.env.workspace
 # You can add more by adding to the DUNE_EXECUTABLE_OVERRIDE_OPTIONS variable
 DUNE_EXECUTABLE_OVERRIDE_OPTIONS = link_flags
 
-define DUNEENVEXEC_option_template =
+define DUNEENVEXEC_option_template
   buildconfig/dune/executable/1-base.$(1).sexp:
 	@install -d buildconfig/dune/executable
 	@[ -e $$@ ] || echo '(:standard) ; Used as an (:include) in (executable) stanzas after being merged by `$(DKML_DIR)/buildtime/sexp_merge_configurator`. See https://dune.readthedocs.io/en/stable/concepts.html#id2 for how to remove flags' > $$@
 endef
 $(foreach option,$(DUNE_EXECUTABLE_OVERRIDE_OPTIONS),$(eval $(call DUNEENVEXEC_option_template,$(option))))
 
-define DUNEENVEXEC_option_platform_template =
+define DUNEENVEXEC_option_platform_template
   buildconfig/dune/executable/2-$(2)-all.$(1).sexp: buildconfig/dune/executable/1-base.$(1).sexp
 	@[ -e $$@ ] || echo '() ; Used as an (:include) in (executable) stanzas after being merged by `$(DKML_DIR)/buildtime/sexp_merge_configurator`. See https://dune.readthedocs.io/en/stable/concepts.html#ordered-set-language' > $$@
 endef
 $(foreach option,$(DUNE_EXECUTABLE_OVERRIDE_OPTIONS),$(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call DUNEENVEXEC_option_platform_template,$(option),$(platform)))))
 
-define DUNEENVEXEC_option_buildtype_template =
+define DUNEENVEXEC_option_buildtype_template
   buildconfig/dune/executable/3-all-$(2).$(1).sexp: buildconfig/dune/executable/1-base.$(1).sexp
 	@[ -e $$@ ] || echo '() ; Used as an (:include) in (executable) stanzas after being merged by `$(DKML_DIR)/buildtime/sexp_merge_configurator` . See https://dune.readthedocs.io/en/stable/concepts.html#ordered-set-language' > $$@
 endef
 $(foreach option,$(DUNE_EXECUTABLE_OVERRIDE_OPTIONS),$(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call DUNEENVEXEC_option_buildtype_template,$(option),$(buildtype)))))
 
-define DUNEENVEXEC_option_platform_buildtype_template =
+define DUNEENVEXEC_option_platform_buildtype_template
   buildconfig/dune/executable/4-$(2)-$(3).$(1).sexp: buildconfig/dune/executable/2-$(2)-all.$(1).sexp buildconfig/dune/executable/3-all-$(3).$(1).sexp
 	@[ -e $$@ ] || echo '() ; Used as an (:include) in (executable) stanzas after being merged by `$(DKML_DIR)/buildtime/sexp_merge_configurator` . See https://dune.readthedocs.io/en/stable/concepts.html#ordered-set-language' > $$@
 endef
