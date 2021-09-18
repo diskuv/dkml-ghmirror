@@ -87,8 +87,11 @@ case "$ABSOLUTE_REFERENT" in
         DESIRED_SYSTEMROOT=$(cygpath -a "$SYSTEMROOT\\")
         # Tricky thing is getting quoting correct while only replacing the first /cygdrive/c.
         # we delegate to Bash to do it right.
+        tmpe="$(mktemp)"
+        set | grep ^ABSOLUTE_REFERENT= | sed "s,/cygdrive/c/windows/,$DESIRED_SYSTEMROOT,i" > "$tmpe"
         # shellcheck disable=SC1090
-        source <(set | grep ^ABSOLUTE_REFERENT= | sed "s,/cygdrive/c/windows/,$DESIRED_SYSTEMROOT,i")
+        source "$tmpe"
+        rm -f "$tmpe"
 
         ln -sf "$ABSOLUTE_REFERENT" "$REFEREE"
         ;;

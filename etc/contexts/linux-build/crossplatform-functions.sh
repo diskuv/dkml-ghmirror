@@ -630,10 +630,12 @@ autodetect_vsdev() {
     # (the set {VSDEV_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
     echo "$VSDEV_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt
+    sort -u "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt > "$autodetect_vsdev_TEMPDIR"/vcvars_entries.sortuniq.txt
+    echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_vsdev_TEMPDIR"/path.sortuniq.txt
     comm \
         -23 \
-        <(sort -u "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt) \
-        <(echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u) \
+        "$autodetect_vsdev_TEMPDIR"/vcvars_entries.sortuniq.txt \
+        "$autodetect_vsdev_TEMPDIR"/path.sortuniq.txt \
         > "$autodetect_vsdev_TEMPDIR"/vcvars_uniq.txt
     while IFS='' read -r autodetect_vsdev_line; do
         # if and only if the $autodetect_vsdev_line matches one of the lines in vcvars_uniq.txt

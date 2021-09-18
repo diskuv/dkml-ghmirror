@@ -115,8 +115,10 @@ fi
 PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
 if [ -n "$PREHOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
-    # shellcheck disable=SC1090
-    source <(eval "$PREHOOK")
+    eval "$PREHOOK" > "$WORK"/prehook.eval
+    # shellcheck disable=SC1091
+    source "$WORK"/prehook.eval
+    rm -f "$WORK"/prehook.eval
     # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
     if [ -x /usr/bin/cygpath ]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi

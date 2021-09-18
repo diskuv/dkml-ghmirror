@@ -84,7 +84,8 @@ then
 
     for layer_name in $(cat "$MOBYDIR"/layers-"$SIMPLE_NAME".txt); do
         layer="$MOBYDIR"/"$layer_name"
-        if echo -n '{"errors":' | cmp -s - <( head --bytes=10 "$layer" ) 2>/dev/null; then
+        head --bytes=10 "$layer" > "$WORK"/rhs
+        if echo -n '{"errors":' | cmp -s - "$WORK"/rhs 2>/dev/null; then
             echo "Skipping   $OCAML_OPAM_PORT $layer"
             continue
         fi

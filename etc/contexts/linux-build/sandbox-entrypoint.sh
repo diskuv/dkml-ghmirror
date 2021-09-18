@@ -62,8 +62,11 @@ fi
 # run any prehooks (the PATH has already been setup)
 if [ -n "$SANDBOX_PRE_HOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $SANDBOX_PRE_HOOK" >&2; fi
+    tmpe="$(mktemp)"
+    eval "$SANDBOX_PRE_HOOK" > "$tmpe"
     # shellcheck disable=SC1090
-    source <(eval "$SANDBOX_PRE_HOOK")
+    source "$tmpe"
+    rm -f "$tmpe"
 fi
 
 # Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
