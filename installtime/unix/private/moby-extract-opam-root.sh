@@ -82,7 +82,7 @@ then
     # since tar can create 0o000 directories we need to try to change permissions before deleting
     trap 'chmod -R 755 "$WORK"; rm -rf "$WORK"' EXIT
 
-    for layer_name in $(< "$MOBYDIR"/layers-"$SIMPLE_NAME".txt); do
+    for layer_name in $(cat "$MOBYDIR"/layers-"$SIMPLE_NAME".txt); do
         layer="$MOBYDIR"/"$layer_name"
         if echo -n '{"errors":' | cmp -s - <( head --bytes=10 "$layer" ) 2>/dev/null; then
             echo "Skipping   $OCAML_OPAM_PORT $layer"

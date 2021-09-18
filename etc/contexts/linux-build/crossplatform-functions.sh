@@ -368,7 +368,7 @@ autodetect_cpus() {
             # Windows usually has NUMBER_OF_PROCESSORS
             NUMCPUS="$NUMBER_OF_PROCESSORS"
         elif nproc --all > "$WORK"/numcpus 2>/dev/null && [ -s "$WORK"/numcpus ]; then
-            NUMCPUS=$(< "$WORK"/numcpus)
+            NUMCPUS=$(cat "$WORK"/numcpus)
         fi
     fi
     # type cast again to a number (in case autodetection produced a string)
@@ -624,7 +624,7 @@ autodetect_vsdev() {
     # shellcheck disable=SC2086
     cygpath --path -f - < "$autodetect_vsdev_TEMPDIR/winpath.txt" > "$autodetect_vsdev_TEMPDIR"/unixpath.txt
     # shellcheck disable=SC2034
-    VSDEV_PATH=$(< "$autodetect_vsdev_TEMPDIR"/unixpath.txt)
+    VSDEV_PATH=$(cat "$autodetect_vsdev_TEMPDIR"/unixpath.txt)
 
     # FIFTH, set VSDEV_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {VSDEV_UNIQ_PATH} - {PATH}) are used. But maintain the order
