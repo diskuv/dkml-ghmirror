@@ -127,8 +127,8 @@ fi
 
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 
-# Autodetect VCVARS on Windows; do nothing on Unix.
-autodetect_vsdev
+# Autodetect compiler like Visual Studio on Windows.
+autodetect_compiler "$WORK"/launch-compiler.sh
 if [ -n "$OCAML_HOST_TRIPLET" ]; then
     BOOTSTRAP_EXTRA_OPTS="--host=$OCAML_HOST_TRIPLET"
 else
@@ -137,9 +137,9 @@ fi
 
 if is_unixy_windows_build_machine; then
     echo -n "cl.exe, if detected: "
-    env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" which cl.exe
-    env "${ENV_ARGS[@]}" echo "INCLUDE: ${INCLUDE:-}"
-    env "${ENV_ARGS[@]}" echo "LIBS: ${LIBS:-}"
+    "$WORK"/launch-compiler.sh which cl.exe
+    "$WORK"/launch-compiler.sh echo "INCLUDE: ${INCLUDE:-}"
+    "$WORK"/launch-compiler.sh echo "LIBS: ${LIBS:-}"
 fi
 
 # Running through the `make compiler`, `make lib-pkg` + `configure` process should be done
@@ -157,7 +157,7 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # all of its required Ocaml dependencies
     # We do what the following does (with customization): `make -C "$OPAMSRC_UNIX" compiler -j "$NUMCPUS"`
     pushd "$OPAMSRC_UNIX"
-    if ! env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" \
+    if ! "$WORK"/launch-compiler.sh \
         BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS" BOOTSTRAP_OPT_TARGET=opt.opt BOOTSTRAP_ROOT=.. BOOTSTRAP_DIR=bootstrap \
         ./shell/bootstrap-ocaml.sh auto;
     then
@@ -178,7 +178,7 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
 
     # Install Opam's dependencies as findlib packages to the bootstrap compiler
     # Note: We could add `OPAM_0INSTALL_SOLVER_ENABLED=true` but unclear if that is a good idea.
-    env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
+    "$WORK"/launch-compiler.sh make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
 
     # Standard autotools ./configure
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.

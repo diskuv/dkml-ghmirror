@@ -311,8 +311,9 @@ fi
 install -d "$VCPKG_UNIX"/downloads
 touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
-# Autodetect VCVARS on Windows; do nothing on Unix.
-autodetect_vsdev
+# Autodetect VSDEV_HOME_WINDOWS on Windows.
+# We only care about the output VSDEV_HOME_* environment values.
+autodetect_compiler "$WORK"/launch-compiler.sh
 if is_unixy_windows_build_machine; then
     VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}")
     if [ -n "$CMDOUT" ]; then

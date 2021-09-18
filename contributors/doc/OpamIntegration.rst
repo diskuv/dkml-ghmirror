@@ -93,10 +93,10 @@ similar to the following:
 
     ENV_ARGS=()
     source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x86-windows" # if 64-bit
-    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x64-windows" # if 32-bit
+    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x86-windows" # if 64-bit
+    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.1/installed/x64-windows" # if 32-bit
 
-    env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" bash
+    /tmp/launcher.sh bash
 
 The choice of Microsoft compiler is configured during *Diskuv OCaml* installation and made
 available at ``$env:LOCALAPPDATA\Programs\DiskuvOCaml\vsstudio.dir.txt`` (full details at
@@ -107,7 +107,7 @@ an OCaml package (ex. ``opam install``):
 
 * Many packages use `autoconf <https://www.gnu.org/software/autoconf/>`_ to generate a ``./configure``
   script that will automatically detect the presence of Microsoft environment variables. Those will
-  have been set by ``autodetect_vsdev``.
+  have been set by ``autodetect_compiler``.
 * Some packages, especially core OCaml packages like the OCaml compiler and Opam, will use
   `msvs-tools <https://github.com/metastack/msvs-tools>`_. Recent versions of msvs-tools can detect
   an *Diskuv OCaml* auto-installed Visual Studio Build Tools but they will not add vcpkg

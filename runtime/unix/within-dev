@@ -146,37 +146,33 @@ else
     VCPKG_INSTALLED_PACKAGES=
 fi
 
-# Autodetect VCVARS on Windows; do nothing on Unix.
+# Autodetect compiler like Visual Studio on Windows.
+LAUNCHER="$WORK"/launch-compiler.sh
 if [ "$COMPILATION" = ON ]; then
     set +e
     if [ -n "$VCPKG_INSTALLED_PACKAGES" ]; then
-        autodetect_vsdev "$VCPKG_INSTALLED_PACKAGES"
+        autodetect_compiler "$LAUNCHER" "$VCPKG_INSTALLED_PACKAGES"
     else
-        autodetect_vsdev
+        autodetect_compiler "$LAUNCHER"
     fi
     EXITCODE=$? # 1 is not a Windows machine but is OK
     set -e
     if [ $EXITCODE -eq 2 ]; then
         echo "FATAL: Did not detect a completed Diskuv OCaml installation"
         exit 1
-    elif [ $EXITCODE -eq 0 ]; then
-        # Add unique path entries from vcvars (vsdevcmd) to front of PATH.
-        PATH="$VSDEV_UNIQ_PATH:$PATH"
     fi
 fi
 
 # print PATH for troubleshooting
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
-# We are about to `exec` so we are responsible for cleaning up the temporary directories
-rm -rf "$WORK"
-
-# run the requested command
+# run the requested command (cannot `exec` since the launcher script is a temporary file
+# that needs to be cleaned up after execution)
 if [ $# -eq 0 ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
     # shellcheck disable=SC2016
-    exec env "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
+    "$LAUNCHER" "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
 else
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-    exec env "${ENV_ARGS[@]}" "$@"
+    "$LAUNCHER" "${ENV_ARGS[@]}" "$@"
 fi

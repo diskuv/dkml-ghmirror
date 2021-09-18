@@ -38,7 +38,7 @@ set_opamrootdir
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Dump all the environment variables that Opam tells us.
     # This will also transitively include:
-    # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_vsdev
+    # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
     # * the TOPDIR tools since platform-opam-exec -> within-dev
     SHELL_WINDOWS=$(cygpath -aw "$SHELL")
     if [ -n "${BUILDTYPE:-}" ]; then

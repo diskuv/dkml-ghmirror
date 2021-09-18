@@ -381,14 +381,19 @@ autodetect_cpus() {
     export NUMCPUS
 }
 
-# Detects Visual Studio and sets its variables.
-# autodetect_vsdev [EXTRA_PREFIX]
+# Detects a compiler like Visual Studio and sets its variables.
+# autodetect_compiler OUT_LAUNCHER.sh [EXTRA_PREFIX]
 #
-# Includes EXTRA_PREFIX as a prefix for /include and and /lib library paths.
+# Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
 #
 # Example:
-#  autodetect_vsdev /usr/local && env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" run-something.sh
-#  autodetect_vsdev /usr/local && env "${ENV_ARGS[@]}" PATH="$VSDEV_PATH" run-something.sh
+#  autodetect_compiler /tmp/launcher.sh && /tmp/launcher.sh cl.exe /help
+#  autodetect_compiler /tmp/launcher.sh /usr/local && /tmp/launcher.sh DEBUG=1 cl.exe /help
+#
+# The generated launcher.sh behaves like a `env` command. You may place environment variable
+# definitions before your target executable. Also you may use `-u name` to unset an environment
+# variable. In fact, if there is no compiler detected than the generated launcher.sh is simply
+# a file containing the line `exec env "$@"`
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
@@ -396,34 +401,35 @@ autodetect_cpus() {
 #   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
 #   a native compilation.
 # - env:WORK - Optional. If provided will be used as temporary directory
-# - env:DKML_VSSTUDIO_DIR - Optional. If provided the specified installation of Visual Studio will be used.
+# - env:DKML_VSSTUDIO_DIR - Optional. If provided with all three (3) DKML_VSSTUDIO_* variables the
+#   specified installation directory of Visual Studio will be used.
 #   The directory should contain VC and Common7 subfolders.
-# - array:ENV_ARGS - Optional. An array of environment variables which will be modified by this function
+# - env:DKML_VSSTUDIO_VCVARSVER - Optional. If provided it must be a version that can locate the Visual Studio
+#   installation in DKML_VSSTUDIO_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
+# - env:DKML_VSSTUDIO_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
+#   value that can locate the Visual Studio installation in DKML_VSSTUDIO_DIR when
+#   https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
-# - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
-#   if and only if Visual Studio was detected. Empty otherwise
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 # - env:OCAML_HOST_TRIPLET is non-empty if `--host OCAML_HOST_TRIPLET` should be passed to OCaml's ./configure script when
 #   compiling OCaml. Aligns with the PLATFORM variable that was specified, especially for cross-compilation.
-# - env:VSDEV_UNIQ_PATH is the text of all new PATH entries that should be prepended to the existing PATH if and
-#   only if the vcvars could be detected (aka. on a Windows machine, and it is installed); otherwise it is empty.
-# - env:VSDEV_PATH is new PATH if and only if the vcvars could be detected (aka. on a Windows machine, and it is
-#   installed); otherwise it is the original PATH. You should use VSDEV_UNIQ_PATH instead
-# - array:ENV_ARGS - An array of environment variables for Visual Studio, including any provided at
-#   the start of the function
+# - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Empty otherwise
+# - env:VSDEV_HOME_WINDOWS is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Empty otherwise
 # Return Values:
 # - 0: Success
-# - 1: Not a Windows machine
-# - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit)
-autodetect_vsdev() {
-    autodetect_vsdev_TEMPDIR=${WORK:-$TMP}
-    autodetect_vsdev_PLATFORM_ARCH=${PLATFORM:-dev}
+# - 1: Not a Windows machine (ie. do not say this is fatal)
+# - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
+autodetect_compiler() {
+    autodetect_compiler_LAUNCHER="$1"
+    shift
+    autodetect_compiler_TEMPDIR=${WORK:-$TMP}
+    autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
 
-    # Initialize output variables ...
-    export VSDEV_UNIQ_PATH=
-    export VSDEV_PATH="$PATH"
-    [[ -v ENV_ARGS[@] ]] || ENV_ARGS=() # initialize array if not exist
+    # Initialize output script and variables in case of failure
+    printf '#!/bin/sh\nexec env "$@"\n' > "$autodetect_compiler_LAUNCHER"
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_WINDOWS=
 
@@ -434,12 +440,12 @@ autodetect_vsdev() {
 
     # Get the extra prefix with backslashes escaped for Awk, if specified
     if [ "$#" -ge 1 ]; then
-        autodetect_vsdev_EXTRA_PREFIX_ESCAPED="$1"
-        if is_unixy_windows_build_machine; then autodetect_vsdev_EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$autodetect_vsdev_EXTRA_PREFIX_ESCAPED"); fi
-        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=$(echo "${autodetect_vsdev_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
+        autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
+        if is_unixy_windows_build_machine; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
+        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(echo "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
         shift
     else
-        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=""
+        autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
     fi
 
     # Autodetect BUILDHOST_ARCH
@@ -452,90 +458,42 @@ autodetect_vsdev() {
     set_dkmlparenthomedir
 
     if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
-        autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
-        autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
-        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
+        autodetect_compiler_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
+        autodetect_compiler_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
+        autodetect_compiler_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
     else
-        autodetect_vsdev_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then
+        autodetect_compiler_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
+        if [ ! -e "$autodetect_compiler_VSSTUDIO_DIRFILE" ]; then
             return 2
         fi
-        autodetect_vsdev_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE" ]; then
+        autodetect_compiler_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
+        if [ ! -e "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE" ]; then
             return 2
         fi
-        autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
+        autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
+        if [ ! -e "$autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
             return 2
         fi
-        autodetect_vsdev_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
-        autodetect_vsdev_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
-        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
+        autodetect_compiler_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_DIRFILE")
+        autodetect_compiler_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE")
+        autodetect_compiler_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE")
     fi
     if [ -x /usr/bin/cygpath ]; then
-        autodetect_vsdev_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_vsdev_VSSTUDIODIR")
+        autodetect_compiler_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_compiler_VSSTUDIODIR")
     fi
-    VSDEV_HOME_UNIX="$autodetect_vsdev_VSSTUDIODIR"
+    VSDEV_HOME_UNIX="$autodetect_compiler_VSSTUDIODIR"
     if [ -x /usr/bin/cygpath ]; then
         VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
     else
         VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
     fi
 
-    # MSYS2 detection. Path is /c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build/vcvarsall.bat.
-    # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat but
-    # can't select cross-compilation for some reason.
-    autodetect_vsdev_USE_VSDEV=1
-    if [ "${autodetect_vsdev_USE_VSDEV}" -eq 1 ]; then
-        if [ -e "$autodetect_vsdev_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
-            autodetect_vsdev_VSDEVCMD="$autodetect_vsdev_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
-        else
-            return 2
-        fi
+    # MSYS2 detection.
+    # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat.
+    if [ -e "$autodetect_compiler_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
+        autodetect_compiler_VSDEVCMD="$autodetect_compiler_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
     else
-        if [ -e "$autodetect_vsdev_VSSTUDIODIR"/VC/Auxiliary/Build/vcvarsall.bat ]; then
-            autodetect_vsdev_VSDEVCMD="$autodetect_vsdev_VSSTUDIODIR/VC/Auxiliary/Build/vcvarsall.bat"
-        else
-            return 2
-        fi
-    fi
-
-    VSDEV_ARGS=(-no_logo -vcvars_ver="$autodetect_vsdev_VSSTUDIOVCVARSVER")
-    VCVARS_ARGS=(-vcvars_ver="$autodetect_vsdev_VSSTUDIOVCVARSVER")
-    # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
-    if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
-        # The build host machine is 32-bit ...
-        if [ "$autodetect_vsdev_PLATFORM_ARCH" = dev ] || [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86 ]; then
-            VSDEV_ARGS+=(-arch=x86)
-            VCVARS_ARGS+=(x86)
-            OCAML_HOST_TRIPLET=i686-pc-windows
-        elif [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86_64 ]; then
-            # The target machine is 64-bit
-            VSDEV_ARGS+=(-host_arch=x86 -arch=x64)
-            VCVARS_ARGS+=(-arch=x86_amd64)
-            OCAML_HOST_TRIPLET=x86_64-pc-windows
-        else
-            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
-            exit 1
-        fi
-    elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
-        # The build host machine is 64-bit ...
-        if [ "$autodetect_vsdev_PLATFORM_ARCH" = dev ] || [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86_64 ]; then
-            VSDEV_ARGS+=(-arch=x64)
-            VCVARS_ARGS+=(x64)
-            OCAML_HOST_TRIPLET=x86_64-pc-windows
-        elif [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86 ]; then
-            # The target machine is 32-bit
-            VSDEV_ARGS+=(-host_arch=x64 -arch=x86)
-            VCVARS_ARGS+=(amd64_x86)
-            OCAML_HOST_TRIPLET=i686-pc-windows
-        else
-            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
-            exit 1
-        fi
-    else
-        echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
-        exit 1
+        return 2
     fi
 
     # FIRST, create a file that calls vsdevcmd.bat and then adds a `set` dump.
@@ -544,28 +502,72 @@ autodetect_vsdev() {
     #     set > "C:\the-WORK-directory\vcvars.txt"
     # to the bottom of it so we can inspect the environment variables.
     # (Less hacky version of https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell)
-    autodetect_vsdev_VSDEVCMDFILE_WIN=$(cygpath -aw "$autodetect_vsdev_VSDEVCMD")
+    autodetect_compiler_VSDEVCMDFILE_WIN=$(cygpath -aw "$autodetect_compiler_VSDEVCMD")
     {
-        echo '@call "'"$autodetect_vsdev_VSDEVCMDFILE_WIN"'" %*'
+        echo '@call "'"$autodetect_compiler_VSDEVCMDFILE_WIN"'" %*'
         # shellcheck disable=SC2046
-        echo 'set > "'$(cygpath -aw "$autodetect_vsdev_TEMPDIR")'\vcvars.txt"'
-    } > "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat
+        echo 'set > "'$(cygpath -aw "$autodetect_compiler_TEMPDIR")'\vcvars.txt"'
+    } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
-    # SECOND, we run the batch file
-    PATH_UNIX=$(cygpath -au --path "$PATH")
-    VSCMD_OPTS=(__VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1) # __VSCMD_ARG_NO_LOGO is for vcvars which is missing -no_logo option
-    if [ "${USE_VSDEV}" -eq 1 ]; then
-        VSCMD_ARGS=("${VSDEV_ARGS[@]}")
-    else
-        VSCMD_ARGS=("${VCVARS_ARGS[@]}")
-    fi
+    # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
-        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" VSCMD_DEBUG=1 "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" >&2 # use stderr to not mess up stdout which calling script may care about.
+        autodetect_compiler_VSCMD_DEBUG=1
     else
-        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" > /dev/null
+        autodetect_compiler_VSCMD_DEBUG=
+    fi
+    PATH_UNIX=$(cygpath -au --path "$PATH")
+    # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
+    if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
+        # The build host machine is 32-bit ...
+        if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
+            autodetect_compiler_vsdev_dump_vars() {
+                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" \
+                    -arch=x86 >&2
+            }
+            OCAML_HOST_TRIPLET=i686-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
+            # The target machine is 64-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" \
+                    -host_arch=x86 -arch=x64 >&2
+            }
+            OCAML_HOST_TRIPLET=x86_64-pc-windows
+        else
+            echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+            exit 1
+        fi
+    elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
+        # The build host machine is 64-bit ...
+        if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
+            autodetect_compiler_vsdev_dump_vars() {
+                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" \
+                    -arch=x64 >&2
+            }
+            OCAML_HOST_TRIPLET=x86_64-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
+            # The target machine is 32-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" \
+                    -host_arch=x64 -arch=x86 >&2
+            }
+            OCAML_HOST_TRIPLET=i686-pc-windows
+        else
+            echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+            exit 1
+        fi
+    else
+        echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+        exit 1
     fi
 
-    # THIRD, we add everything to the environment except:
+    # THIRD, we run the batch file
+    autodetect_compiler_vsdev_dump_vars
+
+    # FOURTH, capture everything we will need in the launcher environment except:
     # - PATH (we need to cygpath this, and we need to replace any existing PATH)
     # - MSVS_PREFERENCE (we will add our own)
     # - INCLUDE (we actually add this, but we also add our own vcpkg include path)
@@ -582,16 +584,16 @@ autodetect_vsdev() {
     # - CYGPATH
     # - HOME* (HOME, HOMEDRIVE, HOMEPATH)
     # - USER* (USERNAME, USERPROFILE, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE)
-    if [ -n "${autodetect_vsdev_EXTRA_PREFIX_ESCAPED:-}" ]; then
-        autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED="$autodetect_vsdev_EXTRA_PREFIX_ESCAPED\\\\include;"
-        autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED="$autodetect_vsdev_EXTRA_PREFIX_ESCAPED\\\\lib;"
+    if [ -n "${autodetect_compiler_EXTRA_PREFIX_ESCAPED:-}" ]; then
+        autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED="$autodetect_compiler_EXTRA_PREFIX_ESCAPED\\\\include;"
+        autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED="$autodetect_compiler_EXTRA_PREFIX_ESCAPED\\\\lib;"
     else
-        autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED=""
-        autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED=""
+        autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED=""
+        autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED=""
     fi
     awk \
-        -v VCPKG_PREFIX_INCLUDE="$autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED" \
-        -v VCPKG_PREFIX_LIB="$autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED" '
+        -v VCPKG_PREFIX_INCLUDE="$autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED" \
+        -v VCPKG_PREFIX_LIB="$autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED" '
     BEGIN{FS="="}
 
     $1 != "PATH" &&
@@ -607,46 +609,71 @@ autodetect_vsdev() {
 
     $1 == "INCLUDE" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_INCLUDE value}
     $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_LIB value}
-    ' "$autodetect_vsdev_TEMPDIR"/vcvars.txt > "$autodetect_vsdev_TEMPDIR"/mostvars.eval.sh
+    ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh
 
-    # Add all but PATH and MSVS_PREFERENCE to ENV_ARGS
-    while IFS='' read -r line; do ENV_ARGS+=("$line"); done < "$autodetect_vsdev_TEMPDIR"/mostvars.eval.sh
-
-    # Add MSVS_PREFERENCE
-    ENV_ARGS+=(MSVS_PREFERENCE="VS$autodetect_vsdev_VSSTUDIOMSVSPREFERENCE")
-
-    # FOURTH, set VSDEV_PATH to the provided PATH
+    # FIFTH, set autodetect_compiler_COMPILER_PATH to the provided PATH
     awk '
     BEGIN{FS="="}
 
     $1 == "PATH" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print value}
-    ' "$autodetect_vsdev_TEMPDIR"/vcvars.txt > "$autodetect_vsdev_TEMPDIR"/winpath.txt
+    ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/winpath.txt
     # shellcheck disable=SC2086
-    cygpath --path -f - < "$autodetect_vsdev_TEMPDIR/winpath.txt" > "$autodetect_vsdev_TEMPDIR"/unixpath.txt
+    cygpath --path -f - < "$autodetect_compiler_TEMPDIR/winpath.txt" > "$autodetect_compiler_TEMPDIR"/unixpath.txt
     # shellcheck disable=SC2034
-    VSDEV_PATH=$(cat "$autodetect_vsdev_TEMPDIR"/unixpath.txt)
+    autodetect_compiler_COMPILER_PATH=$(cat "$autodetect_compiler_TEMPDIR"/unixpath.txt)
 
-    # FIFTH, set VSDEV_UNIQ_PATH so that it is only the _unique_ entries
-    # (the set {VSDEV_UNIQ_PATH} - {PATH}) are used. But maintain the order
+    # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
+    # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    echo "$VSDEV_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt
-    sort -u "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt > "$autodetect_vsdev_TEMPDIR"/vcvars_entries.sortuniq.txt
-    echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_vsdev_TEMPDIR"/path.sortuniq.txt
+    echo "$autodetect_compiler_COMPILER_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+    sort -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
+    echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
     comm \
         -23 \
-        "$autodetect_vsdev_TEMPDIR"/vcvars_entries.sortuniq.txt \
-        "$autodetect_vsdev_TEMPDIR"/path.sortuniq.txt \
-        > "$autodetect_vsdev_TEMPDIR"/vcvars_uniq.txt
-    while IFS='' read -r autodetect_vsdev_line; do
-        # if and only if the $autodetect_vsdev_line matches one of the lines in vcvars_uniq.txt
-        if ! echo "$autodetect_vsdev_line" | comm -12 - "$autodetect_vsdev_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
-            if [ -z "$VSDEV_UNIQ_PATH" ]; then
-                VSDEV_UNIQ_PATH="$autodetect_vsdev_line"
+        "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt \
+        "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt \
+        > "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt
+    autodetect_compiler_COMPILER_UNIQ_PATH=
+    while IFS='' read -r autodetect_compiler_line; do
+        # if and only if the $autodetect_compiler_line matches one of the lines in vcvars_uniq.txt
+        if ! echo "$autodetect_compiler_line" | comm -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
+            if [ -z "$autodetect_compiler_COMPILER_UNIQ_PATH" ]; then
+                autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_line"
             else
-                VSDEV_UNIQ_PATH="$VSDEV_UNIQ_PATH:$autodetect_vsdev_line"
+                autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_COMPILER_UNIQ_PATH:$autodetect_compiler_line"
             fi
         fi
-    done < "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt
+    done < "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+
+    # SEVENTH, make the launcher script
+    autodetect_compiler_escape_as_single_quoted_argument() {
+        # Since we will embed each name/value pair in single quotes
+        # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
+        # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
+        # we need to replace single quotes (') with ('"'"').
+        sed "s#'#'\"'\"'#g" "$@"
+    }
+    {
+        echo '#!/bin/sh'
+        echo "exec env \\"
+
+        # Add all but PATH and MSVS_PREFERENCE to launcher environment
+        autodetect_compiler_escape_as_single_quoted_argument "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
+            echo "  '$autodetect_compiler_line' \\";
+        done
+
+        # Add MSVS_PREFERENCE
+        echo "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
+
+        # Add PATH
+        autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape_as_single_quoted_argument)
+        echo "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
+
+        # Add arguments
+        echo '  "$@"'
+    } > "$autodetect_compiler_LAUNCHER".tmp
+    chmod +x "$autodetect_compiler_LAUNCHER".tmp
+    mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
 
     return 0
 }
