@@ -31,6 +31,26 @@
 export SHARE_OCAML_OPAM_REPO_RELPATH=share/diskuv-ocaml/ocaml-opam-repo
 export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
 
+# Prefer dash if it is there because it is average 4x faster than bash and should
+# be much more secure. Otherwise /bin/sh which should always be a POSIX
+# compatible shell.
+#
+# Output:
+#   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
+#     set.
+# References:
+#   - https://unix.stackexchange.com/questions/148035/is-dash-or-some-other-shell-faster-than-bash
+autodetect_posix_shell() {
+    export DKML_POSIX_SHELL
+    if [ -n "${DKML_POSIX_SHELL:-}" ]; then
+        return
+    elif [ -e /bin/dash ]; then
+        DKML_POSIX_SHELL=/bin/dash
+    else
+        DKML_POSIX_SHELL=/bin/sh
+    fi
+}
+
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
 #
 # Better alternatives
@@ -428,8 +448,13 @@ autodetect_compiler() {
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
     autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
 
+    # Set DKML_POSIX_SHELL if not already set
+    autodetect_posix_shell
+
     # Initialize output script and variables in case of failure
-    printf '#!/bin/sh\nexec env "$@"\n' > "$autodetect_compiler_LAUNCHER"
+    printf '#!%s\nexec env "$@"\n' "$DKML_POSIX_SHELL" > "$autodetect_compiler_LAUNCHER".tmp
+    chmod +x "$autodetect_compiler_LAUNCHER".tmp
+    mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_WINDOWS=
 
@@ -654,7 +679,7 @@ autodetect_compiler() {
         sed "s#'#'\"'\"'#g" "$@"
     }
     {
-        echo '#!/bin/sh'
+        echo "#!$DKML_POSIX_SHELL"
         echo "exec env \\"
 
         # Add all but PATH and MSVS_PREFERENCE to launcher environment
