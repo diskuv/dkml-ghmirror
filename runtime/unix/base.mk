@@ -186,7 +186,7 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call SHELL_platform_template,$
 define SHELL_platform_buildtype_template
 .PHONY: shell-$(1)-$(2)
 shell-$(1)-$(2):
-	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
 	@exit 0
 endef
 $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
@@ -217,7 +217,7 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 
 .PHONY: init-dev
 init-dev: buildconfig/dune
-	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
 .PHONY: prepare-dev
 prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
@@ -225,10 +225,10 @@ prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
 define PREPARE_buildtype_template
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
-	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
 	fi
 
   .PHONY: prepare-all-$(1)
@@ -365,10 +365,10 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call BUILD_platform_template,$(pla
 define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
-	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
   build-$(1)-$(2): prepare-$(1)-$(2) quickbuild-$(1)-$(2)
   test-$(1)-$(2):
@@ -376,14 +376,12 @@ define BUILD_platform_buildtype_template
 		printf "\n\n$(HORIZONTAL_RULE_80COLS)\n"; \
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
-		if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-			if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
-			if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
 		fi; \
 	fi
 endef
