@@ -73,8 +73,8 @@ is_cygwin_build_machine() {
 #  env:BOOTSTRAPNAME - Examples include: 100-compile-opam
 #  env:DKMLDIR - The directory with .dkmlroot
 install_reproducible_common() {
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$BOOTSTRAPDIR"
+    install_reproducible_common_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install -d "$install_reproducible_common_BOOTSTRAPDIR"
     install_reproducible_file .dkmlroot
     install_reproducible_file installtime/none/emptytop/dune-project
     install_reproducible_file etc/contexts/linux-build/crossplatform-functions.sh
@@ -91,13 +91,12 @@ install_reproducible_common() {
 #       It will be deployed relative to $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
 install_reproducible_file() {
-    local RELFILE="$1"
+    _install_reproducible_file_RELFILE="$1"
     shift
-    local RELDIR
-    RELDIR=$(dirname "$RELFILE")
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$BOOTSTRAPDIR"/"$RELDIR"/
-    install "$DKMLDIR"/"$RELFILE" "$BOOTSTRAPDIR"/"$RELDIR"/
+    _install_reproducible_file_RELDIR=$(dirname "$_install_reproducible_file_RELFILE")
+    _install_reproducible_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install -d "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+    install "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
 }
 
 # Install any deterministically generated files that go into your
@@ -111,16 +110,15 @@ install_reproducible_file() {
 #  $2 - The location of the script that will be installed.
 #       It must be specified relative to $DEPLOYDIR_UNIX.
 install_reproducible_generated_file() {
-    local SRCFILE="$1"
+    install_reproducible_generated_file_SRCFILE="$1"
     shift
-    local RELFILE="$1"
+    install_reproducible_generated_file_RELFILE="$1"
     shift
-    local RELDIR
-    RELDIR=$(dirname "$RELFILE")
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$BOOTSTRAPDIR"/"$RELDIR"/
-    rm -f "$BOOTSTRAPDIR"/"$RELFILE" # ensure if exists it is a regular file or link but not a directory
-    install "$SRCFILE" "$BOOTSTRAPDIR"/"$RELFILE"
+    install_reproducible_generated_file_RELDIR=$(dirname "$install_reproducible_generated_file_RELFILE")
+    install_reproducible_generated_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install -d "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELDIR"/
+    rm -f "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE" # ensure if exists it is a regular file or link but not a directory
+    install "$install_reproducible_generated_file_SRCFILE" "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE"
 }
 
 # Install a README.md file that go into your reproducible build.
@@ -137,13 +135,11 @@ install_reproducible_generated_file() {
 #       It will be deployed as 'README.md' in the bootstrap folder of $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
 install_reproducible_readme() {
-    local RELFILE="$1"
+    install_reproducible_readme_RELFILE="$1"
     shift
-    local RELDIR
-    RELDIR=$(dirname "$RELFILE")
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$BOOTSTRAPDIR"
-    sed "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$RELFILE" > "$BOOTSTRAPDIR"/README.md
+    install_reproducible_readme_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install -d "$install_reproducible_readme_BOOTSTRAPDIR"
+    sed "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$install_reproducible_readme_RELFILE" > "$install_reproducible_readme_BOOTSTRAPDIR"/README.md
 }
 
 # Install a script that can re-install necessary system packages.
@@ -156,38 +152,37 @@ install_reproducible_readme() {
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
 install_reproducible_system_packages() {
-    local SCRIPTFILE="$1"
+    install_reproducible_system_packages_SCRIPTFILE="$1"
     shift
-    local PACKAGEFILE="${SCRIPTFILE//.sh/.packagelist.txt}"
-    if [ "$PACKAGEFILE" = "$SCRIPTFILE" ]; then
-        echo "FATAL: The run script $SCRIPTFILE must end with .sh" >&2
+    install_reproducible_system_packages_PACKAGEFILE="${install_reproducible_system_packages_SCRIPTFILE//.sh/.packagelist.txt}"
+    if [ "$install_reproducible_system_packages_PACKAGEFILE" = "$install_reproducible_system_packages_SCRIPTFILE" ]; then
+        echo "FATAL: The run script $install_reproducible_system_packages_SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
-    local SCRIPTDIR
-    SCRIPTDIR=$(dirname "$SCRIPTFILE")
-    local BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
-    install -d "$BOOTSTRAPDIR"/"$SCRIPTDIR"/
+    install_reproducible_system_packages_SCRIPTDIR=$(dirname "$install_reproducible_system_packages_SCRIPTFILE")
+    install_reproducible_system_packages_BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install_reproducible_system_packages_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
+    install -d "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/
 
     if is_msys2_msys_build_machine; then
         # https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#List_of_installed_packages
-        pacman -Qqet > "$BOOTSTRAPDIR"/"$PACKAGEFILE"
-        printf "#!/usr/bin/env bash\nexec pacman -S \"\$@\" --needed - < '%s'\n" "$BOOTSTRAPRELDIR/$PACKAGEFILE" > "$BOOTSTRAPDIR"/"$SCRIPTFILE"
+        pacman -Qqet > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
+        printf "#!/usr/bin/env bash\nexec pacman -S \"\$@\" --needed - < '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE" > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     elif is_cygwin_build_machine; then
-        cygcheck.exe -c -d > "$BOOTSTRAPDIR"/"$PACKAGEFILE"
+        cygcheck.exe -c -d > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
         {
             echo "#!/usr/bin/env bash"
             echo "if [ ! -e /usr/local/bin/cyg-get ]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
             echo "if [ ! -x /usr/local/bin/cyg-get ]; then chmod +x /usr/local/bin/cyg-get; fi"
-            printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$BOOTSTRAPRELDIR/$PACKAGEFILE"
+            printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
             # shellcheck disable=SC2016
             echo 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
-        } > "$BOOTSTRAPDIR"/"$SCRIPTFILE"
+        } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     else
         echo "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
         exit 1
     fi
-    chmod 755 "$BOOTSTRAPDIR"/"$SCRIPTFILE"
+    chmod 755 "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
 }
 
 # Install a script that can relaunch itself in a relocated position.
@@ -202,25 +197,24 @@ install_reproducible_system_packages() {
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
 install_reproducible_script_with_args() {
-    local SCRIPTFILE="$1"
+    install_reproducible_script_with_args_SCRIPTFILE="$1"
     shift
-    local RECREATEFILE="${SCRIPTFILE//.sh/-noargs.sh}"
-    if [ "$RECREATEFILE" = "$SCRIPTFILE" ]; then
-        echo "FATAL: The run script $SCRIPTFILE must end with .sh" >&2
+    install_reproducible_script_with_args_RECREATEFILE="${install_reproducible_script_with_args_SCRIPTFILE//.sh/-noargs.sh}"
+    if [ "$install_reproducible_script_with_args_RECREATEFILE" = "$install_reproducible_script_with_args_SCRIPTFILE" ]; then
+        echo "FATAL: The run script $install_reproducible_script_with_args_SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
-    local RECREATEDIR
-    RECREATEDIR=$(dirname "$SCRIPTFILE")
-    local BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    local BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
+    install_reproducible_script_with_args_RECREATEDIR=$(dirname "$install_reproducible_script_with_args_SCRIPTFILE")
+    install_reproducible_script_with_args_BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+    install_reproducible_script_with_args_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
 
-    install_reproducible_file "$SCRIPTFILE"
-    install -d "$BOOTSTRAPDIR"/"$RECREATEDIR"/
+    install_reproducible_file "$install_reproducible_script_with_args_SCRIPTFILE"
+    install -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
     printf "#!/usr/bin/env bash\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s %s\n" \
-        "$BOOTSTRAPRELDIR" \
-        "$BOOTSTRAPRELDIR/$SCRIPTFILE" \
-        "$*" > "$BOOTSTRAPDIR"/"$RECREATEFILE"
-    chmod 755 "$BOOTSTRAPDIR"/"$RECREATEFILE"
+        "$install_reproducible_script_with_args_BOOTSTRAPRELDIR" \
+        "$install_reproducible_script_with_args_BOOTSTRAPRELDIR/$install_reproducible_script_with_args_SCRIPTFILE" \
+        "$*" > "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
+    chmod 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
 }
 
 # Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine)
@@ -228,10 +222,9 @@ install_reproducible_script_with_args() {
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 build_machine_arch() {
-    local MACHINE
-    MACHINE=$(uname -m)
+    build_machine_arch_MACHINE=$(uname -m)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
-    case "${MACHINE}" in
+    case "${build_machine_arch_MACHINE}" in
         "armv7*")
             BUILDHOST_ARCH=linux_arm32v7;;
         "armv6*" | "arm")
@@ -254,7 +247,7 @@ build_machine_arch() {
             fi
             ;;
         *)
-            echo "FATAL: Unsupported build machine type obtained from 'uname -m': $MACHINE" >&2
+            echo "FATAL: Unsupported build machine type obtained from 'uname -m': $build_machine_arch_MACHINE" >&2
             exit 1
             ;;
     esac
@@ -380,8 +373,8 @@ autodetect_cpus() {
 # - 1: Not a Windows machine
 # - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit)
 autodetect_vsdev() {
-    local TEMPDIR=${WORK:-$TMP}
-    local PLATFORM_ARCH=${PLATFORM:-dev}
+    autodetect_vsdev_TEMPDIR=${WORK:-$TMP}
+    autodetect_vsdev_PLATFORM_ARCH=${PLATFORM:-dev}
 
     # Initialize output variables ...
     export VSDEV_UNIQ_PATH=
@@ -397,12 +390,12 @@ autodetect_vsdev() {
 
     # Get the extra prefix with backslashes escaped for Awk, if specified
     if [ "$#" -ge 1 ]; then
-        local EXTRA_PREFIX_ESCAPED="$1"
-        if is_unixy_windows_build_machine; then EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$EXTRA_PREFIX_ESCAPED"); fi
-        EXTRA_PREFIX_ESCAPED=${EXTRA_PREFIX_ESCAPED//\\/\\\\}
+        autodetect_vsdev_EXTRA_PREFIX_ESCAPED="$1"
+        if is_unixy_windows_build_machine; then autodetect_vsdev_EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$autodetect_vsdev_EXTRA_PREFIX_ESCAPED"); fi
+        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=${autodetect_vsdev_EXTRA_PREFIX_ESCAPED//\\/\\\\}
         shift
     else
-        local EXTRA_PREFIX_ESCAPED=""
+        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=""
     fi
 
     # Autodetect BUILDHOST_ARCH
@@ -414,33 +407,31 @@ autodetect_vsdev() {
     # Set DKMLPARENTHOME_BUILDHOST
     set_dkmlparenthomedir
 
-    local VSSTUDIODIR
-    local VSSTUDIOVCVARSVER
     if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
-        VSSTUDIODIR=$DKML_VSSTUDIO_DIR
-        VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
-        VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
+        autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
     else
-        local VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
-        if [ ! -e "$VSSTUDIO_DIRFILE" ]; then
+        autodetect_vsdev_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then
             return 2
         fi
-        local VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
-        if [ ! -e "$VSSTUDIO_VCVARSVERFILE" ]; then
+        autodetect_vsdev_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE" ]; then
             return 2
         fi
-        local VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
-        if [ ! -e "$VSSTUDIO_MSVSPREFERENCEFILE" ]; then
+        autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
             return 2
         fi
-        VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_DIRFILE")
-        VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_VCVARSVERFILE")
-        VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$VSSTUDIO_MSVSPREFERENCEFILE")
+        autodetect_vsdev_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
     fi
     if [ -x /usr/bin/cygpath ]; then
-        VSSTUDIODIR=$(/usr/bin/cygpath -au "$VSSTUDIODIR")
+        autodetect_vsdev_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_vsdev_VSSTUDIODIR")
     fi
-    VSDEV_HOME_UNIX="$VSSTUDIODIR"
+    VSDEV_HOME_UNIX="$autodetect_vsdev_VSSTUDIODIR"
     if [ -x /usr/bin/cygpath ]; then
         VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
     else
@@ -450,56 +441,56 @@ autodetect_vsdev() {
     # MSYS2 detection. Path is /c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build/vcvarsall.bat.
     # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat but
     # can't select cross-compilation for some reason.
-    local USE_VSDEV=1
-    if (( USE_VSDEV == 1 )); then
-        if [ -e "$VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
-            VSDEVCMD="$VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
+    autodetect_vsdev_USE_VSDEV=1
+    if (( autodetect_vsdev_USE_VSDEV == 1 )); then
+        if [ -e "$autodetect_vsdev_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
+            autodetect_vsdev_VSDEVCMD="$autodetect_vsdev_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
         else
             return 2
         fi
     else
-        if [ -e "$VSSTUDIODIR"/VC/Auxiliary/Build/vcvarsall.bat ]; then
-            VSDEVCMD="$VSSTUDIODIR/VC/Auxiliary/Build/vcvarsall.bat"
+        if [ -e "$autodetect_vsdev_VSSTUDIODIR"/VC/Auxiliary/Build/vcvarsall.bat ]; then
+            autodetect_vsdev_VSDEVCMD="$autodetect_vsdev_VSSTUDIODIR/VC/Auxiliary/Build/vcvarsall.bat"
         else
             return 2
         fi
     fi
 
-    VSDEV_ARGS=(-no_logo -vcvars_ver="$VSSTUDIOVCVARSVER")
-    VCVARS_ARGS=(-vcvars_ver="$VSSTUDIOVCVARSVER")
+    VSDEV_ARGS=(-no_logo -vcvars_ver="$autodetect_vsdev_VSSTUDIOVCVARSVER")
+    VCVARS_ARGS=(-vcvars_ver="$autodetect_vsdev_VSSTUDIOVCVARSVER")
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
-        if [ "$PLATFORM_ARCH" = dev ] || [ "$PLATFORM_ARCH" = windows_x86 ]; then
+        if [ "$autodetect_vsdev_PLATFORM_ARCH" = dev ] || [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86 ]; then
             VSDEV_ARGS+=(-arch=x86)
             VCVARS_ARGS+=(x86)
             OCAML_HOST_TRIPLET=i686-pc-windows
-        elif [ "$PLATFORM_ARCH" = windows_x86_64 ]; then
+        elif [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             VSDEV_ARGS+=(-host_arch=x86 -arch=x64)
             VCVARS_ARGS+=(-arch=x86_amd64)
             OCAML_HOST_TRIPLET=x86_64-pc-windows
         else
-            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH PLATFORM_ARCH=$PLATFORM_ARCH" >&2
+            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
             exit 1
         fi
     elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
         # The build host machine is 64-bit ...
-        if [ "$PLATFORM_ARCH" = dev ] || [ "$PLATFORM_ARCH" = windows_x86_64 ]; then
+        if [ "$autodetect_vsdev_PLATFORM_ARCH" = dev ] || [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86_64 ]; then
             VSDEV_ARGS+=(-arch=x64)
             VCVARS_ARGS+=(x64)
             OCAML_HOST_TRIPLET=x86_64-pc-windows
-        elif [ "$PLATFORM_ARCH" = windows_x86 ]; then
+        elif [ "$autodetect_vsdev_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             VSDEV_ARGS+=(-host_arch=x64 -arch=x86)
             VCVARS_ARGS+=(amd64_x86)
             OCAML_HOST_TRIPLET=i686-pc-windows
         else
-            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH PLATFORM_ARCH=$PLATFORM_ARCH" >&2
+            echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
             exit 1
         fi
     else
-        echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH PLATFORM_ARCH=$PLATFORM_ARCH" >&2
+        echo "FATAL: check_state autodetect_vsdev BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_vsdev_PLATFORM_ARCH=$autodetect_vsdev_PLATFORM_ARCH" >&2
         exit 1
     fi
 
@@ -509,12 +500,12 @@ autodetect_vsdev() {
     #     set > "C:\the-WORK-directory\vcvars.txt"
     # to the bottom of it so we can inspect the environment variables.
     # (Less hacky version of https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell)
-    VSDEVCMDFILE_WIN=$(cygpath -aw "$VSDEVCMD")
+    autodetect_vsdev_VSDEVCMDFILE_WIN=$(cygpath -aw "$autodetect_vsdev_VSDEVCMD")
     {
-        echo '@call "'"$VSDEVCMDFILE_WIN"'" %*'
+        echo '@call "'"$autodetect_vsdev_VSDEVCMDFILE_WIN"'" %*'
         # shellcheck disable=SC2046
-        echo 'set > "'$(cygpath -aw "$TEMPDIR")'\vcvars.txt"'
-    } > "$TEMPDIR"/vsdevcmd-and-printenv.bat
+        echo 'set > "'$(cygpath -aw "$autodetect_vsdev_TEMPDIR")'\vcvars.txt"'
+    } > "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, we run the batch file
     PATH_UNIX=$(cygpath -au --path "$PATH")
@@ -525,9 +516,9 @@ autodetect_vsdev() {
         VSCMD_ARGS=("${VCVARS_ARGS[@]}")
     fi
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
-        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" VSCMD_DEBUG=1 "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" >&2 # use stderr to not mess up stdout which calling script may care about.
+        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" VSCMD_DEBUG=1 "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" >&2 # use stderr to not mess up stdout which calling script may care about.
     else
-        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" "$TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" > /dev/null
+        env PATH="$PATH_UNIX" "${VSCMD_OPTS[@]}" "$autodetect_vsdev_TEMPDIR"/vsdevcmd-and-printenv.bat "${VSCMD_ARGS[@]}" > /dev/null
     fi
 
     # THIRD, we add everything to the environment except:
@@ -547,16 +538,16 @@ autodetect_vsdev() {
     # - CYGPATH
     # - HOME* (HOME, HOMEDRIVE, HOMEPATH)
     # - USER* (USERNAME, USERPROFILE, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE)
-    if [ -n "${EXTRA_PREFIX_ESCAPED:-}" ]; then
-        local VCPKG_PREFIX_INCLUDE_ESCAPED="$EXTRA_PREFIX_ESCAPED\\\\include;"
-        local VCPKG_PREFIX_LIB_ESCAPED="$EXTRA_PREFIX_ESCAPED\\\\lib;"
+    if [ -n "${autodetect_vsdev_EXTRA_PREFIX_ESCAPED:-}" ]; then
+        autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED="$autodetect_vsdev_EXTRA_PREFIX_ESCAPED\\\\include;"
+        autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED="$autodetect_vsdev_EXTRA_PREFIX_ESCAPED\\\\lib;"
     else
-        local VCPKG_PREFIX_INCLUDE_ESCAPED=""
-        local VCPKG_PREFIX_LIB_ESCAPED=""
+        autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED=""
+        autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED=""
     fi
     awk \
-        -v VCPKG_PREFIX_INCLUDE="$VCPKG_PREFIX_INCLUDE_ESCAPED" \
-        -v VCPKG_PREFIX_LIB="$VCPKG_PREFIX_LIB_ESCAPED" '
+        -v VCPKG_PREFIX_INCLUDE="$autodetect_vsdev_VCPKG_PREFIX_INCLUDE_ESCAPED" \
+        -v VCPKG_PREFIX_LIB="$autodetect_vsdev_VCPKG_PREFIX_LIB_ESCAPED" '
     BEGIN{FS="="}
 
     $1 != "PATH" &&
@@ -572,44 +563,44 @@ autodetect_vsdev() {
 
     $1 == "INCLUDE" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_INCLUDE value}
     $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_LIB value}
-    ' "$TEMPDIR"/vcvars.txt > "$TEMPDIR"/mostvars.eval.sh
+    ' "$autodetect_vsdev_TEMPDIR"/vcvars.txt > "$autodetect_vsdev_TEMPDIR"/mostvars.eval.sh
 
     # Add all but PATH and MSVS_PREFERENCE to ENV_ARGS
-    while IFS='' read -r line; do ENV_ARGS+=("$line"); done < "$TEMPDIR"/mostvars.eval.sh
+    while IFS='' read -r line; do ENV_ARGS+=("$line"); done < "$autodetect_vsdev_TEMPDIR"/mostvars.eval.sh
 
     # Add MSVS_PREFERENCE
-    ENV_ARGS+=(MSVS_PREFERENCE="VS$VSSTUDIOMSVSPREFERENCE")
+    ENV_ARGS+=(MSVS_PREFERENCE="VS$autodetect_vsdev_VSSTUDIOMSVSPREFERENCE")
 
     # FOURTH, set VSDEV_PATH to the provided PATH
     awk '
     BEGIN{FS="="}
 
     $1 == "PATH" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print value}
-    ' "$TEMPDIR"/vcvars.txt > "$TEMPDIR"/winpath.txt
+    ' "$autodetect_vsdev_TEMPDIR"/vcvars.txt > "$autodetect_vsdev_TEMPDIR"/winpath.txt
     # shellcheck disable=SC2086
-    cygpath --path -f - < "$TEMPDIR/winpath.txt" > "$TEMPDIR"/unixpath.txt
+    cygpath --path -f - < "$autodetect_vsdev_TEMPDIR/winpath.txt" > "$autodetect_vsdev_TEMPDIR"/unixpath.txt
     # shellcheck disable=SC2034
-    VSDEV_PATH=$(< "$TEMPDIR"/unixpath.txt)
+    VSDEV_PATH=$(< "$autodetect_vsdev_TEMPDIR"/unixpath.txt)
 
     # FIFTH, set VSDEV_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {VSDEV_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    echo "$VSDEV_PATH" | awk 'BEGIN{RS=":"} {print}' > "$TEMPDIR"/vcvars_entries.txt
+    echo "$VSDEV_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt
     comm \
         -23 \
-        <(sort -u "$TEMPDIR"/vcvars_entries.txt) \
+        <(sort -u "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt) \
         <(echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u) \
-        > "$TEMPDIR"/vcvars_uniq.txt
-    while IFS='' read -r line; do
-        # if and only if the $line matches one of the lines in vcvars_uniq.txt
-        if ! echo "$line" | comm -12 - "$TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
+        > "$autodetect_vsdev_TEMPDIR"/vcvars_uniq.txt
+    while IFS='' read -r autodetect_vsdev_line; do
+        # if and only if the $autodetect_vsdev_line matches one of the lines in vcvars_uniq.txt
+        if ! echo "$autodetect_vsdev_line" | comm -12 - "$autodetect_vsdev_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
             if [ -z "$VSDEV_UNIQ_PATH" ]; then
-                VSDEV_UNIQ_PATH="$line"
+                VSDEV_UNIQ_PATH="$autodetect_vsdev_line"
             else
-                VSDEV_UNIQ_PATH="$VSDEV_UNIQ_PATH:$line"
+                VSDEV_UNIQ_PATH="$VSDEV_UNIQ_PATH:$autodetect_vsdev_line"
             fi
         fi
-    done < "$TEMPDIR"/vcvars_entries.txt
+    done < "$autodetect_vsdev_TEMPDIR"/vcvars_entries.txt
 
     return 0
 }

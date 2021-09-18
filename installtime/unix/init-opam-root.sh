@@ -348,7 +348,7 @@ function install_vcpkg_pkgs {
     if is_unixy_windows_build_machine; then
         # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
         # stalls when running vcpkg directly in MSYS2.
-        local COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+        install_vcpkg_pkgs_COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
         if [ -n "$CMDOUT" ]; then
             {
                 echo '@echo.'
@@ -363,11 +363,11 @@ function install_vcpkg_pkgs {
                 echo '@echo and other "slowness" issues that have been closed without adequate explanations.'
                 echo '@echo.'
                 echo '@echo.'
-                echo "powershell -ExecutionPolicy Bypass -Command \"$COMMAND_AND_ARGS\""
+                echo "powershell -ExecutionPolicy Bypass -Command \"$install_vcpkg_pkgs_COMMAND_AND_ARGS\""
             } >> "$CMDOUT"
             exit 0
         fi
-        log_trace env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$COMMAND_AND_ARGS"
+        log_trace env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
     else
         log_trace env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
     fi

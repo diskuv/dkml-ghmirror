@@ -34,8 +34,8 @@ cd "$TOPDIR"
 # BEGIN Version Cleanup
 
 uninstall_opam_root() {
-    local OLDOPAMROOT="$1"
-    opam switch list --root "$OLDOPAMROOT" --short > "$WORK"/list
+    uninstall_opam_root_OLDOPAMROOT="$1"
+    opam switch list --root "$uninstall_opam_root_OLDOPAMROOT" --short > "$WORK"/list
     for sw in $(< "$WORK"/list); do
         trimmed_switch=$(echo "$sw" | awk 'NF>0{print $1}')
         if [ -z "$trimmed_switch" ] || [ "$trimmed_switch" = "/" ]; then
@@ -59,9 +59,9 @@ uninstall_opam_root() {
             exit 1
             ;;
         esac
-        opam switch remove --root "$OLDOPAMROOT" --yes "$trimmed_switch"
+        opam switch remove --root "$uninstall_opam_root_OLDOPAMROOT" --yes "$trimmed_switch"
     done
-    rm -rf "$OLDOPAMROOT"
+    rm -rf "$uninstall_opam_root_OLDOPAMROOT"
 }
 
 # shellcheck disable=SC2154

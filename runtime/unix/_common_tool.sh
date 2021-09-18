@@ -213,54 +213,50 @@ exec_dev_or_multiarch() {
 }
 
 _exec_dev_or_arch_helper() {
-    local SANDBOX_PLATFORM
-    SANDBOX_PLATFORM=$1
+    _exec_dev_or_arch_helper_SANDBOX_PLATFORM=$1
     shift
-    local ARGS=()
+    _exec_dev_or_arch_helper_ARGS=()
     if [ -n "${BUILDTYPE:-}" ]; then
-        ARGS+=(-b "$BUILDTYPE")
+        _exec_dev_or_arch_helper_ARGS+=(-b "$BUILDTYPE")
     fi
     if [ "${COMPILATION:-}" = OFF ]; then
-        ARGS+=(-n)
+        _exec_dev_or_arch_helper_ARGS+=(-n)
     fi
     if is_dev_platform; then
-        local ACTUALTOPDIR
-        local ACTUALTOPDIR_UNIX
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
             echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
             exit 79
         fi
         if [ -x /usr/bin/cygpath ]; then
-            ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
-            ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
+            _exec_dev_or_arch_helper_ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
+            _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
             ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
             ACTUALDKMLDIR_UNIX=$(/usr/bin/cygpath -au "$DKMLDIR")
             ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
             ACTUALDISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
             ACTUALDISKUVOCAMLHOME_MIXED=$(/usr/bin/cygpath -am "$DiskuvOCamlHome")
         else
-            ACTUALTOPDIR="$TOPDIR"
-            ACTUALTOPDIR_UNIX="$TOPDIR"
+            _exec_dev_or_arch_helper_ACTUALTOPDIR="$TOPDIR"
+            _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX="$TOPDIR"
             ACTUALDKMLDIR="$DKMLDIR"
             ACTUALDKMLDIR_UNIX="$DKMLDIR"
         fi
-        local ARG
-        for ARG in "$@"; do
-            ARG="${ARG//@@EXPAND_TOPDIR@@/$ACTUALTOPDIR}"
-            ARG="${ARG//@@EXPAND_TOPDIR_UNIX@@/$ACTUALTOPDIR_UNIX}"
-            ARG="${ARG//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
-            ARG="${ARG//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
+        for _exec_dev_or_arch_helper_ARG in "$@"; do
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR_UNIX@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
             if is_unixy_windows_build_machine; then
-                ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
-                ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
-                ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
+                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
+                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
+                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
             fi
-            ARGS+=("$ARG")
+            _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@/$ACTUALTOPDIR}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@/$ACTUALTOPDIR_UNIX}"
+            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR}"
+            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
             if is_unixy_windows_build_machine; then
@@ -270,17 +266,17 @@ _exec_dev_or_arch_helper() {
             fi
         fi
         if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-        "$DKMLDIR"/runtime/unix/within-dev -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
+        "$DKMLDIR"/runtime/unix/within-dev -1 "${ACTUAL_PRE_HOOK:-}" "${_exec_dev_or_arch_helper_ARGS[@]}"
         set +x
     else
         local
-        for ARG in "$@"; do
-            ARG="${ARG//@@EXPAND_TOPDIR@@//work}"
-            ARG="${ARG//@@EXPAND_TOPDIR_UNIX@@//work}"
-            ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@//opt/diskuv-ocaml}"
-            ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@//opt/diskuv-ocaml}"
-            ARG="${ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
-            ARGS+=("$ARG")
+        for _exec_dev_or_arch_helper_ARG in "$@"; do
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR@@//work}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR_UNIX@@//work}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@//opt/diskuv-ocaml}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@//opt/diskuv-ocaml}"
+            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
+            _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
@@ -291,7 +287,7 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
         fi
         if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-        "$DKMLDIR"/runtime/unix/within-sandbox -p "$SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
+        "$DKMLDIR"/runtime/unix/within-sandbox -p "$_exec_dev_or_arch_helper_SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${_exec_dev_or_arch_helper_ARGS[@]}"
         set +x
     fi
 }
@@ -314,9 +310,9 @@ _exec_dev_or_arch_helper() {
 # Exit Code:
 # - 1 if DiskuvOCaml is not installed
 autodetect_dkmlvars() {
-    local DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
-    local DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
-    local DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
+    autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
+    autodetect_dkmlvars_DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
+    autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
     set_dkmlparenthomedir
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
@@ -330,9 +326,9 @@ autodetect_dkmlvars() {
         fi
     fi
     # Overrides
-    if [ -n "${DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$DiskuvOCamlVarsVersion_Override"; fi
-    if [ -n "${DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$DiskuvOCamlHome_Override"; fi
-    if [ -n "${DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$DiskuvOCamlBinaryPaths_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$autodetect_dkmlvars_DiskuvOCamlHome_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override"; fi
     # Check if any vars are still unset
     if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
@@ -414,9 +410,9 @@ set_opamswitchdir_of_system() {
 # Returns: True (0) if and only if the switch exists and is at least an `opam switch create --empty` switch.
 #          False (1) otherwise.
 is_empty_opam_switch_present() {
-    local switchdir_buildhost=$1
+    is_empty_opam_switch_present_switchdir_buildhost=$1
     shift
-    if [ -s "$switchdir_buildhost/.opam-switch/switch-config" ]
+    if [ -s "$is_empty_opam_switch_present_switchdir_buildhost/.opam-switch/switch-config" ]
     then
         return 0
     else
@@ -433,9 +429,9 @@ is_empty_opam_switch_present() {
 # Returns: True (0) if and only if the switch exists and has at least an OCaml system compiler.
 #          False (1) otherwise.
 is_minimal_opam_switch_present() {
-    local switchdir_buildhost=$1
+    is_minimal_opam_switch_present_switchdir_buildhost=$1
     shift
-    if [ -e "$switchdir_buildhost/bin/ocamlc" ] || [ -e "$switchdir_buildhost/bin/ocamlc.exe" ]
+    if [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc" ] || [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc.exe" ]
     then
         return 0
     else
@@ -450,9 +446,9 @@ is_minimal_opam_switch_present() {
 # Returns: True (0) if and only if the root exists and has an Opam configuration file.
 #          False (1) otherwise.
 is_minimal_opam_root_present() {
-    local rootdir_buildhost=$1
+    is_minimal_opam_root_present_rootdir_buildhost=$1
     shift
-    if [ -e "$rootdir_buildhost/config" ]
+    if [ -e "$is_minimal_opam_root_present_rootdir_buildhost/config" ]
     then
         return 0
     else
@@ -503,15 +499,15 @@ is_minimal_opam_root_present() {
 #          "utop.2.8.0"
 #        ]
 get_opam_switch_state_toplevelsection() {
-    local switchdir_buildhost=$1
+    get_opam_switch_state_toplevelsection_switchdir_buildhost=$1
     shift
-    local toplevel_section_name=$1
+    get_opam_switch_state_toplevelsection_toplevel_section_name=$1
     shift
-    if [ ! -e "${switchdir_buildhost}/.opam-switch/switch-state" ]; then
-        echo "FATAL: There is no Opam switch at ${switchdir_buildhost}" >&2
+    if [ ! -e "${get_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state" ]; then
+        echo "FATAL: There is no Opam switch at ${get_opam_switch_state_toplevelsection_switchdir_buildhost}" >&2
         exit 71
     fi
-    awk -v section="$toplevel_section_name" \
+    awk -v section="$get_opam_switch_state_toplevelsection_toplevel_section_name" \
         '$1 ~ ":" {state=0} $1==(section ":") {state=1} state==1{print}' \
-        "${switchdir_buildhost}/.opam-switch/switch-state"
+        "${get_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state"
 }
