@@ -362,7 +362,7 @@ set_dkmlparenthomedir() {
 autodetect_cpus() {
     # type cast to a number (in case user gave a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
-    if (( NUMCPUS == 0 )); then
+    if [ "${NUMCPUS}" -eq 0 ]; then
         NUMCPUS=1
         if [ -n "${NUMBER_OF_PROCESSORS:-}" ]; then
             # Windows usually has NUMBER_OF_PROCESSORS
@@ -373,9 +373,9 @@ autodetect_cpus() {
     fi
     # type cast again to a number (in case autodetection produced a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
-    if (( NUMCPUS < 1 )); then
+    if [ "${NUMCPUS}" -lt 1 ]; then
         NUMCPUS=1
-    elif (( NUMCPUS > 8 )); then
+    elif [ "${NUMCPUS}" -gt 8 ]; then
         NUMCPUS=8
     fi
     export NUMCPUS
@@ -486,7 +486,7 @@ autodetect_vsdev() {
     # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat but
     # can't select cross-compilation for some reason.
     autodetect_vsdev_USE_VSDEV=1
-    if (( autodetect_vsdev_USE_VSDEV == 1 )); then
+    if [ "${autodetect_vsdev_USE_VSDEV}" -eq 1 ]; then
         if [ -e "$autodetect_vsdev_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
             autodetect_vsdev_VSDEVCMD="$autodetect_vsdev_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
         else
@@ -554,7 +554,7 @@ autodetect_vsdev() {
     # SECOND, we run the batch file
     PATH_UNIX=$(cygpath -au --path "$PATH")
     VSCMD_OPTS=(__VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1) # __VSCMD_ARG_NO_LOGO is for vcvars which is missing -no_logo option
-    if (( USE_VSDEV == 1 )); then
+    if [ "${USE_VSDEV}" -eq 1 ]; then
         VSCMD_ARGS=("${VSDEV_ARGS[@]}")
     else
         VSCMD_ARGS=("${VCVARS_ARGS[@]}")
