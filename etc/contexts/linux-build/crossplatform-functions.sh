@@ -142,6 +142,50 @@ install_reproducible_readme() {
     sed "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$install_reproducible_readme_RELFILE" > "$install_reproducible_readme_BOOTSTRAPDIR"/README.md
 }
 
+# Changes the suffix of a string and print to the standard output.
+# change_suffix TEXT OLD_SUFFIX NEW_SUFFIX
+#
+# This function can handle old and suffixes containing:
+# * A-Za-z0-9
+# * commas (,)
+# * dashes (-)
+# * underscores (_)
+# * periods (.)
+# * ampersands (@)
+#
+# Other characters may work, but they are not officially supported by this function.
+change_suffix() {
+    change_suffix_TEXT="$1"
+    shift
+    change_suffix_OLD_SUFFIX="$1"
+    shift
+    change_suffix_NEW_SUFFIX="$1"
+    shift
+    printf "%s" "$change_suffix_TEXT" | sed "s#$change_suffix_OLD_SUFFIX\$#$change_suffix_NEW_SUFFIX#"
+}
+
+# Replaces all occurrences of the search term with a replacement string, and print to the standard output.
+# replace_all TEXT SEARCH REPLACE
+#
+# This function can handle old and suffixes containing:
+# * A-Za-z0-9
+# * commas (,)
+# * dashes (-)
+# * underscores (_)
+# * periods (.)
+# * ampersands (@)
+#
+# Other characters may work, but they are not officially supported by this function.
+replace_all() {
+    replace_all_TEXT="$1"
+    shift
+    replace_all_SEARCH="$1"
+    shift
+    replace_all_REPLACE="$1"
+    shift
+    printf "%s" "$replace_all_TEXT" | sed "s#$replace_all_SEARCH#$replace_all_REPLACE#g"
+}
+
 # Install a script that can re-install necessary system packages.
 #
 # Inputs:
@@ -154,7 +198,7 @@ install_reproducible_readme() {
 install_reproducible_system_packages() {
     install_reproducible_system_packages_SCRIPTFILE="$1"
     shift
-    install_reproducible_system_packages_PACKAGEFILE="${install_reproducible_system_packages_SCRIPTFILE//.sh/.packagelist.txt}"
+    install_reproducible_system_packages_PACKAGEFILE=$(change_suffix "$install_reproducible_system_packages_SCRIPTFILE" .sh .packagelist.txt)
     if [ "$install_reproducible_system_packages_PACKAGEFILE" = "$install_reproducible_system_packages_SCRIPTFILE" ]; then
         echo "FATAL: The run script $install_reproducible_system_packages_SCRIPTFILE must end with .sh" >&2
         exit 1
@@ -199,7 +243,7 @@ install_reproducible_system_packages() {
 install_reproducible_script_with_args() {
     install_reproducible_script_with_args_SCRIPTFILE="$1"
     shift
-    install_reproducible_script_with_args_RECREATEFILE="${install_reproducible_script_with_args_SCRIPTFILE//.sh/-noargs.sh}"
+    install_reproducible_script_with_args_RECREATEFILE=$(change_suffix "$install_reproducible_script_with_args_SCRIPTFILE" .sh -noargs.sh)
     if [ "$install_reproducible_script_with_args_RECREATEFILE" = "$install_reproducible_script_with_args_SCRIPTFILE" ]; then
         echo "FATAL: The run script $install_reproducible_script_with_args_SCRIPTFILE must end with .sh" >&2
         exit 1
@@ -392,7 +436,7 @@ autodetect_vsdev() {
     if [ "$#" -ge 1 ]; then
         autodetect_vsdev_EXTRA_PREFIX_ESCAPED="$1"
         if is_unixy_windows_build_machine; then autodetect_vsdev_EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$autodetect_vsdev_EXTRA_PREFIX_ESCAPED"); fi
-        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=${autodetect_vsdev_EXTRA_PREFIX_ESCAPED//\\/\\\\}
+        autodetect_vsdev_EXTRA_PREFIX_ESCAPED=$(echo "${autodetect_vsdev_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
         shift
     else
         autodetect_vsdev_EXTRA_PREFIX_ESCAPED=""

@@ -242,27 +242,27 @@ _exec_dev_or_arch_helper() {
             ACTUALDKMLDIR_UNIX="$DKMLDIR"
         fi
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR_UNIX@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR@@ "${ACTUALDKMLDIR}")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR_UNIX@@ "${ACTUALDKMLDIR_UNIX}")
             if is_unixy_windows_build_machine; then
-                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
-                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
-                _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${ACTUALDISKUVOCAMLHOME}")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
             _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@/$_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR@@/$ACTUALDKMLDIR}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_DKMLDIR_UNIX@@/$ACTUALDKMLDIR_UNIX}"
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR@@ "${ACTUALDKMLDIR}")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR_UNIX@@ "${ACTUALDKMLDIR_UNIX}")
             if is_unixy_windows_build_machine; then
-                ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/$ACTUALDISKUVOCAMLHOME}"
-                ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@/$ACTUALDISKUVOCAMLHOME_UNIX}"
-                ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/$ACTUALDISKUVOCAMLHOME_MIXED}"
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${ACTUALDISKUVOCAMLHOME}")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
         fi
         if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
@@ -271,20 +271,20 @@ _exec_dev_or_arch_helper() {
     else
         local
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR@@//work}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_TOPDIR_UNIX@@//work}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@//opt/diskuv-ocaml}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@//opt/diskuv-ocaml}"
-            _exec_dev_or_arch_helper_ARG="${_exec_dev_or_arch_helper_ARG//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "/work")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR@@//work}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_TOPDIR_UNIX@@//work}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@//opt/diskuv-ocaml}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@//opt/diskuv-ocaml}"
-            ACTUAL_PRE_HOOK="${ACTUAL_PRE_HOOK//@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@//opt/diskuv-ocaml}"
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "/work")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "/work")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
         fi
         if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
         "$DKMLDIR"/runtime/unix/within-sandbox -p "$_exec_dev_or_arch_helper_SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${_exec_dev_or_arch_helper_ARGS[@]}"

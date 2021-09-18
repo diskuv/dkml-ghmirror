@@ -344,7 +344,7 @@ else
 fi
 
 # Opam `PKG_CONFIG_PATH += "xxx"` requires that `xxx` is a valid Opam string. Escape all the backslashes.
-PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
+PKG_CONFIG_PATH_ADD=$(echo "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 
 # Two operators: option setenv(OP1)"NAME OP2 VALUE"
 #
