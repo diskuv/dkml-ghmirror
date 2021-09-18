@@ -287,31 +287,41 @@ install_reproducible_script_with_args() {
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 build_machine_arch() {
     build_machine_arch_MACHINE=$(uname -m)
+    build_machine_arch_SYSTEM=$(uname -s)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
-    case "${build_machine_arch_MACHINE}" in
-        "armv7*")
+    case "${build_machine_arch_SYSTEM}-${build_machine_arch_MACHINE}" in
+        "Linux-armv7*")
             BUILDHOST_ARCH=linux_arm32v7;;
-        "armv6*" | "arm")
+        "Linux-armv6*" | "Linux-arm")
             BUILDHOST_ARCH=linux_arm32v6;;
-        "aarch64" | "arm64" | "armv8*")
+        "Linux-aarch64" | "Linux-arm64" | "Linux-armv8*")
             BUILDHOST_ARCH=linux_arm64;;
-        "i386" | "i686")
+        "Linux-i386" | "Linux-i686")
+            BUILDHOST_ARCH=linux_x86;;
+        "Linux-x86_64")
+            BUILDHOST_ARCH=linux_x86_64;;
+        "Darwin-arm64")
+            BUILDHOST_ARCH=darwin_arm64;;
+        "Darwin-x86_64")
+            BUILDHOST_ARCH=darwin_x86_64;;
+        "*-i386" | "*-i686")
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86
             else
-                BUILDHOST_ARCH=linux_x86
+                echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                exit 1
             fi
             ;;
-        "x86_64")
+        "*-x86_64")
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86_64
             else
-                # shellcheck disable=SC2034
-                BUILDHOST_ARCH=linux_x86_64
+                echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                exit 1
             fi
             ;;
         *)
-            echo "FATAL: Unsupported build machine type obtained from 'uname -m': $build_machine_arch_MACHINE" >&2
+            echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
             exit 1
             ;;
     esac
@@ -326,17 +336,21 @@ build_machine_arch() {
 # - env:PLATFORM_VCPKG_TRIPLET will contain the correct vcpkg triplet
 platform_vcpkg_triplet() {
     build_machine_arch
+    export PLATFORM_VCPKG_TRIPLET
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
     case "$PLATFORM-$BUILDHOST_ARCH" in
         "dev-windows_x86")    PLATFORM_VCPKG_TRIPLET=x86-windows ;;
         "dev-windows_x86_64") PLATFORM_VCPKG_TRIPLET=x64-windows ;;
         "dev-linux_x86")      PLATFORM_VCPKG_TRIPLET=x86-linux ;;
-        "dev-linux_x86_64")
-            # shellcheck disable=SC2034
-            PLATFORM_VCPKG_TRIPLET=x64-linux ;;
+        "dev-linux_x86_64")   PLATFORM_VCPKG_TRIPLET=x64-linux ;;
+        # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
+        # Caution: arm64-osx and arm64-ios triplets are Community supported. https://github.com/microsoft/vcpkg/tree/master/triplets/community
+        # and https://github.com/microsoft/vcpkg/issues/12258 .
+        "dev-darwin_arm64")  PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
+        "dev-darwin_x86_64")  PLATFORM_VCPKG_TRIPLET=x64-osx ;;
         *)
-            echo "FATAL: Unsupported vcpkg triplet for PLATFORM: $PLATFORM" >&2
+            echo "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1
             ;;
     esac

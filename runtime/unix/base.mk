@@ -86,8 +86,10 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 #                - C++ name mangling scheme
 #  FRAMEWORK  := an optional framework that encompasses:
 #                - the SDKs expected on the target device
-#             => Darwin options could include "iosdevice", "iossimulator", "macos"
-#             => Windows options could include "winstore" (WindowsStore in CMake)
+#             => Darwin options could include "iosdevice", "iossimulator", "macos".
+#                Without options the target is macOS which is somewhat arbitrary but development is much
+#                more likely on a macOS that an iOS, and iOS has multiple options to pick. macOS is simple.
+#             => Windows options could include "winstore" (WindowsStore in CMake).
 #
 # Future Platforms
 # ----------------
