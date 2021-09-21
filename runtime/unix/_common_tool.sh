@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ----------------------------
 # Copyright 2021 Diskuv, Inc.
 #
@@ -92,7 +92,7 @@ WORK_EXPAND_UNIX="@@EXPAND_TOPDIR_UNIX@@/$TMPPARENTDIR_RELTOP/$WORK_BASENAME"
 unset WORK_BASENAME
 
 # shellcheck disable=SC1091
-source "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
+. "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
 
 # shellcheck disable=SC2034
 TOOLSDIR="build/_tools/$PLATFORM"
@@ -215,12 +215,14 @@ exec_dev_or_multiarch() {
 _exec_dev_or_arch_helper() {
     _exec_dev_or_arch_helper_SANDBOX_PLATFORM=$1
     shift
-    _exec_dev_or_arch_helper_ARGS=()
+    _exec_dev_or_arch_helper_CMDFILE="$WORK"/_exec_dev_or_arch_helper-cmdfile.sh
+    _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
+    true > "$_exec_dev_or_arch_helper_CMDARGS"
     if [ -n "${BUILDTYPE:-}" ]; then
-        _exec_dev_or_arch_helper_ARGS+=(-b "$BUILDTYPE")
+        echo "  -b $BUILDTYPE \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if [ "${COMPILATION:-}" = OFF ]; then
-        _exec_dev_or_arch_helper_ARGS+=(-n)
+        echo "  -n \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
@@ -251,7 +253,7 @@ _exec_dev_or_arch_helper() {
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
-            _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
+            echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
@@ -265,18 +267,17 @@ _exec_dev_or_arch_helper() {
                 ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
         fi
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-        "$DKMLDIR"/runtime/unix/within-dev -1 "${ACTUAL_PRE_HOOK:-}" "${_exec_dev_or_arch_helper_ARGS[@]}"
-        set +x
+        echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
+
+        echo "set -ex; '$DKMLDIR'/runtime/unix/within-dev -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     else
-        local
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "/work")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
-            _exec_dev_or_arch_helper_ARGS+=("$_exec_dev_or_arch_helper_ARG")
+            echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
@@ -286,10 +287,12 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
         fi
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-        "$DKMLDIR"/runtime/unix/within-sandbox -p "$_exec_dev_or_arch_helper_SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${_exec_dev_or_arch_helper_ARGS[@]}"
-        set +x
+        echo "set -ex; '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_SANDBOX_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     fi
+    cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
+
+    autodetect_posix_shell # Set DKML_POSIX_SHELL
+    log_trace "$DKML_POSIX_SHELL" "$_exec_dev_or_arch_helper_CMDFILE"
 }
 
 # Detects DiskuvOCaml and sets its variables.
@@ -317,12 +320,12 @@ autodetect_dkmlvars() {
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
             # shellcheck disable=SC1090
-            source "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
+            . "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
         fi
     else
         if [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]; then
             # shellcheck disable=SC1091
-            source "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
+            . "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
         fi
     fi
     # Overrides

@@ -293,6 +293,9 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi
     fi
+    INSTALL_VCPKG=ON
+else
+    INSTALL_VCPKG=OFF
 fi
 
 # END install vcpkg
@@ -301,125 +304,127 @@ fi
 # -----------------------
 # BEGIN install vcpkg packages
 
-if [ -n "$CMDOUT" ]; then
-    true > "$CMDOUT"
-fi
-
-# For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
-# There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
-# "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
-# https://github.com/Microsoft/vcpkg/issues/645 . Note: This doesn't fix the stalling but keeping it!
-install -d "$VCPKG_UNIX"/downloads
-touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
-
-# Autodetect VSDEV_HOME_WINDOWS on Windows.
-# We only care about the output VSDEV_HOME_* environment values.
-autodetect_compiler "$WORK"/launch-compiler.sh
-
-# Set VCPKG_VISUAL_STUDIO_PATH
-if is_unixy_windows_build_machine; then
-    VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}"
+if [ "$INSTALL_VCPKG" = ON ]; then
     if [ -n "$CMDOUT" ]; then
-        echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
+        true > "$CMDOUT"
     fi
-else
-    VCPKG_VISUAL_STUDIO_PATH=""
-fi
 
-# Set DiskuvOCamlHome
-autodetect_dkmlvars
+    # For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
+    # There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
+    # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
+    # https://github.com/Microsoft/vcpkg/issues/645 . Note: This doesn't fix the stalling but keeping it!
+    install -d "$VCPKG_UNIX"/downloads
+    touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
-# Set PATH for vcpkg
-if [ -n "${DiskuvOCamlHome:-}" ]; then
-    # We don't want vcpkg installing cmake again if we have a modern one
+    # Autodetect VSDEV_HOME_WINDOWS on Windows.
+    # We only care about the output VSDEV_HOME_* environment values.
+    autodetect_compiler "$WORK"/launch-compiler.sh
+
+    # Set VCPKG_VISUAL_STUDIO_PATH
     if is_unixy_windows_build_machine; then
-        DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-        DOCH_WINDOWS=$(cygpath -aw "$DiskuvOCamlHome")
-        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH"
+        VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}"
         if [ -n "$CMDOUT" ]; then
-            printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
+            echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
         fi
     else
-        DOCH_UNIX="$DiskuvOCamlHome"
-        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$PATH"
+        VCPKG_VISUAL_STUDIO_PATH=""
     fi
-else
-    VCPKG_PATH="$PATH"
-fi
 
-install_vcpkg_pkgs() {
-    set +u # workaround bash bug on empty arrays
-    if is_unixy_windows_build_machine; then
-        # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
-        # stalls when running vcpkg directly in MSYS2.
-        install_vcpkg_pkgs_COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
-        if [ -n "$CMDOUT" ]; then
-            {
-                echo '@echo.'
-                echo '@echo.'
-                echo '@echo.'
-                echo '@echo KNOWN ISSUE'
-                echo '@echo -----------'
-                echo '@echo.'
-                echo '@echo This window may take a very long time (perhaps an hour) to get through its next command.'
-                echo '@echo The bug is with first-time installs of vcpkg on some machines, and seems related to'
-                echo '@echo https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890'
-                echo '@echo and other "slowness" issues that have been closed without adequate explanations.'
-                echo '@echo.'
-                echo '@echo.'
-                echo "powershell -ExecutionPolicy Bypass -Command \"$install_vcpkg_pkgs_COMMAND_AND_ARGS\""
-            } >> "$CMDOUT"
-            exit 0
+    # Set DiskuvOCamlHome if available
+    autodetect_dkmlvars || true
+
+    # Set PATH for vcpkg
+    if [ -n "${DiskuvOCamlHome:-}" ]; then
+        # We don't want vcpkg installing cmake again if we have a modern one
+        if is_unixy_windows_build_machine; then
+            DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
+            DOCH_WINDOWS=$(cygpath -aw "$DiskuvOCamlHome")
+            VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH"
+            if [ -n "$CMDOUT" ]; then
+                printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
+            fi
+        else
+            DOCH_UNIX="$DiskuvOCamlHome"
+            VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$PATH"
         fi
-        log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
     else
-        log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+        VCPKG_PATH="$PATH"
     fi
-    set -u
-}
 
-# Install vcpkg packages
-if [ -e vcpkg.json ]; then
-    # https://vcpkg.io/en/docs/users/manifests.html
-    # The project in $TOPDIR is a vcpkg manifest project; these are now recommended
-    # by vcpkg. The dependencies are listed in vcpkg.json, with no tool to edit it.
+    install_vcpkg_pkgs() {
+        set +u # workaround bash bug on empty arrays
+        if is_unixy_windows_build_machine; then
+            # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
+            # stalls when running vcpkg directly in MSYS2.
+            install_vcpkg_pkgs_COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+            if [ -n "$CMDOUT" ]; then
+                {
+                    echo '@echo.'
+                    echo '@echo.'
+                    echo '@echo.'
+                    echo '@echo KNOWN ISSUE'
+                    echo '@echo -----------'
+                    echo '@echo.'
+                    echo '@echo This window may take a very long time (perhaps an hour) to get through its next command.'
+                    echo '@echo The bug is with first-time installs of vcpkg on some machines, and seems related to'
+                    echo '@echo https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890'
+                    echo '@echo and other "slowness" issues that have been closed without adequate explanations.'
+                    echo '@echo.'
+                    echo '@echo.'
+                    echo "powershell -ExecutionPolicy Bypass -Command \"$install_vcpkg_pkgs_COMMAND_AND_ARGS\""
+                } >> "$CMDOUT"
+                exit 0
+            fi
+            log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
+        else
+            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+        fi
+        set -u
+    }
 
-    # 1. Install the project dependencies using the triplet we need.
-    install_vcpkg_pkgs
+    # Install vcpkg packages
+    if [ -e vcpkg.json ]; then
+        # https://vcpkg.io/en/docs/users/manifests.html
+        # The project in $TOPDIR is a vcpkg manifest project; these are now recommended
+        # by vcpkg. The dependencies are listed in vcpkg.json, with no tool to edit it.
 
-    # 2. Validate we have all necessary dependencies
-    # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
-    "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
-    run_with_vcpkg_pkgs echo | xargs -n1 | sort -u > "$WORK"/vcpkg.need
-    comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
-    if [ -s "$WORK"/vcpkg.missing ]; then
-        ERRFILE=$TOPDIR/vcpkg.json
-        if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
-        echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
-        cat "$WORK"/vcpkg.missing >&2
-        echo ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"
-        exit 1
+        # 1. Install the project dependencies using the triplet we need.
+        install_vcpkg_pkgs
+
+        # 2. Validate we have all necessary dependencies
+        # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
+        "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
+        run_with_vcpkg_pkgs echo | xargs -n1 | sort -u > "$WORK"/vcpkg.need
+        comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
+        if [ -s "$WORK"/vcpkg.missing ]; then
+            ERRFILE=$TOPDIR/vcpkg.json
+            if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
+            echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
+            cat "$WORK"/vcpkg.missing >&2
+            echo ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"
+            exit 1
+        fi
+    else
+        # Non vcpkg-manifest project. All packages will be installed in the
+        # "system" ($VCPKG_UNIX).
+        run_with_vcpkg_pkgs install_vcpkg_pkgs
     fi
-else
-    # Non vcpkg-manifest project. All packages will be installed in the
-    # "system" ($VCPKG_UNIX).
-    run_with_vcpkg_pkgs install_vcpkg_pkgs
+
+    # ---fixup pkgconf----
+
+    # Copy pkgconf.exe to pkg-config.exe since not provided
+    # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
+
+    install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
+        "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
+
+    # ---fixup libuv----
+
+    # If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
+
+    install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
+        "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
 fi
-
-# ---fixup pkgconf----
-
-# Copy pkgconf.exe to pkg-config.exe since not provided
-# automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
-
-install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
-    "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
-
-# ---fixup libuv----
-
-# If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
-
-install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
-    "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
 
 # END install vcpkg packages
 # -----------------------
