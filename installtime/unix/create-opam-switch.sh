@@ -142,13 +142,13 @@ fi
 # shellcheck disable=SC1091
 if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_build.sh
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+    . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 # shellcheck disable=SC1091
-source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
+. "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container

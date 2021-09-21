@@ -98,7 +98,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # shellcheck disable=SC1091
-source "$DKMLDIR"/runtime/unix/_common_build.sh
+. "$DKMLDIR"/runtime/unix/_common_build.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container

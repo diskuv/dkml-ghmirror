@@ -3,7 +3,7 @@ set -euf
 cd /work
 
 # shellcheck disable=SC1091
-source "/opt/build-sandbox/crossplatform-functions.sh"
+. "/opt/build-sandbox/crossplatform-functions.sh"
 
 # ------------
 # BEGIN stop exporting any non-public variables exported by Dockerfile and `docker run --env`

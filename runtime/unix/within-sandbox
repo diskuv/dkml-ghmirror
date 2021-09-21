@@ -86,13 +86,13 @@ DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_build.sh
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+    . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 # shellcheck disable=SC1091
-source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
+. "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # Set PLATFORM_VCPKG_TRIPLET
 platform_vcpkg_triplet

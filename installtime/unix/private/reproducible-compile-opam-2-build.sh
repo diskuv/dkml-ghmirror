@@ -90,7 +90,7 @@ fi
 # ------------------
 
 # shellcheck disable=SC1091
-source "$DKMLDIR/runtime/unix/_common_tool.sh"
+. "$DKMLDIR/runtime/unix/_common_tool.sh"
 
 disambiguate_filesystem_paths
 

@@ -58,7 +58,7 @@ if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launc
 PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
 
 # shellcheck disable=SC1091
-source "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/runtime/unix/_common_tool.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container

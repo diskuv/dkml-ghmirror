@@ -128,10 +128,10 @@ fi
 
 if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_build.sh
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
     # shellcheck disable=SC1091
-    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+    . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 
 # To be portable whether we build scripts in the container or not, we
