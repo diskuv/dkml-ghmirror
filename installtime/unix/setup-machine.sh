@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euf -o pipefail
+set -euf
 
 # This file is a transliteration of `setup-machine.ps1`.
 # Consider the variable and method naming of PowerShell scripts to be authoritative.

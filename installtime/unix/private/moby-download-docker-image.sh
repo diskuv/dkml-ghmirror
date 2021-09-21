@@ -26,7 +26,7 @@
 # Windows: Meant to be called from Cygwin so there is a working `jq` for the Moby download-frozen-image-v2.sh.
 # If we use native Windows jq then we run into `jq` shell quoting failures, and MSYS2 has no `jq`.
 
-set -euf -o pipefail
+set -euf
 
 MOBYDIR=$1
 shift

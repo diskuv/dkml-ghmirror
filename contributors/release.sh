@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euf -o pipefail
+set -euf
 
 # Really only needed for MSYS2 if we are calling from a MSYS2/usr/bin/make.exe rather than a full shell
 export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$PATH"

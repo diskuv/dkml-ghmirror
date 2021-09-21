@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # -------------------------------------------------------
 # init-opam-root.sh PLATFORM
 #
@@ -16,7 +16,7 @@
 # Prerequisites: A working build/_tools/common/ directory.
 #
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 VCPKG_VER="2021.05.12"
 VCPKG_PKGS=(pkgconf libffi libuv)

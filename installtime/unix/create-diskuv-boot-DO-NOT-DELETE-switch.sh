@@ -20,7 +20,7 @@
 # can be upgraded like any other opam switch.
 #
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

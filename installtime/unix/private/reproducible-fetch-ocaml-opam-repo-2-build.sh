@@ -25,7 +25,7 @@
 #
 # Download the Opam repository
 
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

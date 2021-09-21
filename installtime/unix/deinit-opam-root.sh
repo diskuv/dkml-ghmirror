@@ -8,7 +8,7 @@
 # Prerequisites: A working build/_tools/common/ directory.
 #
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 # shellcheck disable=SC2034
 PLATFORM=$1

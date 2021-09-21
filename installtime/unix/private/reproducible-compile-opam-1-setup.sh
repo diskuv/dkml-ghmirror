@@ -25,7 +25,7 @@
 #
 # Sets up the source code for a reproducible build
 
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

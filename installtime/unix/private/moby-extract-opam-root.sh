@@ -25,7 +25,7 @@
 #
 # OCAML_OPAM_PORT is either msvc or mingw. Confer https://discuss.ocaml.org/t/ann-ocaml-opam-images-for-docker-for-windows/8179
 
-set -euf -o pipefail
+set -euf
 
 MOBYDIR=$1
 shift

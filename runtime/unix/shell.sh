@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euf -o pipefail
+set -euf
 
 PLATFORM=$1
 shift

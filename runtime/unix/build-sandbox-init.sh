@@ -17,7 +17,7 @@
 # The tool packages are placed in build/_tools/$PLATFORM/$PKGNAME.
 #
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 # shellcheck disable=SC2034
 PLATFORM=$1

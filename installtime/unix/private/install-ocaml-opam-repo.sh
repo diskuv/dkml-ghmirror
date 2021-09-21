@@ -2,7 +2,7 @@
 # ----------------------------
 # install-ocaml-opam-repo.sh DKMLDIR DOCKER_IMAGE INSTALLDIR
 
-set -euf -o pipefail
+set -euf
 
 DKMLDIR=$1
 shift

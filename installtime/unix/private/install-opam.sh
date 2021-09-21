@@ -2,7 +2,7 @@
 # ----------------------------
 # install-opam.sh DKMLDIR GIT_TAG INSTALLDIR
 
-set -euf -o pipefail
+set -euf
 
 DKMLDIR=$1
 shift

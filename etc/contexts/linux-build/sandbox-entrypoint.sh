@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euf -o pipefail
+set -euf
 cd /work
 
 # shellcheck disable=SC1091

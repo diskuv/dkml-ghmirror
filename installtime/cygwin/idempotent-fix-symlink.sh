@@ -52,7 +52,7 @@
 #       will change REFERREE as in Example 2
 #    b) else this script will change REFEREE to RELATIVE_REFERENT as in Example 1
 
-set -euf -o pipefail
+set -euf
 
 REFEREE=$1
 shift

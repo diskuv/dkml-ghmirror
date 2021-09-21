@@ -12,7 +12,7 @@
 # * An OPAMROOT created by `init-opam-root.sh`
 #
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 # ------
 # pinned
@@ -377,7 +377,7 @@ fi
 # Create: pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
 {
     echo '#!/bin/bash'
-    echo 'set -euf -o pipefail'
+    echo 'set -euf'
     # shellcheck disable=2016
     echo '_OPAMROOTDIR=$1'
     echo 'shift'

@@ -25,7 +25,7 @@
 #
 # Remove intermediate files from reproducible target directory
 
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

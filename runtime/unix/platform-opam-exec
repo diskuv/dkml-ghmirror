@@ -14,7 +14,7 @@
 #
 # The build is placed in build/$PLATFORM.
 # -------------------------------------------------------
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

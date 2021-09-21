@@ -11,7 +11,7 @@
 #   Instead we mount in the `/` directory or some other mount exclusive directory like `/mnt`.
 #   You can always symlink inside /home/user/ or other essential directory to the mounted directory.
 # --------------------------
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

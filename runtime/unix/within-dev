@@ -4,7 +4,7 @@
 #
 # Analog of within-sandbox and sandbox-entrypoint.sh. Most of the same environment variables should be set albeit with different values.
 # --------------------------
-set -euf -o pipefail
+set -euf
 
 # ------------------
 # BEGIN Command line processing

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euf -o pipefail
+set -euf
 
 # Passthrough environment variables
 ENV_CMD=(env)

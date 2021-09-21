@@ -25,7 +25,7 @@
 #
 # Downloads and patches `download-frozen-image-v2.sh` and places it in MOBYDIR
 
-set -euf -o pipefail
+set -euf
 
 MOBYDIR=$1
 shift
