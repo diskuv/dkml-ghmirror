@@ -454,8 +454,7 @@ autodetect_cpus() {
 #   if and only if Visual Studio was detected. Empty otherwise
 # Return Values:
 # - 0: Success
-# - 1: Not a Windows machine (ie. do not say this is fatal)
-# - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
+# - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
 autodetect_compiler() {
     autodetect_compiler_LAUNCHER="$1"
     shift
@@ -487,15 +486,16 @@ autodetect_compiler() {
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
     fi
 
-    # Autodetect BUILDHOST_ARCH
-    build_machine_arch
-    if [ "$BUILDHOST_ARCH" != windows_x86 ] && [ "$BUILDHOST_ARCH" != windows_x86_64 ]; then
-        return 1
-    fi
-
     # Set DKMLPARENTHOME_BUILDHOST
     set_dkmlparenthomedir
 
+    # Autodetect BUILDHOST_ARCH
+    build_machine_arch
+    if [ "$BUILDHOST_ARCH" != windows_x86 ] && [ "$BUILDHOST_ARCH" != windows_x86_64 ]; then
+        return 0
+    fi
+
+    # Set VSDEV_HOME_*
     if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
         autodetect_compiler_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
         autodetect_compiler_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
@@ -503,15 +503,15 @@ autodetect_compiler() {
     else
         autodetect_compiler_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
         if [ ! -e "$autodetect_compiler_VSSTUDIO_DIRFILE" ]; then
-            return 2
+            return 1
         fi
         autodetect_compiler_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
         if [ ! -e "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE" ]; then
-            return 2
+            return 1
         fi
         autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
         if [ ! -e "$autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
-            return 2
+            return 1
         fi
         autodetect_compiler_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_DIRFILE")
         autodetect_compiler_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE")
@@ -532,7 +532,7 @@ autodetect_compiler() {
     if [ -e "$autodetect_compiler_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
         autodetect_compiler_VSDEVCMD="$autodetect_compiler_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
     else
-        return 2
+        return 1
     fi
 
     # FIRST, create a file that calls vsdevcmd.bat and then adds a `set` dump.
