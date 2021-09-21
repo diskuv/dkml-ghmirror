@@ -19,7 +19,11 @@
 set -euf
 
 VCPKG_VER="2021.05.12"
-VCPKG_PKGS=(pkgconf libffi libuv)
+run_with_vcpkg_pkgs() {
+    run_with_vcpkg_pkgs_CMD="$1"
+    shift
+    "$run_with_vcpkg_pkgs_CMD" pkgconf libffi libuv
+}
 
 # ------------------
 # BEGIN Command line processing
@@ -72,9 +76,9 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 
 # shellcheck disable=SC1091
-source "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/runtime/unix/_common_tool.sh
 # shellcheck disable=SC1091
-source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
+. "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -127,13 +131,12 @@ else
 fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
-    RSYNC_OPTS=(-avp)
     if is_unixy_windows_build_machine; then
-        log_trace rsync "${RSYNC_OPTS[@]}" \
+        log_trace rsync -avp \
             "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
             "$OPAMREPOS_UNIX"/fdopen-mingw
     fi
-    log_trace rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    log_trace rsync -avp "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
     touch "$OPAMREPOS_UNIX".complete
 fi
 
@@ -162,15 +165,15 @@ set_opamrootdir
 # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
 # --no-setup: Don't modify user shell configuration (ex. ~/.profile). The home directory inside the Docker container
 #             is not persistent anyways, so anything else would be useless.
-OPAM_INIT_ARGS=(--yes --disable-sandboxing --no-setup)
 REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
-if is_unixy_windows_build_machine; then
-    # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.
-    # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository
-    OPAM_INIT_ARGS+=(--kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL")
-fi
 if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
-    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init "${OPAM_INIT_ARGS[@]}"
+    if is_unixy_windows_build_machine; then
+        # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.
+        # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
+    else
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init --yes --disable-sandboxing --no-setup
+    fi
 fi
 
 # If and only if we have Windows Opam root we have to configure its global options
@@ -276,20 +279,15 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
     fi
 
     if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
-        # We don't need to send telemetry to Microsoft
-        UNIX_ARGS=(-disableMetrics)
-        WIN_ARGS=(-disableMetrics)
-        if is_reproducible_platform; then
-            # Use cmake and ninja from the system if we are in a reproducible (Linux) container.
-            # (This clause won't be executed on Windows, and even if it were there is no equivalent of useSystemBinaries)
-            UNIX_ARGS+=(-useSystemBinaries)
-        fi
         if is_unixy_windows_build_machine; then
             # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
             #             for command line arguments. Only -disableMetrics is recognized.
-            log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" "${WIN_ARGS[@]}"
+            log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
+        elif is_reproducible_platform; then
+            # Use cmake and ninja from the system if we are in a reproducible Linux container.
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
         else
-            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" "${UNIX_ARGS[@]}"
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi
     fi
 fi
@@ -314,37 +312,39 @@ touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 # Autodetect VSDEV_HOME_WINDOWS on Windows.
 # We only care about the output VSDEV_HOME_* environment values.
 autodetect_compiler "$WORK"/launch-compiler.sh
+
+# Set VCPKG_VISUAL_STUDIO_PATH
 if is_unixy_windows_build_machine; then
-    VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}")
+    VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}"
     if [ -n "$CMDOUT" ]; then
         echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
     fi
 else
-    VCPKG_ENV=(VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_UNIX:-}")
+    VCPKG_VISUAL_STUDIO_PATH=""
 fi
 
 # Set DiskuvOCamlHome
 autodetect_dkmlvars
+
+# Set PATH for vcpkg
 if [ -n "${DiskuvOCamlHome:-}" ]; then
     # We don't want vcpkg installing cmake again if we have a modern one
     if is_unixy_windows_build_machine; then
         DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
         DOCH_WINDOWS=$(cygpath -aw "$DiskuvOCamlHome")
-        # SYSWIN=$(cygpath -Sw) # ex. C:\Windows\System32
-        # VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$SYSWIN")
-        VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH")
+        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH"
         if [ -n "$CMDOUT" ]; then
             printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
         fi
     else
         DOCH_UNIX="$DiskuvOCamlHome"
-        VCPKG_ENV+=(PATH="$DOCH_UNIX/tools/cmake/bin:$PATH")
+        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$PATH"
     fi
 else
-    VCPKG_ENV+=(PATH="$PATH")
+    VCPKG_PATH="$PATH"
 fi
 
-function install_vcpkg_pkgs {
+install_vcpkg_pkgs() {
     set +u # workaround bash bug on empty arrays
     if is_unixy_windows_build_machine; then
         # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
@@ -368,9 +368,9 @@ function install_vcpkg_pkgs {
             } >> "$CMDOUT"
             exit 0
         fi
-        log_trace env --unset=TEMP --unset=TMP "${VCPKG_ENV[@]}" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
+        log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
     else
-        log_trace env "${VCPKG_ENV[@]}" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+        log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
     fi
     set -u
 }
@@ -387,7 +387,7 @@ if [ -e vcpkg.json ]; then
     # 2. Validate we have all necessary dependencies
     # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
     "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
-    echo "${VCPKG_PKGS[@]}" | xargs -n1 | sort -u > "$WORK"/vcpkg.need
+    run_with_vcpkg_pkgs echo | xargs -n1 | sort -u > "$WORK"/vcpkg.need
     comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
     if [ -s "$WORK"/vcpkg.missing ]; then
         ERRFILE=$TOPDIR/vcpkg.json
@@ -400,7 +400,7 @@ if [ -e vcpkg.json ]; then
 else
     # Non vcpkg-manifest project. All packages will be installed in the
     # "system" ($VCPKG_UNIX).
-    install_vcpkg_pkgs "${VCPKG_PKGS[@]}"
+    run_with_vcpkg_pkgs install_vcpkg_pkgs
 fi
 
 # ---fixup pkgconf----
