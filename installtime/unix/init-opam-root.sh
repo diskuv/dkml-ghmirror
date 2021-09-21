@@ -162,17 +162,20 @@ set_opamrootdir
 
 # `opam init`.
 #
-# --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
-# --no-setup: Don't modify user shell configuration (ex. ~/.profile). The home directory inside the Docker container
-#             is not persistent anyways, so anything else would be useless.
+# --no-setup: Don't modify user shell configuration (ex. ~/.profile). For containers,
+#             the home directory inside the Docker container is not persistent anyways.
 REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
 if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     if is_unixy_windows_build_machine; then
-        # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.
-        # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository
+        # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository.
+        # --bare: so we can configure its settings before adding the OCaml system compiler.
+        # --disable-sandboxing: Sandboxing does not work on Windows
         log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
-    else
+    elif is_reproducible_platform; then
+        # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
         log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init --yes --disable-sandboxing --no-setup
+    else
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init --yes --no-setup
     fi
 fi
 

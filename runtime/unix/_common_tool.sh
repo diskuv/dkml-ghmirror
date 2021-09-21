@@ -362,7 +362,7 @@ set_opamrootdir() {
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
             else
                 # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
-                OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/.opam"
+                OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
             fi
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
         fi
