@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # -------------------------------------------------------
 # build-sandbox-init.sh PLATFORM
 #
@@ -27,7 +27,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # shellcheck disable=SC1091
-source "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/runtime/unix/_common_tool.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -39,13 +39,11 @@ cd "$TOPDIR"
 
 BINDIR="$TOOLSDIR/local/bin" # executables placed here are automatically added to build's PATH
 install -d "$BINDIR"
-if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BINDIR"; fi
 
 # -----------------------
 # BEGIN opam init
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-"$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
+log_trace "$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
 
 # END opam init
 # -----------------------
