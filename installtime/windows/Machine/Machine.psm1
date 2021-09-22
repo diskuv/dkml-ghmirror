@@ -101,20 +101,54 @@ $VcVarsVer = "14.26"
 $VcStudioVcToolsMajorVer = 16
 $VcStudioVcToolsMinorVer = 6
 $VsComponents = @(
-    # (no longer true; we use `VCPKG_VISUAL_STUDIO_PATH` environment var to control vcpkg)
-    # We include VC.Tools.x86.x64 because vcpkg needs it! All OCaml stuff will use $VcVarsVer though
-    # "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-
     # Verbatim (except variable replacement) from vsconfig.json that was "Export configuration" from the
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
     # And we do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
     # we need special logic in Get-CompatibleVisualStudios to detect it.
     "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer"
 )
-$VsAddComponents = $VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }
+$VsSpecialComponents = @(
+    # We only install this component if a viable "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" not detected
+    # in Get-CompatibleVisualStudios.
+    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
+)
+$VsProductLangs = @(
+    # English is required because of https://github.com/microsoft/vcpkg/commit/f174d5561af49cccbfb4d9618be123cf7ee971d6.
+    # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
+    "en-US",
+
+    # Use the system default (will be deduplicated in the next step, and removed if unknown in the following step)
+    (Get-WinSystemLocale).Name
+)
+$VsProductLangs = $VsProductLangs | Sort-Object -Property { $_.ToLowerInvariant() } -Unique
+if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
+$VsAvailableProductLangs = @(
+    # https://docs.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2019#list-of-language-locales
+    "Cs-cz",
+    "De-de",
+    "En-us",
+    "Es-es",
+    "Fr-fr",
+    "It-it",
+    "Ja-jp",
+    "Ko-kr",
+    "Pl-pl",
+    "Pt-br",
+    "Ru-ru",
+    "Tr-tr",
+    "Zh-cn",
+    "Zh-tw"
+)
+$VsProductLangs = $VsProductLangs | Where-Object { $VsAvailableProductLangs -contains $_ }
+if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
+$VsAddComponents =
+    ($VsProductLangs | ForEach-Object { $i = 0 }{ @( "--addProductLang", $VsProductLangs[$i] ); $i++ }) +
+    ($VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }) +
+    ($VsSpecialComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsSpecialComponents[$i] ); $i++ })
 $VsDescribeComponents = (
-    "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
-    "`tb) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
+    "`ta) English language pack (en-US)`n" +
+    "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
+    "`tc) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
@@ -126,6 +160,7 @@ Export-ModuleMember -Variable VsBuildToolsMajorVer
 Export-ModuleMember -Variable VsBuildToolsInstaller
 Export-ModuleMember -Variable VsBuildToolsInstallChannel
 Export-ModuleMember -Variable VsDescribeVerMin
+Export-ModuleMember -Variable VcVarsVer
 Export-ModuleMember -Variable VsComponents
 Export-ModuleMember -Variable VsAddComponents
 Export-ModuleMember -Variable VsRemoveComponents
@@ -182,6 +217,12 @@ function Get-CompatibleVisualStudios {
             $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
         };
         ($VCTools.Count -gt 0) -or ($VCExact.Count -gt 0)
+    }
+    # select only installations that have the English language pack
+    $instances = $instances | Where-Object {
+        # Use equivalent detection logic as https://github.com/microsoft/vcpkg/commit/f174d5561af49cccbfb4d9618be123cf7ee971d6
+        $English = Get-ChildItem -Path "$($_.InstallationPath)\VC\Tools\MSVC\$VcVarsVer.*" -Recurse -Include 1033 | Measure-Object
+        $English.Count -gt 0
     }
     # give troubleshooting and exit if no more compatible installations remain
     if ($ErrorIfNotFound -and ($instances | Measure-Object).Count -eq 0) {

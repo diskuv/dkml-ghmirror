@@ -25,7 +25,7 @@ distribution. Please plan accordingly.
 Using an existing Visual Studio Installation
 --------------------------------------------
 
-If you have **all** three (3) of the following:
+If you have **all** four (4) of the following:
 
 1. Visual Studio 2015 Update 3 or later for any of the following products:
 
@@ -34,12 +34,14 @@ If you have **all** three (3) of the following:
    * Visual Studio Enterprise
    * Visual Studio Build Tools (the compilers without the IDE)
 
-2. Either of the following:
+2. The [English language pack](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2019#step-6---install-language-packs-optional)
+
+3. Either of the following:
 
    * MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest) (``Microsoft.VisualStudio.Component.VC.Tools.x86.x64``) installed with `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_
    * MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``) installed with any Visual Studio 2022/2019/2017/2015 version
 
-3. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
+4. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
    which is also known as the 19H1 SDK or May 2019 Update SDK.
 
 then the *Diskuv OCaml* distribution will not automatically try to install its own Visual Studio Build Tools.
@@ -55,15 +57,15 @@ they will not need Administrator privileges.
     .. code-block:: powershell
 
         # Any 16.6.x.x will work. This code block is recommended if you do not already install Visual Studio on your machines
-        choco install visualstudio2019buildtools --version=16.6.5.0 --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.18362"
+        choco install visualstudio2019buildtools --version=16.6.5.0 --package-parameters "--addProductLang en-US --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.18362"
 
         # This will also work, and is recommended if you already install the latest Visual Studio 2019
         choco install visualstudio2019buildtools
-        choco install visualstudio2019-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
+        choco install visualstudio2019-workload-vctools --package-parameters "--addProductLang en-US --add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
 
         # This will also work, and is recommended if you already install the latest Visual Studio 2017
         choco install visualstudio2017buildtools
-        choco install visualstudio2017-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
+        choco install visualstudio2017-workload-vctools --package-parameters "--addProductLang en-US --add Microsoft.VisualStudio.Component.VC.14.26.x86.x64"
 
         # This will also work with any 16.6.x.x version, although it will install more packages than are strictly required.
         # This code block is not recommended, although GitLab CI, as of September 2021, already includes the first line in its shared GitLab Windows Runners.

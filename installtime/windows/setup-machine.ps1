@@ -244,6 +244,7 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     if (($CompatibleVisualStudios | Measure-Object).Count -eq 0) {
         $ErrorActionPreference = "Continue"
         & $VsInstallTempPath\collect.exe "-zip:$VsInstallTempPath\vslogs.zip"
+        Clear-Host
         Write-Error (
             "`n`nNo compatible Visual Studio installation detected after the Visual Studio installation!`n" +
             "Often this is because a reboot is required or your system has a component that needs upgrading.`n`n" +
