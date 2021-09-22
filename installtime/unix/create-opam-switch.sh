@@ -255,7 +255,14 @@ case "$TARGET_ARCH" in
     *_x86 | linux_arm32*) TARGET_32BIT=ON ;;
     *) TARGET_32BIT=OFF
 esac
-if [ $BUILD_DEBUG = ON ] && [ $TARGET_WINDOWS = OFF ]; then
+case "$TARGET_ARCH" in
+    linux_x86_64) TARGET_CANOMITFRAMEPOINTER=ON ;;
+    *) TARGET_CANOMITFRAMEPOINTER=OFF
+esac
+
+# Frame pointers is only a 64-bit Linux thing.
+# Confer: https://github.com/ocaml/ocaml/blob/e93f6f8e5f5a98e7dced57a0c81535481297c413/configure#L17455-L17472
+if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANOMITFRAMEPOINTER = ON ]; then
     # Frame pointer is always on in Debug mode.
     # Windows does not support frame pointers.
     # On Linux we need it for `perf`.
