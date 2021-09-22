@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # -------------------------------------------------------
 # create-opam-switch.sh [-b BUILDTYPE -p PLATFORM | [-b BUILDTYPE] -s]
 #
@@ -20,36 +20,40 @@ set -euf
 #
 # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
 
-PINNED_PACKAGES=()
+PINNED_PACKAGES=
 
 # DKML provides patches for these
-PINNED_PACKAGES+=(
-    "dune-configurator,2.9.0"
-    "bigstringaf,0.8.0"
-    "ppx_expect,v0.14.1"
-    "digestif,1.0.1"
-    "ocp-indent,1.8.2-windowssupport"
-    "mirage-crypto,0.10.4-windowssupport"
-    "mirage-crypto-ec,0.10.4-windowssupport"
-    "mirage-crypto-pk,0.10.4-windowssupport"
-    "mirage-crypto-rng,0.10.4-windowssupport"
-    "mirage-crypto-rng-async,0.10.4-windowssupport"
-    "mirage-crypto-rng-mirage,0.10.4-windowssupport"
-    "ocamlbuild,0.14.0"
-    "core_kernel,v0.14.2"
-    "feather,0.3.0"
-    "ctypes,0.19.2-windowssupport-r4"
-    "ctypes-foreign,0.19.2-windowssupport-r4"
-)
+PINNED_PACKAGES="
+    $PINNED_PACKAGES
+    dune-configurator,2.9.0
+    bigstringaf,0.8.0
+    ppx_expect,v0.14.1
+    digestif,1.0.1
+    ocp-indent,1.8.2-windowssupport
+    mirage-crypto,0.10.4-windowssupport
+    mirage-crypto-ec,0.10.4-windowssupport
+    mirage-crypto-pk,0.10.4-windowssupport
+    mirage-crypto-rng,0.10.4-windowssupport
+    mirage-crypto-rng-async,0.10.4-windowssupport
+    mirage-crypto-rng-mirage,0.10.4-windowssupport
+    ocamlbuild,0.14.0
+    core_kernel,v0.14.2
+    feather,0.3.0
+    ctypes,0.19.2-windowssupport-r4
+    ctypes-foreign,0.19.2-windowssupport-r4
+    "
 
 # These incorrectly did not use a major version bump and caused major breaking changes to downstream packages
-PINNED_PACKAGES+=(
-    "ppxlib,0.22.0" # ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
-)
+ # ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
+PINNED_PACKAGES="
+    $PINNED_PACKAGES
+    ppxlib,0.22.0
+    "
 
 # Security fixes
-PINNED_PACKAGES+=(
-)
+PINNED_PACKAGES="
+    $PINNED_PACKAGES
+    "
 
 # ------------------
 # BEGIN Command line processing
@@ -169,6 +173,7 @@ else
     TARGET_ARCH=$PLATFORM
 fi
 
+echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set $DiskuvOCamlHome and other vars
     autodetect_dkmlvars
@@ -179,17 +184,17 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
 
-    OPAM_NONSWITCHCREATE_PREOPTS=(-s)
+    echo "  -s \\" >> "$WORK"/nonswitchexec.sh
 else
     if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
     set_opamrootandswitchdir
 
-    OPAM_NONSWITCHCREATE_PREOPTS=(-p "$PLATFORM")
+    echo "  -p $PLATFORM \\" >> "$WORK"/nonswitchexec.sh
     if [ -n "$TARGET_OPAMSWITCH" ]; then
-        OPAM_NONSWITCHCREATE_PREOPTS+=(-t "$TARGET_OPAMSWITCH")
+        echo "  -t $TARGET_OPAMSWITCH \\" >> "$WORK"/nonswitchexec.sh
     else
-        OPAM_NONSWITCHCREATE_PREOPTS+=(-b "$BUILDTYPE")
+        echo "  -b $BUILDTYPE \\" >> "$WORK"/nonswitchexec.sh
     fi
 fi
 
@@ -272,23 +277,20 @@ elif [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
 fi
 
-OPAM_SWITCH_CREATE_ARGS=( switch create )
-if [ "$YES" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=( --yes ); fi
+echo "switch create \\" > "$WORK"/switchcreateargs.sh
+if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
 
 if is_unixy_windows_build_machine; then
-    OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
-    OPAM_SWITCH_CREATE_ARGS+=(
-        --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
-        --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS"
-    )
+    # shellcheck disable=SC2154
+    echo "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    echo "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    echo "  --packages='ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
 else
-    OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "default")
-    OPAM_SWITCH_CREATE_ARGS+=(
-        --repos="diskuv-$dkml_root_version,default"
-        --packages="ocaml-variants.4.12.0+options$OCAML_OPTIONS"
-    )
+    echo "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    echo "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    echo "  --packages='ocaml-variants.4.12.0+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
 fi
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
 # We'll use the bash builtin `set` which quotes spaces correctly.
 OPAM_SWITCH_CREATE_PREHOOK="echo OPAMSWITCH=; echo OPAM_SWITCH_PREFIX=" # Ignore any switch the developer gave. We are creating our own.
@@ -300,31 +302,45 @@ if [ -n "${OPAM_SWITCH_AS:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWIT
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    OPAM_SWITCH_REMOVE_ARGS=( switch remove )
-    if [ "$YES" = ON ]; then OPAM_SWITCH_REMOVE_ARGS+=( --yes ); fi
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "${OPAM_SWITCH_REMOVE_ARGS[@]}" "$OPAMSWITCHDIR_EXPAND" || \
-        rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' switch remove \\" > "$WORK"/switchremoveargs.sh
+    if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
+    echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
+    "$SHELL" "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+
     # do real install
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -1 "$OPAM_SWITCH_CREATE_PREHOOK" \
-        "${OPAM_SWITCH_CREATE_ARGS[@]}" "$OPAMSWITCHDIR_EXPAND"
+    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
+    cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
+    echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then tail -n100 "$WORK"/switchcreateexec.sh >&2; fi
+    "$SHELL" "$WORK"/switchcreateexec.sh
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
     # has an upgrade. If we don't the PINNED_PACKAGES may fail.
     # We know from `diskuv-$dkml_root_version` what Diskuv OCaml version the Opam switch is using, so
     # we have the logic to detect here when it is time to upgrade!
-    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-        repository list --short > "$WORK"/list
+    {
+        cat "$WORK"/nonswitchexec.sh
+        echo "  repository list --short"
+    } > "$WORK"/list.sh
+    "$SHELL" "$WORK"/list.sh > "$WORK"/list
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
         # do a `opam update` so the switch has the latest repository definitions.
-        set +u
-        OPAM_REPO_UPGRADE_OPTS=()
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_REPO_UPGRADE_OPTS+=(--debug-level 2); fi
-        "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-            repository set-repos "${OPAM_REPO_UPGRADE_OPTS[@]}" "${OPAMREPOS_CHOICE[@]}"
-        "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-            update "${OPAM_REPO_UPGRADE_OPTS[@]}"
-        set -u
+        {
+            cat "$WORK"/nonswitchexec.sh
+            echo "  repository set-repos \\"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+            cat "$WORK"/repos-choice.lst
+        } > "$WORK"/setrepos.sh
+        "$SHELL" "$WORK"/setrepos.sh
+
+        {
+            echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
+            cat "$WORK"/nonswitchexec.sh
+            echo "  update \\"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+        } > "$WORK"/update.sh
+        "$SHELL" "$WORK"/update.sh
     fi
 fi
 
@@ -361,11 +377,20 @@ PKG_CONFIG_PATH_ADD=$(echo "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 # ----
 # 1. PKG_CONFIG_PATH
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
-"$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-    option setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
+{
+    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
+    cat "$WORK"/nonswitchexec.sh
+    echo "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
+} > "$WORK"/setenv.sh
+"$SHELL" "$WORK"/setenv.sh
+
 if is_unixy_windows_build_machine; then
-    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-        option setenv+="LUV_USE_SYSTEM_LIBUV = \"yes\""
+    {
+        echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
+        cat "$WORK"/nonswitchexec.sh
+        echo "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
+    } > "$WORK"/setenv.sh
+    "$SHELL" "$WORK"/setenv.sh
 fi
 
 # END opam option
@@ -374,9 +399,12 @@ fi
 # --------------------------------
 # BEGIN opam pin add
 
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
 # Create: pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
 {
-    echo '#!/bin/bash'
+    echo "#!$DKML_POSIX_SHELL"
     echo 'set -euf'
     # shellcheck disable=2016
     echo '_OPAMROOTDIR=$1'
@@ -396,14 +424,14 @@ fi
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 
-OPAM_PIN_ADD_ARGS=( pin add )
-if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
+OPAM_PIN_ADD_ARGS="pin add"
+if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS="$OPAM_PIN_ADD_ARGS --yes"; fi
 NEED_TO_PIN=OFF
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
 if is_unixy_windows_build_machine; then
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"; then
-        echo "opam ${OPAM_PIN_ADD_ARGS[*]} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
+        echo "opam ${OPAM_PIN_ADD_ARGS} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON
     fi
 fi
@@ -413,20 +441,25 @@ fi
 # Even though technically we may not need the patches for non-Windows systems, we want the same code
 # running in both Unix and Windows, right?!
 # We add --no-action so the package is not automatically installed but simply pinned.
-for package_tuple in "${PINNED_PACKAGES[@]}"; do
-    IFS=',' read -r package_name package_version <<< "$package_tuple"
+for package_tuple in ${PINNED_PACKAGES}; do
+    # $1 = package_name; $2 = package_version
+    expr=$(echo set -- "$package_tuple" | sed 's/,/ /g')
+    eval "$expr"
     # accumulate
-    if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$package_name.$package_version"; then
-        echo "opam ${OPAM_PIN_ADD_ARGS[*]} --no-action -k version '$package_name' '$package_version'" >> "$WORK"/pin.sh
+    if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$1.$2"; then
+        echo "opam ${OPAM_PIN_ADD_ARGS} --no-action -k version '$1' '$2'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON
     fi
 done
 
 # Execute all of the accumulated `opam pin add` at once
 if [ "$NEED_TO_PIN" = ON ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-        exec -- bash "$WORK_EXPAND"/pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
+    {
+        echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
+        cat "$WORK"/nonswitchexec.sh
+        echo "  exec -- bash '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
+    } > "$WORK"/launchpin.sh
+    "$SHELL" "$WORK"/launchpin.sh
 fi
 
 # END opam pin add

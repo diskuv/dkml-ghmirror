@@ -219,10 +219,10 @@ _exec_dev_or_arch_helper() {
     _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
     true > "$_exec_dev_or_arch_helper_CMDARGS"
     if [ -n "${BUILDTYPE:-}" ]; then
-        echo "  -b $BUILDTYPE \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
+        echo "  -b $BUILDTYPE" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if [ "${COMPILATION:-}" = OFF ]; then
-        echo "  -n \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
+        echo "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
@@ -253,7 +253,7 @@ _exec_dev_or_arch_helper() {
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
-            echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
+            printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
@@ -267,9 +267,7 @@ _exec_dev_or_arch_helper() {
                 ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
         fi
-        echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
-
-        echo "set -ex; '$DKMLDIR'/runtime/unix/within-dev -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        echo "exec '$DKMLDIR'/runtime/unix/within-dev -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
@@ -277,7 +275,7 @@ _exec_dev_or_arch_helper() {
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
-            echo "  '$_exec_dev_or_arch_helper_ARG' \\" >> "$_exec_dev_or_arch_helper_CMDARGS"
+            printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
@@ -287,7 +285,7 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
         fi
-        echo "set -ex; '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_SANDBOX_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        echo "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_SANDBOX_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
 
