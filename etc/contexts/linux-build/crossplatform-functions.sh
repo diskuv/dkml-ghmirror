@@ -243,7 +243,7 @@ install_reproducible_system_packages() {
     fi
     install_reproducible_system_packages_SCRIPTDIR=$(dirname "$install_reproducible_system_packages_SCRIPTFILE")
     install_reproducible_system_packages_BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install_reproducible_system_packages_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
+    install_reproducible_system_packages_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$install_reproducible_system_packages_BOOTSTRAPRELDIR
     install -d "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/
 
     if is_msys2_msys_build_machine; then
@@ -288,7 +288,7 @@ install_reproducible_script_with_args() {
     fi
     install_reproducible_script_with_args_RECREATEDIR=$(dirname "$install_reproducible_script_with_args_SCRIPTFILE")
     install_reproducible_script_with_args_BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install_reproducible_script_with_args_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$BOOTSTRAPRELDIR
+    install_reproducible_script_with_args_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$install_reproducible_script_with_args_BOOTSTRAPRELDIR
 
     install_reproducible_file "$install_reproducible_script_with_args_SCRIPTFILE"
     install -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
@@ -308,21 +308,21 @@ build_machine_arch() {
     build_machine_arch_SYSTEM=$(uname -s)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
     case "${build_machine_arch_SYSTEM}-${build_machine_arch_MACHINE}" in
-        "Linux-armv7*")
+        Linux-armv7*)
             BUILDHOST_ARCH=linux_arm32v7;;
-        "Linux-armv6*" | "Linux-arm")
+        Linux-armv6* | Linux-arm)
             BUILDHOST_ARCH=linux_arm32v6;;
-        "Linux-aarch64" | "Linux-arm64" | "Linux-armv8*")
+        Linux-aarch64 | Linux-arm64 | Linux-armv8*)
             BUILDHOST_ARCH=linux_arm64;;
-        "Linux-i386" | "Linux-i686")
+        Linux-i386 | Linux-i686)
             BUILDHOST_ARCH=linux_x86;;
-        "Linux-x86_64")
+        Linux-x86_64)
             BUILDHOST_ARCH=linux_x86_64;;
-        "Darwin-arm64")
+        Darwin-arm64)
             BUILDHOST_ARCH=darwin_arm64;;
-        "Darwin-x86_64")
+        Darwin-x86_64)
             BUILDHOST_ARCH=darwin_x86_64;;
-        "*-i386" | "*-i686")
+        *-i386 | *-i686)
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86
             else
@@ -330,7 +330,7 @@ build_machine_arch() {
                 exit 1
             fi
             ;;
-        "*-x86_64")
+        *-x86_64)
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86_64
             else
