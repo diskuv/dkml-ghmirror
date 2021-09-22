@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # -------------------------------------------------------
 # build-sandbox-configure.sh PLATFORM BUILDTYPE OPAMS
 #
@@ -46,7 +46,6 @@ cd "$TOPDIR"
 # >>>>>>>>>
 
 install -d "$BUILDDIR"
-if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
 
 # -----------------------
 # BEGIN opam switch create
@@ -54,17 +53,6 @@ if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default 
 "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -b "$BUILDTYPE" -p "$PLATFORM"
 
 # END opam switch create
-# -----------------------
-
-# -----------------------
-# BEGIN OPAM_INSTALL_OPTS and OPAM_INSTALL_DEPS_OPTS
-
-OPAM_INSTALL_OPTS=(--yes)
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_INSTALL_OPTS+=(--debug-level 2); fi
-
-OPAM_INSTALL_DEPS_OPTS=(--deps-only --with-test)
-
-# END OPAM_INSTALL_OPTS and OPAM_INSTALL_DEPS_OPTS
 # -----------------------
 
 # -----------------------
@@ -84,12 +72,12 @@ if is_dev_platform; then
     then
         # We are missing required packages. Let's install them.
         # The explicit veresion of ocamlformat is required because .ocamlformat file lists it.
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" -p "$PLATFORM" install \
-            "${OPAM_INSTALL_OPTS[@]}" \
-            ocamlformat.0.19.0 \
-            ocamlformat-rpc.0.19.0 \
-            ocaml-lsp-server \
-            utop
+        {
+            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --yes \\"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+            echo "  ocamlformat.0.19.0 ocamlformat-rpc.0.19.0 ocaml-lsp-server utop"
+        } > "$WORK"/configure.sh
+        "$SHELL" "$WORK"/configure.sh
     fi
 fi
 
@@ -99,11 +87,14 @@ fi
 # -----------------------
 # BEGIN install code (.opam) dependencies
 
-IFS="," read -r -a OPAMS_ARRAY <<< "$OPAMS"
-
-"$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" -p "$PLATFORM" install \
-    "${OPAM_INSTALL_OPTS[@]}" "${OPAM_INSTALL_DEPS_OPTS[@]}" \
-    "${OPAMS_ARRAY[@]}"
+{
+    echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --yes \\"
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+    echo "  --deps-only --with-test \\"
+    printf "  "
+    echo "$OPAMS" | sed 's/,/ /g'
+} > "$WORK"/configure.sh
+"$SHELL" "$WORK"/configure.sh
 
 # END install code (.opam) dependencies
 # -----------------------
