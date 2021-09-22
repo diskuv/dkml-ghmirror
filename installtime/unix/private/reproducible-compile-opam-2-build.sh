@@ -136,7 +136,7 @@ else
 fi
 
 if is_unixy_windows_build_machine; then
-    echo -n "cl.exe, if detected: "
+    printf "%s" "cl.exe, if detected: "
     "$WORK"/launch-compiler.sh which cl.exe
     "$WORK"/launch-compiler.sh echo "INCLUDE: ${INCLUDE:-}"
     "$WORK"/launch-compiler.sh echo "LIBS: ${LIBS:-}"

@@ -51,6 +51,24 @@ autodetect_posix_shell() {
     fi
 }
 
+# A function that will execute the shell command with error detection enabled and trace
+# it on standard error if DKML_BUILD_TRACE=ON (which is default)
+#
+# Output:
+#   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
+#     set.
+log_shell() {
+    if [ -z "${DKML_POSIX_SHELL:-}" ]; then
+        autodetect_posix_shell
+    fi
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+        echo "@+ $DKML_POSIX_SHELL $*" >&2
+        "$DKML_POSIX_SHELL" -eufx "$@"
+    else
+        "$DKML_POSIX_SHELL" -euf "$@"
+    fi
+}
+
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
 #
 # Better alternatives

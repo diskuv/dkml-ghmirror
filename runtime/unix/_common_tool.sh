@@ -82,7 +82,7 @@ export TOPDIR
 TMPPARENTDIR_RELTOP="build/_tmp"
 TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TOPDIR/$TMPPARENTDIR_RELTOP}"
 install -d "$TMPPARENTDIR_BUILDHOST"
-WORK=$(env TMPDIR="$TMPPARENTDIR_BUILDHOST" mktemp -d)
+WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/work.XXXXXXXXXX)
 trap 'rm -rf "$WORK"' EXIT
 WORK_BASENAME=$(basename "$WORK")
 # shellcheck disable=SC2034
@@ -219,10 +219,10 @@ _exec_dev_or_arch_helper() {
     _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
     true > "$_exec_dev_or_arch_helper_CMDARGS"
     if [ -n "${BUILDTYPE:-}" ]; then
-        echo "  -b $BUILDTYPE" >> "$_exec_dev_or_arch_helper_CMDARGS"
+        printf "  -b %s" "$BUILDTYPE" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if [ "${COMPILATION:-}" = OFF ]; then
-        echo "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
+        printf "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
@@ -232,26 +232,26 @@ _exec_dev_or_arch_helper() {
         if [ -x /usr/bin/cygpath ]; then
             _exec_dev_or_arch_helper_ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
             _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
-            ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
-            ACTUALDKMLDIR_UNIX=$(/usr/bin/cygpath -au "$DKMLDIR")
-            ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
-            ACTUALDISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
-            ACTUALDISKUVOCAMLHOME_MIXED=$(/usr/bin/cygpath -am "$DiskuvOCamlHome")
+            _exec_dev_or_arch_helper_ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
+            _exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX=$(/usr/bin/cygpath -au "$DKMLDIR")
+            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
+            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
+            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED=$(/usr/bin/cygpath -am "$DiskuvOCamlHome")
         else
             _exec_dev_or_arch_helper_ACTUALTOPDIR="$TOPDIR"
             _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX="$TOPDIR"
-            ACTUALDKMLDIR="$DKMLDIR"
-            ACTUALDKMLDIR_UNIX="$DKMLDIR"
+            _exec_dev_or_arch_helper_ACTUALDKMLDIR="$DKMLDIR"
+            _exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX="$DKMLDIR"
         fi
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR@@ "${ACTUALDKMLDIR}")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR_UNIX@@ "${ACTUALDKMLDIR_UNIX}")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
+            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
             if is_unixy_windows_build_machine; then
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${ACTUALDISKUVOCAMLHOME}")
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX}")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
             printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
@@ -259,12 +259,12 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR@@ "${ACTUALDKMLDIR}")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR_UNIX@@ "${ACTUALDKMLDIR_UNIX}")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
+            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
             if is_unixy_windows_build_machine; then
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${ACTUALDISKUVOCAMLHOME}")
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${ACTUALDISKUVOCAMLHOME_UNIX}")
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${ACTUALDISKUVOCAMLHOME_MIXED}")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX}")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
         fi
         echo "exec '$DKMLDIR'/runtime/unix/within-dev -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
@@ -289,8 +289,7 @@ _exec_dev_or_arch_helper() {
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
 
-    autodetect_posix_shell # Set DKML_POSIX_SHELL
-    log_trace "$DKML_POSIX_SHELL" "$_exec_dev_or_arch_helper_CMDFILE"
+    log_shell "$_exec_dev_or_arch_helper_CMDFILE"
 }
 
 # Detects DiskuvOCaml and sets its variables.

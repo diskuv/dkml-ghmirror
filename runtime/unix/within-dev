@@ -161,6 +161,8 @@ if [ "$COMPILATION" = ON ]; then
         echo "FATAL: Your system is missing a compiler, which should be installed if you have completed the Diskuv OCaml installation"
         exit 1
     fi
+else
+    echo 'exec env "$@"' > "$LAUNCHER"
 fi
 
 # print PATH for troubleshooting
@@ -169,10 +171,8 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)
 if [ $# -eq 0 ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
     # shellcheck disable=SC2016
-    "$LAUNCHER" "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
+    log_shell "$LAUNCHER" "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
 else
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-    "$LAUNCHER" "${ENV_ARGS[@]}" "$@"
+    log_shell "$LAUNCHER" "${ENV_ARGS[@]}" "$@"
 fi

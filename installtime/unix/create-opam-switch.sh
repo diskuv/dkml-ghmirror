@@ -312,14 +312,13 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' switch remove \\" > "$WORK"/switchremoveargs.sh
     if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
     echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
-    "$SHELL" "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+    log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
     echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
     echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then tail -n100 "$WORK"/switchcreateexec.sh >&2; fi
-    "$SHELL" "$WORK"/switchcreateexec.sh
+    log_shell "$WORK"/switchcreateexec.sh
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
     # has an upgrade. If we don't the PINNED_PACKAGES may fail.
@@ -329,7 +328,7 @@ else
         cat "$WORK"/nonswitchexec.sh
         echo "  repository list --short"
     } > "$WORK"/list.sh
-    "$SHELL" "$WORK"/list.sh > "$WORK"/list
+    log_shell "$WORK"/list.sh > "$WORK"/list
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
         # do a `opam update` so the switch has the latest repository definitions.
@@ -339,15 +338,14 @@ else
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
             cat "$WORK"/repos-choice.lst
         } > "$WORK"/setrepos.sh
-        "$SHELL" "$WORK"/setrepos.sh
+        log_shell "$WORK"/setrepos.sh
 
         {
-            echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
             cat "$WORK"/nonswitchexec.sh
             echo "  update \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
         } > "$WORK"/update.sh
-        "$SHELL" "$WORK"/update.sh
+        log_shell "$WORK"/update.sh
     fi
 fi
 
@@ -385,19 +383,17 @@ PKG_CONFIG_PATH_ADD=$(echo "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 # 1. PKG_CONFIG_PATH
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 {
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
     cat "$WORK"/nonswitchexec.sh
     echo "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
 } > "$WORK"/setenv.sh
-"$SHELL" "$WORK"/setenv.sh
+log_shell "$WORK"/setenv.sh
 
 if is_unixy_windows_build_machine; then
     {
-        echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
         cat "$WORK"/nonswitchexec.sh
         echo "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
     } > "$WORK"/setenv.sh
-    "$SHELL" "$WORK"/setenv.sh
+    log_shell "$WORK"/setenv.sh
 fi
 
 # END opam option
@@ -462,11 +458,10 @@ done
 # Execute all of the accumulated `opam pin add` at once
 if [ "$NEED_TO_PIN" = ON ]; then
     {
-        echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\"
         cat "$WORK"/nonswitchexec.sh
-        echo "  exec -- bash '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
+        echo "  exec -- '$DKML_POSIX_SHELL' '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
     } > "$WORK"/launchpin.sh
-    "$SHELL" "$WORK"/launchpin.sh
+    log_shell "$WORK"/launchpin.sh
 fi
 
 # END opam pin add
