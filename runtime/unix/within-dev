@@ -19,8 +19,8 @@ usage() {
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
-    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
-    echo "             entering the Build Sandbox _before_ any other commands are run but" >&2
+    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
+    echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
     echo "             _after_ the PATH has been established." >&2
     echo "             It behaves similar to:" >&2
     echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
@@ -113,9 +113,10 @@ fi
 PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
 if [ -n "$PREHOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
-    eval "$PREHOOK" > "$WORK"/prehook.eval
+    # the `awk ...` is dos2unix equivalent
+    eval "$PREHOOK" | awk '{ sub(/\r$/,""); print }' > "$WORK"/prehook.eval
     # shellcheck disable=SC1091
-    source "$WORK"/prehook.eval
+    . "$WORK"/prehook.eval
     rm -f "$WORK"/prehook.eval
     # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.

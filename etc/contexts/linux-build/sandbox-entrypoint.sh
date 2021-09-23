@@ -63,9 +63,10 @@ fi
 if [ -n "$SANDBOX_PRE_HOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $SANDBOX_PRE_HOOK" >&2; fi
     tmpe="$(mktemp)"
-    eval "$SANDBOX_PRE_HOOK" > "$tmpe"
+    # the `awk ...` is dos2unix equivalent
+    eval "$SANDBOX_PRE_HOOK" | awk '{ sub(/\r$/,""); print }' > "$tmpe"
     # shellcheck disable=SC1090
-    source "$tmpe"
+    . "$tmpe"
     rm -f "$tmpe"
 fi
 

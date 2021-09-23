@@ -414,7 +414,7 @@ autodetect_posix_shell
     echo '_OPAMSWITCHDIR=$1'
     echo 'shift'
     # shellcheck disable=2016
-    echo 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch)'
+    printf 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk %c{ sub(/\r$/,""); print }%c)\n' "'" "'"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 
@@ -450,7 +450,7 @@ done
 if [ "$NEED_TO_PIN" = ON ]; then
     {
         cat "$WORK"/nonswitchexec.sh
-        echo "  exec -- '$DKML_POSIX_SHELL' '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
+        echo "  exec -- '$DKML_HOST_POSIX_SHELL' '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
     } > "$WORK"/launchpin.sh
     log_shell "$WORK"/launchpin.sh
 fi

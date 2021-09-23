@@ -157,10 +157,10 @@ OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+options+dkml+msvc64
 #   env:PLATFORM_EXEC_PRE - optional. acts as hook.
 #                           the specified bash statements, if any, are executed
 #                           and their standard output captured. that standard
-#                           output is 'eval'-d _before_ the command line
-#                           arguments are executed.
+#                           output is 'dos2unix'-d and 'eval'-d _before_ the
+#                           command line arguments are executed.
 #                           You can think of it behaving like:
-#                             eval "$PLATFORM_EXEC_PRE" > /tmp/eval.sh
+#                             eval "$PLATFORM_EXEC_PRE" | dos2unix > /tmp/eval.sh
 #                             eval /tmp/eval.sh
 #   $@                    - the command line arguments that will be executed
 #

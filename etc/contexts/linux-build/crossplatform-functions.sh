@@ -38,16 +38,25 @@ export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
 # Output:
 #   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
 #     set.
+#   - env:DKML_HOST_POSIX_SHELL - The host's path to the POSIX shell. Only set if it wasn't already
+#     set. On a Windows host (Cygwin/MSYS2) this will be a Windows path; on Unix this will be a Unix
+#     path.
 # References:
 #   - https://unix.stackexchange.com/questions/148035/is-dash-or-some-other-shell-faster-than-bash
 autodetect_posix_shell() {
     export DKML_POSIX_SHELL
-    if [ -n "${DKML_POSIX_SHELL:-}" ]; then
+    export DKML_HOST_POSIX_SHELL
+    if [ -n "${DKML_POSIX_SHELL:-}" ] && [ -n "${DKML_HOST_POSIX_SHELL}" ]; then
         return
     elif [ -e /bin/dash ]; then
         DKML_POSIX_SHELL=/bin/dash
     else
         DKML_POSIX_SHELL=/bin/sh
+    fi
+    if [ -x /usr/bin/cygpath ]; then
+        DKML_HOST_POSIX_SHELL=$(/usr/bin/cygpath -aw "$DKML_POSIX_SHELL")
+    else
+        DKML_HOST_POSIX_SHELL="$DKML_POSIX_SHELL"
     fi
 }
 

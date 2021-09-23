@@ -27,8 +27,8 @@ usage() {
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
-    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
-    echo "             entering the Build Sandbox _before_ any other commands are run but" >&2
+    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
+    echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
     echo "             _after_ the PATH has been established." >&2
     echo "             It behaves similar to:" >&2
     echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
@@ -117,7 +117,7 @@ DOCKER_ARGS=(
 # Save bash history if user is not root
 if [ "$BUILDER_UID" -ne 0 ]; then
     BH="$HOME"/.diskuv-ocaml.bash_history
-    if [ ! -e $BH ]; then
+    if [ ! -e "$BH" ]; then
         touch "$BH"
     fi
     DOCKER_ARGS+=(-v "$BH":/opt/diskuv-ocaml-build-chroot/mnt/bash_history)
