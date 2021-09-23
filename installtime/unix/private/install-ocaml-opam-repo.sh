@@ -36,10 +36,8 @@ if [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ]; then
     exit 0
 fi
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-
 # Install the source code
-"$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh \
+log_trace "$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$DOCKER_IMAGE" \
@@ -49,4 +47,4 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
 cd "$INSTALLDIR"
 
 # Fetch and install
-"$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh

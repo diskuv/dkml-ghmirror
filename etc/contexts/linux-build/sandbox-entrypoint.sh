@@ -83,10 +83,8 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 # run the requested command
 if [ $# -eq 0 ]; then
     # interactive login shell
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-    exec bash -i -l
+    log_trace exec bash -i -l
 else
     # run whatever the developer told us
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-    exec "$@"
+    log_trace exec "$@"
 fi

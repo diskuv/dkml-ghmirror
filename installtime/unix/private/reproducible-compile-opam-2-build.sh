@@ -125,8 +125,6 @@ if [ -z "$NUMCPUS" ]; then
     autodetect_cpus
 fi
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-
 # Autodetect compiler like Visual Studio on Windows.
 autodetect_compiler "$WORK"/launch-compiler.sh
 if [ -n "$OCAML_HOST_TRIPLET" ]; then
@@ -148,16 +146,16 @@ fi
 # we have successfully completed a single run all the way to `configure`.
 if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # Clear out all intermediate build files
-    installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX"
+    log_trace installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX"
 
     # Make sure at least flexdll is available for the upcoming 'make compiler'
-    make -C "$OPAMSRC_UNIX"/src_ext cache-archives
+    log_trace make -C "$OPAMSRC_UNIX"/src_ext cache-archives
 
     # Let Opam create its own Ocaml compiler which Opam will use to compile
     # all of its required Ocaml dependencies
     # We do what the following does (with customization): `make -C "$OPAMSRC_UNIX" compiler -j "$NUMCPUS"`
     pushd "$OPAMSRC_UNIX"
-    if ! "$WORK"/launch-compiler.sh \
+    if ! log_trace "$WORK"/launch-compiler.sh \
         BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS" BOOTSTRAP_OPT_TARGET=opt.opt BOOTSTRAP_ROOT=.. BOOTSTRAP_DIR=bootstrap \
         ./shell/bootstrap-ocaml.sh auto;
     then
@@ -178,17 +176,17 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
 
     # Install Opam's dependencies as findlib packages to the bootstrap compiler
     # Note: We could add `OPAM_0INSTALL_SOLVER_ENABLED=true` but unclear if that is a good idea.
-    "$WORK"/launch-compiler.sh make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
+    log_trace "$WORK"/launch-compiler.sh make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
 
     # Standard autotools ./configure
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.
     pushd "$OPAMSRC_UNIX"
-    env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" ./configure --prefix="$TARGETDIR_MIXED"
+    log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" ./configure --prefix="$TARGETDIR_MIXED"
     popd
 fi
 
 # At this point we have compiled _all_ of Opam dependencies ...
 # Now we need to build Opam itself.
 
-env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" # parallelism does not work here
-env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" install
+log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" # parallelism does not work here
+log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" install

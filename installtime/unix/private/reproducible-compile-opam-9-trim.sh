@@ -92,11 +92,9 @@ OPAMSRC="$TARGETDIR_UNIX/src/opam"
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-
 # Opam already includes a command to get rid of all build files
 if [ -e "$OPAMSRC/Makefile" ]; then
-    make -C "$OPAMSRC" distclean
+    log_trace make -C "$OPAMSRC" distclean
 fi
 
 # Also get rid of Git files

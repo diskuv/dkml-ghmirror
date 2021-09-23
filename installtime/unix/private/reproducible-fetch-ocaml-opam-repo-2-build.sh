@@ -111,10 +111,8 @@ cd "$DKMLDIR"
 MOBYDIR=$WORK/moby
 TMPOPAMROOT=$WORK/opamroot
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-
-installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
-installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
+log_trace installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
+log_trace installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
 
 DESIRED="$TMPOPAMROOT"/msvc-"$DOCKER_ARCH"
 
@@ -127,6 +125,6 @@ if is_cygwin_build_machine; then
 fi
 
 install -d "$OOREPO_UNIX"
-rsync -a --delete \
+log_trace rsync -a --delete \
     --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
     "$DESIRED"/cygwin64/home/opam/opam-repository/ "$OOREPO_UNIX"

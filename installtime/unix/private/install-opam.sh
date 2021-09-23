@@ -36,10 +36,8 @@ if [ -e "$INSTALLDIR"/bin/opam.exe ]; then
     exit 0
 fi
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then set -x; fi
-
 # Install the source code
-bash -x "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \
+log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$GIT_TAG"
@@ -48,7 +46,7 @@ bash -x "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh
 cd "$INSTALLDIR"
 
 # Build and install Opam
-"$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh
 
 # Remove intermediate files including build files and .git folders
-"$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh
