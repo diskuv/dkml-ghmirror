@@ -121,7 +121,6 @@
   - msys_direct 'pacman -Sy --noconfirm --needed
       diffutils
       make
-      mingw-w64-x86_64-jq
       patch
       rsync
       tar
