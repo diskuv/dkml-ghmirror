@@ -47,6 +47,14 @@ windows:test-setupuserprofile-1-before-create-system-switch:
     - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0 -StopBeforeCreateSystemSwitch
     - msys_direct 'tree -L 5 _ci/LocalAppData'
 
+    # Clean up cache
+    - $DkmlProps = ConvertFrom-StringData (Get-Content "$env:CI_PROJECT_DIR\.dkmlroot" -Raw)
+    - $dkml_root_version = $DkmlProps.dkml_root_version
+    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\opam\plugins" -Recurse | Select -ExpandProperty FullName | Where {$_ -notlike "$dkml_root_version"} | Sort-Object length -Descending | Remove-Item -Force
+    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\opam-repositories" -Recurse -Exclude "$dkml_root_version.complete" | Select -ExpandProperty FullName | Where {$_ -notlike "$dkml_root_version"} | Sort-Object length -Descending | Remove-Item -Force
+    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\opam\repo" -Recurse -Exclude default.tar.gz,repos-config,state-*.cache,"diskuv-$dkml_root_version.tar.gz","fdopen-mingw-$dkml_root_version.tar.gz" | Select -ExpandProperty FullName | Sort-Object length -Descending | Remove-Item -Force
+    - msys_direct 'tree -L 5 _ci/LocalAppData'
+
     # Remove Cygwin if present since not needed for cache (it is only an intermediate tool for downloading ocaml-opam Docker repository)
     - msys_direct 'rm -rf _ci/LocalAppData/Programs/DiskuvOCaml/0/tools/cygwin'
 
