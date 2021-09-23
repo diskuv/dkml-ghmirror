@@ -105,21 +105,20 @@ $VsComponents = @(
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
 
     # 2021-09-23/jonahbeckford@: Since vcpkg does not allow pinning the exact $VcVarsVer, we must install
-    # both VC.Tools and VC.$VcVarsVer.
+    # VC.Tools.
 
     # 2021-09-22/jonahbeckford@:
     # We do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
     # we need special logic in Get-CompatibleVisualStudios to detect it.
 
     "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer",
-    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64",
     "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
 )
 $VsSpecialComponents = @(
     # 2021-09-22/jonahbeckford@:
     # We only install this component if a viable "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" not detected
     # in Get-CompatibleVisualStudios.
-    # "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
+    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
 )
 $VsProductLangs = @(
     # English is required because of https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
@@ -217,16 +216,19 @@ function Get-CompatibleVisualStudios {
         -Product * `
         -Require $VsComponents `
         -Version "[$VsVerMin,)"
-    # select installations that have `VC.Tools (Latest)` -and-
-    # the exact `VC.MM.NN (vMM.NN)`
+    # select installations that have `VC.Tools (Latest)` -and- the exact `VC.MM.NN (vMM.NN)`,
+    # -or- `VC.Tools (Latest)` if the Visual Studio Tools version matches MM.NN.
     $instances = $instances | Where-Object {
+        $VCToolsMatch = $VCTools = $_.Packages | Where-Object {
+            $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -and $_.Version.Major -eq $VcStudioVcToolsMajorVer -and $_.Version.Minor -eq $VcStudioVcToolsMinorVer
+        }
         $VCTools = $_.Packages | Where-Object {
             $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
         };
         $VCExact = $_.Packages | Where-Object {
             $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
         };
-        ($VCTools.Count -gt 0) -and ($VCExact.Count -gt 0)
+        ($VCToolsMatch.Count -gt 0) -or (($VCTools.Count -gt 0) -and ($VCExact.Count -gt 0))
     }
     # select only installations that have the English language pack
     $instances = $instances | Where-Object {

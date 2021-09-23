@@ -46,7 +46,9 @@ If you have **all** four (4) of the following:
       `vcpkg (the C package manager) <https://vcpkg.io/>` does not have the ability pick a precise version (ex. 14.26) of Visual Studio. If you are in the
       rare situation where you must have exact matching versions of the compiler, you can install
       `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_ which can be
-      downloaded at `Visual Studio 2019 Releases <https://docs.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers>`_
+      downloaded at `Visual Studio 2019 Releases <https://docs.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers>`_.
+      Use the VS2019 16.6 installer to install "MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)". Then you won't need to install
+      "MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26)".
 
 4. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
    which is also known as the 19H1 SDK or May 2019 Update SDK.
