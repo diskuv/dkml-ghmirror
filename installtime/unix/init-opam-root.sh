@@ -32,18 +32,12 @@ usage() {
     echo "Usage:" >&2
     echo "    init-opam-root.sh -h                   Display this help message" >&2
     echo "    init-opam-root.sh -p PLATFORM          Initialize the Opam root" >&2
-    echo "    init-opam-root.sh -o FILE -p PLATFORM  Initialize the Opam root and write a Command Line batch file" >&2
-    echo "                                           that the caller must execute to do more initialization." >&2
-    echo "                                           The caller must finally run init-opam-root.sh without -o to">&2
-    echo "                                           complete the initialization." >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -o FILE: The output Command Line batch file" >&2
 }
 
 PLATFORM=
-CMDOUT=
-while getopts ":h:p:o:" opt; do
+while getopts ":h:p:" opt; do
     case ${opt} in
         h )
             usage
@@ -51,9 +45,6 @@ while getopts ":h:p:o:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
-        ;;
-        o )
-            CMDOUT=$OPTARG
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -119,15 +110,17 @@ set_dkmlparenthomedir
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
 
-if is_unixy_windows_build_machine; then
+if [ -x /usr/bin/cygpath ]; then
     # shellcheck disable=SC2154
-    OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
-    OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
-    # shellcheck disable=SC2154
-    DISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
+    OPAMREPOS_MIXED=$(/usr/bin/cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
+    OPAMREPOS_UNIX=$(/usr/bin/cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
 else
     OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
     OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
+fi
+if is_unixy_windows_build_machine; then
+    # shellcheck disable=SC2154
+    DISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
 fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
@@ -305,14 +298,11 @@ fi
 # BEGIN install vcpkg packages
 
 if [ "$INSTALL_VCPKG" = ON ]; then
-    if [ -n "$CMDOUT" ]; then
-        true > "$CMDOUT"
-    fi
-
     # For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
     # There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
     # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
-    # https://github.com/Microsoft/vcpkg/issues/645 . Note: This doesn't fix the stalling but keeping it!
+    # https://github.com/Microsoft/vcpkg/issues/645 .
+    # Note: This doesn't fix the stalling but keeping it!
     install -d "$VCPKG_UNIX"/downloads
     touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
@@ -323,9 +313,6 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # Set VCPKG_VISUAL_STUDIO_PATH
     if is_unixy_windows_build_machine; then
         VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}"
-        if [ -n "$CMDOUT" ]; then
-            echo "@SET \"VCPKG_VISUAL_STUDIO_PATH=${VSDEV_HOME_WINDOWS:-}\"" >> "$CMDOUT"
-        fi
     else
         VCPKG_VISUAL_STUDIO_PATH=""
     fi
@@ -338,11 +325,7 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         # We don't want vcpkg installing cmake again if we have a modern one
         if is_unixy_windows_build_machine; then
             DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-            DOCH_WINDOWS=$(cygpath -aw "$DiskuvOCamlHome")
             VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH"
-            if [ -n "$CMDOUT" ]; then
-                printf '@SET "PATH=%s\\tools\\cmake\\bin;%s\\tools\\ninja\\bin;%%PATH%%"\n' "$DOCH_WINDOWS" "$DOCH_WINDOWS" >> "$CMDOUT"
-            fi
         else
             DOCH_UNIX="$DiskuvOCamlHome"
             VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$PATH"
@@ -357,24 +340,6 @@ if [ "$INSTALL_VCPKG" = ON ]; then
             # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
             # stalls when running vcpkg directly in MSYS2.
             install_vcpkg_pkgs_COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
-            if [ -n "$CMDOUT" ]; then
-                {
-                    echo '@echo.'
-                    echo '@echo.'
-                    echo '@echo.'
-                    echo '@echo KNOWN ISSUE'
-                    echo '@echo -----------'
-                    echo '@echo.'
-                    echo '@echo This window may take a very long time (perhaps an hour) to get through its next command.'
-                    echo '@echo The bug is with first-time installs of vcpkg on some machines, and seems related to'
-                    echo '@echo https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890'
-                    echo '@echo and other "slowness" issues that have been closed without adequate explanations.'
-                    echo '@echo.'
-                    echo '@echo.'
-                    echo "powershell -ExecutionPolicy Bypass -Command \"$install_vcpkg_pkgs_COMMAND_AND_ARGS\""
-                } >> "$CMDOUT"
-                exit 0
-            fi
             log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
             log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
