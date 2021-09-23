@@ -479,14 +479,11 @@ $GitOriginalVersion = @(0, 0, 0)
 $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $false
 $GitExists = $false
 
-$oldeap = $ErrorActionPreference
-$ErrorActionPreference = "SilentlyContinue"
-$GitExe = & where.exe git 2> $null
-$ErrorActionPreference = oldeap
-
-if ($LastExitCode -eq 0) {
+$GitExe = Get-Command git.exe -ErrorAction Ignore
+if ($null -ne $GitExe) {
+    $GitExe = $GitExe.Path
     $GitExists = $true
-    $GitResponse = & $GitExe --version
+    $GitResponse = & "$GitExe" --version
     if ($LastExitCode -eq 0) {
         # git version 2.32.0.windows.2 -> 2.32.0.windows.2
         $GitResponseLast = $GitResponse.Split(" ")[-1]
@@ -537,13 +534,11 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
         # Get new PATH so we can locate the new Git
         $OldPath = $env:PATH
         $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        $oldeap = $ErrorActionPreference
-        $ErrorActionPreference = 'Continue'
-        $GitExe = & where.exe git
-        $ErrorActionPreference = $oldeap
-        if ($LastExitCode -ne 0) {
+        $GitExe = Get-Command git.exe -ErrorAction Ignore
+        if ($null -eq $GitExe) {
             throw "DiskuvOCaml requires that Git is installed in the PATH. The Git installer failed to do so. Please install it manually from https://gitforwindows.org/"
         }
+        $GitExe = $GitExe.Path
         $env:PATH = $OldPath
     }
 }
@@ -758,7 +753,7 @@ try {
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "clone", "https://github.com/thekid/inotify-win.git")
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCachePath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
-        Invoke-Win32CommandWithProgress -FilePath cmd.exe -ArgumentList @("/c", "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`"")
+        Invoke-Win32CommandWithProgress -FilePath (Get-Command cmd.exe).Path -ArgumentList @("/c", "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`"")
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
         # if (-not $SkipProgress) { Clear-Host }
     }
