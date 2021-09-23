@@ -156,6 +156,15 @@ function Start-BlueGreenDeploy {
     elseif ((-not $state[$slotIdx].success) -and (-not $KeepOldDeploymentWhenSameDeploymentId)) {
         $clean = $true
     }
+
+    # set the slot state, before we start modifying the slot
+    $currentepochms = Get-CurrentEpochMillis
+    $state[$slotIdx].id = $DeploymentId
+    $state[$slotIdx].lastepochms = $currentepochms
+    $state[$slotIdx].success = $false
+    Set-BlueGreenDeployState -ParentPath $ParentPath -DeployState $state
+
+    # clean if necessary
     if ($clean) {
         if ($PSBoundParameters.ContainsKey('LogFunction')) {
             Invoke-Command $LogFunction -ArgumentList @("Cleaning directory $DeployPath ...")
@@ -169,13 +178,6 @@ function Start-BlueGreenDeploy {
             Write-Host "Cleaned directory $DeployPath."
         }
     }
-
-    # set the slot state
-    $currentepochms = Get-CurrentEpochMillis
-    $state[$slotIdx].id = $DeploymentId
-    $state[$slotIdx].lastepochms = $currentepochms
-    $state[$slotIdx].success = $false
-    Set-BlueGreenDeployState -ParentPath $ParentPath -DeployState $state
 
     # give back to caller
     Write-Output $DeployPath
@@ -415,6 +417,7 @@ function Step-BlueGreenDeploySlotDryRun {
         if ($DeploymentId -eq $state[$slotIdx].id) {
             # using a slot means updating its slot (especially the timestamp)
             $state[$slotIdx].lastepochms = $CurrentEpochMs
+            $state[$slotIdx].success = $false
 
             # give slot back to caller
             Write-Output @{ "chosenSlotIdx" = $slotIdx; "stateAfterUpdate" = $state }
@@ -440,6 +443,7 @@ function Step-BlueGreenDeploySlotDryRun {
     # use what we picked (which is an indirect reference to $state)
     $picked.slot.lastepochms = $CurrentEpochMs
     $picked.slot.id = $DeploymentId
+    $picked.slot.success = $false
 
     # give slot back to caller
     Write-Output @{ "chosenSlotIdx" = $picked.slotIdx; "stateAfterUpdate" = $state }
