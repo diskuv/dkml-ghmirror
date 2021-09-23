@@ -34,12 +34,19 @@ If you have **all** four (4) of the following:
    * Visual Studio Enterprise
    * Visual Studio Build Tools (the compilers without the IDE)
 
-2. The [English language pack](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2019#step-6---install-language-packs-optional)
+2. The `English language pack <https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2019#step-6---install-language-packs-optional>`_
 
-3. Either of the following:
+3. **Both** of the following:
 
-   * MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest) (``Microsoft.VisualStudio.Component.VC.Tools.x86.x64``) installed with `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_
-   * MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``) installed with any Visual Studio 2022/2019/2017/2015 version
+   * MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26) (``Microsoft.VisualStudio.Component.VC.14.26.x86.x64``) which is used by OCaml to compile C code
+   * MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest) (``Microsoft.VisualStudio.Component.VC.Tools.x86.x64``) which is used by `vcpkg <https://vcpkg.io/>`_ to compile C code
+
+   .. note::
+
+      `vcpkg (the C package manager) <https://vcpkg.io/>` does not have the ability pick a precise version (ex. 14.26) of Visual Studio. If you are in the
+      rare situation where you must have exact matching versions of the compiler, you can install
+      `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_ which can be
+      downloaded at `Visual Studio 2019 Releases <https://docs.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers>`_
 
 4. Windows 10 SDK 18362 (``Microsoft.VisualStudio.Component.Windows10SDK.18362``)
    which is also known as the 19H1 SDK or May 2019 Update SDK.

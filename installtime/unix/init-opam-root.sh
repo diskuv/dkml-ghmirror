@@ -332,17 +332,18 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         VCPKG_PATH="$PATH"
     fi
 
+    # shellcheck disable=SC2120
     install_vcpkg_pkgs() {
-        set +u # workaround bash bug on empty arrays
+        # Reference: Visual Studio detection logic for vcpkg is at https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L191-L345
+
         if is_unixy_windows_build_machine; then
             # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
             # stalls when running vcpkg directly in MSYS2.
-            install_vcpkg_pkgs_COMMAND_AND_ARGS="& {\$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+            install_vcpkg_pkgs_COMMAND_AND_ARGS="& { \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
             log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
             log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
         fi
-        set -u
     }
 
     # Install vcpkg packages

@@ -103,17 +103,26 @@ $VcStudioVcToolsMinorVer = 6
 $VsComponents = @(
     # Verbatim (except variable replacement) from vsconfig.json that was "Export configuration" from the
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
-    # And we do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
+
+    # 2021-09-23/jonahbeckford@: Since vcpkg does not allow pinning the exact $VcVarsVer, we must install
+    # both VC.Tools and VC.$VcVarsVer.
+
+    # 2021-09-22/jonahbeckford@:
+    # We do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
     # we need special logic in Get-CompatibleVisualStudios to detect it.
-    "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer"
+
+    "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer",
+    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
 )
 $VsSpecialComponents = @(
+    # 2021-09-22/jonahbeckford@:
     # We only install this component if a viable "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" not detected
     # in Get-CompatibleVisualStudios.
-    "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
+    # "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
 )
 $VsProductLangs = @(
-    # English is required because of https://github.com/microsoft/vcpkg/commit/f174d5561af49cccbfb4d9618be123cf7ee971d6.
+    # English is required because of https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
     # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
     "en-US",
 
@@ -148,7 +157,8 @@ $VsAddComponents =
 $VsDescribeComponents = (
     "`ta) English language pack (en-US)`n" +
     "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
-    "`tc) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
+    "`tc) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
+    "`td) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
@@ -207,20 +217,20 @@ function Get-CompatibleVisualStudios {
         -Product * `
         -Require $VsComponents `
         -Version "[$VsVerMin,)"
-    # select installations that have `VC.Tools (Latest)` from an old Visual Studio version -or-
-    # the exact `VC.MM.NN (vMM.NN)` from any Visual Studio version
+    # select installations that have `VC.Tools (Latest)` -and-
+    # the exact `VC.MM.NN (vMM.NN)`
     $instances = $instances | Where-Object {
         $VCTools = $_.Packages | Where-Object {
-            $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -and $_.Version.Major -eq $VcStudioVcToolsMajorVer -and $_.Version.Minor -eq $VcStudioVcToolsMinorVer
+            $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
         };
         $VCExact = $_.Packages | Where-Object {
             $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
         };
-        ($VCTools.Count -gt 0) -or ($VCExact.Count -gt 0)
+        ($VCTools.Count -gt 0) -and ($VCExact.Count -gt 0)
     }
     # select only installations that have the English language pack
     $instances = $instances | Where-Object {
-        # Use equivalent detection logic as https://github.com/microsoft/vcpkg/commit/f174d5561af49cccbfb4d9618be123cf7ee971d6
+        # Use equivalent detection logic as https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
         $English = Get-ChildItem -Path "$($_.InstallationPath)\VC\Tools\MSVC\$VcVarsVer.*" -Recurse -Include 1033 | Measure-Object
         $English.Count -gt 0
     }
