@@ -588,7 +588,7 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
 $AuditLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.full.log"
 if (Test-Path -Path $AuditLog) {
     # backup the original
-    Rename-Item -Path $AuditLog -NewName "setup-userprofile.backup.log"
+    Rename-Item -Path $AuditLog -NewName "setup-userprofile.backup.$(Get-CurrentEpochMillis).log"
 }
 
 function Invoke-Win32CommandWithProgress {
@@ -633,15 +633,19 @@ function Invoke-Win32CommandWithProgress {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if (-not $SkipProgress) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
-                    Write-ProgressCurrentOperation $tail
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -ErrorAction Ignore
+                    if ($tail -is [array]) { $tail = $tail -join "`n" }
+                    if ($null -ne $tail) {
+                        Write-ProgressCurrentOperation $tail
+                    }
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
             }
             $proc.WaitForExit()
             $exitCode = $proc.ExitCode
             if ($exitCode -ne 0) {
-                $err = Get-Content -Path $RedirectStandardError -Raw
+                $err = Get-Content -Path $RedirectStandardError -Raw -ErrorAction Ignore
+                if ($null -eq $err -or "" -eq $err) { $err = Get-Content -Path $RedirectStandardOutput -Tail 5 -ErrorAction Ignore }
                 throw "Win32 command failed! Exited with $exitCode. Command was: $Command.`nError was: $err"
             }
         }

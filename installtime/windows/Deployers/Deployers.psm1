@@ -486,6 +486,7 @@ function Get-CurrentEpochMillis {
     [long]$timestamp = [math]::Round((([datetime]::UtcNow) - (Get-Date -Date '1/1/1970')).TotalMilliseconds)
     $timestamp
 }
+Export-ModuleMember -Function Get-CurrentEpochMillis
 
 # Tested as part of CI .gitlab\ci\windows-test-setupuserprofile.gitlab-ci.yml
 function Invoke-BlueGreenDeploySlotTest {

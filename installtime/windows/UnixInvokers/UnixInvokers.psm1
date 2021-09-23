@@ -37,8 +37,11 @@ function Invoke-CygwinCommand {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if ($AuditLog) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
-                    Invoke-Command $TailFunction -ArgumentList @($tail)
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -ErrorAction Ignore
+                    if ($tail -is [array]) { $tail = $tail -join "`n" }
+                    if ($null -ne $tail) {
+                        Invoke-Command $TailFunction -ArgumentList @($tail)
+                    }
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
             }
@@ -46,6 +49,7 @@ function Invoke-CygwinCommand {
             $exitCode = $proc.ExitCode
             if ($exitCode -ne 0) {
                 $err = Get-Content -Path $RedirectStandardError -Raw
+                if ($null -eq $err -or "" -eq $err) { $err = Get-Content -Path $RedirectStandardOutput -Tail 5 -ErrorAction Ignore }
                 throw "Cygwin command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
             }
         }
@@ -110,8 +114,11 @@ function Invoke-MSYS2Command {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if ($AuditLog) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
-                    Invoke-Command $TailFunction -ArgumentList @($tail)
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -ErrorAction Ignore
+                    if ($tail -is [array]) { $tail = $tail -join "`n" }
+                    if ($null -ne $tail) {
+                        Invoke-Command $TailFunction -ArgumentList @($tail)
+                    }
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
             }
@@ -119,6 +126,7 @@ function Invoke-MSYS2Command {
             $exitCode = $proc.ExitCode
             if (-not $IgnoreErrors -and $exitCode -ne 0) {
                 $err = Get-Content -Path $RedirectStandardError -Raw
+                if ($null -eq $err -or "" -eq $err) { $err = Get-Content -Path $RedirectStandardOutput -Tail 5 -ErrorAction Ignore }
                 throw "MSYS2 command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
             }
         } finally {
