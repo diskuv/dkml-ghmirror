@@ -172,7 +172,7 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     Invoke-WebRequest -Uri "$VsBuildToolsInstallChannel"  -OutFile $VsInstallTempPath\VisualStudio.chman
     Invoke-WebRequest -Uri "$VsBuildToolsInstaller"       -OutFile $VsInstallTempPath\vs_buildtools.exe
     Invoke-WebRequest -Uri https://raw.githubusercontent.com/MisterDA/Windows-OCaml-Docker/d3a107132f24c05140ad84f85f187e74e83e819b/Install.cmd -OutFile $VsInstallTempPath\Install.orig.cmd
-    $content = Get-Content -Path $VsInstallTempPath\Install.orig.cmd
+    $content = Get-Content -Path $VsInstallTempPath\Install.orig.cmd -Raw
     $content = $content -replace "C:\\TEMP", "$VsInstallTempPath"
     $content = $content -replace "C:\\vslogs.zip", "$VsInstallTempPath\vslogs.zip"
     $content | Set-Content -Path $VsInstallTempPath\Install.cmd

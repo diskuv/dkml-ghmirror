@@ -425,6 +425,7 @@ function Write-ProgressStep {
 }
 function Write-ProgressCurrentOperation {
     param(
+        [Parameter(Mandatory)]
         $CurrentOperation
     )
     if ($SkipProgress) {
@@ -632,7 +633,7 @@ function Invoke-Win32CommandWithProgress {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if (-not $SkipProgress) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
                     Write-ProgressCurrentOperation $tail
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
@@ -640,17 +641,17 @@ function Invoke-Win32CommandWithProgress {
             $proc.WaitForExit()
             $exitCode = $proc.ExitCode
             if ($exitCode -ne 0) {
-                $err = Get-Content -Path $RedirectStandardError
+                $err = Get-Content -Path $RedirectStandardError -Raw
                 throw "Win32 command failed! Exited with $exitCode. Command was: $Command.`nError was: $err"
             }
         }
         finally {
             if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
             }
             if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardError -Force -ErrorAction Continue
             }
         }

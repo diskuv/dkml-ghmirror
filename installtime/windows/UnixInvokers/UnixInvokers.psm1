@@ -37,7 +37,7 @@ function Invoke-CygwinCommand {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if ($AuditLog) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
                     Invoke-Command $TailFunction -ArgumentList @($tail)
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
@@ -45,17 +45,17 @@ function Invoke-CygwinCommand {
             $proc.WaitForExit()
             $exitCode = $proc.ExitCode
             if ($exitCode -ne 0) {
-                $err = Get-Content -Path $RedirectStandardError
+                $err = Get-Content -Path $RedirectStandardError -Raw
                 throw "Cygwin command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
             }
         }
         finally {
             if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
             }
             if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardError -Force -ErrorAction Continue
             }
         }
@@ -110,7 +110,7 @@ function Invoke-MSYS2Command {
             $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
             while (-not $proc.HasExited) {
                 if ($AuditLog) {
-                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
+                    $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines -Raw
                     Invoke-Command $TailFunction -ArgumentList @($tail)
                 }
                 Start-Sleep -Seconds $InvokerTailRefreshSeconds
@@ -118,16 +118,16 @@ function Invoke-MSYS2Command {
             $proc.WaitForExit()
             $exitCode = $proc.ExitCode
             if (-not $IgnoreErrors -and $exitCode -ne 0) {
-                $err = Get-Content -Path $RedirectStandardError
+                $err = Get-Content -Path $RedirectStandardError -Raw
                 throw "MSYS2 command failed! Exited with $exitCode. Command was: $Command`nError was: $err"
             }
         } finally {
             if ($null -ne $RedirectStandardOutput -and (Test-Path $RedirectStandardOutput)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardOutput -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardOutput -Force -ErrorAction Continue
             }
             if ($null -ne $RedirectStandardError -and (Test-Path $RedirectStandardError)) {
-                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError) -Encoding UTF8 }
+                if ($AuditLog) { Add-Content -Path $AuditLog -Value (Get-Content -Path $RedirectStandardError -Raw) -Encoding UTF8 }
                 Remove-Item $RedirectStandardError -Force -ErrorAction Continue
             }
         }
