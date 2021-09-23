@@ -1,6 +1,6 @@
 windows:fetch-ocaml-opam-repo:
   extends:
-  - .windows:before-script-shared-cygwin
+    - .windows:before-script-shared-msys2-setupmachine
   stage: prepare
   needs: []
   artifacts:

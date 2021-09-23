@@ -164,6 +164,14 @@
     - *before-windows
     - *before-setupmachine
 
+.windows:before-script-shared-msys2-setupmachine:
+  extends:
+  - .shared_windows_runners
+  before_script:
+    - *before-windows
+    - *before-setupmachine
+    - *before-msys2
+
 .windows:before-script-diskuv-msys2-setupmachine:
   extends:
   - .diskuv_windows_runners

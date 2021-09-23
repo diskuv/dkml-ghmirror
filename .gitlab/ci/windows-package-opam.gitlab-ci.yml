@@ -1,6 +1,6 @@
 windows:build-opam:
   extends:
-  - .windows:before-script-diskuv-msys2-setupmachine
+    - .windows:before-script-shared-msys2-setupmachine
   stage: build
   parallel:
     matrix:
@@ -10,7 +10,7 @@ windows:build-opam:
     - if: '$CI_COMMIT_TAG'
     # - if: '$CI_COMMIT_BRANCH == "next"'
   script:
-    - $env:MSYSTEM = 'MSYS2'       # Start MSYS2 (not MinGW 32 or 64 bit) environments
+    - $env:MSYSTEM = 'MSYS2' # Start MSYS2 (not MinGW 32 or 64 bit) environments
     - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
@@ -30,15 +30,15 @@ windows:build-opam:
 
     - if ("$env:BITS" -eq "32") { $PLATFORM = "windows_x86" } else { $PLATFORM = "windows_x86_64" }
     - msys (
-        'env'
-        + ' TOPDIR=$PWD/installtime/none/emptytop'
-        + ' installtime/unix/private/reproducible-compile-opam-1-setup.sh'
-        + " -d '" + "$PWD" + "'"
-        + " -a " + "$PLATFORM"
-        + " -b " + "$($VisualStudioProps.MsvsPreference)"
-        + " -t '" + "$DEPLOYDIR" + "'"
-        + " -v " + $DV_AvailableOpamVersion
-        )
+      'env'
+      + ' TOPDIR=$PWD/installtime/none/emptytop'
+      + ' installtime/unix/private/reproducible-compile-opam-1-setup.sh'
+      + " -d '" + "$PWD" + "'"
+      + " -a " + "$PLATFORM"
+      + " -b " + "$($VisualStudioProps.MsvsPreference)"
+      + " -t '" + "$DEPLOYDIR" + "'"
+      + " -v " + $DV_AvailableOpamVersion
+      )
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/100-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/100-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\opam.exe")) { throw "Build failed" }
