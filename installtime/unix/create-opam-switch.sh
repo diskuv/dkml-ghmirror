@@ -415,13 +415,6 @@ autodetect_posix_shell
     echo 'shift'
     # shellcheck disable=2016
     echo 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch)'
-    if [ -x /usr/bin/cygpath ]; then
-        # PATH may be a Windows path. For now we need it to be a UNIX path or else commands
-        # like 'opam' will not be found.
-        # Always add in standard /usr/bin:/bin paths as well.
-        # shellcheck disable=2016
-        echo 'PATH=$(/usr/bin/cygpath --path "$PATH"):/usr/bin:/bin'
-    fi
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 

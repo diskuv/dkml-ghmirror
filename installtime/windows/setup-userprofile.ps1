@@ -1145,7 +1145,7 @@ try {
     if (!$global:SkipOpamSetup) {
         if (!(Test-Path -Path $OpamInitTempPath)) { New-Item -Path $OpamInitTempPath -ItemType Directory | Out-Null }
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps dash -x '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev"
     }
 
     # END opam init

@@ -211,7 +211,7 @@ fi
 # We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
 if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then PLATFORM_EXEC_PRE="; $PLATFORM_EXEC_PRE"; fi
 # shellcheck disable=SC2034 disable=SC2016
-PLATFORM_EXEC_PRE="${OPAM_ENV_STMT} ${PLATFORM_EXEC_PRE:-}"
+PLATFORM_EXEC_PRE="${OPAM_ENV_STMT:-} ${PLATFORM_EXEC_PRE:-}"
 
 # -----------------------
 # Inject our options first, immediately after the subcommand
