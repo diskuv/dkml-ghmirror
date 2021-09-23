@@ -77,8 +77,6 @@ else
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
-# shellcheck disable=SC1091
-. "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # Set PLATFORM_VCPKG_TRIPLET
 platform_vcpkg_triplet

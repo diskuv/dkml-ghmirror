@@ -22,8 +22,6 @@ trap 'rm -rf "$WORK"' EXIT
 
 # shellcheck disable=1091
 . "$DKMLDIR/runtime/unix/_common_tool.sh"
-# shellcheck disable=SC1091
-. "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # _common_tool.sh functions expect us to be in $TOPDIR. We'll change directories later.
 cd "$TOPDIR"

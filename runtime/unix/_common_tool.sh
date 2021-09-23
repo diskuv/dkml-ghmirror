@@ -47,6 +47,11 @@ is_reproducible_platform() {
 
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
+# set $dkml_root_version
+# shellcheck disable=SC1091
+. "$DKMLDIR"/.dkmlroot
+dkml_root_version=$(echo "$dkml_root_version" | tr -d '\r')
+
 if [ -z "${TOPDIR:-}" ]; then
     # Check at most 10 ancestors
     if [ -n "${TOPDIR_CANDIDATE:-}" ]; then
