@@ -199,13 +199,13 @@ change_suffix() {
     shift
     change_suffix_NEW_SUFFIX="$1"
     shift
-    printf "%s" "$change_suffix_TEXT" | sed "s#$change_suffix_OLD_SUFFIX\$#$change_suffix_NEW_SUFFIX#"
+    printf "%s" "$change_suffix_TEXT" | awk -v REPLACE="$change_suffix_NEW_SUFFIX" "{ gsub(/$change_suffix_OLD_SUFFIX/,REPLACE); print }"
 }
 
 # Replaces all occurrences of the search term with a replacement string, and print to the standard output.
 # replace_all TEXT SEARCH REPLACE
 #
-# This function can handle old and suffixes containing:
+# This function can handle SEARCH text containing:
 # * A-Za-z0-9
 # * commas (,)
 # * dashes (-)
@@ -214,6 +214,8 @@ change_suffix() {
 # * ampersands (@)
 #
 # Other characters may work, but they are not officially supported by this function.
+#
+# Any characters can be used in TEXT and REPLACE.
 replace_all() {
     replace_all_TEXT="$1"
     shift
@@ -221,7 +223,8 @@ replace_all() {
     shift
     replace_all_REPLACE="$1"
     shift
-    printf "%s" "$replace_all_TEXT" | sed "s#$replace_all_SEARCH#$replace_all_REPLACE#g"
+    replace_all_REPLACE=$(echo "$replace_all_REPLACE" | sed 's#\\#\\\\#g') # escape all backslashes for awk
+    printf "%s" "$replace_all_TEXT" | awk -v REPLACE="$replace_all_REPLACE" "{ gsub(/$replace_all_SEARCH/,REPLACE); print }"
 }
 
 # Install a script that can re-install necessary system packages.
