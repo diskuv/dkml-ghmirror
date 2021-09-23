@@ -95,7 +95,7 @@ likely run into some roadblocks. Several companies and groups have filled the vo
 
 .. note::
 
-  The first releases (0.1.x) of Diskuv OCaml support Windows 64-bit systems only, and should be
+  The first releases (0.1.x and 0.2.x) of Diskuv OCaml support Windows 64-bit systems only, and should be
   considered preview releases.
 
 The *Diskuv OCaml* distribution includes the following OCaml components:

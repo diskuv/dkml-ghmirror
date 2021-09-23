@@ -4,7 +4,7 @@
 
 **Documentation is available at https://diskuv.gitlab.io/diskuv-ocaml/**
 
-The preview versions 0.1.x run on **64-bit Windows** and:
+The preview versions 0.2.x run on **64-bit Windows** and:
 
 1. Includes an installer for the initial multi-hour Windows compilation process, including the installation of Git and Visual Studio Build Tools if needed:
 
