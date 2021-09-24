@@ -29,6 +29,7 @@ windows:test-setupuserprofile-1-before-create-system-switch:
     key:
       files:
         - contributors\.userprofile.cachekey
+        - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
       - _ci\LocalAppData\opam
@@ -45,15 +46,6 @@ windows:test-setupuserprofile-1-before-create-system-switch:
     # Call setup-userprofile.bat
     # Use incremental deployments and slot 0 so cache can be re-used.
     - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0 -StopBeforeCreateSystemSwitch
-    - msys_direct 'tree -L 5 _ci/LocalAppData'
-
-    # Clean up cache, removing everything except the current dkml_root_version (the cache key is often the same between prereleases)
-    - $DkmlProps = ConvertFrom-StringData (Get-Content "$env:CI_PROJECT_DIR\.dkmlroot" -Raw)
-    - $dkml_root_version = $DkmlProps.dkml_root_version
-    - $dkml_root_version
-    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\opam\plugins" -Recurse | Select -ExpandProperty FullName | Where-Object {$_ -notlike "*\$dkml_root_version\*" -and $_ -notlike "*\$dkml_root_version" } | Sort-Object Length -Descending | ForEach-Object { Remove-Item -LiteralPath "$_" -Force }
-    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\opam-repositories" -Recurse -Exclude "$dkml_root_version.complete" | Select -ExpandProperty FullName | Where-Object {$_ -notlike "*\$dkml_root_version\*" -and $_ -notlike "*\$dkml_root_version" } | Sort-Object Length -Descending | ForEach-Object { Remove-Item -LiteralPath "$_" -Force }
-    - Get-ChildItem -Path "$env:CI_PROJECT_DIR\_ci\LocalAppData\opam\repo" -Recurse -Exclude default.tar.gz,repos-config,state-*.cache,"diskuv-$dkml_root_version.tar.gz","fdopen-mingw-$dkml_root_version.tar.gz" | Select -ExpandProperty FullName | Sort-Object Length -Descending | ForEach-Object { Remove-Item -LiteralPath "$_" -Force }
     - msys_direct 'tree -L 5 _ci/LocalAppData'
 
     # Remove Cygwin if present since not needed for cache (it is only an intermediate tool for downloading ocaml-opam Docker repository)
@@ -74,6 +66,7 @@ windows:test-setupuserprofile-2-install-system-switch:
     key:
       files:
         - contributors\.userprofile.cachekey
+        - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
       - _ci\LocalAppData\opam
@@ -97,6 +90,7 @@ windows:test-setupuserprofile-3-remaining:
     key:
       files:
         - contributors\.userprofile.cachekey
+        - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
       - _ci\LocalAppData\opam
