@@ -13,6 +13,7 @@ Import-Module Deployers # for Get-Sha256Hex16OfText
 # * Microsoft build numbers
 # * Semver numbers
 $Windows10SdkVer = "18362"        # KEEP IN SYNC with WindowsAdministrator.rst
+$Windows10SdkFullVer = "10.0.$Windows10SdkVer.0"
 
 # Visual Studio minimum version
 # Why MSBuild / Visual Studio 2015+? Because [vcpkg](https://vcpkg.io/en/getting-started.html) needs
@@ -159,7 +160,7 @@ $VsDescribeComponents = (
     "`ta) English language pack (en-US)`n" +
     "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
     "`tc) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
-    "`td) Windows 10 SDK (10.0.$Windows10SdkVer.0)`n")
+    "`td) Windows 10 SDK ($Windows10SdkFullVer)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
@@ -226,7 +227,8 @@ function Get-VisualStudioProperties {
     @{
         InstallPath = $VisualStudioInstallation.InstallationPath;
         MsvsPreference = "VS$MsvsPreference";
-        VcVarsVer = $VcVarsVerChoice
+        VcVarsVer = $VcVarsVerChoice;
+        WinSdkVer = $Windows10SdkFullVer;
     }
 }
 Export-ModuleMember -Function Get-VisualStudioProperties

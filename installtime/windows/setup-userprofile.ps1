@@ -457,10 +457,12 @@ $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $Chose
 $VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
 $VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
 $VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
+$VisualStudioWinSdkVerPath = "$ProgramParentPath\vsstudio.winsdk.txt"
 $VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.txt"
 [System.IO.File]::WriteAllText($VisualStudioDirPath, "$($VisualStudioProps.InstallPath)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json -Depth 5), $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioWinSdkVerPath, "$($VisualStudioProps.WinSdkVer)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
 
 # END Visual Studio Setup PowerShell Module
@@ -762,7 +764,7 @@ try {
         if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "clone", "https://github.com/thekid/inotify-win.git")
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCachePath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
-        Set-Content -Path "$InotifyCachePath\compile.bat" -Value "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
+        Set-Content -Path "$InotifyCachePath\compile.bat" -Value "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) -winsdk=$($VisualStudioProps.WinSdkVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
         Invoke-Win32CommandWithProgress -FilePath "$env:ComSpec" -ArgumentList @("/c", "call `"$InotifyCachePath\compile.bat`"")
         Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
         # if (-not $SkipProgress) { Clear-Host }

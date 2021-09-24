@@ -82,13 +82,13 @@
   - $ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
   - $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
   - $VisualStudioProps
-  - $VS_EXPORT_CMDS = "export DKML_VSSTUDIO_DIR='$($VisualStudioProps.InstallPath)'; export DKML_VSSTUDIO_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_VSSTUDIO_MSVSPREFERENCE='$($VisualStudioProps.MsvsPreference)'"
+  - $VS_EXPORT_CMDS = "export DKML_VSSTUDIO_DIR='$($VisualStudioProps.InstallPath)'; export DKML_VSSTUDIO_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_VSSTUDIO_WINSDKVER='$($VisualStudioProps.WinSdkVer)'; export DKML_VSSTUDIO_MSVSPREFERENCE='$($VisualStudioProps.MsvsPreference)'"
 
 .before_msys2: &before-msys2
   # ----------- MSYS2 -----------
   # Timing: 5 minutes if MSYS2 needs to be installed
   # Inputs:
-  #  $VS_EXPORT_CMDS - Optional. A string with `export DKML_VSSTUDIO_DIR='...'; export DKML_VSSTUDIO_VCVARSVER='...'; export DKML_VSSTUDIO_MSVSPREFERENCE='...'`
+  #  $VS_EXPORT_CMDS - Optional. A string with `export DKML_VSSTUDIO_DIR='...'; export DKML_VSSTUDIO_VCVARSVER='...'; export DKML_VSSTUDIO_WINSDKVER='...'; export DKML_VSSTUDIO_MSVSPREFERENCE='...'`
 
   # Docs: https://www.msys2.org/docs/ci/#docker
   # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
