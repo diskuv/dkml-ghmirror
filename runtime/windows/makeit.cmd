@@ -122,7 +122,7 @@ if not exist "%DKMAKE_TOPDIR%\dune-project" (
 
 REM Find cygpath so we can convert Windows paths to Unix/Cygwin paths
 if not defined DKMAKE_INTERNAL_CYGPATH (
-	set "DKMAKE_INTERNAL_CYGPATH=%DiskuvOCamlHome%\tools\MSYS2\usr\bin\cygpath.exe"
+	set "DKMAKE_INTERNAL_CYGPATH=%DiskuvOCamlMSYS2Dir%\usr\bin\cygpath.exe"
 )
 
 "%DKMAKE_INTERNAL_CYGPATH%" --version >NUL 2>NUL
@@ -189,7 +189,7 @@ SET DKMAKE_INTERNAL_GITPATH=%DKMAKE_INTERNAL_GITPATH:"=%
 REM Set DKMAKE_INTERNAL_MAKE
 REM We set MSYSTEM=MSYS environment variable to mimic the msys2.exe launcher https://www.msys2.org/wiki/MSYS2-introduction/
 if not defined DKMAKE_INTERNAL_MAKE (
-	SET DKMAKE_INTERNAL_MAKE=%DiskuvOCamlHome%\tools\MSYS2\usr\bin\env.exe ^
+	SET DKMAKE_INTERNAL_MAKE=%DiskuvOCamlMSYS2Dir%\usr\bin\env.exe ^
 		MSYSTEM=MSYS ^
 		MSYSTEM_CARCH=x86_64 ^
 		MSYSTEM_CHOST=x86_64-pc-msys ^
