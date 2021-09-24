@@ -68,7 +68,9 @@
     the version of the Diskuv OCaml distribution.
 .Parameter $ForceDeploymentSlot0
     Forces the blue-green deployer to use slot 0. Useful in CI situations.
-
+.Parameter $MSYS2Dir
+    When specified the specified MSYS2 installation directory will be used.
+    Useful in CI situations.
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 
@@ -102,6 +104,8 @@ param (
     [Parameter()]
     [int]
     $ParentProgressId = -1,
+    [string]
+    $MSYS2Dir,
     [switch]
     $SkipAutoUpgradeGitWhenOld,
     [switch]
@@ -970,7 +974,9 @@ try {
     Write-ProgressStep
 
     $MSYS2ParentDir = "$ProgramPath\tools"
-    $MSYS2Dir = "$MSYS2ParentDir\MSYS2"
+    if ($null -eq $MSYS2Dir -or "" -eq $MSYS2Dir) {
+        $MSYS2Dir = "$MSYS2ParentDir\MSYS2"
+    }
     $MSYS2CachePath = "$TempPath\MSYS2"
     if ([Environment]::Is64BitOperatingSystem) {
         # The "base" installer is friendly for CI (ex. GitLab CI).
@@ -1081,7 +1087,8 @@ try {
     $UnixVarsArray = @(
         "DiskuvOCamlVarsVersion=1",
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
-        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'"
+        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'",
+        "DiskuvOCamlMSYS2Dir='/'"
     )
     $UnixVarsContents = $UnixVarsArray -join [environment]::NewLine
     $UnixVarsContentsOnOneLine = $UnixVarsArray -join " "
@@ -1089,6 +1096,13 @@ try {
 `$env:DiskuvOCamlVarsVersion = 1
 `$env:DiskuvOCamlHome = '$ProgramPath'
 `$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin'
+`$env:DiskuvOCamlMSYS2Dir = '$MSYS2Dir'
+"@
+    $CmdVarsContents = @"
+`@SET DiskuvOCamlVarsVersion=1
+`@SET DiskuvOCamlHome=$ProgramPath
+`@SET DiskuvOCamlBinaryPaths=$ProgramPath\bin
+`@SET DiskuvOCamlMSYS2Dir=$MSYS2Dir
 "@
 
     # END Define dkmlvars
@@ -1273,13 +1287,17 @@ try {
     # UTF-8 with BOM (cf. https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-5.1)
     # we write to standard Windows encoding `Unicode` (UTF-16 LE with BOM) and then use dos2unix to convert it to UTF-8 with no BOM.
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.sh" -Value $UnixVarsContents -Encoding Unicode
+    Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.cmd" -Value $CmdVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.ps1" -Value $PowershellVarsContents -Encoding Unicode
 
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command (
-            "set -x && dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
-            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' && " +
-            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.sh'"
+            "set -x && " +
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' && " +
+            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.sh' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.cmd'"
         )
 
 

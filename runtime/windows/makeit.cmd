@@ -50,8 +50,49 @@ REM
 REM * Any variables we define here will appear inside the Makefile.
 REM ==» Use DKMAKE_INTERNAL_ as prefix for all variables.
 
+REM Set DiskuvOCamlHome if unset
+IF defined DiskuvOCamlHome GOTO HaveDiskuvOCamlHome
+SET "DKMAKE_INTERNAL_DOCH_PARENT=%LOCALAPPDATA%\Programs\DiskuvOCaml"
+if not exist "%DKMAKE_INTERNAL_DOCH_PARENT%\dkmlvars.cmd" (
+	echo.
+	echo.The %DKMAKE_INTERNAL_DOCH_PARENT%\dkmlvars.cmd script was not found. Make sure you have run
+	echo.the script 'installtime\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+CALL "%DKMAKE_INTERNAL_DOCH_PARENT%\dkmlvars.cmd"
+IF not defined DiskuvOCamlHome (
+	echo.
+	echo.The '%DKMAKE_INTERNAL_DOCH_PARENT%\dkmlvars.cmd' script is missing the definition
+	echo.for DiskuvOCamlHome. Make sure you have run
+	echo.the script 'installtime\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+
+REM Set DiskuvOCamlMSYS2Dir if unset
+:HaveDiskuvOCamlHome
+IF defined DiskuvOCamlMSYS2Dir GOTO HaveDiskuvOCamlMSYS2Dir
+if not exist "%DiskuvOCamlHome%\..\dkmlvars.cmd" (
+	echo.
+	echo.The '%DiskuvOCamlHome%\..\dkmlvars.cmd' script was not found. Make sure you have run
+	echo.the script 'installtime\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+CALL "%DiskuvOCamlHome%\..\dkmlvars.cmd"
+IF not defined DiskuvOCamlMSYS2Dir (
+	echo.
+	echo.The '%DiskuvOCamlHome%\..\dkmlvars.cmd' script is missing the definition
+	echo.for DiskuvOCamlMSYS2Dir. Make sure you have run
+	echo.the script 'installtime\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+
 REM Find .dkmlroot in an ancestor of the current scripts' directory
 REM Set DKMLDIR which is used by most Diskuv OCaml scripts through _common_tool.sh, etc.
+:HaveDiskuvOCamlMSYS2Dir
 FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%~dp0,.dkmlroot`) DO (
 SET "DKMLDIR=%%F"
 )
@@ -166,6 +207,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Clear environment variables that will pollute the Makefile environment, especially for a clean environment in `./makeit shell`
+set DKMAKE_INTERNAL_DOCH_PARENT=
 set DKMAKE_INTERNAL_CYGPATH=
 set DKMAKE_INTERNAL_DISKUVOCAMLHOME=
 set DKMAKE_INTERNAL_WINPATH=
