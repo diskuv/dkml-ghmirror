@@ -15,7 +15,7 @@
     - $env:LOCALAPPDATA = "$env:CI_PROJECT_DIR\_ci\LocalAppData"
     - if (!(Test-Path "$env:LOCALAPPDATA")) { New-Item -Path "$env:LOCALAPPDATA" -ItemType Directory }
 
-windows:test-setupuserprofile-1-before-create-system-switch:
+windows:test-setupuserprofile-1-before-init-opam:
   variables:
     SKIP_VISUAL_STUDIO_INSTALL: 'ON'
   extends:
@@ -45,7 +45,7 @@ windows:test-setupuserprofile-1-before-create-system-switch:
 
     # Call setup-userprofile.bat
     # Use incremental deployments and slot 0 so cache can be re-used.
-    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0 -StopBeforeCreateSystemSwitch
+    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0 -StopBeforeInitOpam
     - msys_direct 'tree -L 5 _ci/LocalAppData'
 
     # Remove Cygwin if present since not needed for cache (it is only an intermediate tool for downloading ocaml-opam Docker repository)
@@ -53,13 +53,37 @@ windows:test-setupuserprofile-1-before-create-system-switch:
 
     - date
 
-windows:test-setupuserprofile-2-install-system-switch:
+windows:test-setupuserprofile-2-before-create-system-switch:
   variables:
     SKIP_VISUAL_STUDIO_INSTALL: 'ON'
   extends:
   - .windows:before-script-shared-setupmachine
   stage: build
-  needs: ["windows:test-setupuserprofile-1-before-create-system-switch"]
+  needs: ["windows:test-setupuserprofile-1-before-init-opam"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "next"'
+  cache:
+    key:
+      files:
+        - contributors\.userprofile.cachekey
+        - .dkmlroot
+    paths:
+      - _ci\LocalAppData\Programs\DiskuvOCaml
+      - _ci\LocalAppData\opam
+      - _ci\LocalAppData\vcpkg
+  script:
+    - *test-before
+    - installtime\windows\setup-userprofile.ps1 -SkipProgress -AllowRunAsAdmin -ForceDeploymentSlot0 -StopBeforeCreateSystemSwitch
+    - msys_direct 'tree -L 5 _ci/LocalAppData'
+    - date
+
+windows:test-setupuserprofile-3-before-install-system-switch:
+  variables:
+    SKIP_VISUAL_STUDIO_INSTALL: 'ON'
+  extends:
+  - .windows:before-script-shared-setupmachine
+  stage: build
+  needs: ["windows:test-setupuserprofile-2-before-create-system-switch"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "next"'
   cache:
@@ -77,13 +101,13 @@ windows:test-setupuserprofile-2-install-system-switch:
     - msys_direct 'tree -L 5 _ci/LocalAppData'
     - date
 
-windows:test-setupuserprofile-3-remaining:
+windows:test-setupuserprofile-4-remaining:
   variables:
     SKIP_VISUAL_STUDIO_INSTALL: 'ON'
   extends:
   - .windows:before-script-shared-setupmachine
   stage: build
-  needs: ["windows:test-setupuserprofile-2-install-system-switch"]
+  needs: ["windows:test-setupuserprofile-3-before-install-system-switch"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "next"'
   cache:

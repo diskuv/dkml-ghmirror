@@ -117,6 +117,8 @@ param (
     [switch]
     $ForceDeploymentSlot0,
     [switch]
+    $StopBeforeInitOpam,
+    [switch]
     $StopBeforeCreateSystemSwitch,
     [switch]
     $StopBeforeInstallSystemSwitch
@@ -1143,6 +1145,11 @@ try {
     # ----------------------------------------------------------------
     # BEGIN opam init
 
+    if ($StopBeforeInitOpam) {
+        Write-Host "Stopping before being completed finished due to -StopBeforeInitOpam switch"
+        exit 0
+    }
+
     $global:ProgressActivity = "Initialize Opam Package Manager"
     Write-ProgressStep
 
@@ -1203,7 +1210,7 @@ try {
     # BEGIN opam install required `diskuv-system` packages
 
     if ($StopBeforeInstallSystemSwitch) {
-        Write-Host "Stopping before being completed finished due to -StopBeforeCreateSystemSwitch switch"
+        Write-Host "Stopping before being completed finished due to -StopBeforeInstallSystemSwitch switch"
         exit 0
     }
 
