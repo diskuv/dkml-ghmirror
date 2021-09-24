@@ -273,7 +273,11 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
     if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
         # Download vcpkg
         if [ ! -e "$VCPKG_UNIX"/src.tar.gz ]; then
-            log_trace wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
+            if [ "${CI:-}" = true ]; then
+                log_trace wget -q "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
+            else
+                log_trace wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
+            fi
             mv "$VCPKG_UNIX"/src.tar.gz.tmp "$VCPKG_UNIX"/src.tar.gz
         fi
 
