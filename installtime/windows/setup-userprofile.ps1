@@ -1140,9 +1140,6 @@ try {
     # END Compile/install opam.exe
     # ----------------------------------------------------------------
 
-    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command "if [ -e /usr/bin/tree ]; then tree -F -L 5 '$env:LOCALAPPDATA'; fi"
-
     # ----------------------------------------------------------------
     # BEGIN opam init
 
