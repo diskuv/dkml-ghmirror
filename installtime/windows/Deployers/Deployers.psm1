@@ -236,7 +236,7 @@ function Stop-BlueGreenDeploy {
         # package manager takes over the slot
         $state2 = Get-BlueGreenDeployState -ParentPath $ParentPath | ConvertFrom-Json
         $reserved = $state2[$matchSlotIdx].reserved
-        $state[$matchSlotIdx] = $DeploySlotInitValue | ConvertTo-Json | ConvertFrom-Json # clone
+        $state[$matchSlotIdx] = $DeploySlotInitValue | ConvertTo-Json -Depth 5 | ConvertFrom-Json # clone
         $state[$matchSlotIdx].reserved = $reserved # restore 'reserved'
         Set-BlueGreenDeployState -ParentPath $ParentPath -DeployState $state
     }
@@ -325,7 +325,7 @@ function Get-BlueGreenDeployState {
     }
 
     # clone an initial state
-    $state = $DeployStateInitValue | ConvertTo-Json | ConvertFrom-Json
+    $state = $DeployStateInitValue | ConvertTo-Json -Depth 5 | ConvertFrom-Json
 
     # fill in only valid state
     for ($slotIdx = 0; $slotIdx -lt $jsState.Count; $slotIdx++) {
@@ -345,7 +345,7 @@ function Get-BlueGreenDeployState {
         $state[$slotIdx] = [ordered]@{ "id" = $id; "lastepochms" = $lastepochms; "reserved" = $reserved; "success" = $success }
     }
 
-    Write-Output ($state | ConvertTo-Json)
+    Write-Output ($state | ConvertTo-Json -Depth 5)
 }
 
 # Set-BlueGreenDeployState
@@ -369,7 +369,7 @@ function Set-BlueGreenDeployState {
     if (Test-Path "$ParentPath\$DeployStateJson") {
         Copy-Item "$ParentPath\$DeployStateJson" -Destination "$ParentPath\$DeployStateJson.bak" -Force
     }
-    $Str = $DeployState | ConvertTo-Json
+    $Str = $DeployState | ConvertTo-Json -Depth 5
     [System.IO.File]::WriteAllText("$ParentPath\$DeployStateJson.tmp", $Str, $Utf8NoBomEncoding) 
     if (Test-Path "$ParentPath\$DeployStateJson") {
         Remove-Item "$ParentPath\$DeployStateJson" -Force
@@ -398,7 +398,7 @@ function Step-BlueGreenDeploySlotDryRun {
         [Parameter(Mandatory = $true)]
         $CurrentEpochMs
     )
-    $state = $ImmutableDeployState | ConvertTo-Json | ConvertFrom-Json # clone
+    $state = $ImmutableDeployState | ConvertTo-Json -Depth 5 | ConvertFrom-Json # clone
 
     # S1. Remove from consideration all `SLOT<i>` with a negative
     #     last successful deployment time. *Meant to be used if and when
@@ -428,7 +428,7 @@ function Step-BlueGreenDeploySlotDryRun {
     # S3. If there are less than 2 slots to consider then abort so we don't
     #     deploy over an existing, running deployment
     if ($slotsToConsider.Count -lt 2) {
-        throw "Need at least two deployment slots to deploy safely. Deployment state was: $($state | ConvertTo-Json)"
+        throw "Need at least two deployment slots to deploy safely. Deployment state was: $($state | ConvertTo-Json -Depth 5)"
     }
 
     # S4. Sort the considered slots by deployment success status (unsuccessful, then successful) and by
@@ -501,8 +501,8 @@ function Invoke-BlueGreenDeploySlotTest {
         $DeploySlotInitValue
         $DeploySlotInitValue) }
     $actual = Step-BlueGreenDeploySlotDryRun -DeploymentId $testid -CurrentEpochMs 10 -ImmutableDeployState $given
-    Write-Host ($actual | ConvertTo-Json)
-    if (($actual | ConvertTo-Json) -ne ($expected | ConvertTo-Json)) { throw "failed $testid" }
+    Write-Host ($actual | ConvertTo-Json -Depth 5)
+    if (($actual | ConvertTo-Json -Depth 5) -ne ($expected | ConvertTo-Json -Depth 5)) { throw "failed $testid" }
 
     # test2:
     #   given (older successful deployments, new unsuccessful deployments)
@@ -518,6 +518,6 @@ function Invoke-BlueGreenDeploySlotTest {
         [ordered]@{ "id" =  $testid; "lastepochms" = 10; "reserved" = $false; "success" = $false },
         [ordered]@{ "id" = "c"; "lastepochms" = 3; "reserved" = $false; "success" = $false })}
     $actual = Step-BlueGreenDeploySlotDryRun -DeploymentId $testid -CurrentEpochMs 10 -ImmutableDeployState $given
-    Write-Host ($actual | ConvertTo-Json)
-    if (($actual | ConvertTo-Json) -ne ($expected | ConvertTo-Json)) { throw "failed $testid" }
+    Write-Host ($actual | ConvertTo-Json -Depth 5)
+    if (($actual | ConvertTo-Json -Depth 5) -ne ($expected | ConvertTo-Json -Depth 5)) { throw "failed $testid" }
 }

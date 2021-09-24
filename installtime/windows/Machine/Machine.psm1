@@ -202,7 +202,7 @@ Export-ModuleMember -Function Import-VSSetup
 # Get zero or more Visual Studio installations that are compatible with Diskuv OCaml.
 # The latest install date is chosen so theoretically should be zero or one installations returned,
 # but for safety you should pick only the first given back (ex. Select-Object -First 1)
-# and for troubleshooting you should dump what is given back (ex. Get-CompatibleVisualStudios | ConvertTo-Json)
+# and for troubleshooting you should dump what is given back (ex. Get-CompatibleVisualStudios | ConvertTo-Json -Depth 5)
 function Get-CompatibleVisualStudios {
     [CmdletBinding()]
     param (
@@ -240,7 +240,7 @@ function Get-CompatibleVisualStudios {
     if ($ErrorIfNotFound -and ($instances | Measure-Object).Count -eq 0) {
         $ErrorActionPreference = "Continue"
         Write-Warning "`n`nBEGIN Dump all incompatible Visual Studio(s)`n`n"
-        if ($null -ne $allinstances) { Write-Host ($allinstances | ConvertTo-Json) }
+        if ($null -ne $allinstances) { Write-Host ($allinstances | ConvertTo-Json -Depth 5) }
         Write-Warning "`n`nEND Dump all incompatible Visual Studio(s)`n`n"
         $err = "There is no $VsDescribeVerMin with the following:`n$VsDescribeComponents"
         Write-Error $err
