@@ -1240,9 +1240,11 @@ try {
 
     # Only apps, not bootstrap-apps, are installed
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
-    Copy-Item "$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe" -Destination $AppsBinDir
-    Copy-Item "$AppsCachePath\default\findup\findup.exe" -Destination $AppsBinDir\dkml-findup.exe
-    Copy-Item "$AppsCachePath\default\dkml-templatizer\dkml_templatizer.exe" -Destination $AppsBinDir\dkml-templatizer.exe
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && " +
+            "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' &&" +
+            "install '$AppsCachePath\default\findup\findup.exe'                     '$AppsBinDir\dkml-findup.exe' &&" +
+            "install '$AppsCachePath\default\dkml-templatizer\dkml_templatizer.exe' '$AppsBinDir\dkml-templatizer.exe'")
 
     # END compile apps
     # ----------------------------------------------------------------
