@@ -659,6 +659,9 @@ autodetect_compiler() {
     # - ALLUSERSPROFILE
     # - CYGWIN
     # - CYGPATH
+    # - CI_* (CI_JOB_JWT, CI_JOB_TOKEN, CI_REGISTRY_PASSWORD) on GitLab CI / GitHub Actions
+    # - *_DEPLOY_TOKEN (DKML_PACKAGE_PUBLISH_PRIVATE_DEPLOY_TOKEN)
+    # - PG* (PGUSER, PGPASSWORD) on GitHub Actions
     # - HOME* (HOME, HOMEDRIVE, HOMEPATH)
     # - USER* (USERNAME, USERPROFILE, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE)
     if [ -n "${autodetect_compiler_EXTRA_PREFIX_ESCAPED:-}" ]; then
@@ -681,6 +684,7 @@ autodetect_compiler() {
     $1 !~ /^_$/ && $1 != "TEMP" && $1 != "TMP" && $1 != "PWD" &&
     $1 != "PROMPT" && $1 !~ /^LOGON/ && $1 !~ /APPDATA$/ &&
     $1 != "ALLUSERSPROFILE" && $1 != "CYGWIN" && $1 != "CYGPATH" &&
+    $1 !~ /^CI_/ && $1 !~ /_DEPLOY_TOKEN$/ && $1 !~ /^PG/ &&
     $1 !~ /^HOME/ &&
     $1 !~ /^USER/ {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" value}
 
