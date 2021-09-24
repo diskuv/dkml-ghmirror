@@ -424,6 +424,10 @@ set_dkmlparenthomedir() {
 # - env:NUMCPUS . Maximum of 8 if detectable; otherwise 1. Always a number from 1 to 8, even
 #   if on input env:NUMCPUS was set to text.
 autodetect_cpus() {
+    # initialize to 0 if not set
+    if [ -z "${NUMCPUS:-}" ]; then
+        NUMCPUS=0
+    fi
     # type cast to a number (in case user gave a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
     if [ "${NUMCPUS}" -eq 0 ]; then

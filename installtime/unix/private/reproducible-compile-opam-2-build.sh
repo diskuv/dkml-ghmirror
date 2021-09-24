@@ -120,10 +120,8 @@ else
 fi
 POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
 
-# Autodetect CPUs
-if [ -z "$NUMCPUS" ]; then
-    autodetect_cpus
-fi
+# Set NUMCPUS if unset from autodetection of CPUs
+autodetect_cpus
 
 # Autodetect compiler like Visual Studio on Windows.
 autodetect_compiler "$WORK"/launch-compiler.sh

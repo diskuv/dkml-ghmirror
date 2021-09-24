@@ -163,6 +163,9 @@ cd "$TOPDIR"
 # --------------------------------
 # BEGIN opam switch create
 
+# Set NUMCPUS if unset from autodetection of CPUs
+autodetect_cpus
+
 # Set BUILDHOST_ARCH
 build_machine_arch
 if [ $PLATFORM = dev ]; then
@@ -284,6 +287,7 @@ fi
 
 echo "switch create \\" > "$WORK"/switchcreateargs.sh
 if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
+echo "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 
 if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
