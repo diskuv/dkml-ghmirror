@@ -101,6 +101,7 @@ $VsBuildToolsInstallChannel = "https://aka.ms/vs/16/release/channel" # use 'inst
 $VcVarsVer = "14.26"
 $VcVarsCompatibleVers = @( "14.25" ) # Tested with GitHub Actions at https://github.com/diskuv/diskuv-ocaml-starter-ghmirror/actions
 $VcVarsCompatibleComponents = $VcVarsCompatibleVers | ForEach-Object { "Microsoft.VisualStudio.Component.VC.${_}.x86.x64" }
+if ($null -eq $VcVarsCompatibleComponents) { $VcVarsCompatibleComponents = @() }
 $VcStudioVcToolsMajorVer = 16
 $VcStudioVcToolsMinorVer = 6
 $VsComponents = @(
