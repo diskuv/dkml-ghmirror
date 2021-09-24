@@ -98,6 +98,8 @@ $VsBuildToolsInstallChannel = "https://aka.ms/vs/16/release/channel" # use 'inst
 #   >> Microsoft.VisualStudio.Component.VC.14.26.x86.x64 <<
 # Either of those will give use 14.26 compiler tools.
 $VcVarsVer = "14.26"
+$VcVarsCompatibleVers = @( "14.25" ) # Tested with GitHub Actions at https://github.com/diskuv/diskuv-ocaml-starter-ghmirror/actions
+$VcVarsCompatibleComponents = $VcVarsCompatibleVers | ForEach-Object { "Microsoft.VisualStudio.Component.VC.${_}.x86.x64" }
 $VcStudioVcToolsMajorVer = 16
 $VcStudioVcToolsMinorVer = 6
 $VsComponents = @(
@@ -164,13 +166,9 @@ $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
 $MachineDeploymentId = "winsdk-$Windows10SdkVer;vsvermin-$VsVerMin;vssetup-$VsSetupVer;vscomp-$VsComponentsHash"
 
 Export-ModuleMember -Variable MachineDeploymentId
-Export-ModuleMember -Variable Windows10SdkVer
 Export-ModuleMember -Variable VsBuildToolsMajorVer
 Export-ModuleMember -Variable VsBuildToolsInstaller
 Export-ModuleMember -Variable VsBuildToolsInstallChannel
-Export-ModuleMember -Variable VsDescribeVerMin
-Export-ModuleMember -Variable VcVarsVer
-Export-ModuleMember -Variable VsComponents
 Export-ModuleMember -Variable VsAddComponents
 Export-ModuleMember -Variable VsRemoveComponents
 Export-ModuleMember -Variable VsDescribeComponents
@@ -198,6 +196,40 @@ function Import-VSSetup {
     Import-Module VSSetup
 }
 Export-ModuleMember -Function Import-VSSetup
+
+function Get-VisualStudioProperties {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        $VisualStudioInstallation
+    )
+    $MsvsPreference = ("" + $VisualStudioInstallation.InstallationVersion.Major + "." + $VisualStudioInstallation.InstallationVersion.Minor)
+
+    $VcVarsVerCandidates = $VisualStudioInstallation.Packages | Where-Object {
+        $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64" -or
+        $VcVarsCompatibleComponents.Contains($_.Id)
+    }
+    if ($VcVarsVerCandidates.Count -eq 0) {
+        $VcVarsVerCandidates = $VisualStudioInstallation.Packages | Where-Object {
+            $_.Id -eq "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+        }
+        if ($VcVarsVerCandidates.Count -eq 0) {
+            throw "Get-CompatibleVisualStudios is not in sync with Get-VisualStudioProperties"
+        }
+        $VcVarsVerChoice = $VcVarsVer
+    } else {
+        # pick the latest compatible version
+        $matched = ($VcVarsVerCandidates | Sort-Object -Property Version -Descending | Select-Object -Property Id -First 1).Id -match "Microsoft[.]VisualStudio[.]Component[.]VC[.](?<VCVersion>.*)[.]x86[.]x64"
+        $VcVarsVerChoice = $Matches.VCVersion
+    }
+
+    @{
+        InstallPath = $VisualStudioInstallation.InstallationPath;
+        MsvsPreference = "VS$MsvsPreference";
+        VcVarsVer = $VcVarsVerChoice
+    }
+}
+Export-ModuleMember -Function Get-VisualStudioProperties
 
 # Get zero or more Visual Studio installations that are compatible with Diskuv OCaml.
 # The latest install date is chosen so theoretically should be zero or one installations returned,
@@ -228,12 +260,16 @@ function Get-CompatibleVisualStudios {
         $VCExact = $_.Packages | Where-Object {
             $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
         };
-        ($VCToolsMatch.Count -gt 0) -or (($VCTools.Count -gt 0) -and ($VCExact.Count -gt 0))
+        $VCCompatible = $_.Packages | Where-Object {
+            $VcVarsCompatibleComponents.Contains($_.Id)
+        }
+        ($VCToolsMatch.Count -gt 0) -or (  ($VCTools.Count -gt 0) -and (($VCExact.Count -gt 0) -or ($VCCompatible.Count -gt 0))  )
     }
     # select only installations that have the English language pack
     $instances = $instances | Where-Object {
         # Use equivalent detection logic as https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
-        $English = Get-ChildItem -Path "$($_.InstallationPath)\VC\Tools\MSVC\$VcVarsVer.*" -Recurse -Include 1033 | Measure-Object
+        $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $_
+        $English = Get-ChildItem -Path "$($_.InstallationPath)\VC\Tools\MSVC\$($VisualStudioProps.VcVarsVer).*" -Recurse -Include 1033 | Measure-Object
         $English.Count -gt 0
     }
     # give troubleshooting and exit if no more compatible installations remain
@@ -253,18 +289,3 @@ function Get-CompatibleVisualStudios {
     $instances | Sort-Object -Property InstallDate -Descending
 }
 Export-ModuleMember -Function Get-CompatibleVisualStudios
-
-function Get-VisualStudioProperties {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        $VisualStudioInstallation
-    )
-    $MsvsPreference = ("" + $VisualStudioInstallation.InstallationVersion.Major + "." + $VisualStudioInstallation.InstallationVersion.Minor)
-    @{
-        InstallPath = $VisualStudioInstallation.InstallationPath;
-        MsvsPreference = "VS$MsvsPreference";
-        VcVarsVer = $VcVarsVer
-    }
-}
-Export-ModuleMember -Function Get-VisualStudioProperties
