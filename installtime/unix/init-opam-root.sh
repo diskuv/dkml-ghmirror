@@ -123,11 +123,21 @@ fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
     if is_unixy_windows_build_machine; then
-        log_trace rsync -ap --info=progress2 --human-readable \
-            "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
-            "$OPAMREPOS_UNIX"/fdopen-mingw
+        if [ "${CI:-}" = true ]; then
+            log_trace rsync -ap \
+                "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
+                "$OPAMREPOS_UNIX"/fdopen-mingw
+        else
+            log_trace rsync -ap --info=progress2 --human-readable \
+                "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
+                "$OPAMREPOS_UNIX"/fdopen-mingw
+        fi
     fi
-    log_trace rsync -ap --info=progress2 --human-readable "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    if [ "${CI:-}" = true ]; then
+        log_trace rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    else
+        log_trace rsync -ap --info=progress2 --human-readable "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    fi
     touch "$OPAMREPOS_UNIX".complete
 fi
 
