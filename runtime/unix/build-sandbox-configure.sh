@@ -47,6 +47,9 @@ cd "$TOPDIR"
 
 install -d "$BUILDDIR"
 
+# Set NUMCPUS if unset from autodetection of CPUs
+autodetect_cpus
+
 # -----------------------
 # BEGIN opam switch create
 
@@ -73,7 +76,7 @@ if is_dev_platform; then
         # We are missing required packages. Let's install them.
         # The explicit veresion of ocamlformat is required because .ocamlformat file lists it.
         {
-            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --yes \\"
+            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
             echo "  ocamlformat.0.19.0 ocamlformat-rpc.0.19.0 ocaml-lsp-server utop"
         } > "$WORK"/configure.sh
@@ -88,7 +91,7 @@ fi
 # BEGIN install code (.opam) dependencies
 
 {
-    echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --yes \\"
+    echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
     echo "  --deps-only --with-test \\"
     printf "  "
