@@ -78,7 +78,7 @@ if is_dev_platform; then
         {
             echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
-            echo "  ocamlformat.0.19.0 ocamlformat-rpc.0.19.0 ocaml-lsp-server utop"
+            echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server utop"
         } > "$WORK"/configure.sh
         "$SHELL" "$WORK"/configure.sh
     fi

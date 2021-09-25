@@ -22,7 +22,7 @@ set -euf
 
 PINNED_PACKAGES=
 
-# DKML provides patches for these.
+# DKML provides patches for these -or- are the $DistributionPackages in installtime\windows\setup-userprofile.ps1
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
 PINNED_PACKAGES="
     $PINNED_PACKAGES
@@ -42,6 +42,15 @@ PINNED_PACKAGES="
     feather,0.3.0
     ctypes,0.19.2-windowssupport-r4
     ctypes-foreign,0.19.2-windowssupport-r4
+
+    dune,2.9.0
+    jingoo,1.4.3
+    ocaml-lsp-server,1.7.0
+    ocamlfind,1.9.1
+    ocamlformat,0.19.0
+    ocamlformat-rpc,0.19.0
+    utop,2.8.0
+
     "
 
 # These incorrectly did not use a major version bump and caused major breaking changes to downstream packages
@@ -445,6 +454,10 @@ for package_tuple in ${PINNED_PACKAGES}; do
     # $1 = package_name; $2 = package_version
     expr=$(echo set -- "$package_tuple" | sed 's/,/ /g')
     eval "$expr"
+    if [ "$#" -ne 2 ]; then
+        echo "FATAL: The package tuple '$package_tuple' does not have a single comma. A correctly formatted example is 'dune-configurator,2.9.0'. Edit the PINNED_PACKAGES in create-opam-switch.sh" >&2
+        exit 1
+    fi
     # accumulate
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$1.$2"; then
         echo "opam ${OPAM_PIN_ADD_ARGS} --no-action -k version '$1' '$2'" >> "$WORK"/pin.sh
