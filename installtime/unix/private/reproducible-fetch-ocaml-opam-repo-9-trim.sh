@@ -274,6 +274,13 @@ trim_package() {
     fi
 }
 
+# run test cases
+test_semver
+
+# init
+assemble_prepins
+find_packages
+
 # exports for `parallel`. note that Bash cannot export arrays
 export -f trim_package
 export -f list_contains
@@ -281,13 +288,11 @@ export -f find_package_versions
 export -f semver
 export WORK
 
-# run test cases
-test_semver
-
 # do the transformations
-assemble_prepins
-find_packages
-parallel --will-cite --jobs 4 trim_package ::: "${PACKAGES[@]}"
+# * `parallel` does not work on Cygwin:
+#   https://cygwin.cygwin.narkive.com/TNtfRS5K/how-to-get-gnu-parallel-working-with-cygwin
+#   so we use xargs instead
+echo "${PACKAGES[@]}" | xargs -n1 | xargs -P 4 -I {} bash -c 'trim_package "$@"' _ {}
 
 # aggregate all of the pin statements
 set +f

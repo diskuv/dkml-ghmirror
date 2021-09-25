@@ -8,14 +8,9 @@ windows:ocaml-opam-repo-fetch-1:
     - .windows:before-script-diskuv-cygwin
   stage: prepare
   needs: []
-  artifacts:
-    name: "ocaml-opam-repo-complete"
-    paths:
-      - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
-    expire_in: 1 week
   rules:
-    # - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
@@ -47,42 +42,3 @@ windows:ocaml-opam-repo-fetch-1:
     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.tar.gz"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.zip"; }
-
-# windows:ocaml-opam-repo-trim-2:
-#   extends:
-#     - .windows:before-script-shared-cygwin
-#   stage: prepare
-#   needs: ["windows:ocaml-opam-repo-fetch-1"]
-#   rules:
-#     # - if: '$CI_COMMIT_TAG'
-#     - if: '$CI_COMMIT_BRANCH == "next"'
-#   script:
-#     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
-#     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
-#     - $REPODIR = "$DEPLOYDIR\share\diskuv-ocaml\ocaml-opam-repo"
-
-#     # Setup but do not fetch since job artifact will be available
-#     - date
-#     - $ErrorActionPreference = "Continue"; cygwin (
-#         'pwd && env TOPDIR=$PWD/installtime/none/emptytop installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
-#         + " -d '" + "$PWD" + "'"
-#         + " -t '" + "$DEPLOYDIR" + "'"
-#         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
-#         + " -a amd64"
-#         )
-
-#     # Trim
-#     - date
-#     - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
-#     - if (!(Test-Path -Path "$REPODIR\pins")) { throw "Trim failed" }
-
-#     # Create .tar.gz and .zip
-#     - New-Item -Path "$EXTRASRC\oorepodist" -ItemType Directory
-#     - cygwin ('/usr/bin/tar cvCfz ''' + "$REPODIR" + ''' _ci/oorepodist/dist.tar.gz .')
-#     - Compress-Archive -Path "$REPODIR\*" -DestinationPath "$EXTRASRC\oorepodist\dist.zip"
-
-#     # Create public packages
-#     - if ("${env:CI_COMMIT_TAG}" -ne "") { $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/${env:CI_COMMIT_TAG}"; }
-#     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
-#     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.tar.gz"; }
-#     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.zip"; }
