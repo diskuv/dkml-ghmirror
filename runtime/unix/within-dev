@@ -110,7 +110,13 @@ if [ -n "${DiskuvOCamlBinaryPaths:-}" ]; then
 fi
 
 # Set PATH and run any prehooks
+# Also, normalize the PATH. If we end up with any double quotes in the Windows PATH passed to
+# vsdevcmd.bat then we will get '\Microsoft was unexpected at this time'
+# (https://social.msdn.microsoft.com/Forums/vstudio/en-US/21821c4a-b415-4b55-8779-1d22694a8f82/microsoft-was-unexpected-at-this-time?forum=vssetup).
+# That will happen if we have trailing slashes in our PATH (which Opam.exe internally cygpaths
+# and escapes). Regardless, even if this didn't happen we still want normalized PATHs.
 PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
+PATH=$(echo "$PATH" | PATH="/usr/bin:/bin:$PATH" sed 's#/:#:#g; s#/$##') # remove trailing slashes
 if [ -n "$PREHOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
     # the `awk ...` is dos2unix equivalent
