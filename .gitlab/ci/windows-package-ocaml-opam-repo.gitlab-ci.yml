@@ -48,7 +48,7 @@ windows:ocaml-opam-repo-trim-2:
     # Setup but do not fetch since job artifact will be available
     - date
     - $ErrorActionPreference = "Continue"; cygwin (
-        'pwd && env TOPDIR=$PWD/installtime/none/emptytop bash -x installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
+        'pwd && env TOPDIR=$PWD/installtime/none/emptytop installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
         + " -d '" + "$PWD" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"

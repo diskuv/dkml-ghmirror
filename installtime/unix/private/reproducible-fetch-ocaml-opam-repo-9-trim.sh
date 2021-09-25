@@ -192,8 +192,9 @@ semver() {
     shift
     # replace all non-numbers with spaces, then stuff into array.
     # the 0 0 0 makes sure there are at least 3 array terms.
-    # the sed expression converts 8.00~alpha05 -> 8.00 (when a number is followed by a non-number/non-dot, then the remainder is thrown away for semver comparison)
-    read -ra semver_TERMS < <(printf "%s" "$semver_VER" | sed 's#\([0-9]\)[^0-9.].*#\1#' | tr -C '0-9' ' '; echo ' 0 0 0')
+    # the 1st sed expression converts 8.00~alpha05 -> 8.00 (when a number is followed by a non-number/non-dot, then the remainder is thrown away for semver comparison)
+    # the 2nd sed expression convert 08 -> 8 so the subsequent printf does not interpret it as an octal number
+    read -ra semver_TERMS < <(printf "%s" "$semver_VER" | sed 's#\([0-9]\)[^0-9.].*#\1#' | tr -C '0-9' ' ' | sed 's#\b0*##g'; echo ' 0 0 0')
     printf "%010d_%010d_%010d_%s\n" "${semver_TERMS[0]}" "${semver_TERMS[1]}" "${semver_TERMS[2]}" "$semver_VER"
 }
 
