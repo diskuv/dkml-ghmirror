@@ -417,8 +417,9 @@ autodetect_posix_shell
     # shellcheck disable=2016
     echo '_OPAMSWITCHDIR=$1'
     echo 'shift'
+    # verbatim: eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk '{ sub(/\r$/,""); print }')
     # shellcheck disable=2016
-    printf 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk %c{ sub(/\r$/,""); print }%c)\n' "'" "'"
+    printf 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk %c{ sub(/%s$/,""); print }%c)\n' "'" '\r' "'"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 
