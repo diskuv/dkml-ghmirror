@@ -1,7 +1,7 @@
 # This is split into two jobs so that each completes within the one hour time limit of a shared cluster.
 
 variables:
-  OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: 'OcamlOpamRepo'
+  OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: '_ci\OcamlOpamRepo'
 
 windows:ocaml-opam-repo-fetch-1:
   extends:
@@ -9,25 +9,19 @@ windows:ocaml-opam-repo-fetch-1:
   stage: prepare
   needs: []
   artifacts:
-    untracked: false
-    expire_in: 30 days
+    name: "ocaml-opam-repo-complete"
+    paths:
+      - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
+    expire_in: 1 week
   rules:
     # - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "next"'
-  cache:
-    key:
-      files:
-        # this is a bit kludgy. We want cache key to be $DV_WindowsMsvcDockerImage
-        # but this file contains the definition, so it is fine as the cache key.
-        - installtime\windows\DeploymentVersion\DeploymentVersion.psm1
-    paths:
-      - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
     - $REPODIR = "$DEPLOYDIR\share\diskuv-ocaml\ocaml-opam-repo"
 
-    # Fetch
+    # Setup and Fetch
     - cygwin (
         'pwd && env TOPDIR=$PWD/installtime/none/emptytop installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
         + " -d '" + "$PWD" + "'"
@@ -43,27 +37,15 @@ windows:ocaml-opam-repo-trim-2:
     - .windows:before-script-shared-cygwin
   stage: prepare
   needs: ["windows:ocaml-opam-repo-fetch-1"]
-  artifacts:
-    untracked: false
-    expire_in: 30 days
   rules:
     # - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "next"'
-  cache:
-    policy: pull # do not modify the cache since we have a destructive operation on it that we may want to redo
-    key:
-      files:
-        # this is a bit kludgy. We want cache key to be $DV_WindowsMsvcDockerImage
-        # but this file contains the definition, so it is fine as the cache key.
-        - installtime\windows\DeploymentVersion\DeploymentVersion.psm1
-    paths:
-      - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
     - $REPODIR = "$DEPLOYDIR\share\diskuv-ocaml\ocaml-opam-repo"
 
-    # Fetch again (but it should be cached!)
+    # Setup but do not fetch since job artifact will be available
     - date
     - $ErrorActionPreference = "Continue"; cygwin (
         'pwd && env TOPDIR=$PWD/installtime/none/emptytop bash -x installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
@@ -72,8 +54,6 @@ windows:ocaml-opam-repo-trim-2:
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         )
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
-    - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
 
     # Trim
     - date
