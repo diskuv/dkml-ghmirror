@@ -28,13 +28,13 @@
 set -euf
 
 # These are packages that are pinned because they are not lexographically the latest
-PREPINNED_PACKAGE_VERSIONS=(
+export PREPINNED_PACKAGE_VERSIONS=(
     "seq:base"
 )
 
 # depext is unnecessary as of Opam 2.1
 # The second section MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's first PINNED_PACKAGES clause.
-PACKAGES_TO_REMOVE="
+export PACKAGES_TO_REMOVE="
     depext
 
     dune-configurator
@@ -66,15 +66,20 @@ usage() {
     echo "Options" >&2
     echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
     echo "   -t DIR: Target directory" >&2
+    echo "   -n:     Dry run." >&2
 }
 
 DKMLDIR=
 TARGETDIR=
-while getopts ":d:t:h" opt; do
+export DRYRUN=OFF
+while getopts ":d:t:nh" opt; do
     case ${opt} in
         h )
             usage
             exit 0
+        ;;
+        n )
+            DRYRUN=ON
         ;;
         d )
             DKMLDIR="$OPTARG"
@@ -120,31 +125,33 @@ if [ -x /usr/bin/cygpath ]; then
 else
     OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"
 fi
+export OOREPO_UNIX
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the DKMLDIR (just like the container
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-PREPINNED_PACKAGES=()
-PREPINNED_VERSIONS=()
-
-PINFILE="$WORK"/pins
+export PINFILE="$WORK"/pins
 true > "$WORK"/pins
+install -d "$WORK"/pin-assembly
 
 # [assemble_prepins] populates PREPINNED_PACKAGES and PREPINNED_VERSIONS from
 # PREPINNED_PACKAGE_VERSIONS, and adds the pre-pinned `opam pin add ...` to
-# PINFILE, and fills in PACKAGES_PREPINNED
+# PINFILE, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
 assemble_prepins() {
+    assemble_prepins_PREPINNED_PACKAGES=()
+    assemble_prepins_PREPINNED_VERSIONS=()
     for ppv in "${PREPINNED_PACKAGE_VERSIONS[@]}" ; do
         PPKG="${ppv%%:*}"
         PVER="${ppv##*:}"
-        PREPINNED_PACKAGES+=("$PPKG")
-        PREPINNED_VERSIONS+=("$PVER")
+        assemble_prepins_PREPINNED_PACKAGES+=("$PPKG")
+        assemble_prepins_PREPINNED_VERSIONS+=("$PVER")
         echo opam pin add --yes --no-action -k version "$PPKG" "$PVER" >> "$PINFILE"
-        PACKAGES_PREPINNED="${PREPINNED_PACKAGES[*]}"
     done
     echo >> "$PINFILE"
+    export PACKAGES_PREPINNED="${assemble_prepins_PREPINNED_PACKAGES[*]}"
+    export VERSIONS_PREPINNED="${assemble_prepins_PREPINNED_VERSIONS[*]}"
 }
 
 PACKAGES=()
@@ -166,8 +173,8 @@ find_package_versions() {
     while IFS='' read -r find_package_versions_line; do PACKAGE_VERSIONS+=("$find_package_versions_line"); done < <(find "$OOREPO_UNIX/packages/$find_package_versions_PACKAGE" -mindepth 1 -maxdepth 1  -type d | sed "s#.*/##; s#^${find_package_versions_PACKAGE}[.]##")
 }
 
-# [contains LST ITEM] checks if the item ITEM is in the space separated list LST
-contains() {
+# [list_contains LST ITEM] checks if the item ITEM is in the space separated list LST
+list_contains() {
     [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && return 0 || return 1
 }
 
@@ -184,8 +191,6 @@ contains() {
 # Ex. VER=transition     -> 0000000000_0000000000_0000000000_transition (the example is depext. another is seq's "base" version)
 # Ex. VER=4.10.2+flambda+mingw32c -> 0000000004_0000000010_0000000002_4.10.2+flambda+mingw32c
 
-set +f # `read -ra` is broken if `set -f`
-
 semver_TERMS=()
 semver() {
     semver_VER="$1"
@@ -193,8 +198,8 @@ semver() {
     # replace all non-numbers with spaces, then stuff into array.
     # the 0 0 0 makes sure there are at least 3 array terms.
     # the 1st sed expression converts 8.00~alpha05 -> 8.00 (when a number is followed by a non-number/non-dot, then the remainder is thrown away for semver comparison)
-    # the 2nd sed expression convert 08 -> 8 so the subsequent printf does not interpret it as an octal number
-    read -ra semver_TERMS < <(printf "%s" "$semver_VER" | sed 's#\([0-9]\)[^0-9.].*#\1#' | tr -C '0-9' ' ' | sed 's#\b0*##g'; echo ' 0 0 0')
+    # the 2nd sed expression convert 08 0 05 -> 8 0 5 so the subsequent printf does not interpret it as an octal number
+    read -ra semver_TERMS < <(printf "%s" "$semver_VER" | sed 's#\([0-9]\)[^0-9.].*#\1#' | tr -C '0-9' ' ' | sed 's#\b0*\([1-9]\)#\1#g'; echo ' 0 0 0')
     printf "%010d_%010d_%010d_%s\n" "${semver_TERMS[0]}" "${semver_TERMS[1]}" "${semver_TERMS[2]}" "$semver_VER"
 }
 
@@ -224,43 +229,74 @@ test_semver() {
     assert_semver 4.10.2+flambda+mingw32c 0000000004_0000000010_0000000002_4.10.2+flambda+mingw32c
 }
 
+trim_package() {
+    set -eu # `read -ra` is broken if `set -f`
+    read -r -a trim_package_PREPINNED_PACKAGES <<< "$PACKAGES_PREPINNED"
+    read -r -a trim_package_PREPINNED_VERSIONS <<< "$VERSIONS_PREPINNED"
+    trim_package_PKG="$1"
+    if list_contains "$PACKAGES_TO_REMOVE" "$trim_package_PKG"; then
+        if [[ "$DRYRUN" = OFF ]]; then
+            echo "Removing package $trim_package_PKG"
+            rm -rf "$OOREPO_UNIX/packages/$trim_package_PKG"
+        else
+            echo "Would have removed package $trim_package_PKG at $OOREPO_UNIX/packages/$trim_package_PKG"
+        fi
+    else
+        if list_contains "$PACKAGES_PREPINNED" "$trim_package_PKG"; then
+            # find the version that was pinned
+            echo "Considering $trim_package_PKG which is prepinned"
+            trim_package_CHOSEN_VER=
+            for trim_package_PKGIDX in "${!trim_package_PREPINNED_PACKAGES[@]}"; do
+                if [ "${trim_package_PREPINNED_PACKAGES[$trim_package_PKGIDX]}" = "$trim_package_PKG" ]; then
+                    trim_package_CHOSEN_VER="${trim_package_PREPINNED_VERSIONS[$trim_package_PKGIDX]}"
+                fi
+            done
+        else
+            # find the latest version
+            find_package_versions "$trim_package_PKG"
+            echo "Considering $trim_package_PKG with versions: ${PACKAGE_VERSIONS[*]}"
+            for trim_package_VER in "${PACKAGE_VERSIONS[@]}"; do
+                semver "$trim_package_VER"
+            done | sort -r | tee "$WORK"/"$trim_package_PKG"-versions | awk '{print "    " $0}'
+            trim_package_CHOSEN_VER=$(head -n1 "$WORK"/"$trim_package_PKG"-versions | cut -c34-)
+        fi
+        if [[ -z "$trim_package_CHOSEN_VER" ]]; then
+            echo "FATAL. Could not pick a version for package $trim_package_PKG" >&2
+            exit 1
+        fi
+        if [[ "$DRYRUN" = OFF ]]; then
+            echo "  Chose version $trim_package_CHOSEN_VER. Removing all others"
+            find "$OOREPO_UNIX/packages/$trim_package_PKG" -mindepth 1 -maxdepth 1 ! -name "$trim_package_PKG.$trim_package_CHOSEN_VER" -type d -exec rm -rf {} +
+        else
+            echo "  Would have chosen version $trim_package_CHOSEN_VER and removed all others"
+        fi
+        echo opam pin add --yes --no-action -k version "$trim_package_PKG" "$trim_package_CHOSEN_VER" > "$WORK"/pin-assembly/"$trim_package_PKG"
+    fi
+}
+
+# exports for `parallel`. note that Bash cannot export arrays
+export -f trim_package
+export -f list_contains
+export -f find_package_versions
+export -f semver
+export WORK
+
 # run test cases
 test_semver
 
 # do the transformations
 assemble_prepins
 find_packages
-for pkg in "${PACKAGES[@]}"; do
-    if contains "$PACKAGES_TO_REMOVE" "$pkg"; then
-        echo "Removing package $pkg"
-        rm -rf "$OOREPO_UNIX/packages/$pkg"
-    else
-        if contains "$PACKAGES_PREPINNED" "$pkg"; then
-            # find the version that was pinned
-            echo "Considering $pkg which is prepinned"
-            chosen_ver=
-            for pkgidx in "${!PREPINNED_PACKAGES[@]}"; do
-                if [ "${PREPINNED_PACKAGES[$pkgidx]}" = "$pkg" ]; then
-                    chosen_ver="${PREPINNED_VERSIONS[$pkgidx]}"
-                fi
-            done
-        else
-            # find the latest version
-            find_package_versions "$pkg"
-            echo "Considering $pkg with versions: ${PACKAGE_VERSIONS[*]}"
-            for ver in "${PACKAGE_VERSIONS[@]}"; do
-                semver "$ver"
-            done | sort -r | tee "$WORK"/versions | awk '{print "    " $0}'
-            chosen_ver=$(head -n1 "$WORK"/versions | cut -c34-)
-        fi
-        if [[ -z "$chosen_ver" ]]; then
-            echo "FATAL. Could not pick a version for package $pkg" >&2
-            exit 1
-        fi
-        echo "  Chose version $chosen_ver. Removing all others"
-        find "$OOREPO_UNIX/packages/$pkg" -mindepth 1 -maxdepth 1 ! -name "$pkg.$chosen_ver" -type d -exec rm -rf {} +
-        echo opam pin add --yes --no-action -k version "$pkg" "$chosen_ver" >> "$PINFILE"
-    fi
-done
+parallel --will-cite --jobs 4 trim_package ::: "${PACKAGES[@]}"
 
-install -v "$PINFILE" "$OOREPO_UNIX/pins"
+# aggregate all of the pin statements
+set +f
+cat "$WORK"/pin-assembly/* >> "$PINFILE"
+set -f
+
+if [[ "$DRYRUN" = OFF ]]; then
+    install -v "$PINFILE" "$OOREPO_UNIX/pins"
+else
+    echo "Would have added the following pins at $OOREPO_UNIX/pins:"
+    awk '{print "    " $0}' "$PINFILE"
+fi

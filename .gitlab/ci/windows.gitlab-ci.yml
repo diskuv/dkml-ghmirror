@@ -141,6 +141,7 @@
   - cyg-get `
       curl `
       jq `
+      parallel `
       rsync
   - Get-ItemProperty HKLM:\SOFTWARE\Cygwin\setup -Name rootdir
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
