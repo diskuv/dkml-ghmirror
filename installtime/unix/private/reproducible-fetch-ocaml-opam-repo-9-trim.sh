@@ -236,15 +236,15 @@ trim_package() {
     trim_package_PKG="$1"
     if list_contains "$PACKAGES_TO_REMOVE" "$trim_package_PKG"; then
         if [[ "$DRYRUN" = OFF ]]; then
-            echo "Removing package $trim_package_PKG"
+            echo "[$trim_package_PKG] Removing package"
             rm -rf "$OOREPO_UNIX/packages/$trim_package_PKG"
         else
-            echo "Would have removed package $trim_package_PKG at $OOREPO_UNIX/packages/$trim_package_PKG"
+            echo "[$trim_package_PKG] Would have removed package at $OOREPO_UNIX/packages/$trim_package_PKG"
         fi
     else
         if list_contains "$PACKAGES_PREPINNED" "$trim_package_PKG"; then
             # find the version that was pinned
-            echo "Considering $trim_package_PKG which is prepinned"
+            echo "[$trim_package_PKG] Matches the prepinned list"
             trim_package_CHOSEN_VER=
             for trim_package_PKGIDX in "${!trim_package_PREPINNED_PACKAGES[@]}"; do
                 if [ "${trim_package_PREPINNED_PACKAGES[$trim_package_PKGIDX]}" = "$trim_package_PKG" ]; then
@@ -254,10 +254,10 @@ trim_package() {
         else
             # find the latest version
             find_package_versions "$trim_package_PKG"
-            echo "Considering $trim_package_PKG with versions: ${PACKAGE_VERSIONS[*]}"
+            echo "[$trim_package_PKG] Considering versions: ${PACKAGE_VERSIONS[*]}"
             for trim_package_VER in "${PACKAGE_VERSIONS[@]}"; do
                 semver "$trim_package_VER"
-            done | sort -r | tee "$WORK"/"$trim_package_PKG"-versions | awk '{print "    " $0}'
+            done | sort -r | tee "$WORK"/"$trim_package_PKG"-versions | awk -v P="$trim_package_PKG" '{print "    [" P "] " $0}'
             trim_package_CHOSEN_VER=$(head -n1 "$WORK"/"$trim_package_PKG"-versions | cut -c34-)
         fi
         if [[ -z "$trim_package_CHOSEN_VER" ]]; then
@@ -265,10 +265,10 @@ trim_package() {
             exit 1
         fi
         if [[ "$DRYRUN" = OFF ]]; then
-            echo "  Chose version $trim_package_CHOSEN_VER. Removing all others"
+            echo "    [$trim_package_PKG] Chose version $trim_package_CHOSEN_VER. Removing all others"
             find "$OOREPO_UNIX/packages/$trim_package_PKG" -mindepth 1 -maxdepth 1 ! -name "$trim_package_PKG.$trim_package_CHOSEN_VER" -type d -exec rm -rf {} +
         else
-            echo "  Would have chosen version $trim_package_CHOSEN_VER and removed all others"
+            echo "    [$trim_package_PKG] Would have chosen version $trim_package_CHOSEN_VER and removed all others"
         fi
         echo opam pin add --yes --no-action -k version "$trim_package_PKG" "$trim_package_CHOSEN_VER" > "$WORK"/pin-assembly/"$trim_package_PKG"
     fi
