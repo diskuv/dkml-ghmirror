@@ -158,6 +158,13 @@
     - *before-windows
     - *before-cygwin
 
+.windows:before-script-diskuv-cygwin:
+  extends:
+  - .diskuv_windows_runners
+  before_script:
+    - *before-windows
+    - *before-cygwin
+
 .windows:before-script-shared-setupmachine:
   extends:
   - .shared_windows_runners
