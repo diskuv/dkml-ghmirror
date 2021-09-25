@@ -22,7 +22,8 @@ set -euf
 
 PINNED_PACKAGES=
 
-# DKML provides patches for these
+# DKML provides patches for these.
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
 PINNED_PACKAGES="
     $PINNED_PACKAGES
     dune-configurator,2.9.0

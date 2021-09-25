@@ -32,6 +32,7 @@ set -euf
 
 SETUP_ARGS=()
 BUILD_ARGS=()
+TRIM_ARGS=()
 
 usage() {
     echo "Usage:" >&2
@@ -72,6 +73,7 @@ while getopts ":d:v:t:a:h" opt; do
             TARGETDIR="$OPTARG"
             SETUP_ARGS+=( -t . )
             BUILD_ARGS+=( -t . )
+            TRIM_ARGS+=( -t . )
         ;;
         a )
             DOCKER_ARCH="$OPTARG"
@@ -123,6 +125,7 @@ install_reproducible_readme           installtime/unix/private/reproducible-fetc
 install_reproducible_system_packages  installtime/unix/private/reproducible-fetch-ocaml-opam-repo-0-system.sh
 install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh "${COMMON_ARGS[@]}" "${SETUP_ARGS[@]}"
 install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build.sh "${COMMON_ARGS[@]}" "${BUILD_ARGS[@]}"
+install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim.sh  "${COMMON_ARGS[@]}" "${TRIM_ARGS[@]}"
 install_reproducible_file             installtime/unix/private/download-moby-downloader.sh
 install_reproducible_file             installtime/unix/private/moby-download-docker-image.sh
 install_reproducible_file             installtime/unix/private/moby-extract-opam-root.sh

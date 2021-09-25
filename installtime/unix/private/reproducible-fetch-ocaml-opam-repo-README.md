@@ -21,4 +21,7 @@ fi
 
 # Download Opam repository
 @@BOOTSTRAPDIR_UNIX@@installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
+
+# Remove unused package versions
+@@BOOTSTRAPDIR_UNIX@@installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh
 ```

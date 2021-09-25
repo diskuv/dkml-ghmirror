@@ -23,6 +23,8 @@ windows:fetch-ocaml-opam-repo:
         )
     - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
+    - if (!(Test-Path -Path "$REPODIR\pins")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip
     - New-Item -Path "$EXTRASRC\oorepodist" -ItemType Directory
