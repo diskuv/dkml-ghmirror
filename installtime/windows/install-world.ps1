@@ -64,7 +64,7 @@ function Write-ProgressStep {
 $global:ProgressActivity = "Setup machine"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools"
+Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipProgress:`$$SkipProgress -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools"
 
 # END Setup machine
 # ----------------------------------------------------------------
@@ -75,7 +75,7 @@ Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $Progre
 $global:ProgressActivity = "Setup user profile"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-userprofile.ps1 -ParentProgressId $ProgressId"
+Invoke-Expression -Command "$HereDir\setup-userprofile.ps1 -ParentProgressId $ProgressId -SkipProgress:`$$SkipProgress"
 
 # END Setup $env:USERPROFILE
 # ----------------------------------------------------------------
