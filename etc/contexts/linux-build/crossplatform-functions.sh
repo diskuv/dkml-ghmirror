@@ -515,7 +515,7 @@ autodetect_compiler() {
     # Get the extra prefix with backslashes escaped for Awk, if specified
     if [ "$#" -ge 1 ]; then
         autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
-        if is_unixy_windows_build_machine; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
+        if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(echo "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
         shift
     else
@@ -583,11 +583,19 @@ autodetect_compiler() {
     #     set > "C:\the-WORK-directory\vcvars.txt"
     # to the bottom of it so we can inspect the environment variables.
     # (Less hacky version of https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell)
-    autodetect_compiler_VSDEVCMDFILE_WIN=$(cygpath -aw "$autodetect_compiler_VSDEVCMD")
+    if [ -x /usr/bin/cygpath ]; then
+        autodetect_compiler_VSDEVCMDFILE_WIN=$(/usr/bin/cygpath -aw "$autodetect_compiler_VSDEVCMD")
+    else
+        autodetect_compiler_VSDEVCMDFILE_WIN="$autodetect_compiler_VSDEVCMD"
+    fi
     {
         echo '@call "'"$autodetect_compiler_VSDEVCMDFILE_WIN"'" %*'
-        # shellcheck disable=SC2046
-        echo 'set > "'$(cygpath -aw "$autodetect_compiler_TEMPDIR")'\vcvars.txt"'
+        if [ -x /usr/bin/cygpath ]; then
+            # shellcheck disable=SC2046
+            echo 'set > "'$(/usr/bin/cygpath -aw "$autodetect_compiler_TEMPDIR")'\vcvars.txt"'
+        else
+            echo 'set > "'"$autodetect_compiler_TEMPDIR"'\vcvars.txt"'
+        fi
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
@@ -596,7 +604,11 @@ autodetect_compiler() {
     else
         autodetect_compiler_VSCMD_DEBUG=
     fi
-    PATH_UNIX=$(cygpath -au --path "$PATH")
+    if [ -x /usr/bin/cygpath ]; then
+        PATH_UNIX=$(/usr/bin/cygpath --path "$PATH")
+    else
+        PATH_UNIX="$PATH"
+    fi
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
@@ -702,8 +714,12 @@ autodetect_compiler() {
 
     $1 == "PATH" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print value}
     ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/winpath.txt
-    # shellcheck disable=SC2086
-    cygpath --path -f - < "$autodetect_compiler_TEMPDIR/winpath.txt" > "$autodetect_compiler_TEMPDIR"/unixpath.txt
+    if [ -x /usr/bin/cygpath ]; then
+        # shellcheck disable=SC2086
+        /usr/bin/cygpath --path -f - < "$autodetect_compiler_TEMPDIR/winpath.txt" > "$autodetect_compiler_TEMPDIR"/unixpath.txt
+    else
+        cp "$autodetect_compiler_TEMPDIR/winpath.txt" "$autodetect_compiler_TEMPDIR"/unixpath.txt
+    fi
     # shellcheck disable=SC2034
     autodetect_compiler_COMPILER_PATH=$(cat "$autodetect_compiler_TEMPDIR"/unixpath.txt)
 
