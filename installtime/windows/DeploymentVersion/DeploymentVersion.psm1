@@ -4,7 +4,7 @@
     Target="AvailableOpamVersion")]
 Param()
 
-$DV_AvailableOpamVersion = "2.1.0.msys2.8" # needs to be a real Opam tag in https://github.com/diskuv/opam!
+$DV_AvailableOpamVersion = "2.1.0.msys2.9" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 Export-ModuleMember -Variable DV_AvailableOpamVersion
 
 # https://hub.docker.com/layers/ocaml/opam/windows-msvc-20H2-ocaml-4.12/images/sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55?context=explore
