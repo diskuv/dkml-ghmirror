@@ -17,7 +17,7 @@ include $(DKML_DIR)/runtime/unix/doc.mk
 
 .PHONY: shell
 shell: # DKMAKE_CALLING_DIR set by make.cmd
-	@env DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' 'dev' '' || true
+	@DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' 'dev' '' || true
 	@exit 0
 
 .PHONY: build quickbuild test

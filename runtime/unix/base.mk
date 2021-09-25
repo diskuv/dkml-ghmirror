@@ -188,7 +188,7 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call SHELL_platform_template,$
 define SHELL_platform_buildtype_template
 .PHONY: shell-$(1)-$(2)
 shell-$(1)-$(2):
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
 	@exit 0
 endef
 $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
