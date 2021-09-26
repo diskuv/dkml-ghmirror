@@ -33,7 +33,7 @@ export PREPINNED_PACKAGE_VERSIONS=(
 )
 
 # depext is unnecessary as of Opam 2.1
-# The second section and third section MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's first PINNED_PACKAGES clause.
+# The last three sections correspond to a), b) and c) and MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's first PINNED_PACKAGES clause.
 export PACKAGES_TO_REMOVE="
     depext
 
@@ -61,6 +61,11 @@ export PACKAGES_TO_REMOVE="
     ocamlformat
     ocamlformat-rpc
     utop
+
+    dune-build-info
+    jst-config
+    ocaml-compiler-libs
+    ocaml-variants
 "
 
 # ------------------
@@ -269,8 +274,17 @@ trim_package() {
             find_package_versions "$trim_package_PKG"
             echo "[$trim_package_PKG] Considering versions: ${PACKAGE_VERSIONS[*]}"
             for trim_package_VER in "${PACKAGE_VERSIONS[@]}"; do
-                # only respect version directories that have an 'opam' file. Ex. frama-c-base.20160502 does not have one.
-                [[ -e "$OOREPO_UNIX/packages/$trim_package_PKG/$trim_package_PKG.$trim_package_VER/opam" ]] && semver "$trim_package_VER"
+                # 1. only respect version directories that have an 'opam' file. Ex. frama-c-base.20160502 does not have one.
+                if [[ -e "$OOREPO_UNIX/packages/$trim_package_PKG/$trim_package_PKG.$trim_package_VER/opam" ]]; then
+                    # 2. only respect Jane Street packages that start with a 'v' (like v0.14.0), rather than 113.33.03.
+                    if grep -q "Jane Street" "$OOREPO_UNIX/packages/$trim_package_PKG/$trim_package_PKG.$trim_package_VER/opam"; then
+                        if [[ "$trim_package_VER" = v* ]]; then
+                            semver "$trim_package_VER"
+                        fi
+                    else
+                        semver "$trim_package_VER"
+                    fi
+                fi
             done | sort -r | tee "$WORK"/"$trim_package_PKG"-versions | awk -v P="$trim_package_PKG" '{print "    [" P "] " $0}'
             if [[ -s "$WORK"/"$trim_package_PKG"-versions ]]; then
                 trim_package_CHOSEN_VER=$(head -n1 "$WORK"/"$trim_package_PKG"-versions | cut -c34-)

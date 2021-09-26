@@ -22,8 +22,8 @@ set -euf
 
 PINNED_PACKAGES=
 
-# DKML provides patches for these -or- are the $DistributionPackages in installtime\windows\setup-userprofile.ps1
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
+# a) DKML provides patches for these
 PINNED_PACKAGES="
     $PINNED_PACKAGES
     dune-configurator,2.9.0
@@ -42,7 +42,12 @@ PINNED_PACKAGES="
     feather,0.3.0
     ctypes,0.19.2-windowssupport-r4
     ctypes-foreign,0.19.2-windowssupport-r4
+    "
 
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
+# b) $DistributionPackages in installtime\windows\setup-userprofile.ps1 -or-
+PINNED_PACKAGES="
+    $PINNED_PACKAGES
     dune,2.9.0
     jingoo,1.4.3
     ocaml-lsp-server,1.7.0
@@ -50,11 +55,17 @@ PINNED_PACKAGES="
     ocamlformat,0.19.0
     ocamlformat-rpc,0.19.0
     utop,2.8.0
-
     "
 
-# These incorrectly did not use a major version bump and caused major breaking changes to downstream packages
- # ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
+# c) versions that come from a working opam installation that differ from the latest fdopen version (some
+#    like ocaml-variants are pinned elsewhere and removed from fdopen in reproducible-fetch-ocaml-opam-repo-9-trim.sh).
+# Callouts:
+# * ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
+#   That is, ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
+# * ocamlformat-rpc-lib,0.18.0 may be needed (it is part of the good set), but since everything else is 0.19.0 we unpin it.
+# * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
+#   reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
 PINNED_PACKAGES="
     $PINNED_PACKAGES
     ppxlib,0.22.0
