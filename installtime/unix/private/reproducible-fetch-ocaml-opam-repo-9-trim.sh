@@ -72,15 +72,17 @@ usage() {
     echo "        -h              Display this help message." >&2
     echo "        -d DIR -t DIR   Remove unneded package version." >&2
     echo "Options" >&2
-    echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
-    echo "   -t DIR: Target directory" >&2
-    echo "   -n:     Dry run." >&2
+    echo "   -d DIR:     DKML directory containing a .dkmlroot file" >&2
+    echo "   -t DIR:     Target directory" >&2
+    echo "   -n:         Dry run" >&2
+    echo "   -p PACKAGE: Consider only the named package" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
+SINGLEPACKAGE=
 export DRYRUN=OFF
-while getopts ":d:t:nh" opt; do
+while getopts ":d:t:np:h" opt; do
     case ${opt} in
         h )
             usage
@@ -99,6 +101,9 @@ while getopts ":d:t:nh" opt; do
         ;;
         t )
             TARGETDIR="$OPTARG"
+        ;;
+        p )
+            SINGLEPACKAGE="$OPTARG"
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -244,10 +249,10 @@ trim_package() {
     trim_package_PKG="$1"
     if list_contains "$PACKAGES_TO_REMOVE" "$trim_package_PKG"; then
         if [[ "$DRYRUN" = OFF ]]; then
-            echo "[$trim_package_PKG] Removing package"
+            echo "[$trim_package_PKG] Removing package since on the predefined removal list"
             rm -rf "$OOREPO_UNIX/packages/$trim_package_PKG"
         else
-            echo "[$trim_package_PKG] Would have removed package at $OOREPO_UNIX/packages/$trim_package_PKG"
+            echo "[$trim_package_PKG] Would have removed package at $OOREPO_UNIX/packages/$trim_package_PKG since on the predefined removal list"
         fi
     else
         if list_contains "$PACKAGES_PREPINNED" "$trim_package_PKG"; then
@@ -264,21 +269,31 @@ trim_package() {
             find_package_versions "$trim_package_PKG"
             echo "[$trim_package_PKG] Considering versions: ${PACKAGE_VERSIONS[*]}"
             for trim_package_VER in "${PACKAGE_VERSIONS[@]}"; do
-                semver "$trim_package_VER"
+                # only respect version directories that have an 'opam' file. Ex. frama-c-base.20160502 does not have one.
+                [[ -e "$OOREPO_UNIX/packages/$trim_package_PKG/$trim_package_PKG.$trim_package_VER/opam" ]] && semver "$trim_package_VER"
             done | sort -r | tee "$WORK"/"$trim_package_PKG"-versions | awk -v P="$trim_package_PKG" '{print "    [" P "] " $0}'
-            trim_package_CHOSEN_VER=$(head -n1 "$WORK"/"$trim_package_PKG"-versions | cut -c34-)
+            if [[ -s "$WORK"/"$trim_package_PKG"-versions ]]; then
+                trim_package_CHOSEN_VER=$(head -n1 "$WORK"/"$trim_package_PKG"-versions | cut -c34-)
+            else
+                trim_package_CHOSEN_VER=
+            fi
         fi
         if [[ -z "$trim_package_CHOSEN_VER" ]]; then
-            echo "FATAL. Could not pick a version for package $trim_package_PKG" >&2
-            exit 1
-        fi
-        if [[ "$DRYRUN" = OFF ]]; then
-            echo "    [$trim_package_PKG] Chose version $trim_package_CHOSEN_VER. Removing all others"
-            find "$OOREPO_UNIX/packages/$trim_package_PKG" -mindepth 1 -maxdepth 1 ! -name "$trim_package_PKG.$trim_package_CHOSEN_VER" -type d -exec rm -rf {} +
+            if [[ "$DRYRUN" = OFF ]]; then
+                echo "[$trim_package_PKG] Removing package since no valid opam-containing versions were found"
+                rm -rf "$OOREPO_UNIX/packages/$trim_package_PKG"
+            else
+                echo "[$trim_package_PKG] Would have removed package at $OOREPO_UNIX/packages/$trim_package_PKG since no valid opam-containing versions were found"
+            fi
         else
-            echo "    [$trim_package_PKG] Would have chosen version $trim_package_CHOSEN_VER and removed all others"
+            if [[ "$DRYRUN" = OFF ]]; then
+                echo "    [$trim_package_PKG] Chose version $trim_package_CHOSEN_VER. Removing all others"
+                find "$OOREPO_UNIX/packages/$trim_package_PKG" -mindepth 1 -maxdepth 1 ! -name "$trim_package_PKG.$trim_package_CHOSEN_VER" -type d -exec rm -rf {} +
+            else
+                echo "    [$trim_package_PKG] Would have chosen version $trim_package_CHOSEN_VER and removed all others"
+            fi
+            echo opam pin add --yes --no-action -k version "$trim_package_PKG" "$trim_package_CHOSEN_VER" > "$WORK"/pin-assembly/"$trim_package_PKG"
         fi
-        echo opam pin add --yes --no-action -k version "$trim_package_PKG" "$trim_package_CHOSEN_VER" > "$WORK"/pin-assembly/"$trim_package_PKG"
     fi
 }
 
@@ -300,7 +315,11 @@ export WORK
 # * `parallel` does not work on Cygwin:
 #   https://cygwin.cygwin.narkive.com/TNtfRS5K/how-to-get-gnu-parallel-working-with-cygwin
 #   so we use xargs instead
-echo "${PACKAGES[@]}" | xargs -n1 | xargs -P 4 -I {} bash -c 'trim_package "$@"' _ {}
+if [[ -n "$SINGLEPACKAGE" ]]; then
+    trim_package "$SINGLEPACKAGE"
+else
+    echo "${PACKAGES[@]}" | xargs -n1 | xargs -P 4 -I {} bash -c 'trim_package "$@"' _ {}
+fi
 
 # aggregate all of the pin statements
 set +f
