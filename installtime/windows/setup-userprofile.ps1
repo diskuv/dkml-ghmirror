@@ -920,7 +920,7 @@ try {
     # END Cygwin
     # ----------------------------------------------------------------
 
-    if (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") {
+    if ((Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") -and (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\pins.txt")) {
         Invoke-CygwinInitialization
     } elseif (Import-DiskuvOCamlAsset `
             -PackageName "ocaml_opam_repo-reproducible" `

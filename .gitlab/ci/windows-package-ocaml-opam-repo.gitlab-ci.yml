@@ -34,7 +34,7 @@ windows:ocaml-opam-repo-fetch-1:
     # Trim
     - date
     - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
-    - if (!(Test-Path -Path "$REPODIR\pins")) { throw "Trim failed" }
+    - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip
     - New-Item -Path "$EXTRASRC\oorepodist" -ItemType Directory

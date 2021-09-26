@@ -431,6 +431,13 @@ autodetect_posix_shell
     # shellcheck disable=2016
     printf 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk %c{ sub(/%s$/,""); print }%c)\n' "'" '\r' "'"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
+
+    # fdopen-mingw has pins that must be used since we've trimmed the fdopen repository
+    if [ -e "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins ]; then # TODO REMOVE and just leave the elif block
+        cat "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins
+    elif [ -e "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt ]; then
+        cat "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt
+    fi
 } > "$WORK"/pin.sh
 
 OPAM_PIN_ADD_ARGS="pin add"
