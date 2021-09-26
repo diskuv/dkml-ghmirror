@@ -357,16 +357,16 @@ else
         # do a `opam update` so the switch has the latest repository definitions.
         {
             cat "$WORK"/nonswitchexec.sh
-            echo "  repository set-repos \\"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+            printf "%s" "  repository set-repos"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
             cat "$WORK"/repos-choice.lst
         } > "$WORK"/setrepos.sh
         log_shell "$WORK"/setrepos.sh
 
         {
             cat "$WORK"/nonswitchexec.sh
-            echo "  update \\"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
+            printf "%s" "  update"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/update.sh
         log_shell "$WORK"/update.sh
     fi
@@ -424,6 +424,11 @@ fi
 
 # --------------------------------
 # BEGIN opam pin add
+#
+# Since opam pin add is way too slow for hundreds of pins, we directly add the pins to the
+# switch-state file. And since as an escape hatch we want developer to be able to override
+# the pins, we only insert the pins if there are no other pins.
+# The only thing we force pin is ocaml-variants if we are on Windows.
 
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
@@ -431,68 +436,55 @@ autodetect_posix_shell
 # Set DKMLPARENTHOME_BUILDHOST
 set_dkmlparenthomedir
 
-# Create: pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
-{
-    echo "#!$DKML_POSIX_SHELL"
-    echo 'set -euf'
-    # shellcheck disable=2016
-    echo '_OPAMROOTDIR=$1'
-    echo 'shift'
-    # shellcheck disable=2016
-    echo '_OPAMSWITCHDIR=$1'
-    echo 'shift'
-    # verbatim: eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk '{ sub(/\r$/,""); print }')
-    # shellcheck disable=2016
-    printf 'eval $(opam env --root "$_OPAMROOTDIR" --switch "$_OPAMSWITCHDIR" --set-root --set-switch | awk %c{ sub(/%s$/,""); print }%c)\n' "'" '\r' "'"
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo 'set -x'; fi
+# We insert our pins if no pinned: [ ] section or it is empty like:
+# pinned: [
+# ]
+get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned > "$WORK"/pinned
+PINNED_NUMLINES=$(awk 'END{print NR}' "$WORK"/pinned)
+if [ "$PINNED_NUMLINES" -le 2 ]; then
+    # The pins have to be sorted
+    {
+        # Input: dune-configurator,2.9.0
+        # Output:  "dune-configurator.2.9.0"
+        echo "$PINNED_PACKAGES" | xargs -n1 printf '  "%s"\n' | sed 's/,/./'
 
-    # fdopen-mingw has pins that must be used since we've trimmed the fdopen repository
-    if [ -e "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins ]; then # TODO REMOVE and just leave the elif block
-        cat "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins
-    elif [ -e "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt ]; then
-        cat "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt
-    fi
-} > "$WORK"/pin.sh
+        # fdopen-mingw has pins that must be used since we've trimmed the fdopen repository
+        if is_unixy_windows_build_machine; then
+            # Input: opam pin add --yes --no-action -k version 0install 2.17
+            # Output:   "0install.2.17"
+            awk -v dquot='"' 'NF>=2 { l2=NF-1; l1=NF; print "  " dquot $l2 "." $l1 dquot}' "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt
+        fi
+    } | sort > "$WORK"/new-pinned
 
-OPAM_PIN_ADD_ARGS="pin add"
-if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS="$OPAM_PIN_ADD_ARGS --yes"; fi
-NEED_TO_PIN=OFF
+    # Make the new switch state
+    {
+        # everything except any old pinned section
+        delete_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned
+
+        echo 'pinned: ['
+        cat "$WORK"/new-pinned
+        echo ']'
+    } > "$WORK"/new-switch-state
+
+    # Reset the switch state
+    echo "========= OLD SWITCH STATE" >&2 # TODO REMOVE
+    tail -n2000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
+    mv "$WORK"/new-switch-state "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state
+    echo "========= NEW SWITCH STATE" >&2 # TODO REMOVE
+    tail -n2000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
+fi
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
 if is_unixy_windows_build_machine; then
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"; then
-        echo "opam ${OPAM_PIN_ADD_ARGS} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
-        NEED_TO_PIN=ON
+        OPAM_PIN_ADD_ARGS="pin add"
+        if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS="$OPAM_PIN_ADD_ARGS --yes"; fi
+        {
+            cat "$WORK"/nonswitchexec.sh
+            echo "  ${OPAM_PIN_ADD_ARGS} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'"
+        } > "$WORK"/pinadd.sh
+        log_shell "$WORK"/pinadd.sh
     fi
-fi
-
-# Pin the versions of the packages for which we have patches (etc/opam-repositories/diskuv-opam-repo/packages)
-# Each ___ in `for package_tuple in __ __ __` is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma**!
-# Even though technically we may not need the patches for non-Windows systems, we want the same code
-# running in both Unix and Windows, right?!
-# We add --no-action so the package is not automatically installed but simply pinned.
-for package_tuple in ${PINNED_PACKAGES}; do
-    # $1 = package_name; $2 = package_version
-    expr=$(echo set -- "$package_tuple" | sed 's/,/ /g')
-    eval "$expr"
-    if [ "$#" -ne 2 ]; then
-        echo "FATAL: The package tuple '$package_tuple' does not have a single comma. A correctly formatted example is 'dune-configurator,2.9.0'. Edit the PINNED_PACKAGES in create-opam-switch.sh" >&2
-        exit 1
-    fi
-    # accumulate
-    if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$1.$2"; then
-        echo "opam ${OPAM_PIN_ADD_ARGS} --no-action -k version '$1' '$2'" >> "$WORK"/pin.sh
-        NEED_TO_PIN=ON
-    fi
-done
-
-# Execute all of the accumulated `opam pin add` at once
-if [ "$NEED_TO_PIN" = ON ]; then
-    {
-        cat "$WORK"/nonswitchexec.sh
-        echo "  exec -- '$DKML_HOST_POSIX_SHELL' '$WORK_EXPAND'/pin.sh '$OPAMROOTDIR_EXPAND' '$OPAMSWITCHDIR_EXPAND' "
-    } > "$WORK"/launchpin.sh
-    log_shell "$WORK"/launchpin.sh
 fi
 
 # END opam pin add

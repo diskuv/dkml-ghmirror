@@ -516,3 +516,21 @@ get_opam_switch_state_toplevelsection() {
         '$1 ~ ":" {state=0} $1==(section ":") {state=1} state==1{print}' \
         "${get_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state"
 }
+
+# delete_opam_switch_state_toplevelsection SWITCHDIR TOPLEVEL_SECTION_NAME
+#
+# Prints out the switch state with the specified toplevel section name removed.
+# See get_opam_switch_state_toplevelsection for more details.
+delete_opam_switch_state_toplevelsection() {
+    delete_opam_switch_state_toplevelsection_switchdir_buildhost=$1
+    shift
+    delete_opam_switch_state_toplevelsection_toplevel_section_name=$1
+    shift
+    if [ ! -e "${delete_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state" ]; then
+        echo "FATAL: There is no Opam switch at ${delete_opam_switch_state_toplevelsection_switchdir_buildhost}" >&2
+        exit 71
+    fi
+    awk -v section="$delete_opam_switch_state_toplevelsection_toplevel_section_name" \
+        '$1 ~ ":" {state=0} $1==(section ":") {state=1} state==0{print}' \
+        "${delete_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state"
+}
