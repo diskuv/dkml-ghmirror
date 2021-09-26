@@ -11,6 +11,10 @@ windows:ocaml-opam-repo-fetch-1:
   rules:
     - if: '$CI_COMMIT_TAG'
     # - if: '$CI_COMMIT_BRANCH == "next"'
+  artifacts: # The artifact is not needed, except for browsing the repository at https://gitlab.com/diskuv/diskuv-ocaml/-/jobs to troubleshoot what version is picked
+    name: "ocaml-opam-repo-complete"
+    paths:
+      - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }

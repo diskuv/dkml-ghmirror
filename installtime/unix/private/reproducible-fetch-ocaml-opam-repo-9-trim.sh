@@ -308,8 +308,8 @@ cat "$WORK"/pin-assembly/* >> "$PINFILE"
 set -f
 
 if [[ "$DRYRUN" = OFF ]]; then
-    install -v "$PINFILE" "$OOREPO_UNIX/pins"
+    install -v "$PINFILE" "$OOREPO_UNIX/pins.txt"
 else
-    echo "Would have added the following pins at $OOREPO_UNIX/pins:"
+    echo "Would have added the following pins at $OOREPO_UNIX/pins.txt :"
     awk '{print "    " $0}' "$PINFILE"
 fi
