@@ -428,6 +428,9 @@ fi
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
 
+# Set DKMLPARENTHOME_BUILDHOST
+set_dkmlparenthomedir
+
 # Create: pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
 {
     echo "#!$DKML_POSIX_SHELL"
