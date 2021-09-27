@@ -91,7 +91,7 @@
   #  $VS_EXPORT_CMDS - Optional. A string with `export DKML_VSSTUDIO_DIR='...'; export DKML_VSSTUDIO_VCVARSVER='...'; export DKML_VSSTUDIO_WINSDKVER='...'; export DKML_VSSTUDIO_MSVSPREFERENCE='...'`
 
   # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
-  - choco upgrade msys2 -y --no-progress --version="'20210604.0.0'" --params="'/NoPath /NoUpdate /InstallDir:C:\msys64'"
+  - choco upgrade msys2 -y --no-progress --version="'20210604.0.0'" --params="'/NoPath /InstallDir:C:\msys64'"
   # msys starts a process in the background and waits on it. it also handles quoting.
   # msys_direct calls the shell command synchronously.
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
@@ -106,10 +106,6 @@
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
       Invoke-MSYS2Command -MSYS2Dir C:\msys64 -Command ("set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
     }
-  - msys_direct 'true' # https://www.msys2.org/docs/ci/#docker has a blank space; auto-create home directory
-  - msys_direct "sed -i 's/^CheckSpace/#CheckSpace/g' /etc/pacman.conf"
-  - msys_direct 'pacman --noconfirm -Syuu' # Core update
-  - msys_direct 'pacman --noconfirm -Syuu' # Normal update
   - msys_direct 'pacman -Sy --noconfirm --needed
       diffutils
       make
