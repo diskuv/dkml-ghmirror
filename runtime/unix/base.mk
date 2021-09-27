@@ -242,7 +242,7 @@ define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))" && \
+	if ! is_unixy_windows_build_machine; then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
