@@ -109,7 +109,8 @@ $VsComponents = @(
     # correctly versioned vs_buildtools.exe installer, but removed all transitive dependencies.
 
     # 2021-09-23/jonahbeckford@: Since vcpkg does not allow pinning the exact $VcVarsVer, we must install
-    # VC.Tools.
+    # VC.Tools. Also vcpkg expects VC\Auxiliary\Build\vcvarsall.bat to exist (https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L207-L213)
+    # which is only available with VC.Tools.
 
     # 2021-09-22/jonahbeckford@:
     # We do not include "Microsoft.VisualStudio.Component.VC.(Tools|$VcVarsVer).x86.x64" because
@@ -125,7 +126,7 @@ $VsSpecialComponents = @(
     "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
 )
 $VsProductLangs = @(
-    # English is required because of https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
+    # English is required because of https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
     # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
     "en-US",
 
@@ -270,7 +271,8 @@ function Get-CompatibleVisualStudios {
     }
     # select only installations that have the English language pack
     $instances = $instances | Where-Object {
-        # Use equivalent detection logic as https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L272-L278
+        # Use equivalent English language pack detection
+        # logic as https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
         $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $_
         $English = Get-ChildItem -Path "$($_.InstallationPath)\VC\Tools\MSVC\$($VisualStudioProps.VcVarsVer).*" -Recurse -Include 1033 | Measure-Object
         $English.Count -gt 0

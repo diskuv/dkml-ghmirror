@@ -353,7 +353,11 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         if is_unixy_windows_build_machine; then
             # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
             # stalls when running vcpkg directly in MSYS2.
-            install_vcpkg_pkgs_COMMAND_AND_ARGS="& { \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+            # Also, vcpkg uses an environment variable 'ProgramFiles(x86)' which is not present in dash.exe because of
+            # the parentheses (see https://github.com/microsoft/vcpkg/issues/12433#issuecomment-928165257). That makes vcpkg
+            # unable to locate vswhere.exe, and hence unable to locate most VS Studio installations. So we recreate the
+            # variable in PowerShell using CSIDL_PROGRAM_FILESX86 (https://docs.microsoft.com/en-us/windows/win32/shell/csidl).
+            install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
             log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
             log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
