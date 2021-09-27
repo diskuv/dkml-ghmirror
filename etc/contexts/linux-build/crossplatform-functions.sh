@@ -370,15 +370,17 @@ platform_vcpkg_triplet() {
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
     case "$PLATFORM-$BUILDHOST_ARCH" in
-        "dev-windows_x86")    PLATFORM_VCPKG_TRIPLET=x86-windows ;;
-        "dev-windows_x86_64") PLATFORM_VCPKG_TRIPLET=x64-windows ;;
-        "dev-linux_x86")      PLATFORM_VCPKG_TRIPLET=x86-linux ;;
-        "dev-linux_x86_64")   PLATFORM_VCPKG_TRIPLET=x64-linux ;;
+        dev-windows_x86)      PLATFORM_VCPKG_TRIPLET=x86-windows ;;
+        dev-windows_x86_64)   PLATFORM_VCPKG_TRIPLET=x64-windows ;;
+        dev-linux_x86)        PLATFORM_VCPKG_TRIPLET=x86-linux ;;
+        dev-linux_x86_64)     PLATFORM_VCPKG_TRIPLET=x64-linux ;;
         # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
         # Caution: arm64-osx and arm64-ios triplets are Community supported. https://github.com/microsoft/vcpkg/tree/master/triplets/community
         # and https://github.com/microsoft/vcpkg/issues/12258 .
-        "dev-darwin_arm64")  PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
-        "dev-darwin_x86_64")  PLATFORM_VCPKG_TRIPLET=x64-osx ;;
+        dev-darwin_arm64)     PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
+        dev-darwin_x86_64)    PLATFORM_VCPKG_TRIPLET=x64-osx ;;
+        windows_x86-*)        PLATFORM_VCPKG_TRIPLET=x86-windows ;;
+        windows_x86_64-*)     PLATFORM_VCPKG_TRIPLET=x64-windows ;;
         *)
             echo "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1
