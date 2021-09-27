@@ -412,7 +412,7 @@ define UPDATE_template
   .PHONY: update-$(1)
   update-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam update;
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype) opam update; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPDATE_template,$(platform))))
@@ -433,7 +433,7 @@ define UPGRADE_template
   .PHONY: upgrade-$(1)
   upgrade-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam upgrade;
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype) opam upgrade; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPGRADE_template,$(platform))))
@@ -527,6 +527,7 @@ dkml-report: buildconfig/dune
 	@echo
 	@echo PATH = $$PATH
 	@echo
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
 	@$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 			if [ -e build/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
 				echo; \
@@ -534,8 +535,8 @@ dkml-report: buildconfig/dune
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				echo; \
-				if [ "$(platform)" = dev ]; then \
-				  within="'$(DKML_DIR)/runtime/unix/within-dev' -b $(buildtype)"; \
+				if is_unixy_windows_build_machine || [ "$(platform)" = dev ]; then \
+				  within="'$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype)"; \
 				else \
 				  within="'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype)"; \
 				fi; \

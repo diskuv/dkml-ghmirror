@@ -13,8 +13,9 @@ usage() {
     echo "Usage:" >&2
     echo "    within-dev -h                          Display this help message." >&2
     echo "    within-dev -h                          Display this help message." >&2
-    echo "    within-dev [-b BUILDTYPE]              Enter the dev platform with an interactive bash shell." >&2
-    echo "    within-dev [-b BUILDTYPE] command ...  Run the command and any arguments in the dev platform." >&2
+    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE]              Enter the dev platform with an interactive bash shell." >&2
+    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE] command ...  Run the command and any arguments in the dev platform." >&2
+    echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and BUILDDIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the dev platform" >&2
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
@@ -35,15 +36,18 @@ if [ $# -eq 0 ]; then
 fi
 
 # shellcheck disable=SC2034
-PLATFORM=dev
+export PLATFORM=dev
 BUILDTYPE=
 PREHOOK=
 COMPILATION=ON
-while getopts ":hb:1:n" opt; do
+while getopts ":hb:p:1:n" opt; do
     case ${opt} in
         h )
             usage
             exit 0
+        ;;
+        p )
+            PLATFORM=$OPTARG
         ;;
         b )
             # shellcheck disable=SC2034

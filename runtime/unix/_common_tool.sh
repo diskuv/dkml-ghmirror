@@ -218,7 +218,7 @@ exec_dev_or_multiarch() {
 }
 
 _exec_dev_or_arch_helper() {
-    _exec_dev_or_arch_helper_SANDBOX_PLATFORM=$1
+    _exec_dev_or_arch_helper_PLATFORM=$1
     shift
     _exec_dev_or_arch_helper_CMDFILE="$WORK"/_exec_dev_or_arch_helper-cmdfile.sh
     _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
@@ -229,7 +229,7 @@ _exec_dev_or_arch_helper() {
     if [ "${COMPILATION:-}" = OFF ]; then
         printf "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
-    if is_dev_platform; then
+    if is_dev_platform || is_unixy_windows_build_machine; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
             echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
             exit 79
@@ -272,7 +272,7 @@ _exec_dev_or_arch_helper() {
                 ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED}")
             fi
         fi
-        echo "exec '$DKMLDIR'/runtime/unix/within-dev -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        echo "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
@@ -290,7 +290,7 @@ _exec_dev_or_arch_helper() {
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
         fi
-        echo "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_SANDBOX_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        echo "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
 
