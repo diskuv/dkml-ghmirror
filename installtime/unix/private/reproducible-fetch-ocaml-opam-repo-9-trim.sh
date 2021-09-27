@@ -27,14 +27,26 @@
 
 set -euf
 
-# These are packages that are pinned because they are not lexographically the latest
+# The first section:
+# * These are packages that are pinned because they are not lexographically the latest
+# The second section:
+# * The $DistributionPackages in installtime\windows\setup-userprofile.ps1
 export PREPINNED_PACKAGE_VERSIONS=(
     "seq:base"
+
+    "dune:2.9.0"
+    "jingoo:1.4.3"
+    "ocaml-lsp-server:1.7.0"
+    "ocamlfind:1.9.1"
+    "ocamlformat:0.19.0"
+    "ocamlformat-rpc:0.19.0"
+    "utop:2.8.0"
 )
 
 # The first section:
 # * depext is unnecessary as of Opam 2.1
-# The last two sections correspond to a) and c) and MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's PINNED_PACKAGES clauses and comments.
+# The last two sections correspond to PINNED_PACKAGES_DKML_PATCHES and PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
+# and MUST BE IN SYNC.
 export PACKAGES_TO_REMOVE="
     depext
 
@@ -148,8 +160,7 @@ true > "$WORK"/pins
 install -d "$WORK"/pin-assembly
 
 # [assemble_prepins] populates PREPINNED_PACKAGES and PREPINNED_VERSIONS from
-# PREPINNED_PACKAGE_VERSIONS, and adds the pre-pinned `opam pin add ...` to
-# PINFILE, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
+# PREPINNED_PACKAGE_VERSIONS, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
 assemble_prepins() {
     assemble_prepins_PREPINNED_PACKAGES=()
     assemble_prepins_PREPINNED_VERSIONS=()
@@ -158,9 +169,7 @@ assemble_prepins() {
         PVER="${ppv##*:}"
         assemble_prepins_PREPINNED_PACKAGES+=("$PPKG")
         assemble_prepins_PREPINNED_VERSIONS+=("$PVER")
-        echo opam pin add --yes --no-action -k version "$PPKG" "$PVER" >> "$PINFILE"
     done
-    echo >> "$PINFILE"
     export PACKAGES_PREPINNED="${assemble_prepins_PREPINNED_PACKAGES[*]}"
     export VERSIONS_PREPINNED="${assemble_prepins_PREPINNED_VERSIONS[*]}"
 }

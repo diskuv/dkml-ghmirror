@@ -20,12 +20,9 @@ set -euf
 #
 # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
 
-PINNED_PACKAGES=
-
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE.
-# a) DKML provides patches for these
-PINNED_PACKAGES="
-    $PINNED_PACKAGES
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
+# Summary: DKML provides patches for these
+PINNED_PACKAGES_DKML_PATCHES="
     dune-configurator,2.9.0
     bigstringaf,0.8.0
     ppx_expect,v0.14.1
@@ -44,37 +41,18 @@ PINNED_PACKAGES="
     ctypes-foreign,0.19.2-windowssupport-r4
     "
 
-# These SHOULD NOT be in sync with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE,
-# unless the package does not have an entry in fdopen (https://github.com/fdopen/opam-repository-mingw/tree/opam2/packages).
-# b) $DistributionPackages in installtime\windows\setup-userprofile.ps1
-PINNED_PACKAGES="
-    $PINNED_PACKAGES
-    dune,2.9.0
-    jingoo,1.4.3
-    ocaml-lsp-server,1.7.0
-    ocamlfind,1.9.1
-    ocamlformat,0.19.0
-    ocamlformat-rpc,0.19.0
-    utop,2.8.0
-    "
-
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE.
-# c) versions that come from a working opam installation that differ from the latest fdopen version (some
-#    like ocaml-variants are pinned elsewhere and removed from fdopen in reproducible-fetch-ocaml-opam-repo-9-trim.sh).
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
+# Summary: Packages which need to be pinned and come from the central Opam repository.
+#
 # Callouts:
 # * ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
 #   That is, ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
 # * ocamlformat-rpc-lib,0.18.0 may be needed (it is part of the good set), but since everything else is 0.19.0 we unpin it.
 # * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
 #   reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
-PINNED_PACKAGES="
-    $PINNED_PACKAGES
+PINNED_PACKAGES_OPAM="
     ppxlib,0.22.0
-    "
 
-# Security fixes
-PINNED_PACKAGES="
-    $PINNED_PACKAGES
     "
 
 # ------------------
@@ -345,7 +323,7 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     log_shell "$WORK"/switchcreateexec.sh
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
-    # has an upgrade. If we don't the PINNED_PACKAGES may fail.
+    # has an upgrade. If we don't the PINNED_PACKAGES_* may fail.
     # We know from `diskuv-$dkml_root_version` what Diskuv OCaml version the Opam switch is using, so
     # we have the logic to detect here when it is time to upgrade!
     {
@@ -447,7 +425,7 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     {
         # Input: dune-configurator,2.9.0
         # Output:  "dune-configurator.2.9.0"
-        echo "$PINNED_PACKAGES" | xargs -n1 printf '  "%s"\n' | sed 's/,/./'
+        echo "$PINNED_PACKAGES_DKML_PATCHES $PINNED_PACKAGES_OPAM" | xargs -n1 printf '  "%s"\n' | sed 's/,/./'
 
         # fdopen-mingw has pins that must be used since we've trimmed the fdopen repository
         if is_unixy_windows_build_machine; then
@@ -456,6 +434,14 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
             awk -v dquot='"' 'NF>=2 { l2=NF-1; l1=NF; print "  " dquot $l2 "." $l1 dquot}' "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt
         fi
     } | sort > "$WORK"/new-pinned
+
+    # The pins should also be unique
+    sort -u "$WORK"/new-pinned > "$WORK"/new-pinned.uniq
+    if ! cmp -s "$WORK"/new-pinned "$WORK"/new-pinned.uniq; then
+        echo "FATAL: The pins should be unique! Instead we have some duplicated entries that may lead to problems:" >&2
+        diff "$WORK"/new-pinned "$WORK"/new-pinned.uniq >&2
+        exit 1
+    fi
 
     # Make the new switch state
     {
@@ -472,7 +458,7 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     tail -n2000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
     mv "$WORK"/new-switch-state "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state
     echo "========= NEW SWITCH STATE" >&2 # TODO REMOVE
-    tail -n2000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
+    tail -n4000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
 fi
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
