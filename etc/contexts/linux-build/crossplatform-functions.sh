@@ -369,6 +369,7 @@ platform_vcpkg_triplet() {
     export PLATFORM_VCPKG_TRIPLET
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
+    # In fact, the list we should be using is base.mk:VCPKG_TRIPLET_*
     case "$PLATFORM-$BUILDHOST_ARCH" in
         dev-windows_x86)      PLATFORM_VCPKG_TRIPLET=x86-windows ;;
         dev-windows_x86_64)   PLATFORM_VCPKG_TRIPLET=x64-windows ;;

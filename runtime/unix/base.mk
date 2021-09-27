@@ -120,6 +120,7 @@ KERNEL_linux_arm32v6    = linux
 KERNEL_linux_arm32v7    = linux
 KERNEL_linux_arm64      = linux
 KERNEL_linux_x86_64     = linux
+KERNEL_windows_x86      = windows
 KERNEL_windows_x86_64   = windows
 # ANDROID_ABI_xxPLATFORMxx_ := See https://developer.android.com/ndk/guides/abis#sa
 ANDROID_ABI_android_arm64v8a = arm64-v8a
@@ -132,6 +133,7 @@ ANDROID_ABI_linux_arm32v6    = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_arm32v7    = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_arm64      = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_x86_64     = $(NOTAPPLICABLE)
+ANDROID_ABI_windows_x86      = $(NOTAPPLICABLE)
 ANDROID_ABI_windows_x86_64   = $(NOTAPPLICABLE)
 # ALPINE_ARCH_xxPLATFORMxx := See http://mirror.csclub.uwaterloo.ca/alpine/latest-stable/releases/ .
 #    The compiler is from the Alpine arch, so this list of Alpine archs will be very fine-grained
@@ -146,8 +148,10 @@ ALPINE_ARCH_linux_arm32v6    = armhf
 ALPINE_ARCH_linux_arm32v7    = armv7
 ALPINE_ARCH_linux_arm64      = aarch64
 ALPINE_ARCH_linux_x86_64     = x86_64
+ALPINE_ARCH_windows_x86      = x86
 ALPINE_ARCH_windows_x86_64   = x86_64
 # VCPKG_TRIPLET_xxPLATFORMxx  := See https://github.com/microsoft/vcpkg/tree/master/triplets and etc/vcpkg/triplets/
+# At the moment these are not used; instead crossplatform-functions.sh:platform_vcpkg_triplet is used
 VCPKG_TRIPLET_android_arm64v8a = arm64-android
 VCPKG_TRIPLET_android_arm32v7a = arm-android
 VCPKG_TRIPLET_android_x86      = x86-android
@@ -158,6 +162,7 @@ VCPKG_TRIPLET_linux_arm32v6    = arm-linux-static
 VCPKG_TRIPLET_linux_arm32v7    = arm-linux-static
 VCPKG_TRIPLET_linux_arm64      = arm64-linux-static
 VCPKG_TRIPLET_linux_x86_64     = x64-linux-static
+VCPKG_TRIPLET_windows_x86      = x86-windows
 VCPKG_TRIPLET_windows_x86_64   = x64-windows
 
 # All of the build types.
