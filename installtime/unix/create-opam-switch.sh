@@ -454,11 +454,7 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     } > "$WORK"/new-switch-state
 
     # Reset the switch state
-    echo "========= OLD SWITCH STATE" >&2 # TODO REMOVE
-    tail -n2000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
     mv "$WORK"/new-switch-state "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state
-    echo "========= NEW SWITCH STATE" >&2 # TODO REMOVE
-    tail -n4000 -v "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state >&2 # TODO REMOVE
 fi
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
