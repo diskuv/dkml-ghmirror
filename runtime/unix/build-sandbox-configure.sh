@@ -50,6 +50,9 @@ install -d "$BUILDDIR"
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
 
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
 # -----------------------
 # BEGIN opam switch create
 
@@ -80,7 +83,7 @@ if is_dev_platform; then
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
             echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server utop"
         } > "$WORK"/configure.sh
-        "$SHELL" "$WORK"/configure.sh
+        "$DKML_POSIX_SHELL" "$WORK"/configure.sh
     fi
 fi
 
@@ -97,7 +100,7 @@ fi
     printf "  "
     echo "$OPAMS" | sed 's/,/ /g'
 } > "$WORK"/configure.sh
-"$SHELL" "$WORK"/configure.sh
+"$DKML_POSIX_SHELL" "$WORK"/configure.sh
 
 # END install code (.opam) dependencies
 # -----------------------

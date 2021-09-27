@@ -219,7 +219,7 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 
 .PHONY: init-dev
 init-dev: buildconfig/dune
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
 .PHONY: prepare-dev
 prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
@@ -227,10 +227,10 @@ prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
 define PREPARE_buildtype_template
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_unixy_windows_build_machine; then \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
 	fi
 
   .PHONY: prepare-all-$(1)
@@ -241,8 +241,9 @@ $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call PREPARE_buildtype_template,
 define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
-	'$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"
-	'$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
+	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))" && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
   prepare-$(1): prepare-$(1)-$(BUILDTYPE_DEFAULT)
@@ -252,7 +253,8 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call PREPARE_platform_template,$(p
 define PREPARE_platform_buildtype_template
   .PHONY: prepare-$(1)-$(2)
   prepare-$(1)-$(2): init-$(1)
-	'$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(LINUX_OPAMS_CSV);
+	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(LINUX_OPAMS_CSV);
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
     $(eval $(call PREPARE_platform_buildtype_template,$(platform),$(buildtype))) \
