@@ -22,7 +22,7 @@ set -euf
 
 PINNED_PACKAGES=
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE.
 # a) DKML provides patches for these
 PINNED_PACKAGES="
     $PINNED_PACKAGES
@@ -44,8 +44,9 @@ PINNED_PACKAGES="
     ctypes-foreign,0.19.2-windowssupport-r4
     "
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
-# b) $DistributionPackages in installtime\windows\setup-userprofile.ps1 -or-
+# These SHOULD NOT be in sync with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE,
+# unless the package does not have an entry in fdopen (https://github.com/fdopen/opam-repository-mingw/tree/opam2/packages).
+# b) $DistributionPackages in installtime\windows\setup-userprofile.ps1
 PINNED_PACKAGES="
     $PINNED_PACKAGES
     dune,2.9.0
@@ -57,7 +58,7 @@ PINNED_PACKAGES="
     utop,2.8.0
     "
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh PACKAGES_TO_REMOVE.
 # c) versions that come from a working opam installation that differ from the latest fdopen version (some
 #    like ocaml-variants are pinned elsewhere and removed from fdopen in reproducible-fetch-ocaml-opam-repo-9-trim.sh).
 # Callouts:

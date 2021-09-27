@@ -32,8 +32,9 @@ export PREPINNED_PACKAGE_VERSIONS=(
     "seq:base"
 )
 
-# depext is unnecessary as of Opam 2.1
-# The last three sections correspond to a), b) and c) and MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's first PINNED_PACKAGES clause.
+# The first section:
+# * depext is unnecessary as of Opam 2.1
+# The last two sections correspond to a) and c) and MUST BE IN SYNC WITH installtime\unix\create-opam-switch.sh's PINNED_PACKAGES clauses and comments.
 export PACKAGES_TO_REMOVE="
     depext
 
@@ -53,14 +54,6 @@ export PACKAGES_TO_REMOVE="
     feather
     ctypes
     ctypes-foreign
-
-    dune
-    jingoo
-    ocaml-lsp-server
-    ocamlfind
-    ocamlformat
-    ocamlformat-rpc
-    utop
 
     dune-build-info
     jst-config
