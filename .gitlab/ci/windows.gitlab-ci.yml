@@ -90,16 +90,8 @@
   # Inputs:
   #  $VS_EXPORT_CMDS - Optional. A string with `export DKML_VSSTUDIO_DIR='...'; export DKML_VSSTUDIO_VCVARSVER='...'; export DKML_VSSTUDIO_WINSDKVER='...'; export DKML_VSSTUDIO_MSVSPREFERENCE='...'`
 
-  # Docs: https://www.msys2.org/docs/ci/#docker
-  # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
-  - |
-    if (!(Test-Path -Path C:\msys64)) {
-      Invoke-WebRequest -UseBasicParsing -uri "https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe" -OutFile msys2.exe;
-      .\msys2.exe -y -oC:\;
-      Remove-Item msys2.exe;
-      ((Get-Content -path C:\msys64\etc\post-install\07-pacman-key.post -Raw) -replace '--refresh-keys', '--version') |
-        Set-Content -Path C:\msys64\etc\post-install\07-pacman-key.post;
-    }
+  # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
+  - choco upgrade msys2 -y --no-progress --version="'20210604.0.0'" --params="'/NoPath /NoUpdate /InstallDir:C:\msys64'"
   # msys starts a process in the background and waits on it. it also handles quoting.
   # msys_direct calls the shell command synchronously.
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
