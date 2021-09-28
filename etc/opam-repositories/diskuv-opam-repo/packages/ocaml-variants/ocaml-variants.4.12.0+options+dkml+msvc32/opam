@@ -1,9 +1,10 @@
 # Based on https://raw.githubusercontent.com/fdopen/opam-repository-mingw/opam2/packages/ocaml-variants/ocaml-variants.4.12.0%2Bmsvc64/opam
+# and https://github.com/ocaml/opam-repository/tree/master/packages/ocaml-variants/ocaml-variants.4.12.0%2Boptions
 # with tweaks so works with MSYS2 rather than Cygwin.
-#
-# All the compiler options are ignored for Windows!!! Use ocaml-variants.4.12.0+options+dkml+msvc64 instead
+# Also, since ocaml-option-32bit is hardcoded to `available: [ arch = "x86_64" & (os = "linux" | os = "macos") ]` we use different
+# options files to select 32bit vs 64bit rather than use options.
 opam-version: "2.0"
-synopsis: "OCaml 4.12.0 (msvc64 + MSYS2)"
+synopsis: "OCaml 4.12.0 (options + Diskuv OCaml 0.2.2-prerel8 + 32-bit MSVC)"
 maintainer: "[Diskuv, Inc. <support@diskuv.com>]"
 authors: "Xavier Leroy and many contributors"
 homepage: "https://ocaml.org"
@@ -33,9 +34,30 @@ build: [
   #   Error (warning 14 [illegal-backslash]): illegal backslash escape in string.
   # because --prefix is a pure Windows path containing backslashes.
   # Now we use `cygpath -am` to convert it to a C:/Users/user/... path that is portable.
-  #
-  # Upstream big fix? Somehow get the Opam prefix to be C:/ rather than C:\ . Unclear where it is getting it from, and doesn't seem overridable.
-  ["dash" "-exc" "cygpath -am '%{prefix}%' > msys2.prefix && exec ./configure --prefix \"`cat msys2.prefix`\" --host=x86_64-pc-windows"]
+  [
+    "dash" "-eufx"
+    "./configure-with-cygpath-prefix.sh"
+    "%{prefix}%"
+    "--with-afl" {ocaml-option-afl:installed}
+    "--disable-native-compiler" {ocaml-option-bytecode-only:installed}
+    "--disable-force-safe-string" {ocaml-option-default-unsafe-string:installed}
+    "DEFAULT_STRING=unsafe" {ocaml-option-default-unsafe-string:installed}
+    "--disable-flat-float-array" {ocaml-option-no-flat-float-array:installed}
+    "--enable-flambda" {ocaml-option-flambda:installed}
+    "--enable-spacetime" {ocaml-option-spacetime:installed}
+    "--disable-naked-pointers" {ocaml-option-nnp:installed}
+    "--enable-naked-pointers-checker" {ocaml-option-nnpchecker:installed}
+    # The --host might be better if we say we are MSYS2 or pretend we are MinGW since many packages do ./configure
+    # based on --host parsing.
+    # MSYS2 toolchains: https://www.msys2.org/wiki/MSYS2-introduction/#subsystems
+    #                   https://github.com/msys2-contrib/mingw-w64/blob/master/mingw-w64-doc/howto-build/mingw-w64-howto-build.txt
+    # MinGW toolchains: https://sourceforge.net/p/mingw-w64/wiki2/TypeTriplets/
+    #
+    # For now --host is chosen the same as fdopen@'s repository, which is important
+    # also because it is used by the OCaml compiler to select libraries:
+    # https://github.com/ocaml/ocaml/blob/672965bfda6220c690d26ff6a0b7a9a59519d9af/configure.ac#L1962-L1964
+    "--host=i686-pc-windows"
+  ]
   [make "SHELL=/bin/dash" "flexdll"]
   [make "SHELL=/bin/dash" "-j%{jobs}%" "world.opt"]
   [make "SHELL=/bin/dash" "flexlink.opt"]
@@ -50,6 +72,14 @@ install: [
   # Windows portable (ex. C:/Users/.../stublibs).
   #
   ["dash" "-exc" "cygpath -am '%{lib}%/stublibs' >> '%{lib}%/ocaml/ld.conf'"]
+]
+depopts: [
+  "ocaml-option-afl"
+  "ocaml-option-bytecode-only"
+  "ocaml-option-default-unsafe-string"
+  "ocaml-option-no-flat-float-array"
+  "ocaml-option-flambda"
+  "ocaml-option-static"
 ]
 patches: ["ocaml-4.12.0+beta1.patch" "inline-flexdll.patch"]
 url {

@@ -135,7 +135,8 @@ OPAM_PORT_FOR_SWITCHES_IN_WINDOWS=msvc
 # Pick from a msys2 variant in $DiskuvOCamlHome/etc/opam-repositories/diskuv-opam-repo
 # that aligns with the OPAM_PORT_FOR_SWITCHES_IN_WINDOWS.
 # shellcheck disable=SC2034
-OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+options+dkml+msvc64
+OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS=4.12.0+options+dkml+msvc32
+OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS=4.12.0+options+dkml+msvc64
 #
 # END Opam in Windows
 #####

@@ -1,8 +1,10 @@
 # Based on https://raw.githubusercontent.com/fdopen/opam-repository-mingw/opam2/packages/ocaml-variants/ocaml-variants.4.12.0%2Bmsvc64/opam
 # and https://github.com/ocaml/opam-repository/tree/master/packages/ocaml-variants/ocaml-variants.4.12.0%2Boptions
 # with tweaks so works with MSYS2 rather than Cygwin.
+# Also, since ocaml-option-32bit is hardcoded to `available: [ arch = "x86_64" & (os = "linux" | os = "macos") ]` we use different
+# options files to select 32bit vs 64bit rather than use options.
 opam-version: "2.0"
-synopsis: "OCaml 4.12.0 (options + Diskuv OCaml 0.2.2-prerel8 + msvc)"
+synopsis: "OCaml 4.12.0 (options + Diskuv OCaml 0.2.2-prerel8 + 64-bit MSVC)"
 maintainer: "[Diskuv, Inc. <support@diskuv.com>]"
 authors: "Xavier Leroy and many contributors"
 homepage: "https://ocaml.org"
@@ -54,8 +56,7 @@ build: [
     # For now --host is chosen the same as fdopen@'s repository, which is important
     # also because it is used by the OCaml compiler to select libraries:
     # https://github.com/ocaml/ocaml/blob/672965bfda6220c690d26ff6a0b7a9a59519d9af/configure.ac#L1962-L1964
-    "--host=i686-pc-windows" {ocaml-option-32bit:installed}
-    "--host=x86_64-pc-windows" {!ocaml-option-32bit:installed}
+    "--host=x86_64-pc-windows"
   ]
   [make "SHELL=/bin/dash" "flexdll"]
   [make "SHELL=/bin/dash" "-j%{jobs}%" "world.opt"]
