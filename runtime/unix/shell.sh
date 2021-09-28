@@ -82,7 +82,6 @@ if [ -n "${DKMAKE_CALLING_DIR:-}" ]; then
     cd "$DKMAKE_CALLING_DIR"
 fi
 
-
 # Get rid of environment variables that shouldn't be seen
 # * We don't want TOPDIR especially so user can run `create-opam-switch.sh -t .` for example withou
 #   TOPDIR interfering.
@@ -91,4 +90,8 @@ unset DKMAKE_CALLING_DIR DKMAKE_INTERNAL_MAKE MAKEFLAGS MAKE_TERMERR MAKELEVEL T
 # Must clean WORK because we are about to do an exec
 rm -rf "$WORK"
 
-exec "$SHELL" --noprofile --norc -i
+if [ -n "${SHELL_SCRIPTFILE:-}" ]; then
+    exec "$SHELL" --noprofile --norc "${SHELL_SCRIPTFILE}"
+else
+    exec "$SHELL" --noprofile --norc -i
+fi
