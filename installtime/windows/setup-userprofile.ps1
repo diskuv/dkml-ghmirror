@@ -34,6 +34,17 @@
     & $env:DiskuvOCamlHome\tools\MSYS2\msys2_shell.cmd
 
     `.\makeit.cmd` from a local project is way better though.
+.Parameter $Flavor
+    Which type of installation to perform.
+
+    The `CI` flavor installs the minimal applications that are necessary
+    for a functional (though limited) Diskuv OCaml system. Today that is
+    only `dune` and `opam`, but that may change in the future. The CI flavor
+    also does not modify the User environment variables. Choose
+    the `CI` flavor if you have continuous integration tests.
+
+    The `Full` flavor installs everything, including human-centric applications
+    like `utop`.
 .Parameter $ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
@@ -101,7 +112,9 @@
     Target="CygwinPackagesArch")]
 [CmdletBinding()]
 param (
-    [Parameter()]
+    [ValidateSet("CI", "Full")]
+    [string]
+    $Flavor = 'Full',
     [int]
     $ParentProgressId = -1,
     [string]
@@ -278,11 +291,18 @@ if ([Environment]::Is64BitOperatingSystem) {
         "mingw-w64-i686-ag" # search tool called Silver Surfer
     )
 }
-$DistributionPackages = @(
-    "dune.2.9.0",
+$CiFlavorPackages = @(
+    # Dune is needed to compile dkml-findup.exe
+    "dune.2.9.0"
+)
+$CiFlavorBinaries = @(
+    "dune.exe"
+)
+$FullFlavorPackages = $CiFlavorPackages + @(
     # Really only for dkml_templatizer; may be used for creating local projects as well.
     # Would have used `shexp.0.14.0` but wasn't compiling on Windows because of Opam's complaint
-    # that `posixat` had 'os != "win32"'
+    # that `posixat` had 'os != "win32"'.
+    # Another possibility is `bos` which is likely now that the PR review for feather is stalled.
     "feather.0.3.0",
     # Really only for dkml_templatizer; may be used for creating local projects as well.
     "jingoo.1.4.3",
@@ -292,8 +312,7 @@ $DistributionPackages = @(
     "ocamlformat-rpc.0.19.0",
     "utop.2.8.0"
 )
-$DistributionBinaries = @(
-    "dune.exe",
+$FullFlavorBinaries = $CiFlavorBinaries + @(
     "flexlink.exe",
     "ocaml.exe",
     "ocamlc.byte.exe",
@@ -340,14 +359,21 @@ $DistributionBinaries = @(
     "ocp-indent.exe",
     "utop.exe",
     "utop-full.exe")
+if ($Flavor -eq "Full") {
+    $FlavorPackages = $FullFlavorPackages
+    $FlavorBinaries = $FullFlavorBinaries
+} elseif ($Flavor -eq "CI") {
+    $FlavorPackages = $CiFlavorPackages
+    $FlavorBinaries = $CiFlavorBinaries
+}
 
 # Consolidate the magic constants into a single deployment id
 $CygwinHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
 $MSYS2Hash = Get-Sha256Hex16OfText -Text ($MSYS2PackagesArch -join ',')
 $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
-$PackagesHash = Get-Sha256Hex16OfText -Text ($DistributionPackages -join ',')
-$BinariesHash = Get-Sha256Hex16OfText -Text ($DistributionBinaries -join ',')
-$DeploymentId = "opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
+$PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
+$BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
+$DeploymentId = "opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
 
 if ($OnlyOutputCacheKey) {
     Write-Output $DeploymentId
@@ -366,7 +392,7 @@ $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -Deploy
 # Advanced. Skip check with ... $global:RedeployIfExists = $true ... remove it with ... Remove-Variable RedeployIfExists
 if (!$global:RedeployIfExists -and $finished) {
     Write-Host "$DeploymentId already deployed."
-    Write-Host "Enjoy Diskuv OCaml!"
+    Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.gitlab.io/diskuv-ocaml/"
     return
 }
 
@@ -1224,7 +1250,7 @@ try {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command (
             "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
-            "$($DistributionPackages -join ' ')"
+            "$($FlavorPackages -join ' ')"
         )
     }
 
@@ -1240,18 +1266,25 @@ try {
     $AppsCachePath = "$TempPath\apps"
     $AppsBinDir = "$ProgramPath\tools\apps"
 
-    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("set -x && " +
-            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' @all")
-
     # Only apps, not bootstrap-apps, are installed
+    # And we only need dkml-findup.exe for the CI Flavor.
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
-            "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' &&" +
-            "install '$AppsCachePath\default\findup\findup.exe'                     '$AppsBinDir\dkml-findup.exe' &&" +
+            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
+    if ($Flavor -eq "Full") {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && " +
+            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && " +
+            "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
             "install '$AppsCachePath\default\dkml-templatizer\dkml_templatizer.exe' '$AppsBinDir\dkml-templatizer.exe'")
+    }
 
     # END compile apps
     # ----------------------------------------------------------------
@@ -1267,7 +1300,7 @@ try {
     $DiskuvSystemDir = "$ProgramPath\system\_opam"
 
     if (!(Test-Path -Path $ProgramBinDir)) { New-Item -Path $ProgramBinDir -ItemType Directory | Out-Null }
-    foreach ($binary in $DistributionBinaries) {
+    foreach ($binary in $FlavorBinaries) {
         if (!(Test-Path -Path "$ProgramBinDir\$binary")) {
             Copy-Item -Path "$DiskuvSystemDir\bin\$binary" -Destination $ProgramBinDir
         }
@@ -1318,42 +1351,44 @@ try {
     $global:ProgressActivity = "Modify environment variables"
     Write-ProgressStep
 
-    $splitter = [System.IO.Path]::PathSeparator # should be ';' if we are running on Windows (yes, you can run Powershell on other operating systems)
-
-    $userpath = [Environment]::GetEnvironmentVariable('PATH', 'User')
-    $userpathentries = $userpath -split $splitter # all of the User's PATH in a collection
     $PathModified = $false
+    if ($Flavor -eq "Full") {
+        $splitter = [System.IO.Path]::PathSeparator # should be ';' if we are running on Windows (yes, you can run Powershell on other operating systems)
 
-    # DiskuvOCamlHome
-    [Environment]::SetEnvironmentVariable("DiskuvOCamlHome", "$ProgramPath", 'User')
+        $userpath = [Environment]::GetEnvironmentVariable('PATH', 'User')
+        $userpathentries = $userpath -split $splitter # all of the User's PATH in a collection
 
-    # Add bin\ to the User's PATH if it isn't already
-    if (!($userpathentries -contains $ProgramBinDir)) {
-        # remove any old deployments
-        $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelBinDir
-        foreach ($possibleDir in $PossibleDirs) {
-            $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
+        # DiskuvOCamlHome
+        [Environment]::SetEnvironmentVariable("DiskuvOCamlHome", "$ProgramPath", 'User')
+
+        # Add bin\ to the User's PATH if it isn't already
+        if (!($userpathentries -contains $ProgramBinDir)) {
+            # remove any old deployments
+            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelBinDir
+            foreach ($possibleDir in $PossibleDirs) {
+                $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
+            }
+            # add new PATH entry
+            $userpathentries = @( $ProgramBinDir ) + $userpathentries
+            $PathModified = $true
         }
-        # add new PATH entry
-        $userpathentries = @( $ProgramBinDir ) + $userpathentries
-        $PathModified = $true
-    }
 
-    # Remove legacy tools\opam\ from the User's PATH
-    $ProgramRelToolDir = "tools\opam"
-    $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
-    if ($userpathentries -contains $ProgramToolOpamDir) {
-        # remove any old deployments
-        $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelToolDir
-        foreach ($possibleDir in $PossibleDirs) {
-            $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
+        # Remove legacy tools\opam\ from the User's PATH
+        $ProgramRelToolDir = "tools\opam"
+        $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
+        if ($userpathentries -contains $ProgramToolOpamDir) {
+            # remove any old deployments
+            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelToolDir
+            foreach ($possibleDir in $PossibleDirs) {
+                $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
+            }
+            $PathModified = $true
         }
-        $PathModified = $true
-    }
 
-    if ($PathModified) {
-        # modify PATH
-        [Environment]::SetEnvironmentVariable("PATH", ($userpathentries -join $splitter), 'User')
+        if ($PathModified) {
+            # modify PATH
+            [Environment]::SetEnvironmentVariable("PATH", ($userpathentries -join $splitter), 'User')
+        }
     }
 
     # END Modify User's environment variables
@@ -1374,7 +1409,7 @@ Write-Host ""
 Write-Host ""
 Write-Host ""
 Write-Host "Setup is complete. Congratulations!"
-Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.gitlab.io/diskuv-ocaml/"
+Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.gitlab.io/diskuv-ocaml/. Announcements will be available at https://twitter.com/diskuv"
 Write-Host ""
 Write-Host ""
 Write-Host ""
