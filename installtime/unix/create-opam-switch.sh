@@ -439,7 +439,10 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     sort -u "$WORK"/new-pinned > "$WORK"/new-pinned.uniq
     if ! cmp -s "$WORK"/new-pinned "$WORK"/new-pinned.uniq; then
         echo "FATAL: The pins should be unique! Instead we have some duplicated entries that may lead to problems:" >&2
-        diff "$WORK"/new-pinned "$WORK"/new-pinned.uniq >&2
+        diff "$WORK"/new-pinned "$WORK"/new-pinned.uniq >&2 || true
+        echo "(Debugging) PINNED_PACKAGES_DKML_PATCHES=$PINNED_PACKAGES_DKML_PATCHES" >&2
+        echo "(Debugging) PINNED_PACKAGES_OPAM=$PINNED_PACKAGES_OPAM" >&2
+        echo "(Debugging) Pins at '$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/pins.txt'" >&2
         exit 1
     fi
 
