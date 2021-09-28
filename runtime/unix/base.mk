@@ -232,7 +232,7 @@ prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
 define PREPARE_buildtype_template
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_unixy_windows_build_machine; then \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform dev; then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
@@ -247,7 +247,7 @@ define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	if ! is_unixy_windows_build_machine; then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
+	if ! is_arg_windows_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
@@ -258,8 +258,11 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call PREPARE_platform_template,$(p
 define PREPARE_platform_buildtype_template
   .PHONY: prepare-$(1)-$(2)
   prepare-$(1)-$(2): init-$(1)
-	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(LINUX_OPAMS_CSV);
+	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_WINDOWS); \
+	else \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_LINUX); \
+	fi
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
     $(eval $(call PREPARE_platform_buildtype_template,$(platform),$(buildtype))) \
@@ -374,7 +377,7 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call BUILD_platform_template,$(pla
 define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
@@ -385,7 +388,7 @@ define BUILD_platform_buildtype_template
 		printf "\n\n$(HORIZONTAL_RULE_80COLS)\n"; \
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then \
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
 			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
 			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
@@ -412,7 +415,7 @@ define UPDATE_template
   .PHONY: update-$(1)
   update-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype) opam update; fi
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam update; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPDATE_template,$(platform))))
@@ -433,7 +436,7 @@ define UPGRADE_template
   .PHONY: upgrade-$(1)
   upgrade-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_unixy_windows_build_machine; then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype) opam upgrade; fi
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam upgrade; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPGRADE_template,$(platform))))
@@ -535,7 +538,7 @@ dkml-report: buildconfig/dune
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				echo; \
-				if is_unixy_windows_build_machine || [ "$(platform)" = dev ]; then \
+				if is_arg_windows_platform $(platform)"; then \
 				  within="'$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype)"; \
 				else \
 				  within="'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype)"; \

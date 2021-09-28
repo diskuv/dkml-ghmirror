@@ -90,6 +90,7 @@ log_shell() {
 #       fi
 #    This clearly guards what you are about to do (cygpath) with what you will
 #    need (cygpath).
+# 2. is_arg_windows_platform
 is_unixy_windows_build_machine() {
     if is_msys2_msys_build_machine || is_cygwin_build_machine; then
         return 0
@@ -111,6 +112,15 @@ is_cygwin_build_machine() {
         return 0
     fi
     return 1
+}
+
+is_arg_windows_platform() {
+    case "$1" in
+        windows_x86)    return 0;;
+        windows_x86_64) return 0;;
+        dev)            if is_unixy_windows_build_machine; then return 0; else return 1; fi ;;
+        *)              return 1;;
+    esac
 }
 
 # Install files that will always be in a reproducible build.
