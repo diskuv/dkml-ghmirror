@@ -97,29 +97,39 @@ fi
 # BEGIN install code (.opam) dependencies
 
 {
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
+    # [configure.sh JOBS]
+    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=\$1 --yes \\"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
     echo "  --deps-only --with-test \\"
-    printf "  "
+    # shellcheck disable=SC2016
+    printf ' '
     echo "$OPAMS" | sed 's/,/ /g'
 } > "$WORK"/configure.sh
 {
     if [ "${CI:-}" = true ]; then
-        # When we are doing CI, we'll run it twice ... allowing for failures ... and the last time we will run it
-        # without any failures allowed. Also, it is pointless having DKML_BUILD_PRINT_LOGS_ON_ERROR=ON during
-        # retries, except the last one.
+        # When we are doing CI:
+        # * we'll run it twice ... allowing for failures ... and the last time we will run it
+        # without any failures allowed
+        # * we disable DKML_BUILD_PRINT_LOGS_ON_ERROR=ON during retries except the last one
+        # * any retries are done with parallelism=1 to remove race problems
+
         # shellcheck disable=SC2016
         echo 'old_bploe="${DKML_BUILD_PRINT_LOGS_ON_ERROR:-}"'
         echo "export DKML_BUILD_PRINT_LOGS_ON_ERROR=OFF"
-        echo "if $DKML_POSIX_SHELL '$WORK/configure.sh'; then exit 0; fi"
-        echo 'echo Installing code dependencies failed. Retry 1 of 2. >&2'
-        echo "if $DKML_POSIX_SHELL -x '$WORK/configure.sh'; then exit 0; fi"
-        echo 'echo Installing code dependencies failed. Retry 2 of 2. >&2'
+        echo "if $DKML_POSIX_SHELL '$WORK/configure.sh' $NUMCPUS; then exit 0; fi"
+        if [ -n "${DKML_TROUBLESHOOTING_HOOK:-}" ]; then
+            echo "echo 'Installing code dependencies failed. Using troubleshooting hook: $DKML_TROUBLESHOOTING_HOOK.' >&2"
+            # run hook but ignore errors
+            echo "$DKML_POSIX_SHELL -x $DKML_TROUBLESHOOTING_HOOK || true"
+        fi
+        echo 'echo Installing code dependencies failed. Disabling any parallelism. Retry 1 of 2. >&2'
+        echo "if $DKML_POSIX_SHELL -x '$WORK/configure.sh' 1; then exit 0; fi"
+        echo 'echo Installing code dependencies failed. Disabling any parallelism. Retry 2 of 2. >&2'
         # shellcheck disable=SC2016
         echo 'DKML_BUILD_PRINT_LOGS_ON_ERROR="$old_bploe"'
-        echo "exec $DKML_POSIX_SHELL '$WORK/configure.sh'"
+        echo "exec $DKML_POSIX_SHELL '$WORK/configure.sh' 1"
     else
-        echo "exec $DKML_POSIX_SHELL '$WORK/configure.sh'"
+        echo "exec $DKML_POSIX_SHELL '$WORK/configure.sh' $NUMCPUS"
     fi
 } > "$WORK"/configure-with-retry.sh
 
