@@ -53,6 +53,9 @@ autodetect_cpus
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
 
+# Set OPAMROOTDIR_BUILDHOST
+set_opamrootdir
+
 # -----------------------
 # BEGIN opam switch create
 
@@ -83,7 +86,7 @@ if is_dev_platform; then
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
             echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server utop"
         } > "$WORK"/configure.sh
-        "$DKML_POSIX_SHELL" "$WORK"/configure.sh
+        print_opam_logs_on_error "$DKML_POSIX_SHELL" "$WORK"/configure.sh
     fi
 fi
 
@@ -100,7 +103,7 @@ fi
     printf "  "
     echo "$OPAMS" | sed 's/,/ /g'
 } > "$WORK"/configure.sh
-"$DKML_POSIX_SHELL" "$WORK"/configure.sh
+print_opam_logs_on_error "$DKML_POSIX_SHELL" "$WORK"/configure.sh
 
 # END install code (.opam) dependencies
 # -----------------------

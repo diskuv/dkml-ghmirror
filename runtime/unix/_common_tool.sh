@@ -535,3 +535,44 @@ delete_opam_switch_state_toplevelsection() {
         '$1 ~ ":" {state=0} $1==(section ":") {state=1} state==0{print}' \
         "${delete_opam_switch_state_toplevelsection_switchdir_buildhost}/.opam-switch/switch-state"
 }
+
+# [print_opam_logs_on_error CMD [ARGS...]] will execute `CMD [ARGS...]`. If the CMD fails _and_
+# the environment variable `DKML_BUILD_PRINT_LOGS_ON_ERROR` is `ON` then print out Opam log files
+# to the standard error.
+print_opam_logs_on_error() {
+    # save `set` state
+    print_opam_logs_on_error_OLDSTATE=$(set +o)
+    set +e # allow the next command to possibly fail
+    "$@"
+    print_opam_logs_on_error_EC=$?
+    if [ "$print_opam_logs_on_error_EC" -ne 0 ]; then
+        if [ "${DKML_BUILD_PRINT_LOGS_ON_ERROR:-}" = ON ]; then
+            printf "\n\n========= [START OF TROUBLESHOOTING] ===========\n\n" >&2
+
+            # print _one_ of the environment
+            # shellcheck disable=SC2030
+            find "$OPAMROOTDIR_BUILDHOST"/log -mindepth 1 -maxdepth 1 -name "*.env" ! -name "log-*.env" ! -name "ocaml-variants-*.env" | head -n1 | while read -r dump_on_error_LOG; do
+                # shellcheck disable=SC2031
+                dump_on_error_BLOG=$(basename "$dump_on_error_LOG")
+                printf "\n\n========= [TROUBLESHOOTING] %s ===========\n# To save space, this is only one of the many similar Opam environment files that have been printed.\n\n" "$dump_on_error_BLOG" >&2
+                cat "$dump_on_error_LOG" >&2
+            done
+
+            # print all output files (except ocaml-variants)
+            find "$OPAMROOTDIR_BUILDHOST"/log -mindepth 1 -maxdepth 1 -name "*.out" ! -name "log-*.out" ! -name "ocaml-variants-*.out" | while read -r dump_on_error_LOG; do
+                dump_on_error_BLOG=$(basename "$dump_on_error_LOG")
+                printf "\n\n========= [TROUBLESHOOTING] %s ===========\n\n" "$dump_on_error_BLOG" >&2
+                cat "$dump_on_error_LOG" >&2
+            done
+
+            # TODO: we could add other logs files from the switch, like
+            # `$env:LOCALAPPDATA\Programs\DiskuvOCaml\0\system\_opam\.opam-switch\build\ocamlfind.1.9.1\ocargs.log`
+
+            printf "The command %s failed with exit code $print_opam_logs_on_error_EC. Scroll up to see the [TROUBLESHOOTING] logs that begin at the [START OF TROUBLESHOOTING] line\n" "$*" >&2
+        fi
+
+        exit $print_opam_logs_on_error_EC
+    fi
+    # restore old state
+    eval "$print_opam_logs_on_error_OLDSTATE"
+}
