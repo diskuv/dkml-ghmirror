@@ -612,7 +612,11 @@ autodetect_compiler() {
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
+    if   [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 4 ]; then
+        autodetect_compiler_VSCMD_DEBUG=3
+    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 3 ]; then
+        autodetect_compiler_VSCMD_DEBUG=2
+    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
         autodetect_compiler_VSCMD_DEBUG=1
     else
         autodetect_compiler_VSCMD_DEBUG=
