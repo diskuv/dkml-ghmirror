@@ -53,8 +53,9 @@ autodetect_cpus
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
 
-# Set OPAMROOTDIR_BUILDHOST
+# Set OPAMROOTDIR_BUILDHOST. Export for use by DKML_TROUBLESHOOTING_HOOK
 set_opamrootdir
+export OPAMROOTDIR_BUILDHOST
 
 # -----------------------
 # BEGIN opam switch create
@@ -95,6 +96,10 @@ fi
 
 # -----------------------
 # BEGIN install code (.opam) dependencies
+
+# Set and export OPAMSWITCHNAME_BUILDHOST, for use by DKML_TROUBLESHOOTING_HOOK
+set_opamrootandswitchdir
+export OPAMSWITCHNAME_BUILDHOST
 
 {
     # [configure.sh JOBS]
