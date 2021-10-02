@@ -71,7 +71,7 @@ log_shell() {
         autodetect_posix_shell
     fi
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
-        echo "@+ $DKML_POSIX_SHELL $*" >&2
+        printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
         "$DKML_POSIX_SHELL" -eufx "$@"
     else
         "$DKML_POSIX_SHELL" -euf "$@"
@@ -242,7 +242,7 @@ replace_all() {
     shift
     replace_all_REPLACE="$1"
     shift
-    replace_all_REPLACE=$(echo "$replace_all_REPLACE" | sed 's#\\#\\\\#g') # escape all backslashes for awk
+    replace_all_REPLACE=$(printf "%s" "$replace_all_REPLACE" | sed 's#\\#\\\\#g') # escape all backslashes for awk
     printf "%s" "$replace_all_TEXT" | awk -v REPLACE="$replace_all_REPLACE" "{ gsub(/$replace_all_SEARCH/,REPLACE); print }"
 }
 
@@ -260,7 +260,7 @@ install_reproducible_system_packages() {
     shift
     install_reproducible_system_packages_PACKAGEFILE=$(change_suffix "$install_reproducible_system_packages_SCRIPTFILE" .sh .packagelist.txt)
     if [ "$install_reproducible_system_packages_PACKAGEFILE" = "$install_reproducible_system_packages_SCRIPTFILE" ]; then
-        echo "FATAL: The run script $install_reproducible_system_packages_SCRIPTFILE must end with .sh" >&2
+        printf "%s" "FATAL: The run script $install_reproducible_system_packages_SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
     install_reproducible_system_packages_SCRIPTDIR=$(dirname "$install_reproducible_system_packages_SCRIPTFILE")
@@ -275,15 +275,15 @@ install_reproducible_system_packages() {
     elif is_cygwin_build_machine; then
         cygcheck.exe -c -d > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
         {
-            echo "#!/usr/bin/env bash"
-            echo "if [ ! -e /usr/local/bin/cyg-get ]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
-            echo "if [ ! -x /usr/local/bin/cyg-get ]; then chmod +x /usr/local/bin/cyg-get; fi"
+            printf "%s\n" "#!/usr/bin/env bash"
+            printf "%s\n" "if [ ! -e /usr/local/bin/cyg-get ]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
+            printf "%s\n" "if [ ! -x /usr/local/bin/cyg-get ]; then chmod +x /usr/local/bin/cyg-get; fi"
             printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
             # shellcheck disable=SC2016
-            echo 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
+            printf "%s\n" 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
         } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     else
-        echo "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
+        printf "%s\n" "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
         exit 1
     fi
     chmod 755 "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
@@ -305,7 +305,7 @@ install_reproducible_script_with_args() {
     shift
     install_reproducible_script_with_args_RECREATEFILE=$(change_suffix "$install_reproducible_script_with_args_SCRIPTFILE" .sh -noargs.sh)
     if [ "$install_reproducible_script_with_args_RECREATEFILE" = "$install_reproducible_script_with_args_SCRIPTFILE" ]; then
-        echo "FATAL: The run script $install_reproducible_script_with_args_SCRIPTFILE must end with .sh" >&2
+        printf "%s\n" "FATAL: The run script $install_reproducible_script_with_args_SCRIPTFILE must end with .sh" >&2
         exit 1
     fi
     install_reproducible_script_with_args_RECREATEDIR=$(dirname "$install_reproducible_script_with_args_SCRIPTFILE")
@@ -348,7 +348,7 @@ build_machine_arch() {
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86
             else
-                echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
                 exit 1
             fi
             ;;
@@ -356,12 +356,12 @@ build_machine_arch() {
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86_64
             else
-                echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
                 exit 1
             fi
             ;;
         *)
-            echo "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+            printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
             exit 1
             ;;
     esac
@@ -393,7 +393,7 @@ platform_vcpkg_triplet() {
         windows_x86-*)        PLATFORM_VCPKG_TRIPLET=x86-windows ;;
         windows_x86_64-*)     PLATFORM_VCPKG_TRIPLET=x64-windows ;;
         *)
-            echo "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
+            printf "%s\n" "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1
             ;;
     esac
@@ -529,7 +529,7 @@ autodetect_compiler() {
     if [ "$#" -ge 1 ]; then
         autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
         if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
-        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(echo "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
+        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
         shift
     else
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
@@ -598,17 +598,14 @@ autodetect_compiler() {
     # (Less hacky version of https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell)
     if [ -x /usr/bin/cygpath ]; then
         autodetect_compiler_VSDEVCMDFILE_WIN=$(/usr/bin/cygpath -aw "$autodetect_compiler_VSDEVCMD")
+        autodetect_compiler_TEMPDIR_WIN=$(/usr/bin/cygpath -aw "$autodetect_compiler_TEMPDIR")
     else
         autodetect_compiler_VSDEVCMDFILE_WIN="$autodetect_compiler_VSDEVCMD"
+        autodetect_compiler_TEMPDIR_WIN="$autodetect_compiler_TEMPDIR"
     fi
     {
-        echo '@call "'"$autodetect_compiler_VSDEVCMDFILE_WIN"'" %*'
-        if [ -x /usr/bin/cygpath ]; then
-            # shellcheck disable=SC2046
-            echo 'set > "'$(/usr/bin/cygpath -aw "$autodetect_compiler_TEMPDIR")'\vcvars.txt"'
-        else
-            echo 'set > "'"$autodetect_compiler_TEMPDIR"'\vcvars.txt"'
-        fi
+        printf "@call %s%s%s %s\n" '"' "$autodetect_compiler_VSDEVCMDFILE_WIN" '"' '%*'
+        printf "set > %s%s%s%s\n" '"' "$autodetect_compiler_TEMPDIR_WIN" '\vcvars.txt' '"'
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
@@ -645,7 +642,7 @@ autodetect_compiler() {
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
         else
-            echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+            printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 1
         fi
     elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
@@ -666,11 +663,11 @@ autodetect_compiler() {
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
         else
-            echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+            printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 1
         fi
     else
-        echo "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
+        printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
         exit 1
     fi
 
@@ -743,9 +740,9 @@ autodetect_compiler() {
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    echo "$autodetect_compiler_COMPILER_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+    printf "%s\n" "$autodetect_compiler_COMPILER_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
     sort -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
-    echo "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
+    printf "%s\n" "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
     comm \
         -23 \
         "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt \
@@ -754,7 +751,7 @@ autodetect_compiler() {
     autodetect_compiler_COMPILER_UNIQ_PATH=
     while IFS='' read -r autodetect_compiler_line; do
         # if and only if the $autodetect_compiler_line matches one of the lines in vcvars_uniq.txt
-        if ! echo "$autodetect_compiler_line" | comm -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
+        if ! printf "%s\n" "$autodetect_compiler_line" | comm -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
             if [ -z "$autodetect_compiler_COMPILER_UNIQ_PATH" ]; then
                 autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_line"
             else
@@ -772,23 +769,23 @@ autodetect_compiler() {
         sed "s#'#'\"'\"'#g" "$@"
     }
     {
-        echo "#!$DKML_POSIX_SHELL"
-        echo "exec env \\"
+        printf "%s\n" "#!$DKML_POSIX_SHELL"
+        printf "%s\n" "exec env \\"
 
         # Add all but PATH and MSVS_PREFERENCE to launcher environment
         autodetect_compiler_escape_as_single_quoted_argument "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
-            echo "  '$autodetect_compiler_line' \\";
+            printf "%s\n" "  '$autodetect_compiler_line' \\";
         done
 
         # Add MSVS_PREFERENCE
-        echo "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
+        printf "%s\n" "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
 
         # Add PATH
-        autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape_as_single_quoted_argument)
-        echo "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
+        autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape_as_single_quoted_argument)
+        printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
 
         # Add arguments
-        echo '  "$@"'
+        printf "%s\n" '  "$@"'
     } > "$autodetect_compiler_LAUNCHER".tmp
     chmod +x "$autodetect_compiler_LAUNCHER".tmp
     mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
@@ -798,7 +795,7 @@ autodetect_compiler() {
 
 log_trace() {
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
-        echo "+ $*" >&2
+        printf "%s\n" "+ $*" >&2
         time "$@"
     else
         "$@"
