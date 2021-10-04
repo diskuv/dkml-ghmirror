@@ -1,3 +1,7 @@
 (executable
  (name dkml_templatizer)
- (libraries feather jingoo str))
+ (public_name dkml-templatizer)
+ (libraries bos jingoo str))
+
+(cram
+ (deps %{bin:dkml-templatizer}))

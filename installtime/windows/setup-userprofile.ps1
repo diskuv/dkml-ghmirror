@@ -293,19 +293,19 @@ if ([Environment]::Is64BitOperatingSystem) {
 }
 $CiFlavorPackages = @(
     # Dune is needed to compile dkml-findup.exe
-    "dune.2.9.0"
+    "dune.2.9.0",
+    # Bos, sha and sexplib is needed to compile dkml-opam-build.exe
+    "bos.0.2.0",
+    "sha.1.14",
+    "sexplib.v0.14.0"
 )
 $CiFlavorBinaries = @(
     "dune.exe"
 )
 $FullFlavorPackages = $CiFlavorPackages + @(
-    # Really only for dkml_templatizer; may be used for creating local projects as well.
-    # Would have used `shexp.0.14.0` but wasn't compiling on Windows because of Opam's complaint
-    # that `posixat` had 'os != "win32"'.
-    # Another possibility is `bos` which is likely now that the PR review for feather is stalled.
-    "feather.0.3.0",
-    # Really only for dkml_templatizer; may be used for creating local projects as well.
+    # For dkml_templatizer; may be used for creating local projects as well.
     "jingoo.1.4.3",
+
     "ocaml-lsp-server.1.7.0",
     "ocamlfind.1.9.1",
     "ocamlformat.0.19.0",
@@ -896,7 +896,15 @@ try {
     }
 
     function Invoke-CygwinInitialization {
-        $global:ProgressActivity = "Install Cygwin"
+        param (
+            [switch]
+            $Skipped
+        )
+        if ($Skipped) {
+            $global:ProgressActivity = "Install Cygwin"
+        } else {
+            $global:ProgressActivity = "Install Cygwin (skipped)"
+        }
         Write-ProgressStep
     }
 
@@ -947,13 +955,13 @@ try {
     # ----------------------------------------------------------------
 
     if ((Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") -and (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\pins.txt")) {
-        Invoke-CygwinInitialization
+        Invoke-CygwinInitialization -Skipped
     } elseif (Import-DiskuvOCamlAsset `
             -PackageName "ocaml_opam_repo-reproducible" `
             -ZipFile "ocaml-opam-repo.zip" `
             -TmpPath "$TempPath" `
             -DestinationPath "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo") {
-        Invoke-CygwinInitialization
+        Invoke-CygwinInitialization -Skipped
     } else {
         Install-Cygwin
 
@@ -1118,7 +1126,8 @@ try {
         "DiskuvOCamlVarsVersion=1",
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
         "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'",
-        "DiskuvOCamlMSYS2Dir='/'"
+        "DiskuvOCamlMSYS2Dir='/'",
+        "DiskuvOCamlDeploymentId='$DeploymentId'"
     )
     $UnixVarsContents = $UnixVarsArray -join [environment]::NewLine
     $UnixVarsContentsOnOneLine = $UnixVarsArray -join " "
@@ -1127,12 +1136,24 @@ try {
 `$env:DiskuvOCamlHome = '$ProgramPath'
 `$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin'
 `$env:DiskuvOCamlMSYS2Dir = '$MSYS2Dir'
+`$env:DiskuvOCamlDeploymentId = '$DeploymentId'
 "@
     $CmdVarsContents = @"
 `@SET DiskuvOCamlVarsVersion=1
 `@SET DiskuvOCamlHome=$ProgramPath
 `@SET DiskuvOCamlBinaryPaths=$ProgramPath\bin
 `@SET DiskuvOCamlMSYS2Dir=$MSYS2Dir
+`@SET DiskuvOCamlDeploymentId=$DeploymentId
+"@
+
+    $SexpVarsContents = @"
+`(
+`("DiskuvOCamlVarsVersion" "1")
+`("DiskuvOCamlHome" "$($ProgramPath.Replace('\', '\\'))")
+`("DiskuvOCamlBinaryPaths" "$($ProgramPath.Replace('\', '\\'))\\bin")
+`("DiskuvOCamlMSYS2Dir" "$($MSYS2Dir.Replace('\', '\\'))")
+`("DiskuvOCamlDeploymentId" "$DeploymentId")
+`)
 "@
 
     # END Define dkmlvars
@@ -1258,23 +1279,31 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN compile apps
+    # BEGIN compile apps and install crossplatform-functions.sh
 
-    $global:ProgressActivity = "Compile apps"
+    $global:ProgressActivity = "Compile apps and install functions"
     Write-ProgressStep
 
     $AppsCachePath = "$TempPath\apps"
     $AppsBinDir = "$ProgramPath\tools\apps"
+    $FunctionsDir = "$ProgramPath\share\diskuv-ocaml\functions"
 
-    # Only apps, not bootstrap-apps, are installed
-    # And we only need dkml-findup.exe for the CI Flavor.
+    # We use crossplatform-functions.sh for dkml-opam-build.exe.
+    if (!(Test-Path -Path $FunctionsDir)) { New-Item -Path $FunctionsDir -ItemType Directory | Out-Null }
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && install '$DkmlPath\etc\contexts\linux-build\crossplatform-functions.sh' '$FunctionsDir\crossplatform-functions.sh'")
+
+    # Only apps, not bootstrap-apps, are installed.
+    # And we only need dkml-findup.exe and dkml-opam-build.exe for the CI Flavor.
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe dkml-opam-build/dkml_opam_build.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("set -x && install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
+        -Command ("set -x && "+
+            "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe' && " +
+            "install '$AppsCachePath\default\dkml-opam-build\dkml_opam_build.exe' '$AppsBinDir\dkml-opam-build.exe'")
     if ($Flavor -eq "Full") {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
@@ -1329,16 +1358,19 @@ try {
     # we write to standard Windows encoding `Unicode` (UTF-16 LE with BOM) and then use dos2unix to convert it to UTF-8 with no BOM.
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.sh" -Value $UnixVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.cmd" -Value $CmdVarsContents -Encoding Unicode
+    Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.sexp" -Value $SexpVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.ps1" -Value $PowershellVarsContents -Encoding Unicode
 
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command (
             "set -x && " +
-            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
-            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' && " +
-            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' && " +
-            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.sh' && " +
-            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.cmd'"
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh'   '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd'  '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' && " +
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' && " +
+            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh'   '$ProgramParentMSYS2AbsPath/dkmlvars.sh' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd'  '$ProgramParentMSYS2AbsPath/dkmlvars.cmd' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars.sexp'"
         )
 
 

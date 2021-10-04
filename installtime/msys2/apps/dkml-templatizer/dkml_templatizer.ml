@@ -1,3 +1,4 @@
+open Bos
 open Jingoo
 
 let usage_msg =
@@ -6,12 +7,15 @@ let usage_msg =
 
 let path_ref = ref ""
 
+let quiet_ref = ref false
 let output_file_ref = ref ""
 
 let anon_fun path = path_ref := path
 
 let speclist =
   [
+    ( "-q", Arg.Set quiet_ref,
+      "Quiet mode. Does not print messages to standard error unless there is an error");
     ( "-o",
       Arg.Set_string output_file_ref,
       "Save the resulting file to OUTPUT_FILE. Defaults to standard output" );
@@ -24,16 +28,20 @@ let () =
     prerr_endline "FATAL: Missing TEMPLATE_FILE";
     exit 1);
   let dkml_home = Sys.getenv "DiskuvOCamlHome" in
-  prerr_endline ("dkml_home = " ^ dkml_home);
-  prerr_endline ("PATH = " ^ (Sys.getenv "PATH"));
+  if not !quiet_ref then prerr_endline ("dkml_home = " ^ dkml_home);
+  if not !quiet_ref then prerr_endline ("PATH = " ^ (Sys.getenv "PATH"));
+  let cygpath = Cmd.v "cygpath" in
   let dkml_home_windows =
-    Feather.(process "cygpath" [ "-aw"; dkml_home ] |> collect stdout)
+    let cmd = Cmd.(cygpath % "-aw" % dkml_home) in
+    Result.get_ok OS.Cmd.(run_out cmd |> to_string ~trim:true)
   in
   let dkml_home_mixed =
-    Feather.(process "cygpath" [ "-am"; dkml_home ] |> collect stdout)
+    let cmd = Cmd.(cygpath % "-am" % dkml_home) in
+    Result.get_ok OS.Cmd.(run_out cmd |> to_string ~trim:true)
   in
   let dkml_home_unix =
-    Feather.(process "cygpath" [ "-au"; dkml_home ] |> collect stdout)
+    let cmd = Cmd.(cygpath % "-au" % dkml_home) in
+    Result.get_ok OS.Cmd.(run_out cmd |> to_string ~trim:true)
   in
   let models =
     [

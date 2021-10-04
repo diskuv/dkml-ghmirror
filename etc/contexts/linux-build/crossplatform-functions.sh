@@ -30,6 +30,7 @@
 
 export SHARE_OCAML_OPAM_REPO_RELPATH=share/diskuv-ocaml/ocaml-opam-repo
 export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
+export SHARE_FUNCTIONS_RELPATH=share/diskuv-ocaml/functions
 
 # Prefer dash if it is there because it is average 4x faster than bash and should
 # be much more secure. Otherwise /bin/sh which should always be a POSIX
@@ -463,7 +464,7 @@ autodetect_cpus() {
 }
 
 # Detects a compiler like Visual Studio and sets its variables.
-# autodetect_compiler OUT_LAUNCHER.sh [EXTRA_PREFIX]
+# autodetect_compiler [--sexp] OUTPUT_SCRIPT_OR_SEXP [EXTRA_PREFIX]
 #
 # Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
 #
@@ -474,7 +475,12 @@ autodetect_cpus() {
 # The generated launcher.sh behaves like a `env` command. You may place environment variable
 # definitions before your target executable. Also you may use `-u name` to unset an environment
 # variable. In fact, if there is no compiler detected than the generated launcher.sh is simply
-# a file containing the line `exec env "$@"`
+# a file containing the line `exec env "$@"`. The launcher script will prepend to the existing
+# PATH (and replace most other environment variables), so it can be re-usable if used with care.
+#
+# If `--sexp` was used, then the output file is an s-expr (https://github.com/janestreet/sexplib#lexical-conventions-of-s-expression)
+# file. It contains an association list of the environment variables; that is, a list of pairs where each pair is a 2-element
+# list (KEY VALUE). The s-exp output will always use the full Windows PATH.
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
@@ -505,6 +511,11 @@ autodetect_cpus() {
 # - 0: Success
 # - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
 autodetect_compiler() {
+    autodetect_compiler_SEXP=OFF
+    if [ "$1" = --sexp ]; then
+        autodetect_compiler_SEXP=ON
+        shift
+    fi
     autodetect_compiler_LAUNCHER="$1"
     shift
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
@@ -514,9 +525,14 @@ autodetect_compiler() {
     autodetect_posix_shell
 
     # Initialize output script and variables in case of failure
-    printf '#!%s\nexec env "$@"\n' "$DKML_POSIX_SHELL" > "$autodetect_compiler_LAUNCHER".tmp
-    chmod +x "$autodetect_compiler_LAUNCHER".tmp
-    mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    if [ "$autodetect_compiler_SEXP" = ON ]; then
+        printf '()' > "$autodetect_compiler_LAUNCHER".tmp
+        mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    else
+        printf '#!%s\nexec env "$@"\n' "$DKML_POSIX_SHELL" > "$autodetect_compiler_LAUNCHER".tmp
+        chmod +x "$autodetect_compiler_LAUNCHER".tmp
+        mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    fi
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_WINDOWS=
 
@@ -735,12 +751,13 @@ autodetect_compiler() {
         cp "$autodetect_compiler_TEMPDIR/winpath.txt" "$autodetect_compiler_TEMPDIR"/unixpath.txt
     fi
     # shellcheck disable=SC2034
-    autodetect_compiler_COMPILER_PATH=$(cat "$autodetect_compiler_TEMPDIR"/unixpath.txt)
+    autodetect_compiler_COMPILER_PATH_UNIX=$(cat "$autodetect_compiler_TEMPDIR"/unixpath.txt)
+    autodetect_compiler_COMPILER_PATH_WIN=$(cat "$autodetect_compiler_TEMPDIR"/winpath.txt)
 
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    printf "%s\n" "$autodetect_compiler_COMPILER_PATH" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+    printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
     sort -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
     printf "%s\n" "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
     comm \
@@ -760,32 +777,61 @@ autodetect_compiler() {
         fi
     done < "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
 
-    # SEVENTH, make the launcher script
-    autodetect_compiler_escape_as_single_quoted_argument() {
-        # Since we will embed each name/value pair in single quotes
-        # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
-        # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
-        # we need to replace single quotes (') with ('"'"').
-        sed "s#'#'\"'\"'#g" "$@"
-    }
+    # SEVENTH, make the launcher script or s-exp
+    if [ "$autodetect_compiler_SEXP" = ON ]; then
+        autodetect_compiler_escape() {
+            # Each s-exp string must follow OCaml syntax (escape double-quotes and backslashes)
+            # Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`
+            sed 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
+        }
+    else
+        autodetect_compiler_escape() {
+            # Since we will embed each name/value pair in single quotes
+            # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
+            # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
+            # we need to replace single quotes (') with ('"'"').
+            sed "s#'#'\"'\"'#g" "$@"
+        }
+    fi
     {
-        printf "%s\n" "#!$DKML_POSIX_SHELL"
-        printf "%s\n" "exec env \\"
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf "(\n"
+        else
+            printf "%s\n" "#!$DKML_POSIX_SHELL"
+            printf "%s\n" "exec env \\"
+        fi
 
         # Add all but PATH and MSVS_PREFERENCE to launcher environment
-        autodetect_compiler_escape_as_single_quoted_argument "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
-            printf "%s\n" "  '$autodetect_compiler_line' \\";
+        autodetect_compiler_escape "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
+            if [ "$autodetect_compiler_SEXP" = ON ]; then
+                printf "%s\n" "  (\"$autodetect_compiler_line\")";
+            else
+                printf "%s\n" "  '$autodetect_compiler_line' \\";
+            fi
         done
 
         # Add MSVS_PREFERENCE
-        printf "%s\n" "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf "%s\n" "  (\"MSVS_PREFERENCE\" \"$autodetect_compiler_VSSTUDIOMSVSPREFERENCE\")"
+        else
+            printf "%s\n" "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
+        fi
 
         # Add PATH
-        autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape_as_single_quoted_argument)
-        printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            autodetect_compiler_COMPILER_PATH_WIN_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_PATH_WIN" | autodetect_compiler_escape)
+            printf "%s\n" "  (\"PATH\" \"$autodetect_compiler_COMPILER_PATH_WIN_QUOTED\")"
+        else
+            autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape)
+            printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
+        fi
 
-        # Add arguments
-        printf "%s\n" '  "$@"'
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf ")"
+        else
+            # Add arguments
+            printf "%s\n" '  "$@"'
+        fi
     } > "$autodetect_compiler_LAUNCHER".tmp
     chmod +x "$autodetect_compiler_LAUNCHER".tmp
     mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
