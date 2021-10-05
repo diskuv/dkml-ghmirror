@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ----------------------------
 # Copyright 2021 Diskuv, Inc.
 #
@@ -54,6 +54,7 @@ fi
 # Run the Moby download script, which relies on `jq`
 # For MSYS2 on Windows, let the files named `json` be translated to Windows paths
 which jq >&2
+which curl >&2
 env TARGETARCH="$DOCKER_TARGET_ARCH" MSYS2_ARG_CONV_EXCL='json' "$FROZEN_SCRIPT" "$MOBYDIR" "$DOCKER_IMAGE"
 
 # dump out the layers in order
