@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/sh
+# Even though this is /bin/sh, Bash or Zsh or another shell will execute this script
+# when invoked from ./makeit shell or ./makeit shell-*.
 set -euf
 
 PLATFORM=$1
@@ -41,7 +43,11 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # This will also transitively include:
     # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
     # * the TOPDIR tools since platform-opam-exec -> within-dev
-    SHELL_WINDOWS=$(cygpath -aw "$SHELL")
+    if [ -x /usr/bin/cygpath ]; then
+        SHELL_WINDOWS=$(/usr/bin/cygpath -aw "$SHELL")
+    else
+        SHELL_WINDOWS="$SHELL"
+    fi
     if [ -n "${BUILDTYPE:-}" ]; then
         "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
     else
@@ -49,14 +55,15 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     fi
 
     # Remove environment variables that are readonly (like UID) or simply should come from our
-    # environment rather than platform-opam-exec (like DKML_BUILD_TRACE and TERM)
-    grep -Ev '^(BASH.*|DKML_BUILD_TRACE|DKMAKE_.*|DIRSTACK|EUID|GROUPS|LOGON.*|MAKE.*|PPID|SHELLOPTS|TEMP|TERM|UID|USERDOMAIN.*|_)=' "$WORK/1.sh" |
+    # environment rather than platform-opam-exec (like DKML_BUILD_TRACE and TERM).
+    # If you get `read-only variables: ARGC` or something similar, you need to edit these.
+    grep -Ev '^(0|ZSH_.*|BASH.*|ARGC|HISTCMD|LINENO|TTYIDLE|status|zsh_.*|DKML_BUILD_TRACE|DKMAKE_.*|DIRSTACK|EUID|GROUPS|LOGON.*|MAKE.*|PPID|SHELLOPTS|TEMP|TERM|UID|USERDOMAIN.*|_)=' "$WORK/1.sh" |
         grep -E '^[A-Za-z0-9_]+=' |
         sed 's/^/export /' > "$WORK/2.sh"
 
     # Read the remaining environment variables into this shell
     # shellcheck disable=SC1091
-    source "$WORK/2.sh"
+    . "$WORK/2.sh"
 else
     # Add tools to the PATH
     PATH="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin:$PATH"
@@ -77,8 +84,6 @@ if [ -n "${BUILDTYPE:-}" ]; then
 else
     LABEL="$PLATFORM"
 fi
-PS1='\[\e]0;\[\033[01;32m\]'$LABEL'@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-export PS1
 
 # Change directory to where we were invoked
 if [ -n "${DKMAKE_CALLING_DIR:-}" ]; then
@@ -93,22 +98,43 @@ unset DKMAKE_CALLING_DIR DKMAKE_INTERNAL_MAKE MAKEFLAGS MAKE_TERMERR MAKELEVEL T
 # Must clean WORK because we are about to do an exec
 rm -rf "$WORK"
 
+# ----
+# We will use "$@" since it is the only /bin/sh array
+# ----
+
+# Reset array
+set --
+
+# Select shell
 if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ]; then
-    exec_shell() {
-        if [ -x /usr/bin/cygpath ]; then
-            exec_shell_SHELL=$(/usr/bin/cygpath -aw "$SHELL")
-        else
-            exec_shell_SHELL="$SHELL"
-        fi
-        exec "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" "$exec_shell_SHELL" "$@"
-    }
+    if [ -x /usr/bin/cygpath ]; then
+        exec_shell_SHELL=$(/usr/bin/cygpath -aw "$SHELL")
+    else
+        exec_shell_SHELL="$SHELL"
+    fi
+    set -- "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" "$exec_shell_SHELL" "$@"
 else
-    exec_shell() {
-        exec "$SHELL" "$@"
-    }
+    set -- "$SHELL" "$@"
 fi
+
+# Skip user profile or rc file. Set command prompt
+if [ -n "${ZSH_VERSION:-}" ]; then
+    set -- "$@" --no-rcs
+    unset -v PS1
+    PS1='%F{green}'$LABEL'@%m%f:%F{blue}%1~%f%F{magenta}$%f '
+elif [ -n "${BASH_VERSION:-}" ]; then
+    set -- "$@" --noprofile --norc
+    export PS1='\[\e]0;\[\033[01;32m\]'$LABEL'@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+fi
+
+# Add interactivity
+if [ -z "${SHELL_SCRIPTFILE:-}" ]; then
+    set -- "$@" -i
+fi
+
+# Run shell script if specified
 if [ -n "${SHELL_SCRIPTFILE:-}" ]; then
-    exec_shell --noprofile --norc "${SHELL_SCRIPTFILE}"
-else
-    exec_shell --noprofile --norc -i
+    set -- "$@" "${SHELL_SCRIPTFILE}"
 fi
+
+exec "$@"
