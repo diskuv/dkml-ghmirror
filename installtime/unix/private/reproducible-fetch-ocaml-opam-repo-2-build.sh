@@ -126,11 +126,11 @@ fi
 
 install -d "$OOREPO_UNIX"
 if [ "${CI:-}" = true ]; then
-    log_trace rsync -a --delete \
+    log_trace rsync -a --delete --delete-excluded \
         --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
         "$DESIRED"/cygwin64/home/opam/opam-repository/ "$OOREPO_UNIX"
 else
-    log_trace rsync -a --info=progress2 --human-readable --delete \
+    log_trace rsync -a --info=progress2 --human-readable --delete --delete-excluded \
         --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
         "$DESIRED"/cygwin64/home/opam/opam-repository/ "$OOREPO_UNIX"
 fi
