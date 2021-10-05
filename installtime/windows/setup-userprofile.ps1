@@ -294,7 +294,7 @@ if ([Environment]::Is64BitOperatingSystem) {
 $CiFlavorPackages = @(
     # Dune is needed to compile dkml-findup.exe
     "dune.2.9.0",
-    # Bos, sha and sexplib is needed to compile dkml-opam-build.exe
+    # Bos, sha and sexplib is needed to compile dkml-opam-wrapper.exe
     "bos.0.2.0",
     "sha.1.14",
     "sexplib.v0.14.0"
@@ -1288,22 +1288,22 @@ try {
     $AppsBinDir = "$ProgramPath\tools\apps"
     $FunctionsDir = "$ProgramPath\share\diskuv-ocaml\functions"
 
-    # We use crossplatform-functions.sh for dkml-opam-build.exe.
+    # We use crossplatform-functions.sh for dkml-opam-wrapper.exe.
     if (!(Test-Path -Path $FunctionsDir)) { New-Item -Path $FunctionsDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && install '$DkmlPath\etc\contexts\linux-build\crossplatform-functions.sh' '$FunctionsDir\crossplatform-functions.sh'")
 
     # Only apps, not bootstrap-apps, are installed.
-    # And we only need dkml-findup.exe and dkml-opam-build.exe for the CI Flavor.
+    # And we only need dkml-findup.exe and dkml-opam-wrapper.exe for the CI Flavor.
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe dkml-opam-build/dkml_opam_build.exe")
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe dkml-opam-wrapper/dkml_opam_wrapper.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
             "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe' && " +
-            "install '$AppsCachePath\default\dkml-opam-build\dkml_opam_build.exe' '$AppsBinDir\dkml-opam-build.exe'")
+            "install '$AppsCachePath\default\dkml-opam-wrapper\dkml_opam_wrapper.exe' '$AppsBinDir\dkml-opam-wrapper.exe'")
     if ($Flavor -eq "Full") {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +

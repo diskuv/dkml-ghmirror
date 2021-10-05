@@ -224,7 +224,7 @@ case "$subcommand" in
     init)
         exec_in_platform opam init --root "$OPAMROOTDIR_EXPAND" "${OPAM_OPTS[@]}" "$@"
     ;;
-    list)
+    list | option | repository | env)
         COMPILATION=OFF exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
     *)

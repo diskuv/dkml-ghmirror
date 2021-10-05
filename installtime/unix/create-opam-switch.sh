@@ -174,11 +174,11 @@ else
     TARGET_ARCH=$PLATFORM
 fi
 
+# Set $DiskuvOCamlHome and other vars
+autodetect_dkmlvars || true
+
 echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-    # Set $DiskuvOCamlHome and other vars
-    autodetect_dkmlvars
-
     # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
     set_opamrootdir
 
@@ -388,16 +388,43 @@ PKG_CONFIG_PATH_ADD=$(echo "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 {
     cat "$WORK"/nonswitchexec.sh
-    echo "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
+    printf "%s" "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
 } > "$WORK"/setenv.sh
 log_shell "$WORK"/setenv.sh
 
 if is_unixy_windows_build_machine; then
     {
         cat "$WORK"/nonswitchexec.sh
-        echo "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
+        printf "%s" "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
+fi
+
+if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
+        [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.exist" ] && \
+        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" ]; then
+    # We can't put dkml-opam-wrapper.exe into Diskuv System switches because dkml-opam-wrapper.exe currently needs a system switch to compile itself.
+    printf "%s" "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
+    DOW_PATH=$(cat "$WORK"/dow.path)
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option wrap-build-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+    } > "$WORK"/wbc.sh
+    log_shell "$WORK"/wbc.sh
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option wrap-install-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+    } > "$WORK"/wbc.sh
+    log_shell "$WORK"/wbc.sh
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option wrap-remove-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+    } > "$WORK"/wbc.sh
+    log_shell "$WORK"/wbc.sh
+
+    # Done. Don't repeat anymore
+    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.exist"
 fi
 
 # END opam option
@@ -427,7 +454,7 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     {
         # Input: dune-configurator,2.9.0
         # Output:  "dune-configurator.2.9.0"
-        echo "$PINNED_PACKAGES_DKML_PATCHES $PINNED_PACKAGES_OPAM" | xargs -n1 printf '  "%s"\n' | sed 's/,/./'
+        printf "%s" "$PINNED_PACKAGES_DKML_PATCHES $PINNED_PACKAGES_OPAM" | xargs -n1 printf '  "%s"\n' | sed 's/,/./'
 
         # fdopen-mingw has pins that must be used since we've trimmed the fdopen repository
         if is_unixy_windows_build_machine; then
@@ -440,11 +467,11 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
     # The pins should also be unique
     sort -u "$WORK"/new-pinned > "$WORK"/new-pinned.uniq
     if ! cmp -s "$WORK"/new-pinned "$WORK"/new-pinned.uniq; then
-        echo "FATAL: The pins should be unique! Instead we have some duplicated entries that may lead to problems:" >&2
+        printf "%s\n" "FATAL: The pins should be unique! Instead we have some duplicated entries that may lead to problems:" >&2
         diff "$WORK"/new-pinned "$WORK"/new-pinned.uniq >&2 || true
-        echo "(Debugging) PINNED_PACKAGES_DKML_PATCHES=$PINNED_PACKAGES_DKML_PATCHES" >&2
-        echo "(Debugging) PINNED_PACKAGES_OPAM=$PINNED_PACKAGES_OPAM" >&2
-        echo "(Debugging) Pins at '$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/pins.txt'" >&2
+        printf "%s\n" "(Debugging) PINNED_PACKAGES_DKML_PATCHES=$PINNED_PACKAGES_DKML_PATCHES" >&2
+        printf "%s\n" "(Debugging) PINNED_PACKAGES_OPAM=$PINNED_PACKAGES_OPAM" >&2
+        printf "%s\n" "(Debugging) Pins at '$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/pins.txt'" >&2
         exit 1
     fi
 
@@ -469,7 +496,7 @@ if is_unixy_windows_build_machine; then
         if [ "$YES" = ON ]; then OPAM_PIN_ADD_ARGS="$OPAM_PIN_ADD_ARGS --yes"; fi
         {
             cat "$WORK"/nonswitchexec.sh
-            echo "  ${OPAM_PIN_ADD_ARGS} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'"
+            printf "%s" "  ${OPAM_PIN_ADD_ARGS} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'"
         } > "$WORK"/pinadd.sh
         log_shell "$WORK"/pinadd.sh
     fi

@@ -463,6 +463,83 @@ autodetect_cpus() {
     export NUMCPUS
 }
 
+# Set VSDEV_HOME_UNIX and VSDEV_HOME_WINDOWS
+#
+# Inputs:
+# - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
+# - env:PLATFORM - Optional; if missing treated as 'dev'. This variable will select the Visual Studio
+#   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
+#   a native compilation.
+# - env:WORK - Optional. If provided will be used as temporary directory
+# - env:DKML_VSSTUDIO_DIR - Optional. If provided with all three (3) DKML_VSSTUDIO_* variables the
+#   specified installation directory of Visual Studio will be used.
+#   The directory should contain VC and Common7 subfolders.
+# - env:DKML_VSSTUDIO_VCVARSVER - Optional. If provided it must be a version that can locate the Visual Studio
+#   installation in DKML_VSSTUDIO_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
+# - env:DKML_VSSTUDIO_WINSDKVER - Optional. If provided it must be a version that can locate the Windows SDK
+#   kit when `vsdevcmd.bat -winsdk=VERSION` is invoked. Example: `10.0.18362.0`
+# - env:DKML_VSSTUDIO_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
+#   value that can locate the Visual Studio installation in DKML_VSSTUDIO_DIR when
+#   https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
+# Outputs:
+# - env:DKMLPARENTHOME_BUILDHOST
+# - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Empty otherwise
+# - env:VSDEV_HOME_WINDOWS is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Empty otherwise
+# Return Values:
+# - 0: Success
+# - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
+autodetect_vsdev() {
+    # Set DKMLPARENTHOME_BUILDHOST
+    set_dkmlparenthomedir
+
+    export VSDEV_HOME_UNIX=
+    export VSDEV_HOME_WINDOWS=
+    export VSDEV_VCVARSVER=
+    export VSDEV_WINSDKVER=
+    export VSDEV_MSVSPREFERENCE=
+    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
+        autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
+        autodetect_vsdev_VSSTUDIOWINSDKVER=$DKML_VSSTUDIO_WINSDKVER
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
+    else
+        autodetect_vsdev_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then
+            return 1
+        fi
+        autodetect_vsdev_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE" ]; then
+            return 1
+        fi
+        autodetect_vsdev_VSSTUDIO_WINSDKVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.winsdk.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE" ]; then
+            return 1
+        fi
+        autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
+            return 1
+        fi
+        autodetect_vsdev_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
+        autodetect_vsdev_VSSTUDIOWINSDKVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE")
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
+    fi
+    if [ -x /usr/bin/cygpath ]; then
+        autodetect_vsdev_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_vsdev_VSSTUDIODIR")
+    fi
+    VSDEV_HOME_UNIX="$autodetect_vsdev_VSSTUDIODIR"
+    if [ -x /usr/bin/cygpath ]; then
+        VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
+    else
+        VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
+    fi
+    VSDEV_VCVARSVER="$autodetect_vsdev_VSSTUDIOVCVARSVER"
+    VSDEV_WINSDKVER="$autodetect_vsdev_VSSTUDIOWINSDKVER"
+    VSDEV_MSVSPREFERENCE="$autodetect_vsdev_VSSTUDIOMSVSPREFERENCE"
+}
+
 # Detects a compiler like Visual Studio and sets its variables.
 # autodetect_compiler [--sexp] OUTPUT_SCRIPT_OR_SEXP [EXTRA_PREFIX]
 #
@@ -551,57 +628,19 @@ autodetect_compiler() {
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
     fi
 
-    # Set DKMLPARENTHOME_BUILDHOST
-    set_dkmlparenthomedir
-
     # Autodetect BUILDHOST_ARCH
     build_machine_arch
     if [ "$BUILDHOST_ARCH" != windows_x86 ] && [ "$BUILDHOST_ARCH" != windows_x86_64 ]; then
         return 0
     fi
 
-    # Set VSDEV_HOME_*
-    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
-        autodetect_compiler_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
-        autodetect_compiler_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
-        autodetect_compiler_VSSTUDIOWINSDKVER=$DKML_VSSTUDIO_WINSDKVER
-        autodetect_compiler_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
-    else
-        autodetect_compiler_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
-        if [ ! -e "$autodetect_compiler_VSSTUDIO_DIRFILE" ]; then
-            return 1
-        fi
-        autodetect_compiler_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
-        if [ ! -e "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE" ]; then
-            return 1
-        fi
-        autodetect_compiler_VSSTUDIO_WINSDKVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.winsdk.txt"
-        if [ ! -e "$autodetect_compiler_VSSTUDIO_WINSDKVERFILE" ]; then
-            return 1
-        fi
-        autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
-        if [ ! -e "$autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
-            return 1
-        fi
-        autodetect_compiler_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_DIRFILE")
-        autodetect_compiler_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_VCVARSVERFILE")
-        autodetect_compiler_VSSTUDIOWINSDKVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_WINSDKVERFILE")
-        autodetect_compiler_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_compiler_VSSTUDIO_MSVSPREFERENCEFILE")
-    fi
-    if [ -x /usr/bin/cygpath ]; then
-        autodetect_compiler_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_compiler_VSSTUDIODIR")
-    fi
-    VSDEV_HOME_UNIX="$autodetect_compiler_VSSTUDIODIR"
-    if [ -x /usr/bin/cygpath ]; then
-        VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
-    else
-        VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
-    fi
+    # Set DKMLPARENTHOME_BUILDHOST and VSDEV_*
+    autodetect_vsdev
 
     # MSYS2 detection.
     # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat.
-    if [ -e "$autodetect_compiler_VSSTUDIODIR"/Common7/Tools/VsDevCmd.bat ]; then
-        autodetect_compiler_VSDEVCMD="$autodetect_compiler_VSSTUDIODIR/Common7/Tools/VsDevCmd.bat"
+    if [ -e "$VSDEV_HOME_UNIX"/Common7/Tools/VsDevCmd.bat ]; then
+        autodetect_compiler_VSDEVCMD="$VSDEV_HOME_UNIX/Common7/Tools/VsDevCmd.bat"
     else
         return 1
     fi
@@ -645,7 +684,7 @@ autodetect_compiler() {
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             autodetect_compiler_vsdev_dump_vars() {
                 env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" -winsdk="$autodetect_compiler_VSSTUDIOWINSDKVER" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x86 >&2
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
@@ -653,7 +692,7 @@ autodetect_compiler() {
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
                 env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" -winsdk="$autodetect_compiler_VSSTUDIOWINSDKVER" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=x64 >&2
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
@@ -666,7 +705,7 @@ autodetect_compiler() {
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             autodetect_compiler_vsdev_dump_vars() {
                 env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" -winsdk="$autodetect_compiler_VSSTUDIOWINSDKVER" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x64 >&2
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
@@ -674,7 +713,7 @@ autodetect_compiler() {
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
                 env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$autodetect_compiler_VSSTUDIOVCVARSVER" -winsdk="$autodetect_compiler_VSSTUDIOWINSDKVER" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=x86 >&2
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
@@ -812,9 +851,9 @@ autodetect_compiler() {
 
         # Add MSVS_PREFERENCE
         if [ "$autodetect_compiler_SEXP" = ON ]; then
-            printf "%s\n" "  (\"MSVS_PREFERENCE\" \"$autodetect_compiler_VSSTUDIOMSVSPREFERENCE\")"
+            printf "%s\n" "  (\"MSVS_PREFERENCE\" \"$VSDEV_MSVSPREFERENCE\")"
         else
-            printf "%s\n" "  MSVS_PREFERENCE='$autodetect_compiler_VSSTUDIOMSVSPREFERENCE' \\"
+            printf "%s\n" "  MSVS_PREFERENCE='$VSDEV_MSVSPREFERENCE' \\"
         fi
 
         # Add PATH

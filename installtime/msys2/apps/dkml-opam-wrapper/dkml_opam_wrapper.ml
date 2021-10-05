@@ -264,7 +264,7 @@ let main_with_result () =
   Logs.debug (fun m -> m "Current directory: %a" Fpath.pp current_dir);
   Logs.debug (fun m -> m "DKML home directory: %a" Fpath.pp dkmlhome_dir);
   Logs.debug (fun m -> m "MSYS2 directory: %a" Fpath.pp msys2_dir);
-  Logs.info (fun m -> m "Running build command: %a" Cmd.pp cmd);
+  Logs.info (fun m -> m "Running command: %a" Cmd.pp cmd);
 
   (* Run the command *)
   OS.Cmd.run_status cmd >>| function

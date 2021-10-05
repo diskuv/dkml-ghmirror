@@ -32,6 +32,9 @@ platform_vcpkg_triplet
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
 
+# Set $DiskuvOCamlHome and other vars if on Windows
+autodetect_dkmlvars || true
+
 # If and only the Opam root exists ...
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Dump all the environment variables that Opam tells us.
@@ -90,8 +93,22 @@ unset DKMAKE_CALLING_DIR DKMAKE_INTERNAL_MAKE MAKEFLAGS MAKE_TERMERR MAKELEVEL T
 # Must clean WORK because we are about to do an exec
 rm -rf "$WORK"
 
-if [ -n "${SHELL_SCRIPTFILE:-}" ]; then
-    exec "$SHELL" --noprofile --norc "${SHELL_SCRIPTFILE}"
+if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ]; then
+    exec_shell() {
+        if [ -x /usr/bin/cygpath ]; then
+            exec_shell_SHELL=$(/usr/bin/cygpath -aw "$SHELL")
+        else
+            exec_shell_SHELL="$SHELL"
+        fi
+        exec "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" "$exec_shell_SHELL" "$@"
+    }
 else
-    exec "$SHELL" --noprofile --norc -i
+    exec_shell() {
+        exec "$SHELL" "$@"
+    }
+fi
+if [ -n "${SHELL_SCRIPTFILE:-}" ]; then
+    exec_shell --noprofile --norc "${SHELL_SCRIPTFILE}"
+else
+    exec_shell --noprofile --norc -i
 fi

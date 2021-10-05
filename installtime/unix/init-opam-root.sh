@@ -318,9 +318,8 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     install -d "$VCPKG_UNIX"/downloads
     touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
-    # Autodetect VSDEV_HOME_WINDOWS on Windows.
-    # We only care about the output VSDEV_HOME_* environment values.
-    autodetect_compiler "$WORK"/launch-compiler.sh
+    # Set DKMLPARENTHOME_BUILDHOST and autodetect VSDEV_HOME_WINDOWS
+    autodetect_vsdev
 
     # Set VCPKG_VISUAL_STUDIO_PATH
     if is_unixy_windows_build_machine; then

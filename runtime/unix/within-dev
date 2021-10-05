@@ -142,7 +142,7 @@ if [ -n "$PREHOOK" ]; then
         *:/usr/bin:*) ;;
         *)
             PATH=/usr/bin:/bin:"$PATH"
-    esac        
+    esac
 fi
 
 # Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
@@ -158,19 +158,23 @@ fi
 # Autodetect compiler like Visual Studio on Windows.
 LAUNCHER="$WORK"/launch-compiler.sh
 if [ "$COMPILATION" = ON ]; then
-    set +e
-    if [ -n "$VCPKG_INSTALLED_PACKAGES" ]; then
-        autodetect_compiler "$LAUNCHER" "$VCPKG_INSTALLED_PACKAGES"
-    else
-        autodetect_compiler "$LAUNCHER"
+    # If we have an Opam switch with a Opam command wrapper, we don't need to waste a few seconds detecting the compiler.
+    if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX"/.dkml/wrap-commands.exist ]; then
+        set +e
+        if [ -n "$VCPKG_INSTALLED_PACKAGES" ]; then
+            autodetect_compiler "$LAUNCHER" "$VCPKG_INSTALLED_PACKAGES"
+        else
+            autodetect_compiler "$LAUNCHER"
+        fi
+        EXITCODE=$?
+        set -e
+        if [ $EXITCODE -ne 0 ]; then
+            echo "FATAL: Your system is missing a compiler, which should be installed if you have completed the Diskuv OCaml installation"
+            exit 1
+        fi
     fi
-    EXITCODE=$?
-    set -e
-    if [ $EXITCODE -ne 0 ]; then
-        echo "FATAL: Your system is missing a compiler, which should be installed if you have completed the Diskuv OCaml installation"
-        exit 1
-    fi
-else
+fi
+if [ ! -e "$LAUNCHER" ]; then
     echo 'exec env "$@"' > "$LAUNCHER"
 fi
 
