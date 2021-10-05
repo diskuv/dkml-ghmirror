@@ -27,19 +27,49 @@
 
 set -euf
 
+# Compiler specific package versions.
+# These are required for the compiler version DKML supports.
+export PREPINNED_4_12_0_PACKAGE_VERSIONS=(
+    "camlp4:4.12+system"
+    "merlin:4.3.1-412"
+    "ocaml:4.12.0"
+    "ocamlbrowser:4.12.0"
+    "ocaml-src:4.12.0"
+)
+export PREPINNED_4_12_1_PACKAGE_VERSIONS=(
+    "camlp4:4.12+system"
+    "merlin:4.3.1-412"
+    "ocaml:4.12.1"
+    "ocamlbrowser:4.12.0"
+    "ocaml-src:4.12.1"
+)
+export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
+    "camlp4:4.13+system"
+    "merlin:4.3.2~4.13preview"
+    "ocaml:4.13.1"
+    "ocamlbrowser:4.13.0" # not a typo! 4.13.0 is latest
+    "ocaml-src:4.13.1"
+)
+
+# Compiler agnostic package versions.
+#
 # The first section:
 # * These are packages that are pinned because they are not lexographically the latest
 # The second section:
-# * The $DistributionPackages in installtime\windows\setup-userprofile.ps1
-export PREPINNED_PACKAGE_VERSIONS=(
+# * The $*FlavorPackages in installtime\windows\setup-userprofile.ps1
+export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "seq:base"
 
+    "bos:0.2.0"
     "dune:2.9.0"
     "jingoo:1.4.3"
-    "ocaml-lsp-server:1.7.0"
+    "lsp:1.8.2"
+    "ocaml-lsp-server:1.8.2"
     "ocamlfind:1.9.1"
     "ocamlformat:0.19.0"
     "ocamlformat-rpc:0.19.0"
+    "sexplib:v0.14.0"
+    "sha:1.14"
     "utop:2.8.0"
 )
 
@@ -160,11 +190,11 @@ true > "$WORK"/pins
 install -d "$WORK"/pin-assembly
 
 # [assemble_prepins] populates PREPINNED_PACKAGES and PREPINNED_VERSIONS from
-# PREPINNED_PACKAGE_VERSIONS, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
+# PREPINNED_AGNOSTIC_PACKAGE_VERSIONS and PREPINNED_4_12_0_PACKAGE_VERSIONS, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
 assemble_prepins() {
     assemble_prepins_PREPINNED_PACKAGES=()
     assemble_prepins_PREPINNED_VERSIONS=()
-    for ppv in "${PREPINNED_PACKAGE_VERSIONS[@]}" ; do
+    for ppv in "${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_0_PACKAGE_VERSIONS[@]}" ; do
         PPKG="${ppv%%:*}"
         PVER="${ppv##*:}"
         assemble_prepins_PREPINNED_PACKAGES+=("$PPKG")

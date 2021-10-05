@@ -306,7 +306,8 @@ $FullFlavorPackages = $CiFlavorPackages + @(
     # For dkml_templatizer; may be used for creating local projects as well.
     "jingoo.1.4.3",
 
-    "ocaml-lsp-server.1.7.0",
+    "lsp.1.8.2",
+    "ocaml-lsp-server.1.8.2",
     "ocamlfind.1.9.1",
     "ocamlformat.0.19.0",
     "ocamlformat-rpc.0.19.0",
