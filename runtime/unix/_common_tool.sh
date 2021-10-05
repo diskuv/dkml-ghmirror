@@ -576,3 +576,27 @@ print_opam_logs_on_error() {
     # restore old state
     eval "$print_opam_logs_on_error_OLDSTATE"
 }
+
+# [spawn_rsync ARGS] runs an rsync with options selected for human readability or for CI.
+# You do not need to specify the options:
+# * --info=progress2
+# * --human-readable
+spawn_rsync() {
+    if [ "${CI:-}" = true ]; then
+        rsync "$@"
+    else
+        # test whether --info=progress2 works
+        spawn_rsync_D1=$(mktemp -d "$WORK"/tmp.XXXXXXXXXX)
+        spawn_rsync_D2=$(mktemp -d "$WORK"/tmp.XXXXXXXXXX)
+        spawn_rsync_IP2=ON
+        rsync -ap --info=progress2 "$spawn_rsync_D1"/ "$spawn_rsync_D2" 2>/dev/null >/dev/null || spawn_rsync_IP2=OFF
+        rm -rf "$spawn_rsync_D2"
+        rm -rf "$spawn_rsync_D1"
+
+        if [ "$spawn_rsync_IP2" = ON ]; then
+            rsync --info=progress2 --human-readable "$@"
+        else
+            rsync --human-readable "$@"
+        fi
+    fi
+}

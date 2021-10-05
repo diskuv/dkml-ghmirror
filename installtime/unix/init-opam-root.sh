@@ -133,11 +133,7 @@ if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
                 "$OPAMREPOS_UNIX"/fdopen-mingw
         fi
     fi
-    if [ "${CI:-}" = true ]; then
-        log_trace rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
-    else
-        log_trace rsync -ap --info=progress2 --human-readable "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
-    fi
+    log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
     touch "$OPAMREPOS_UNIX".complete
 fi
 
