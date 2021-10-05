@@ -13,7 +13,6 @@ usage() {
     echo "Usage:" >&2
     echo "    within-dev -h                          Display this help message." >&2
     echo "    within-dev -h                          Display this help message." >&2
-    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE]              Enter the dev platform with an interactive bash shell." >&2
     echo "    within-dev [-p PLATFORM] [-b BUILDTYPE] command ...  Run the command and any arguments in the dev platform." >&2
     echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and BUILDDIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the dev platform" >&2
@@ -68,6 +67,11 @@ while getopts ":hb:p:1:n" opt; do
 done
 shift $((OPTIND -1))
 
+if [ $# -eq 0 ]; then
+    usage
+    exit 1
+fi
+
 # END Command line processing
 # ------------------
 
@@ -86,7 +90,7 @@ fi
 platform_vcpkg_triplet
 
 # Essential environment values.
-ENV_ARGS=(
+LAUNCHER_ARGS=(
     # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
     DKML_TOOLS_DIR="$TOPDIR/$TOOLSDIR"
     DKML_TOOLSCOMMON_DIR="$TOPDIR/$TOOLSCOMMONDIR"
@@ -102,7 +106,7 @@ disambiguate_filesystem_paths
 
 # If and only if [-b BUILDDIR] specified
 if [ -n "${BUILDTYPE:-}" ]; then
-    ENV_ARGS+=(
+    LAUNCHER_ARGS+=(
         DK_BUILD_DIR="$TOPDIR/$BUILDDIR"
     )
 fi
@@ -178,6 +182,18 @@ if [ ! -e "$LAUNCHER" ]; then
     echo 'exec env "$@"' > "$LAUNCHER"
 fi
 
+# If macOS then make sure we are running the correct architecture.
+# Can really only switch if the launched command is a Universal binary.
+case "$PLATFORM" in
+    darwin_arm64)
+        # arm64 will be tried first, and then arm64e (Apple Silicon)
+        LAUNCHER_ARGS+=(/usr/bin/arch -arch arm64)
+        ;;
+    darwin_x86_64)
+        LAUNCHER_ARGS+=(/usr/bin/arch -arch x86_64)
+        ;;
+esac
+
 # We should not rely on the PATH ordering.
 # Also, on GitHub Actions windows-2019 environment, the PATH will have both
 # MinGW from Git (including bash.exe and sh.exe) and make.exe from Chocolatey in the command
@@ -193,9 +209,4 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)
-if [ $# -eq 0 ]; then
-    # shellcheck disable=SC2016
-    log_shell "$LAUNCHER" "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
-else
-    log_shell "$LAUNCHER" "${ENV_ARGS[@]}" "$@"
-fi
+log_shell "$LAUNCHER" "${LAUNCHER_ARGS[@]}" "$@"

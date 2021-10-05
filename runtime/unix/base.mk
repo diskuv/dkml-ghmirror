@@ -247,7 +247,7 @@ define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	if ! is_arg_windows_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
+	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
@@ -415,7 +415,7 @@ define UPDATE_template
   .PHONY: update-$(1)
   update-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam update; fi
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam update; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPDATE_template,$(platform))))
@@ -436,7 +436,7 @@ define UPGRADE_template
   .PHONY: upgrade-$(1)
   upgrade-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam upgrade; fi
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam upgrade; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPGRADE_template,$(platform))))
@@ -538,10 +538,10 @@ dkml-report: buildconfig/dune
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				echo; \
-				if is_arg_windows_platform $(platform)"; then \
-				  within="'$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype)"; \
-				else \
+				if is_arg_linux_based_platform $(platform)"; then \
 				  within="'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype)"; \
+				else \
+				  within="'$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype)"; \
 				fi; \
 				DKML_BUILD_TRACE=OFF $$within uname -a || true; \
 				echo; \

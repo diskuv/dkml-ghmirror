@@ -115,12 +115,35 @@ is_cygwin_build_machine() {
     return 1
 }
 
+# Inputs:
+# - $1 - The PLATFORM
 is_arg_windows_platform() {
     case "$1" in
         windows_x86)    return 0;;
         windows_x86_64) return 0;;
         dev)            if is_unixy_windows_build_machine; then return 0; else return 1; fi ;;
         *)              return 1;;
+    esac
+}
+
+# Linux and Android are Linux based platforms
+# Inputs:
+# - $1 - The PLATFORM
+# Outputs:
+# - BUILDHOST_ARCH
+is_arg_linux_based_platform() {
+    build_machine_arch
+    case "$1" in
+        linux_*)    return 0;;
+        android_*)  return 0;;
+        dev)
+            case "$BUILDHOST_ARCH" in
+                linux_*)    return 0;;
+                android_*)  return 0;;
+                *)          return 1;;
+            esac
+            ;;
+        *)          return 1;;
     esac
 }
 
@@ -393,6 +416,8 @@ platform_vcpkg_triplet() {
         dev-darwin_x86_64)    PLATFORM_VCPKG_TRIPLET=x64-osx ;;
         windows_x86-*)        PLATFORM_VCPKG_TRIPLET=x86-windows ;;
         windows_x86_64-*)     PLATFORM_VCPKG_TRIPLET=x64-windows ;;
+        darwin_arm64-*)       PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
+        darwin_x86_64-*)      PLATFORM_VCPKG_TRIPLET=x64-osx ;;
         *)
             printf "%s\n" "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1

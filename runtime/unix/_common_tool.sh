@@ -230,7 +230,7 @@ _exec_dev_or_arch_helper() {
     if [ "${COMPILATION:-}" = OFF ]; then
         printf "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
-    if is_dev_platform || is_unixy_windows_build_machine; then
+    if is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
             echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
             exit 79
