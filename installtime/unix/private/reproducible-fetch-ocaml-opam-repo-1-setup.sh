@@ -116,8 +116,8 @@ cd "$DKMLDIR"
 
 installtime/unix/private/download-moby-downloader.sh "$WORK"
 
-# Copy self into share/dkml-bootstrap/200-fetch-ocaml-opam-repo
-export BOOTSTRAPNAME=200-fetch-ocaml-opam-repo
+# Copy self into share/dkml-bootstrap/200-fetch-oorepo
+export BOOTSTRAPNAME=200-fetch-oorepo
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common

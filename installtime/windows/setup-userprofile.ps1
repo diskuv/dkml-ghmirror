@@ -954,13 +954,13 @@ try {
     # END Cygwin
     # ----------------------------------------------------------------
 
-    if ((Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\repo") -and (Test-Path -Path "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo\pins.txt")) {
+    if ((Test-Path -Path "$ProgramPath\share\dkml\repro\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\pins.txt")) {
         Invoke-CygwinInitialization -Skipped
     } elseif (Import-DiskuvOCamlAsset `
             -PackageName "ocaml_opam_repo-reproducible" `
             -ZipFile "ocaml-opam-repo.zip" `
             -TmpPath "$TempPath" `
-            -DestinationPath "$ProgramPath\share\diskuv-ocaml\ocaml-opam-repo") {
+            -DestinationPath "$ProgramPath\share\dkml\repro") {
         Invoke-CygwinInitialization -Skipped
     } else {
         Install-Cygwin
@@ -1286,7 +1286,7 @@ try {
 
     $AppsCachePath = "$TempPath\apps"
     $AppsBinDir = "$ProgramPath\tools\apps"
-    $FunctionsDir = "$ProgramPath\share\diskuv-ocaml\functions"
+    $FunctionsDir = "$ProgramPath\share\dkml\functions"
 
     # We use crossplatform-functions.sh for dkml-opam-wrapper.exe.
     if (!(Test-Path -Path $FunctionsDir)) { New-Item -Path $FunctionsDir -ItemType Directory | Out-Null }

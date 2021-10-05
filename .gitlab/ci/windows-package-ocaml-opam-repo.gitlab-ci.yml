@@ -1,7 +1,7 @@
 # This is split into two jobs so that each completes within the one hour time limit of a shared cluster.
 
 variables:
-  OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: '_ci\OcamlOpamRepo'
+  OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: '_ci\OOR'
 
 windows:ocaml-opam-repo-fetch-1:
   extends:
@@ -18,7 +18,7 @@ windows:ocaml-opam-repo-fetch-1:
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
-    - $REPODIR = "$DEPLOYDIR\share\diskuv-ocaml\ocaml-opam-repo"
+    - $REPODIR = "$DEPLOYDIR\share\dkml\repro"
 
     # Setup and Fetch
     - cygwin (
@@ -28,12 +28,12 @@ windows:ocaml-opam-repo-fetch-1:
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         )
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
 
     # Trim
     - date
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/diskuv-ocaml/reproducible-builds/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip

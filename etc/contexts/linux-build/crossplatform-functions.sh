@@ -28,9 +28,9 @@
 # Can be run within a container or outside of a container.
 #
 
-export SHARE_OCAML_OPAM_REPO_RELPATH=share/diskuv-ocaml/ocaml-opam-repo
-export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/diskuv-ocaml/reproducible-builds
-export SHARE_FUNCTIONS_RELPATH=share/diskuv-ocaml/functions
+export SHARE_OCAML_OPAM_REPO_RELPATH=share/dkml/repro
+export SHARE_REPRODUCIBLE_BUILD_RELPATH=share/dkml/repro
+export SHARE_FUNCTIONS_RELPATH=share/dkml/functions
 
 # Prefer dash if it is there because it is average 4x faster than bash and should
 # be much more secure. Otherwise /bin/sh which should always be a POSIX

@@ -47,4 +47,4 @@ log_trace "$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo
 cd "$INSTALLDIR"
 
 # Fetch and install
-log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-ocaml-opam-repo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
