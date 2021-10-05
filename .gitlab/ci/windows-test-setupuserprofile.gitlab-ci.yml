@@ -62,7 +62,8 @@ windows:test-setupuserprofile-2-before-create-system-switch:
   stage: build
   needs: ["windows:test-setupuserprofile-1-before-init-opam"]
   rules:
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '"1" != "1"'
   cache:
     key:
       files:
@@ -86,7 +87,8 @@ windows:test-setupuserprofile-3-before-install-system-switch:
   stage: build
   needs: ["windows:test-setupuserprofile-2-before-create-system-switch"]
   rules:
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '"1" != "1"'
   cache:
     key:
       files:
@@ -110,7 +112,8 @@ windows:test-setupuserprofile-4-remaining:
   stage: build
   needs: ["windows:test-setupuserprofile-3-before-install-system-switch"]
   rules:
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '"1" != "1"'
   cache:
     key:
       files:
