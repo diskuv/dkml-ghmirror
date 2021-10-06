@@ -531,19 +531,19 @@ dkml-report: buildconfig/dune
 	@echo PATH = $$PATH
 	@echo
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
-	@$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
+	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 			if [ -e build/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
 				echo; \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				echo; \
-				if is_arg_linux_based_platform $(platform)"; then \
-				  within="'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype)"; \
+				if is_arg_linux_based_platform $(platform); then \
+				  within='$(DKML_DIR)/runtime/unix/within-sandbox'; \
 				else \
-				  within="'$(DKML_DIR)/runtime/unix/within-dev' -p $(platform) -b $(buildtype)"; \
+				  within='$(DKML_DIR)/runtime/unix/within-dev'; \
 				fi; \
-				DKML_BUILD_TRACE=OFF $$within uname -a || true; \
+				DKML_BUILD_TRACE=OFF $$within -p $(platform) -b $(buildtype) uname -a || true; \
 				echo; \
 				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-opam-exec' -p $(platform) -b $(buildtype) config report || true; \
 				echo; \
