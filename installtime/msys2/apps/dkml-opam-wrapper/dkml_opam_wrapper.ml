@@ -180,7 +180,7 @@ let add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
         in
         let crossplatfuncs =
           Fpath.(
-            dkmlhome_dir / "share" / "diskuv-ocaml" / "functions"
+            dkmlhome_dir / "share" / "dkml" / "functions"
             / "crossplatform-functions.sh"
             |> to_string)
         in
