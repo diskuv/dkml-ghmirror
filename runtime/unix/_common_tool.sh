@@ -78,6 +78,8 @@ export TOPDIR
 # Temporary directory that needs to be accessible inside and outside of containers so shell scripts
 # can be sent from the outside of a container into a container.
 # So we make $WORK be a subdirectory of $TOPDIR.
+# TODO: We could instead mount TMPPARENTDIR_BUILDHOST or WORK in sandbox so we can always use /tmp;
+#       Cygwin in particular has absolute file path length limitations.
 # Our use of mktemp needs to be portable; docs at:
 # * BSD: https://www.freebsd.org/cgi/man.cgi?query=mktemp&sektion=1
 # * GNU: https://www.gnu.org/software/autogen/mktemp.html
@@ -87,7 +89,7 @@ export TOPDIR
 TMPPARENTDIR_RELTOP="build/_tmp"
 TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TOPDIR/$TMPPARENTDIR_RELTOP}"
 install -d "$TMPPARENTDIR_BUILDHOST"
-WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/work.XXXXXXXXXX)
+WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
 trap 'rm -rf "$WORK"' EXIT
 WORK_BASENAME=$(basename "$WORK")
 # shellcheck disable=SC2034

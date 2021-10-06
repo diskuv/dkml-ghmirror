@@ -28,12 +28,13 @@ windows:ocaml-opam-repo-fetch-1:
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         )
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
+    # (because Cygwin has a max 260 character limit of absolute file names, we place the working directories in /tmp)
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX) && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
 
     # Trim
     - date
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX) && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip
