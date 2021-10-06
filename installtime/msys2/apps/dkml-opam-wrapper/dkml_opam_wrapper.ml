@@ -1,4 +1,11 @@
-(* opam option wrap-build-commands='["'$(cygpath -aw $(find $PWD -name dkml_opam_build.exe) | sed 's/\\/\\\\/g')'"] {os = "win32"}' *)
+(*
+To test on Windows:
+  1. Make sure $DiskuvOCamlHome/share/dkml/functions/crossplatform-functions.sh exists.
+  2. Run in MSYS2:
+    eval $(opam env --switch "$DiskuvOCamlHome/system" --set-switch)
+    dune build --root installtime/msys2/apps/ dkml-opam-wrapper/dkml_opam_wrapper.exe
+    DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/dkml-opam-wrapper/dkml_opam_wrapper.exe sleep 5
+*)
 open Bos
 open Rresult
 open Astring
@@ -238,21 +245,27 @@ let main_with_result () =
   (* Setup logging *)
   Fmt_tty.setup_std_outputs ();
   Logs.set_reporter (Logs_fmt.reporter ());
-  if
-    OS.Env.value "DKML_BUILD_TRACE" OS.Env.string ~absent:"OFF" = "ON"
-    && OS.Env.value "DKML_BUILD_TRACE_LEVEL" int_parser ~absent:0 >= 2
+  let dbt = OS.Env.value "DKML_BUILD_TRACE" OS.Env.string ~absent:"OFF" in
+  if dbt = "ON" && OS.Env.value "DKML_BUILD_TRACE_LEVEL" int_parser ~absent:0 >= 2
   then Logs.set_level (Some Logs.Debug)
-  else Logs.set_level (Some Logs.Info);
+  else if dbt = "ON"
+  then Logs.set_level (Some Logs.Info)
+  else Logs.set_level (Some Logs.Warning);
 
-  (* Parse command line arguments *)
+  (* Create a command line with `...\usr\bin\env.exe CMD [ARGS...]`.
+     We use env.exe because it has logic to check if CMD is a shell
+     script and run it accordingly (MSYS2 always uses bash for some reason, instead
+     of looking at shebang).
+   *)
+  get_msys2_dir () >>= fun msys2_dir ->
+  let env_exe = Fpath.(msys2_dir / "usr" / "bin" / "env.exe") in
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
-  let cmd = Cmd.of_list cmd_and_args in
+  let cmd = Cmd.of_list ([Fpath.to_string env_exe] @ cmd_and_args) in
 
   (* Remove MSVC environment variables *)
   remove_microsoft_visual_studio_entries () >>= fun () ->
   (* Add MSVC entries *)
   get_dkmlhome_dir () >>= fun dkmlhome_dir ->
-  get_msys2_dir () >>= fun msys2_dir ->
   get_dkmldeployment_id () >>= fun dkmldeployment_id ->
   add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
   >>= fun () ->

@@ -3,5 +3,9 @@
     "restructuredtext.confPath": "${workspaceFolder}\\contributors",
     "files.exclude": {
         "**/release-zip": true
+    },
+    "ocaml.sandbox": {
+        "kind": "opam",
+        "switch": "C:\\Users\\beckf\\AppData\\Local\\Programs\\DiskuvOCaml\\1\\system"
     }
 }
