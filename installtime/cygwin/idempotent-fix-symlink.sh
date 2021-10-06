@@ -80,7 +80,7 @@ case "$ABSOLUTE_REFERENT" in
 
         # Only proceed if the referent is not dangling (idempotency, and edge case if
         # $env:SYSTEMROOT were C:\Windows\NonStandardSubDirectory instead of customary C:\Windows).
-        if [ -e $ABSOLUTE_REFERENT ]; then #TODO
+        if [ -e "$ABSOLUTE_REFERENT" ]; then #TODO
             exit 0
         fi
         # manual testing 20210807: both cygpath -a 'Z:\Windows\' and cygpath -a 'Z:\Windows\\' gave /cygdrive/z/Windows/
