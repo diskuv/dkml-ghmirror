@@ -125,14 +125,20 @@ $VsSpecialComponents = @(
     # in Get-CompatibleVisualStudios.
     "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
 )
-$VsProductLangs = @(
-    # English is required because of https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
-    # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
-    "en-US",
+if (Get-Command Get-WinSystemLocale -ErrorAction SilentlyContinue) {
+    $VsProductLangs = @(
+        # English is required because of https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
+        # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
+        "en-US",
 
-    # Use the system default (will be deduplicated in the next step, and removed if unknown in the following step)
-    (Get-WinSystemLocale).Name
-)
+        # Use the system default (will be deduplicated in the next step, and removed if unknown in the following step).
+        # This is to be user-friendly for non-English users; not strictly required since the rest of the docs are in English.
+        (Get-WinSystemLocale).Name
+    )
+} else {
+    # May be running in `setup-userprofile.ps1 -OnlyOutputCacheKey` in a non-Windows pwsh shell
+    $VsProductLangs = @( "en-US" )
+}
 $VsProductLangs = $VsProductLangs | Sort-Object -Property { $_.ToLowerInvariant() } -Unique
 if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
 $VsAvailableProductLangs = @(
