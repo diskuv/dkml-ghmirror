@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ----------------------------
 # Copyright 2021 Diskuv, Inc.
 #
@@ -63,10 +63,10 @@ OUTDIR=$DESTINATION_OPAM_ROOT/$OCAML_OPAM_PORT-$DOCKER_TARGET_ARCH
 #            can still read valid SSL certificate authority files. Ditto for any other opam.exe spawned process.
 # Note 2: We have to check whether the tar files are actually JSON error files. We do that by checking if the first characters are '{"errors":'
 
-if [[ ! -e "$OUTDIR/cygwin64/bin/ocaml-env.exe" ||
-      ! -e "$OUTDIR/cygwin64/home/opam/opam-repository/repo" ||
-      ! -e "$OUTDIR/cygwin64/usr/share/crypto-policies/DEFAULT/openssl.txt" ||
-      ! -e "$OUTDIR/opam/.opam/config" ]]
+if [ ! -e "$OUTDIR/cygwin64/bin/ocaml-env.exe" ] ||
+    [ ! -e "$OUTDIR/cygwin64/home/opam/opam-repository/repo" ] ||
+    [ ! -e "$OUTDIR/cygwin64/usr/share/crypto-policies/DEFAULT/openssl.txt" ] ||
+    [ ! -e "$OUTDIR/opam/.opam/config" ]
 then
     install -d "$OUTDIR"
 
@@ -82,10 +82,10 @@ then
     # since tar can create 0o000 directories we need to try to change permissions before deleting
     trap 'chmod -R 755 "$WORK"; rm -rf "$WORK"' EXIT
 
-    for layer_name in $(cat "$MOBYDIR"/layers-"$SIMPLE_NAME".txt); do
+    while IFS= read -r layer_name; do
         layer="$MOBYDIR"/"$layer_name"
         head --bytes=10 "$layer" > "$WORK"/rhs
-        if echo -n '{"errors":' | cmp -s - "$WORK"/rhs 2>/dev/null; then
+        if printf '%s' '{"errors":' | cmp -s - "$WORK"/rhs 2>/dev/null; then
             echo "Skipping   $OCAML_OPAM_PORT $layer"
             continue
         fi
@@ -132,8 +132,8 @@ then
 
         # Clean up for the next tarball
         rm -rf "$WORK/incoming"
-        
-    done
+
+    done < "$MOBYDIR"/layers-"$SIMPLE_NAME".txt
 
     # Fix up repository config which is pointing to Docker location ...
     #   repositories: [
