@@ -126,10 +126,11 @@
   - choco upgrade cyg-get -y --no-progress --version="'1.2.1'"
   - refreshenv
   - cyg-get -help
-  - cyg-get `
+  - cyg-get -debug `
       curl `
       jq `
-      rsync
+      rsync `
+      tar
   - Get-ItemProperty HKLM:\SOFTWARE\Cygwin\setup -Name rootdir
   - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
   - |
