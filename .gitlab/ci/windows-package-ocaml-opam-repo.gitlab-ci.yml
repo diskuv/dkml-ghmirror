@@ -11,10 +11,19 @@ windows:ocaml-opam-repo-fetch-1:
   rules:
     - if: '$CI_COMMIT_TAG'
     # - if: '$CI_COMMIT_BRANCH == "next"'
+  cache:
+    key:
+      files:
+        - contributors\.userprofile.cachekey
+        - .dkmlroot
+    paths:
+      - _ci\moby
+    when: 'always' # keep the cache even on failure (perhaps partial download)
   artifacts: # The artifact is not needed, except for browsing the repository at https://gitlab.com/diskuv/diskuv-ocaml/-/jobs to troubleshoot what version is picked
     name: "ocaml-opam-repo-complete"
     paths:
       - "$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
+
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
@@ -22,19 +31,24 @@ windows:ocaml-opam-repo-fetch-1:
 
     # Setup and Fetch
     - cygwin (
-        'pwd && env TOPDIR=$PWD/installtime/none/emptytop installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh'
-        + " -d '" + "$PWD" + "'"
+        "env TOPDIR='$env:CI_PROJECT_DIR/installtime/none/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         )
-    # (because Cygwin has a max 260 character limit of absolute file names, we place the working directories in /tmp)
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX) && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh')
+    # (because Cygwin has a max 260 character limit of absolute file names, we place the working directories in /tmp, and override moby/)
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' ; export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
+        + " ; export DKML_MOBYDIR='$env:CI_PROJECT_DIR/_ci/moby'"
+        + ' && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh'
+        + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
     - if (!(Test-Path -Path "$REPODIR\repo")) { throw "Build failed" }
 
     # Trim
     - date
-    - cygwin ("cd '" + "$DEPLOYDIR" + ''' && export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX) && share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh')
+    - cygwin ("cd '" + "$DEPLOYDIR" + ''' ; export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
+        + ' ; share/dkml/repro/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh'
+        + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
     - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip
@@ -47,3 +61,7 @@ windows:ocaml-opam-repo-fetch-1:
     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.tar.gz"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo.zip"; }
+
+  after_script:
+    # Don't waste space and time caching MOBY/tmp folder created by moby-extract-opam-root.sh
+    - if (Test-Path -Path '_ci/moby/tmp') { Remove-Item -Path '_ci/moby/tmp' -Recurse -Force }

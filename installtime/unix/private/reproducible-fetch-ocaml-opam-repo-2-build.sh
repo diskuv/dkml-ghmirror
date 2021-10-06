@@ -108,11 +108,15 @@ fi
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-MOBYDIR=$WORK/moby
+MOBYDIR_UNIX=${DKML_MOBYDIR:-$WORK/moby}
+if [ -x /usr/bin/cygpath ]; then
+    MOBYDIR_UNIX=$(/usr/bin/cygpath -au "$MOBYDIR_UNIX")
+fi
+
 TMPOPAMROOT=$WORK/opamroot
 
-log_trace installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
-log_trace installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
+log_trace installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR_UNIX" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
+log_trace installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR_UNIX" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
 
 DESIRED="$TMPOPAMROOT"/msvc-"$DOCKER_ARCH"
 
