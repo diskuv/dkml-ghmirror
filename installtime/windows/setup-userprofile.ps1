@@ -309,8 +309,9 @@ $FullFlavorPackages = $CiFlavorPackages + @(
     "lsp.1.8.2",
     "ocaml-lsp-server.1.8.2",
     "ocamlfind.1.9.1",
-    "ocamlformat.0.19.0",
-    "ocamlformat-rpc.0.19.0",
+    # Needs to be 0.18.0 because of https://github.com/ocaml/ocaml-lsp/blob/d140d3477972d0dd922019fd863ae943796c192e/ocaml-lsp-server.opam#L31
+    "ocamlformat.0.18.0",
+    "ocamlformat-rpc.0.18.0",
     "utop.2.8.0"
 )
 $FullFlavorBinaries = $CiFlavorBinaries + @(
