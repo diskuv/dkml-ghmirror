@@ -90,7 +90,12 @@ TMPPARENTDIR_RELTOP="build/_tmp"
 TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TOPDIR/$TMPPARENTDIR_RELTOP}"
 install -d "$TMPPARENTDIR_BUILDHOST"
 WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
-trap 'rm -rf "$WORK"' EXIT
+echo "IMPORTANT: Created WORK - $WORK" >&2 # TODO REMOVE
+common_tool_cleanup() {
+    echo "Removing $WORK dir from trapped EXIT signal" >&2
+    rm -rf "$WORK"
+}
+trap 'common_tool_cleanup' EXIT # TODO REVERT
 WORK_BASENAME=$(basename "$WORK")
 # shellcheck disable=SC2034
 WORK_EXPAND="@@EXPAND_TOPDIR@@/$TMPPARENTDIR_RELTOP/$WORK_BASENAME"
