@@ -127,7 +127,7 @@ then
             echo "Extracting $OCAML_OPAM_PORT $layer"
             # As one more safeguard we avoid 'rsync -p' option so that
             # we do _not_ copy '0o000' permissions
-            spawn_rsync -a --prune-empty-dirs "$WORK/incoming/Files/" "$OUTDIR/"
+            rsync -a --prune-empty-dirs "$WORK/incoming/Files/" "$OUTDIR/"
         fi
 
         # Clean up for the next tarball
