@@ -128,7 +128,13 @@ if is_cygwin_build_machine; then
     done
 fi
 
+# Install files and directories into $OOREPO_UNIX:
+# - /repo
+# - /version
+# - /packages/
+# The `/pins.txt` will come from reproducible-fetch-ocaml-opam-repo-9-trim.sh
 install -d "$OOREPO_UNIX"
+install "$DESIRED"/cygwin64/home/opam/opam-repository/repo "$DESIRED"/cygwin64/home/opam/opam-repository/version "$OOREPO_UNIX"
 log_trace spawn_rsync -a --delete --delete-excluded \
     --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
-    "$DESIRED"/cygwin64/home/opam/opam-repository/ "$OOREPO_UNIX"
+    "$DESIRED"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages
