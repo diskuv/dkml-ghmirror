@@ -223,7 +223,7 @@ OPAMS_CSV_WINDOWS ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_WI
 buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.env.executable
 
 .PHONY: init-dev
-init-dev: buildconfig/dune
+init-dev:
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
 .PHONY: prepare-dev
@@ -382,7 +382,7 @@ define BUILD_platform_buildtype_template
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
-  build-$(1)-$(2): prepare-$(1)-$(2) quickbuild-$(1)-$(2)
+  build-$(1)-$(2): prepare-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
 	@if [ -e "build/$(1)/$(2)/_opam/bin/dune" ]; then \
 		printf "\n\n$(HORIZONTAL_RULE_80COLS)\n"; \
