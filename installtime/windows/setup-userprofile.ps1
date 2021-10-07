@@ -218,79 +218,6 @@ else {
         "mingw64-i686-runtime",
         "mingw64-i686-winpthreads")
 }
-$MSYS2Packages = @(
-    # Hints:
-    #  1. Use `MSYS2\msys2_shell.cmd -here` to launch MSYS2 and then `pacman -Ss diff` to
-    #     search for example for 'diff' packages.
-    #     You can also browse https://packages.msys2.org
-    #  2. Instead of `pacman -Ss [search term]` you can use something like `pacman -Fy && pacman -F x86_64-w64-mingw32-as.exe`
-    #     to find which package installs for example the `x86_64-w64-mingw32-as.exe` file.
-
-    # ----
-    # Needed to create native Opam executable in `opam-bootstrap`
-    # ----
-
-    # "mingw-w64-i686-openssl", "mingw-w64-x86_64-openssl",
-    # "mingw-w64-i686-gcc", "mingw-w64-x86_64-gcc",
-    # "mingw-w64-cross-binutils", "mingw-w64-cross-gcc"
-
-    # ----
-    # Needed by the Local Project's `Makefile`
-    # ----
-
-    "make",
-    "diffutils",
-    "dos2unix",
-
-    # ----
-    # Needed by Opam
-    # ----
-
-    "patch",
-    "rsync",
-    # We don't use C:\WINDOWS\System32\tar.exe even if it is available in all Windows SKUs since build
-    # 17063 (https://docs.microsoft.com/en-us/virtualization/community/team-blog/2017/20171219-tar-and-curl-come-to-windows)
-    # because get:
-    #   ocamlbuild-0.14.0/examples/07-dependent-projects/libdemo: Can't create `..long path with too many backslashes..`# tar.exe: Error exit delayed from previous errors.
-    #   MSYS2 seems to be able to deal with excessive backslashes
-    "tar",
-    "unzip",
-
-    # ----
-    # Needed by many OCaml packages during builds
-    # ----
-
-    # ----
-    # Needed by OCaml package `feather`
-    # ----
-
-    "procps", # provides `pgrep`
-
-    # ----
-    # Needed for our own sanity!
-    # ----
-
-    "psmisc", # process management tools: `pstree`
-    "rlwrap", # command line history for executables without builtin command line history support
-    "tree" # directory structure viewer
-)
-if ([Environment]::Is64BitOperatingSystem) {
-    $MSYS2PackagesArch = $MSYS2Packages + @(
-        # ----
-        # Needed for our own sanity!
-        # ----
-
-        "mingw-w64-x86_64-ag" # search tool called Silver Surfer
-    )
-} else {
-    $MSYS2PackagesArch = $MSYS2Packages + @(
-        # ----
-        # Needed for our own sanity!
-        # ----
-
-        "mingw-w64-i686-ag" # search tool called Silver Surfer
-    )
-}
 $CiFlavorPackages = @(
     # Dune is needed to compile dkml-findup.exe
     "dune.2.9.0",
@@ -371,7 +298,7 @@ if ($Flavor -eq "Full") {
 
 # Consolidate the magic constants into a single deployment id
 $CygwinHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
-$MSYS2Hash = Get-Sha256Hex16OfText -Text ($MSYS2PackagesArch -join ',')
+$MSYS2Hash = Get-Sha256Hex16OfText -Text ($DV_MSYS2PackagesArch -join ',')
 $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
 $BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
@@ -1095,7 +1022,7 @@ try {
 
         # Install new packages and/or full system if any were not installed ("--needed")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command ("pacman -S --needed --noconfirm " + ($MSYS2PackagesArch -join " "))
+            -Command ("pacman -S --needed --noconfirm " + ($DV_MSYS2PackagesArch -join " "))
     }
 
     # Create /opt/diskuv-ocaml/installtime/ which is specific to MSYS2 with common pieces from UNIX.
