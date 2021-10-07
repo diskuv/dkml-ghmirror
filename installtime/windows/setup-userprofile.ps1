@@ -37,11 +37,14 @@
 .Parameter $Flavor
     Which type of installation to perform.
 
-    The `CI` flavor installs the minimal applications that are necessary
+    The `CI` flavor:
+    * Installs the minimal applications that are necessary
     for a functional (though limited) Diskuv OCaml system. Today that is
-    only `dune` and `opam`, but that may change in the future. The CI flavor
-    also does not modify the User environment variables. Choose
-    the `CI` flavor if you have continuous integration tests.
+    only `dune` and `opam`, but that may change in the future.
+    * Does not modify the User environment variables.
+    * Does not do a system upgrade of MSYS2
+
+    Choose the `CI` flavor if you have continuous integration tests.
 
     The `Full` flavor installs everything, including human-centric applications
     like `utop`.
@@ -1006,20 +1009,23 @@ try {
     #
     # Skip with ... $global:SkipMSYS2Update = $true ... remove it with ... Remove-Variable SkipMSYS2Update
     if (!$global:SkipMSYS2Update) {
-        # Pacman does not update individual packages but rather the full system is upgraded. We _must_
-        # upgrade the system before installing packages. Confer:
-        # https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported
-        # One more edge case ...
-        #   :: Processing package changes...
-        #   upgrading msys2-runtime...
-        #   upgrading pacman...
-        #   :: To complete this update all MSYS2 processes including this terminal will be closed. Confirm to proceed [Y/n] SUCCESS: The process with PID XXXXX has been terminated.
-        # ... when pacman decides to upgrade itself, it kills all the MSYS2 processes. So we need to run at least
-        # once and ignore any errors from forcible termination.
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir -IgnoreErrors `
-            -Command ("pacman -Syu --noconfirm")
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command ("pacman -Syu --noconfirm")
+        if ($Flavor -ne "CI") {
+            # Pacman does not update individual packages but rather the full system is upgraded. We _must_
+            # upgrade the system before installing packages, except we allow CI systems to use whatever
+            # system was installed as part of the CI. Confer:
+            # https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported
+            # One more edge case ...
+            #   :: Processing package changes...
+            #   upgrading msys2-runtime...
+            #   upgrading pacman...
+            #   :: To complete this update all MSYS2 processes including this terminal will be closed. Confirm to proceed [Y/n] SUCCESS: The process with PID XXXXX has been terminated.
+            # ... when pacman decides to upgrade itself, it kills all the MSYS2 processes. So we need to run at least
+            # once and ignore any errors from forcible termination.
+            Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir -IgnoreErrors `
+                -Command ("pacman -Syu --noconfirm")
+            Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+                -Command ("pacman -Syu --noconfirm")
+        }
 
         # Install new packages and/or full system if any were not installed ("--needed")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
