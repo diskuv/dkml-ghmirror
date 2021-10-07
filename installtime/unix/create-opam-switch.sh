@@ -177,7 +177,7 @@ fi
 # Set $DiskuvOCamlHome and other vars
 autodetect_dkmlvars || true
 
-echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
+printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
     set_opamrootdir
@@ -185,17 +185,17 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
 
-    echo "  -s \\" >> "$WORK"/nonswitchexec.sh
+    printf "%s\n" "  -s \\" >> "$WORK"/nonswitchexec.sh
 else
     if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
     set_opamrootandswitchdir
 
-    echo "  -p $PLATFORM \\" >> "$WORK"/nonswitchexec.sh
+    printf "%s\n" "  -p $PLATFORM \\" >> "$WORK"/nonswitchexec.sh
     if [ -n "$TARGET_OPAMSWITCH" ]; then
-        echo "  -t $TARGET_OPAMSWITCH \\" >> "$WORK"/nonswitchexec.sh
+        printf "%s\n" "  -t $TARGET_OPAMSWITCH \\" >> "$WORK"/nonswitchexec.sh
     else
-        echo "  -b $BUILDTYPE \\" >> "$WORK"/nonswitchexec.sh
+        printf "%s\n" "  -b $BUILDTYPE \\" >> "$WORK"/nonswitchexec.sh
     fi
 fi
 
@@ -287,21 +287,21 @@ elif [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
 fi
 
-echo "switch create \\" > "$WORK"/switchcreateargs.sh
-if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
-echo "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
+printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
+if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
+printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 
 if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
-    echo "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    echo "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    echo "  --packages='ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  --packages='ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
 else
-    echo "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    echo "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    echo "  --packages='ocaml-variants.4.12.0+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    printf "%s\n" "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  --packages='ocaml-variants.4.12.0+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
 fi
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
 # We'll use the bash builtin `set` which quotes spaces correctly.
 OPAM_SWITCH_CREATE_PREHOOK="echo OPAMSWITCH=; echo OPAM_SWITCH_PREFIX=" # Ignore any switch the developer gave. We are creating our own.
@@ -310,18 +310,18 @@ if [ -n "${OPAM_SWITCH_CC:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWIT
 if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
 if [ -n "${OPAM_SWITCH_AS:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' switch remove \\" > "$WORK"/switchremoveargs.sh
-    if [ "$YES" = ON ]; then echo "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
-    echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' switch remove \\" > "$WORK"/switchremoveargs.sh
+    if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
+    printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
     log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
-    echo "  $OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
+    printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
@@ -330,7 +330,7 @@ else
     # we have the logic to detect here when it is time to upgrade!
     {
         cat "$WORK"/nonswitchexec.sh
-        echo "  repository list --short"
+        printf "%s\n" "  repository list --short"
     } > "$WORK"/list.sh
     log_shell "$WORK"/list.sh > "$WORK"/list
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
@@ -369,7 +369,7 @@ else
 fi
 
 # Opam `PKG_CONFIG_PATH += "xxx"` requires that `xxx` is a valid Opam string. Escape all the backslashes.
-PKG_CONFIG_PATH_ADD=$(echo "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
+PKG_CONFIG_PATH_ADD=$(printf "%s" "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 
 # Two operators: option setenv(OP1)"NAME OP2 VALUE"
 #
@@ -480,9 +480,9 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
         # everything except any old pinned section
         delete_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned
 
-        echo 'pinned: ['
+        printf "%s\n" 'pinned: ['
         cat "$WORK"/new-pinned
-        echo ']'
+        printf "%s\n" ']'
     } > "$WORK"/new-switch-state
 
     # Reset the switch state

@@ -66,7 +66,7 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     . "$WORK/2.sh"
 else
     # Add tools to the PATH
-    PATH="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin:$PATH"
+    PATH="${BUILD_BASEPATH}$TOOLSDIR/local/bin:${BUILD_BASEPATH}$TOOLSCOMMONDIR/local/bin:$PATH"
 fi
 
 # On Windows ...

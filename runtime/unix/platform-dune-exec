@@ -109,7 +109,6 @@ cd "$TOPDIR"
 # >>>>>>>>>
 
 install -d "$BUILDDIR"
-if [ -x /usr/bin/setfacl ]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
 
 # no subcommand should display help
 if [ $# -eq 0 ]; then

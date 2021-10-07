@@ -19,7 +19,7 @@
 
 if [ -z "${BUILDDIR:-}" ]; then
     # shellcheck disable=SC2034
-    BUILDDIR="build/$PLATFORM/$BUILDTYPE"
+    BUILDDIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
 fi
 
 # BUILDDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
@@ -67,14 +67,18 @@ set_opamrootandswitchdir() {
         # shellcheck disable=SC2034
         OPAMSWITCHISGLOBAL=OFF
         # shellcheck disable=SC2034
-        OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR/_opam"
+        OPAMSWITCHFINALDIR_BUILDHOST="${BUILD_BASEPATH}$BUILDDIR/_opam"
         if is_unixy_windows_build_machine; then
-            OPAMSWITCHNAME_BUILDHOST=$(cygpath -aw "$BUILDDIR")
+            OPAMSWITCHNAME_BUILDHOST=$(cygpath -aw "${BUILD_BASEPATH}$BUILDDIR")
         else
             # shellcheck disable=SC2034
-            OPAMSWITCHNAME_BUILDHOST="$TOPDIR/$BUILDDIR"
+            OPAMSWITCHNAME_BUILDHOST="${BUILD_BASEPATH}$BUILDDIR"
         fi
-        # shellcheck disable=SC2034
-        OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$BUILDDIR"
+        if [ -z "$BUILD_BASEPATH" ]; then
+            OPAMSWITCHDIR_EXPAND="$OPAMSWITCHNAME_BUILDHOST"
+        else
+            # shellcheck disable=SC2034
+            OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$BUILDDIR"
+        fi
     fi
 }

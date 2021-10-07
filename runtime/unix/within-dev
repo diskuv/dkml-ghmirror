@@ -92,12 +92,12 @@ platform_vcpkg_triplet
 # Essential environment values.
 LAUNCHER_ARGS=(
     # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
-    DKML_TOOLS_DIR="$TOPDIR/$TOOLSDIR"
-    DKML_TOOLSCOMMON_DIR="$TOPDIR/$TOOLSCOMMONDIR"
+    DKML_TOOLS_DIR="${BUILD_BASEPATH}$TOOLSDIR"
+    DKML_TOOLSCOMMON_DIR="${BUILD_BASEPATH}$TOOLSCOMMONDIR"
 )
 
 # give builds access to tools
-ENV_PATH_PREFIX="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin"
+ENV_PATH_PREFIX="${BUILD_BASEPATH}$TOOLSDIR/local/bin:${BUILD_BASEPATH}$TOOLSCOMMONDIR/local/bin"
 ENV_PATH_SUFFIX=
 
 # On Windows always disable the Automatic Unix ⟶ Windows Path Conversion
@@ -107,7 +107,7 @@ disambiguate_filesystem_paths
 # If and only if [-b BUILDDIR] specified
 if [ -n "${BUILDTYPE:-}" ]; then
     LAUNCHER_ARGS+=(
-        DK_BUILD_DIR="$TOPDIR/$BUILDDIR"
+        DK_BUILD_DIR="${BUILD_BASEPATH}$BUILDDIR"
     )
 fi
 

@@ -75,6 +75,31 @@ fi
 # TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
 export TOPDIR
 
+# The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
+# directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.
+# For Windows you want to use it so that you do not run into 260 character absolute path limits!
+# Here is an example of a 260 character limit violation ... it is VERY HARD to see what the problem is!
+#   $ (cd _build/default && D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\bin\ocamlc.opt.exe -w -40 -g -bin-annot -I expander/.ppx_sexp_conv_expander.objs/byte -I D:/a/diskuv-ocaml-starter-ghmirror/diskuv-ocaml-starter-ghmirror/build/windows_x86_64/Release/_opam/lib/ocaml\compiler-libs -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\base_internalhash_types -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\caml -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\shadow_stdlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\common -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\shadow -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-migrate-parsetree -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppx_derivers -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\ast -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\metaquot_lifters -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\print_diff -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\stdppx -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\traverse_builtins -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\sexplib0 -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\stdlib-shims -no-alias-deps -open Ppx_sexp_conv_expander__ -o expander/.ppx_sexp_conv_expander.objs/byte/ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi -c -intf expander/str_generate_sexp_grammar.pp.mli)
+#   File "expander/str_generate_sexp_grammar.mli", line 1:
+#   Error: I/O error: expander/.ppx_sexp_conv_expander.objs/byte\ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi9d73bb.tmp: No such file or directory
+BUILD_ROOT_UNIX="${DKML_BUILD_ROOT:-build}"
+if [ -x /usr/bin/cygpath ]; then
+    BUILD_ROOT_UNIX=$(/usr/bin/cygpath -u "$BUILD_ROOT_UNIX")
+fi
+case "$BUILD_ROOT_UNIX" in
+  /*)
+    BUILD_BASEPATH=
+    ;;
+  *)
+    # BUILD_BASEPATH will have a trailing slash
+    if [ -x /usr/bin/cygpath ]; then
+        BUILD_BASEPATH=$(/usr/bin/cygpath -u "$TOPDIR")/
+    else
+        BUILD_BASEPATH="$TOPDIR"/
+    fi
+    ;;
+esac
+
 # Temporary directory that needs to be accessible inside and outside of containers so shell scripts
 # can be sent from the outside of a container into a container.
 # So we make $WORK be a subdirectory of $TOPDIR.
@@ -86,27 +111,39 @@ export TOPDIR
 # Use $WORK in all situations except:
 # * Use $WORK_EXPAND to communicate the location of a temporary shell script as an argument to `exec_in_platform`
 # * Use $WORK_EXPAND_UNIX to communicate the location of a temporary shell script as a UNIX-path argument to `exec_in_platform`
-TMPPARENTDIR_RELTOP="build/_tmp"
-TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TOPDIR/$TMPPARENTDIR_RELTOP}"
+if [ -z "$BUILD_BASEPATH" ]; then
+    # BUILD_ROOT_UNIX is absolute path
+    TMPPARENTDIR_ABS_OR_RELTOP="$BUILD_ROOT_UNIX/_tmp"
+    TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TMPPARENTDIR_ABS_OR_RELTOP}"
+else
+    TMPPARENTDIR_ABS_OR_RELTOP="build/_tmp"
+    TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$BUILD_BASEPATH$TMPPARENTDIR_ABS_OR_RELTOP}"
+fi
 install -d "$TMPPARENTDIR_BUILDHOST"
 WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
 trap 'rm -rf "$WORK"' EXIT
 WORK_BASENAME=$(basename "$WORK")
-# shellcheck disable=SC2034
-WORK_EXPAND="@@EXPAND_TOPDIR@@/$TMPPARENTDIR_RELTOP/$WORK_BASENAME"
-# shellcheck disable=SC2034
-WORK_EXPAND_UNIX="@@EXPAND_TOPDIR_UNIX@@/$TMPPARENTDIR_RELTOP/$WORK_BASENAME"
+if [ -z "$BUILD_BASEPATH" ]; then
+    # TMPPARENTDIR_ABS_OR_RELTOP is absolute path. Can't work in a container unless it is mounted
+    WORK_EXPAND="$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
+    WORK_EXPAND_UNIX="$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
+else
+    # shellcheck disable=SC2034
+    WORK_EXPAND="@@EXPAND_TOPDIR@@/$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
+    # shellcheck disable=SC2034
+    WORK_EXPAND_UNIX="@@EXPAND_TOPDIR_UNIX@@/$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
+fi
 unset WORK_BASENAME
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
 
 # shellcheck disable=SC2034
-TOOLSDIR="build/_tools/$PLATFORM"
+TOOLSDIR="$BUILD_ROOT_UNIX/_tools/$PLATFORM"
 # shellcheck disable=SC2034
-TOOLSCOMMONDIR="build/_tools/common"
+TOOLSCOMMONDIR="$BUILD_ROOT_UNIX/_tools/common"
 # shellcheck disable=SC2034
-MULTIARCHTOOLSDIR="build/_tools/_multiarch"
+MULTIARCHTOOLSDIR="$BUILD_ROOT_UNIX/_tools/_multiarch"
 # shellcheck disable=SC2034
 OPAMROOT_IN_CONTAINER="$TOOLSDIR"/opam-root
 
@@ -323,8 +360,14 @@ autodetect_dkmlvars() {
     set_dkmlparenthomedir
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
-            # shellcheck disable=SC1090
-            . "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
+            if [ -x /usr/bin/cygpath ]; then
+                autodetect_dkmlvars_VARSSCRIPT=$(cygpath -a "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh")
+                # shellcheck disable=SC1090
+                . "$autodetect_dkmlvars_VARSSCRIPT"
+            else
+                # shellcheck disable=SC1090
+                . "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
+            fi
         fi
     else
         if [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]; then
@@ -353,7 +396,12 @@ autodetect_dkmlvars() {
 # - env:DKMLPLUGIN_BUILDHOST - Plugin directory for config/installations connected to the Opam root
 # - env:DKMLPLUGIN_EXPAND - The plugin directory that works as an argument to `exec_in_platform`
 set_opamrootdir() {
-    if is_dev_platform; then
+    if is_arg_linux_based_platform "$PLATFORM"; then
+        # In a reproducible container ...
+        OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
+        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
+        OPAMROOTDIR_EXPAND="@@EXPAND_TOPDIR@@/$OPAMROOTDIR_BUILDHOST"
+    else
         if is_unixy_windows_build_machine; then
             if [ -n "${OPAMROOT:-}" ]; then
                 # If the developer sets OPAMROOT with an environment variable, then we will respect that
@@ -371,16 +419,11 @@ set_opamrootdir() {
                 # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
                 OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
             fi
+            # shellcheck disable=SC2034
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
         fi
+        # shellcheck disable=SC2034
         OPAMROOTDIR_EXPAND="$OPAMROOTDIR_BUILDHOST"
-    else
-        # In a reproducible container ...
-        OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
-        # shellcheck disable=SC2034
-        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
-        # shellcheck disable=SC2034
-        OPAMROOTDIR_EXPAND="@@EXPAND_TOPDIR@@/$OPAMROOTDIR_BUILDHOST"
     fi
     # shellcheck disable=SC2034
     DKMLPLUGIN_EXPAND="$OPAMROOTDIR_EXPAND/plugins/diskuvocaml"

@@ -124,9 +124,9 @@ if [ "$BUILDER_UID" -ne 0 ]; then
 fi
 
 # Autodetect OPAMROOT and mount it if present
-if [ -e "$TOPDIR/$OPAMROOT_IN_CONTAINER" ]; then
+if [ -e "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER" ]; then
     DOCKER_ARGS+=(
-        -v "$TOPDIR/$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
+        -v "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
     )
 fi
 
