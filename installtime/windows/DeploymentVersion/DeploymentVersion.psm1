@@ -25,14 +25,6 @@ $DV_MSYS2Packages = @(
     #     to find which package installs for example the `x86_64-w64-mingw32-as.exe` file.
 
     # ----
-    # Needed to create native Opam executable in `opam-bootstrap`
-    # ----
-
-    # "mingw-w64-i686-openssl", "mingw-w64-x86_64-openssl",
-    # "mingw-w64-i686-gcc", "mingw-w64-x86_64-gcc",
-    # "mingw-w64-cross-binutils", "mingw-w64-cross-gcc"
-
-    # ----
     # Needed by the Local Project's `Makefile`
     # ----
 

@@ -447,9 +447,17 @@ $GitOriginalVersion = @(0, 0, 0)
 $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $false
 $GitExists = $false
 
-$GitExe = Get-Command git.exe -ErrorAction Ignore
+# NOTE: See runtime\windows\makeit.cmd for why we check for git-gui.exe first
+$GitGuiExe = Get-Command git-gui.exe -ErrorAction Ignore
+if ($null -eq $GitGuiExe) {
+    $GitExe = Get-Command git.exe -ErrorAction Ignore
+    if ($null -ne $GitExe) { $GitExe = $GitExe.Path }
+} else {
+    # Use git.exe in the same PATH as git-gui.exe.
+    # Ex. C:\Program Files\Git\cmd\git.exe not C:\Program Files\Git\bin\git.exe or C:\Program Files\Git\mingw\bin\git.exe
+    $GitExe = Join-Path -Path (Get-Item $GitGuiExe.Path).Directory.FullName -ChildPath "git.exe"
+}
 if ($null -ne $GitExe) {
-    $GitExe = $GitExe.Path
     $GitExists = $true
     $GitResponse = & "$GitExe" --version
     if ($LastExitCode -eq 0) {

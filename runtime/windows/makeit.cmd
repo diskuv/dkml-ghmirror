@@ -155,6 +155,161 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Find Git so we can add its directory to the PATH
+REM However, if a user installs Git for Windows with the full MinGW environment added to the PATH
+REM or with Git Bash added to the PATH (GitHub Actions windows-2019 environment adds both of these!)
+REM then we have to be extremely careful not to mix MinGW with our MSYS2 environment.
+REM
+REM Rules
+REM -----
+REM
+REM 1. We look for git-gui.exe, which is unique to the \cmd subdirectory. If it exists we add that directory.
+REM 2. Otherwise we just look for git.exe
+REM
+REM Context
+REM -------
+REM
+REM     Directory: C:\Program Files\Git\bin
+REM
+REM Mode                 LastWriteTime         Length Name
+REM ----                 -------------         ------ ----
+REM -a---           8/24/2021 10:09 AM          45584 bash.exe
+REM -a---           8/24/2021 10:09 AM          45072 git.exe
+REM -a---           8/24/2021 10:09 AM          45584 sh.exe
+REM
+REM     Directory: C:\Program Files\Git\cmd
+REM
+REM Mode                 LastWriteTime         Length Name
+REM ----                 -------------         ------ ----
+REM -a---           8/24/2021 10:09 AM          45072 git.exe
+REM -a---           8/24/2021 10:09 AM         136208 git-gui.exe
+REM -a---           8/24/2021 10:09 AM         136208 gitk.exe
+REM -a---           8/24/2021 10:09 AM          45072 git-lfs.exe
+REM -a---           8/24/2021 10:09 AM           3022 start-ssh-agent.cmd
+REM -a---           8/24/2021 10:09 AM           2723 start-ssh-pageant.cmd
+REM
+REM     Directory: C:\Program Files\Git\mingw64\bin
+REM
+REM Mode                 LastWriteTime         Length Name
+REM ----                 -------------         ------ ----
+REM -a---           8/24/2021 10:24 AM          90243 acountry.exe
+REM -a---           8/24/2021 10:24 AM          58396 adig.exe
+REM -a---           8/24/2021 10:24 AM          49530 ahost.exe
+REM -a---           8/24/2021 10:24 AM         222709 antiword.exe
+REM -a---           8/24/2021 10:24 AM          46077 blocked-file-util.exe
+REM -a---           8/24/2021 10:24 AM         865942 brotli.exe
+REM -a---           8/24/2021 10:24 AM          68276 bunzip2.exe
+REM -a---           8/24/2021 10:24 AM          68276 bzcat.exe
+REM -a---           8/24/2021 10:24 AM           2140 bzcmp
+REM -a---           8/24/2021 10:24 AM           2140 bzdiff
+REM -a---           8/24/2021 10:24 AM           2054 bzegrep
+REM -a---           8/24/2021 10:24 AM           2054 bzfgrep
+REM -a---           8/24/2021 10:24 AM           2054 bzgrep
+REM -a---           8/24/2021 10:24 AM          68276 bzip2.exe
+REM -a---           8/24/2021 10:24 AM          49031 bzip2recover.exe
+REM -a---           8/24/2021 10:24 AM           1297 bzless
+REM -a---           8/24/2021 10:24 AM           1297 bzmore
+REM -a---           8/24/2021 10:24 AM          78548 connect.exe
+REM -a---           8/24/2021 10:24 AM          98322 create-shortcut.exe
+REM -a---           8/24/2021 10:24 AM         274076 curl.exe
+REM -a---           8/24/2021 10:24 AM          54272 edit.dll
+REM -a---           8/24/2021 10:24 AM          18432 edit_test.exe
+REM -a---           8/24/2021 10:24 AM          20480 edit_test_dll.exe
+REM -a---           8/24/2021 10:24 AM         117225 envsubst.exe
+REM -a---           8/24/2021 10:24 AM         117111 gettext.exe
+REM -a---           8/24/2021 10:24 AM           4629 gettext.sh
+REM -a---           8/24/2021 10:24 AM          43807 gettextize
+REM -a---           8/24/2021 10:09 AM        3502592 git.exe
+REM -a---           8/24/2021 10:24 AM          45938 git-askpass.exe
+REM -a---           8/24/2021 10:24 AM          19161 git-askyesno.exe
+REM -a---           8/24/2021 10:24 AM          60662 git-credential-helper-selector.exe
+REM -a---           8/24/2021 10:09 AM         402353 gitk
+REM -a---           8/24/2021 10:24 AM       10126968 git-lfs.exe
+REM -a---           8/24/2021 10:09 AM        3502592 git-receive-pack.exe
+REM -a---           8/24/2021 10:24 AM           9878 git-update-git-for-windows
+REM -a---           8/24/2021 10:09 AM        3502592 git-upload-archive.exe
+REM -a---           8/24/2021 10:09 AM        3502592 git-upload-pack.exe
+REM -a---           8/24/2021 10:24 AM            140 jemalloc.sh
+REM -a---           8/24/2021 10:24 AM         179224 jeprof
+REM -a---           8/24/2021 10:24 AM         142883 libbrotlicommon.dll
+REM -a---           8/24/2021 10:24 AM          52362 libbrotlidec.dll
+REM -a---           8/24/2021 10:24 AM          99146 libbz2-1.dll
+REM -a---           8/24/2021 10:24 AM         123855 libcares-4.dll
+REM -a---           8/24/2021 10:24 AM        2783388 libcrypto-1_1-x64.dll
+REM -a---           8/24/2021 10:24 AM         673948 libcurl-4.dll
+REM -a---           8/24/2021 10:24 AM         202568 libexpat-1.dll
+REM -a---           8/24/2021 10:24 AM          82097 libgcc_s_seh-1.dll
+REM -a---           8/24/2021 10:24 AM         509898 libgmp-10.dll
+REM -a---           8/24/2021 10:24 AM         275300 libhogweed-6.dll
+REM -a---           8/24/2021 10:24 AM        1058528 libiconv-2.dll
+REM -a---           8/24/2021 10:24 AM         170241 libidn2-0.dll
+REM -a---           8/24/2021 10:24 AM         133659 libintl-8.dll
+REM -a---           8/24/2021 10:24 AM          77904 libjansson-4.dll
+REM -a---           8/24/2021 10:24 AM         529915 libjemalloc.dll
+REM -a---           8/24/2021 10:24 AM         153747 liblzma-5.dll
+REM -a---           8/24/2021 10:24 AM         289910 libnettle-8.dll
+REM -a---           8/24/2021 10:24 AM         184406 libnghttp2-14.dll
+REM -a---           8/24/2021 10:24 AM         281695 libpcre-1.dll
+REM -a---           8/24/2021 10:24 AM         618344 libpcre2-8-0.dll
+REM -a---           8/24/2021 10:24 AM          41752 libpcreposix-0.dll
+REM -a---           8/24/2021 10:24 AM         263986 libssh2-1.dll
+REM -a---           8/24/2021 10:24 AM         560796 libssl-1_1-x64.dll
+REM -a---           8/24/2021 10:24 AM          43429 libssp-0.dll
+REM -a---           8/24/2021 10:24 AM        1745041 libstdc++-6.dll
+REM -a---           8/24/2021 10:24 AM          92313 libtre-5.dll
+REM -a---           8/24/2021 10:24 AM        1764460 libunistring-2.dll
+REM -a---           8/24/2021 10:24 AM          59645 libwinpthread-1.dll
+REM -a---           8/24/2021 10:24 AM        1358585 libxml2-2.dll
+REM -a---           8/24/2021 10:24 AM         999818 libzstd.dll
+REM -a---           8/24/2021 10:24 AM          53283 lzmadec.exe
+REM -a---           8/24/2021 10:24 AM          28069 lzmainfo.exe
+REM -a---           8/24/2021 10:24 AM          62834 odt2txt.exe
+REM -a---           8/24/2021 10:24 AM         715420 openssl.exe
+REM -a---           8/24/2021 10:24 AM           2177 pcre2-config
+REM -a---           8/24/2021 10:24 AM        1537966 pdftotext.exe
+REM -a---           8/24/2021 10:24 AM          57152 pkcs1-conv.exe
+REM -a---           8/24/2021 10:24 AM          44973 proxy-lookup.exe
+REM -a---           8/24/2021 10:24 AM          62989 sexp-conv.exe
+REM -a---           8/24/2021 10:24 AM          30392 sqlite3_analyzer.sh
+REM -a---           8/24/2021 10:24 AM        1679679 tcl86.dll
+REM -a---           8/24/2021 10:24 AM          79654 tclsh.exe
+REM -a---           8/24/2021 10:24 AM          79654 tclsh86.exe
+REM -a---           8/24/2021 10:24 AM        1505405 tk86.dll
+REM -a---           8/24/2021 10:24 AM          82962 unxz.exe
+REM -a---           8/24/2021 10:24 AM           1082 update-ca-trust
+REM -a---           8/24/2021 10:24 AM         106724 WhoUses.exe
+REM -a---           8/24/2021 10:24 AM         319640 wintoast.exe
+REM -a---           8/24/2021 10:24 AM          66707 wish.exe
+REM -a---           8/24/2021 10:24 AM          66707 wish86.exe
+REM -a---           8/24/2021 10:24 AM          36022 x86_64-w64-mingw32-agrep.exe
+REM -a---           8/24/2021 10:24 AM          64688 x86_64-w64-mingw32-deflatehd.exe
+REM -a---           8/24/2021 10:24 AM          60246 x86_64-w64-mingw32-inflatehd.exe
+REM -a---           8/24/2021 10:24 AM           1835 xml2-config
+REM -a---           8/24/2021 10:24 AM          52901 xmlcatalog.exe
+REM -a---           8/24/2021 10:24 AM         131824 xmllint.exe
+REM -a---           8/24/2021 10:24 AM          81407 xmlwf.exe
+REM -a---           8/24/2021 10:24 AM          82962 xz.exe
+REM -a---           8/24/2021 10:24 AM          82962 xzcat.exe
+REM -a---           8/24/2021 10:24 AM           6633 xzcmp
+REM -a---           8/24/2021 10:24 AM          53284 xzdec.exe
+REM -a---           8/24/2021 10:24 AM           6633 xzdiff
+REM -a---           8/24/2021 10:24 AM           5630 xzegrep
+REM -a---           8/24/2021 10:24 AM           5630 xzfgrep
+REM -a---           8/24/2021 10:24 AM           5630 xzgrep
+REM -a---           8/24/2021 10:24 AM           1799 xzless
+REM -a---           8/24/2021 10:24 AM           2162 xzmore
+REM -a---           8/24/2021 10:24 AM         139084 zipcmp.exe
+REM -a---           8/24/2021 10:24 AM         136075 zipmerge.exe
+REM -a---           8/24/2021 10:24 AM         162733 ziptool.exe
+REM -a---           8/24/2021 10:24 AM         116428 zlib1.dll
+REM
+REM Logic replicated in installtime\windows\setup-userprofile.ps1
+SET DKMAKE_INTERNAL_GITEXE=
+FOR /F "tokens=* usebackq" %%F IN (`where.exe git-gui.exe`) DO (
+SET "DKMAKE_INTERNAL_GITEXE=%%F"
+)
+REM If we have git-gui.exe we can't test it out with --version since it only will popup a dialog box
+IF defined DKMAKE_INTERNAL_GITEXE GOTO HaveGit
+
 FOR /F "tokens=* usebackq" %%F IN (`where.exe git.exe`) DO (
 SET "DKMAKE_INTERNAL_GITEXE=%%F"
 )
@@ -168,6 +323,7 @@ if %ERRORLEVEL% neq 0 (
 	exit /b 1
 )
 
+:HaveGit
 REM Set DKMAKE_INTERNAL_WINPATH to something like /c/WINDOWS/System32:/c/WINDOWS:/c/WINDOWS/System32/Wbem
 FOR /F "tokens=* usebackq" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% --path "%SYSTEMROOT%\System32;%SYSTEMROOT%;%SYSTEMROOT%\System32\Wbem"`) DO (
 SET "DKMAKE_INTERNAL_WINPATH=%%F"

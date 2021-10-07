@@ -194,16 +194,6 @@ case "$PLATFORM" in
         ;;
 esac
 
-# We should not rely on the PATH ordering.
-# Also, on GitHub Actions windows-2019 environment, the PATH will have both
-# MinGW from Git (including bash.exe and sh.exe) and make.exe from Chocolatey in the command
-# line. These lead to unpleasant `*** fatal error - cygheap base mismatch detected - 0x180347408/0x180352408.`
-# errors.
-# So /usr/bin:/bin must consistently be at the head of the PATH when running anything on a development
-# environment (within-dev). The somewhat uncontrollable garbage that may be in a development environment PATH
-# will likely not be present in a Docker container, so within-sandbox does not need to follow this reasoning.
-PATH=/usr/bin:/bin:"$PATH"
-
 # print PATH for troubleshooting
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
