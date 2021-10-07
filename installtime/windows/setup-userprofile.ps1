@@ -549,8 +549,16 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
         # You can see the arguments if you run: Git-2.33.0-$GitWindowsArch-bit.exe /?
         # https://jrsoftware.org/ishelp/index.php?topic=setupcmdline has command line options.
         # https://github.com/git-for-windows/build-extra/tree/main/installer has installer source code.
+        # https://github.com/chocolatey-community/chocolatey-coreteampackages/blob/master/automatic/git.install/tools/chocolateyInstall.ps1
+        # and https://github.com/chocolatey-community/chocolatey-coreteampackages/blob/master/automatic/git.install/tools/helpers.ps1 have
+        # options for silent install.
+        $res = "icons", "assoc", "assoc_sh"
+        $isSystem = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsSystem
+        if ( !$isSystem ) { $res += "icons\quicklaunch" }
         $proc = Start-Process -FilePath "$GitWindowsSetupAbsPath\Git-2.33.0-$GitWindowsBits-bit.exe" -NoNewWindow -Wait -PassThru `
-            -ArgumentList @("/SP-", "/SILENT", "/SUPPRESSMSGBOXES", "/CURRENTUSER", "/NORESTART")
+            -ArgumentList @("/CURRENTUSER",
+                "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/NOCANCEL", "/SP-", "/LOG",
+                ('/COMPONENTS="{0}"' -f ($res -join ",")) )
         $exitCode = $proc.ExitCode
         if ($exitCode -ne 0) {
             Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
