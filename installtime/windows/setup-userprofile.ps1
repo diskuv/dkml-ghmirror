@@ -439,7 +439,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 17
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -905,22 +905,7 @@ try {
         Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/usr/bin/find '$dkmlSetupCygwinAbsMixedPath' -type f | /usr/bin/xargs /usr/bin/dos2unix --quiet"
     }
 
-    function Invoke-CygwinInitialization {
-        param (
-            [switch]
-            $Skipped
-        )
-        if ($Skipped) {
-            $global:ProgressActivity = "Install Cygwin"
-        } else {
-            $global:ProgressActivity = "Install Cygwin (skipped)"
-        }
-        Write-ProgressStep
-    }
-
     function Install-Cygwin {
-        Invoke-CygwinInitialization
-
         # Much of the remainder of the 'Cygwin' section is modified from
         # https://github.com/esy/esy-bash/blob/master/build-cygwin.js
 
@@ -964,14 +949,17 @@ try {
     # END Cygwin
     # ----------------------------------------------------------------
 
+    $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
+    Write-ProgressStep
+
     if ((Test-Path -Path "$ProgramPath\share\dkml\repro\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\pins.txt")) {
-        Invoke-CygwinInitialization -Skipped
+        # Already installed
     } elseif (Import-DiskuvOCamlAsset `
             -PackageName "ocaml_opam_repo-reproducible" `
             -ZipFile "ocaml-opam-repo.zip" `
             -TmpPath "$TempPath" `
             -DestinationPath "$ProgramPath\share\dkml\repro") {
-        Invoke-CygwinInitialization -Skipped
+        # Successfully downloaded from asset
     } else {
         Install-Cygwin
 
@@ -993,9 +981,6 @@ try {
 
         # ----------------------------------------------------------------
         # BEGIN Fetch/install fdopen-based ocaml/opam repository
-
-        $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
-        Write-ProgressStep
 
         $DkmlCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$DkmlPath"
 
