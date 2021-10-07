@@ -97,6 +97,7 @@ then
         # subfolder (if any) into the correct location.
         echo "Scanning   $OCAML_OPAM_PORT $layer"
         install -d "$WORK/incoming"
+        set +e
         tar x --file "$layer" --directory "$WORK/incoming" \
             --overwrite --warning=no-unknown-keyword --wildcards --ignore-zeros \
             --exclude 'Hives/' \
@@ -118,6 +119,19 @@ then
             # --exclude 'Files/cygwin64/usr/libexec' \
             # --exclude 'Files/cygwin64/usr/x86_64-w64-mingw32' \
             # --exclude 'Files/cygwin64/var/**'
+        ec=$?
+        if [ "$ec" -ne 0 ]; then
+            # Since there is a chance the file is corrupted (ex. tar: Unexpected EOF in archive), move it out of the way so next
+            # time moby-download-docker-image.sh can redownload it.
+            if [ -e "$layer" ]; then
+                mv "$layer" "$layer.badread"
+            fi
+            exit $ec
+        else
+            # Since we had a successful read, remove any old bad read attempts
+            rm -f "$layer.badread"
+        fi
+        set -e
 
         # Fix any 0o000 perms
         chmod -R 755 "$WORK/incoming"
