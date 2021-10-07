@@ -56,7 +56,8 @@ export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
 # The first section:
 # * These are packages that are pinned because they are not lexographically the latest
 # The second section:
-# * The $*FlavorPackages in installtime\windows\setup-userprofile.ps1
+# * The $*FlavorPackages in installtime\windows\setup-userprofile.ps1 except:
+#     any in PINNED_PACKAGES_DKML_PATCHES or PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
 export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "seq:base"
 
@@ -69,6 +70,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "ocamlformat:0.18.0"
     "ocamlformat-rpc:0.18.0"
     "ocamlformat-rpc-lib:0.18.0"
+    # "ocp-indent:1.8.2-windowssupport" in PINNED_PACKAGES_DKML_PATCHES
     "sexplib:v0.14.0"
     "sha:1.14"
     "utop:2.8.0"

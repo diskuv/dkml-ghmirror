@@ -78,13 +78,14 @@ if is_dev_platform; then
     if ! grep -q '\bocamlformat\b' "$WORK"/packages || \
        ! grep -q '\bocamlformat-rpc\b' "$WORK"/packages || \
        ! grep -q '\bocaml-lsp-server\b' "$WORK"/packages || \
+       ! grep -q '\bocp-indent\b' "$WORK"/packages || \
        ! grep -q '\butop\b' "$WORK"/packages; \
     then
         # We are missing required packages. Let's install them.
         {
             echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
-            echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server utop"
+            echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server ocp-indent utop"
         } > "$WORK"/configure.sh
         print_opam_logs_on_error "$DKML_POSIX_SHELL" "$WORK"/configure.sh
     fi

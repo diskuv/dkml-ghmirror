@@ -243,6 +243,7 @@ $FullFlavorPackages = $CiFlavorPackages + @(
     "ocamlformat.0.18.0",
     "ocamlformat-rpc.0.18.0",
     "ocamlformat-rpc-lib.0.18.0",
+    "ocp-indent.1.8.2-windowssupport",
     "utop.2.8.0"
 )
 $FullFlavorBinaries = $CiFlavorBinaries + @(
