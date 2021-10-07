@@ -324,13 +324,12 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # Set PATH for vcpkg
     if [ -n "${DiskuvOCamlHome:-}" ]; then
         # We don't want vcpkg installing cmake again if we have a modern one
-        if is_unixy_windows_build_machine; then
-            DOCH_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-            VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja/bin:$PATH"
+        if [ -x /usr/bin/cygpath ]; then
+            DOCH_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
         else
             DOCH_UNIX="$DiskuvOCamlHome"
-            VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$PATH"
         fi
+        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja:$PATH"
     else
         VCPKG_PATH="$PATH"
     fi
