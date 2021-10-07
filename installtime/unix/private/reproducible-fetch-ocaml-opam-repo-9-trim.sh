@@ -68,6 +68,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "ocamlfind:1.9.1"
     "ocamlformat:0.18.0"
     "ocamlformat-rpc:0.18.0"
+    "ocamlformat-rpc-lib:0.18.0"
     "sexplib:v0.14.0"
     "sha:1.14"
     "utop:2.8.0"

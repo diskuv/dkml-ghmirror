@@ -81,7 +81,6 @@ if is_dev_platform; then
        ! grep -q '\butop\b' "$WORK"/packages; \
     then
         # We are missing required packages. Let's install them.
-        # The explicit veresion of ocamlformat is required because .ocamlformat file lists it.
         {
             echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
