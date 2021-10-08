@@ -173,14 +173,14 @@ fi
 # ------------
 # BEGIN --switch
 
+# Set $DiskuvOCamlHome, $DKMLPARENTHOME_BUILDHOST and other vars
+autodetect_dkmlvars
+
 # Q: What if there was no switch but there was a root?
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
 
 # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-    # Set $DiskuvOCamlHome and other vars
-    autodetect_dkmlvars
-
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
 elif [ -n "${BUILDDIR:-}" ]; then
@@ -230,7 +230,7 @@ case "$subcommand" in
     exec)
         # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`
         # and `opam remove`.
-        if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ]; then
+        if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ] && [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sexp" ]; then
             DOW="$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe"
             if [ -x /usr/bin/cygpath ]; then
                 DOW=$(/usr/bin/cygpath -aw "$DOW")

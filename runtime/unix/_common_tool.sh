@@ -354,7 +354,7 @@ _exec_dev_or_arch_helper() {
 # - env:DiskuvOCamlHome - optional
 # - env:DiskuvOCamlBinaryPaths - optional
 # Outputs:
-# - env:DKMLPARENTHOME
+# - env:DKMLPARENTHOME_BUILDHOST
 # - env:DiskuvOCamlVarsVersion - set if DiskuvOCaml installed
 # - env:DiskuvOCamlHome - set if DiskuvOCaml installed
 # - env:DiskuvOCamlBinaryPaths - set if DiskuvOCaml installed
