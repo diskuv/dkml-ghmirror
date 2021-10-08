@@ -16,7 +16,11 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 include os-darwin.mk
 else
+ifeq ($(UNAME_S),Linux)
+include os-linux.mk
+else
 $(error We currently do not support doing contributions on '$(UNAME_S)')
+endif
 endif
 endif
 
