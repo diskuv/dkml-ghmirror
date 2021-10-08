@@ -384,7 +384,8 @@ define BUILD_platform_buildtype_template
 	fi
   build-$(1)-$(2): prepare-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
-	@if [ -e "build/$(1)/$(2)/_opam/bin/dune" ]; then \
+	@BUILD_ROOT_UNIX="$$$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$$$(/usr/bin/cygpath -u "$$$$BUILD_ROOT_UNIX"); fi && \
+	if [ -e "$$$$BUILD_ROOT_UNIX/$(1)/$(2)/_opam/bin/dune" ]; then \
 		printf "\n\n$(HORIZONTAL_RULE_80COLS)\n"; \
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
@@ -531,8 +532,9 @@ dkml-report: buildconfig/dune
 	@echo PATH = $$PATH
 	@echo
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
+	BUILD_ROOT_UNIX="$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$(/usr/bin/cygpath -u "$$BUILD_ROOT_UNIX"); fi && \
 	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
-			if [ -e build/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
+			if [ -e "$$BUILD_ROOT_UNIX"/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
 				echo; \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
