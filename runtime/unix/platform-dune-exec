@@ -160,6 +160,8 @@ case "$subcommand" in
     *)
         if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
             DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
+        elif [ -z "$BUILD_BASEPATH" ]; then
+            DUNE_OPTS+=(--build-dir "$BUILDDIR_BUILDHOST${OS_DIR_SEP}_dune") # BUILDDIR_BUILDHOST is absolute path
         else
             DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$BUILDDIR/_dune")
         fi

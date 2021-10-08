@@ -75,6 +75,13 @@ fi
 # TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
 export TOPDIR
 
+if [ -x /usr/bin/cygpath ]; then
+    OS_DIR_SEP="\\"
+else
+    # shellcheck disable=SC2034
+    OS_DIR_SEP=/
+fi
+
 # The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
 # directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.
 # For Windows you want to use it so that you do not run into 260 character absolute path limits!

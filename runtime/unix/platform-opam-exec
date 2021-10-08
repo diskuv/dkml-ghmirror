@@ -227,6 +227,24 @@ case "$subcommand" in
     list | option | repository | env)
         COMPILATION=OFF exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
+    exec)
+        # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`
+        # and `opam remove`.
+        if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ]; then
+            DOW="$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe"
+            if [ -x /usr/bin/cygpath ]; then
+                DOW=$(/usr/bin/cygpath -aw "$DOW")
+            fi
+            if [ "$1" = "--" ]; then
+                shift
+                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "$DOW" "$@"
+            else
+                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$DOW" "$@"
+            fi
+        else
+            exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        fi
+    ;;
     *)
         exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
