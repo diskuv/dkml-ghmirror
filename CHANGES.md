@@ -1,3 +1,30 @@
+## 0.2.2 (2021-10-07)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+
+* Visual Studio fixes. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/3
+  * Detect and require English language pack for Visual Studio.
+  * Fix regression introduced in 0.2.x: Auto-installation of Visual Studio has the Windows 10 SDK but not the Visual Studio compiler.
+  * Auto-install Visual Studio VC.Tools component for vcpkg use, in addition to VC.14.26 for OCaml use, if the existing installation is not Visual Studio 16.6.
+  * Add VC.14.25 as a compatible version so GitHub Actions on a [windows-2019](https://github.com/actions/virtual-environments) environment works.
+* Many changes to support CI, including adding CI flavor so don't need to install utop, etc. when in CI
+* Use new binary dkml-opam-wrapper as Opam wrap-{build|install|remove} command to cache detection of MSVC and lessen need to drop into MSYS2 shell explicitly
+* Order of magnitude trimming of fdopen packages to speed up basic Windows opam operations (especially those that involve tarring)
+* Pin all at once the fdopen and other packages that are part of the DKML distribution
+* Pre-alpha support for macOS. Key features like cross-compiling x86_64 on arm64 to build universal binaries have not been included.
+* Pre-alpha support for Windows 32-bit. A couple key packages are not yet ready for 32-bit.
+
+Sharp edges:
+
+* Windows makeit targets and Windows opam commands are significantly slower than Unix. Signficant changes to Opam are necessary to close the performance gap; no quick fix
+  is available.
+
 ## 0.2.1 (2021-09-17)
 
 > The *Diskuv OCaml* distribution is available under the
