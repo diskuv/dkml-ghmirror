@@ -59,6 +59,9 @@ PINNED_PACKAGES_OPAM="
 # BEGIN Command line processing
 
 usage() {
+    echo "Creates a local Opam switch with a working compiler.">&2
+    echo "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
+    echo "  Will set switch options pin package versions needed to compile on Windows." >&2
     echo "Usage:" >&2
     echo "    create-opam-switch.sh -h                          Display this help message" >&2
     echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    Create the Opam switch" >&2
@@ -290,6 +293,10 @@ fi
 printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
 if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
 printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
+
+# Only the compiler should be created; no local .opam files will be auto-installed so that
+# the `opam option` done later in this script can be set.
+printf "%s\n" "  --no-install \\" >> "$WORK"/switchcreateargs.sh
 
 if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
