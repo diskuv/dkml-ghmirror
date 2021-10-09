@@ -21,10 +21,11 @@ if [ -z "${BUILDDIR:-}" ]; then
     BUILDDIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
 fi
 if [ -x /usr/bin/cygpath ]; then
+    # Trim any trailing slash because `cygpath -aw .` has trailing slash
     BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$BUILDDIR" | sed 's#\\$##')
 else
-    # shellcheck disable=SC2034
-    BUILDDIR_BUILDHOST=$(cd "$BUILDDIR" && pwd)
+    # Make into absolute path if not already.
+    BUILDDIR_BUILDHOST="$BUILD_BASEPATH$BUILDDIR"
 fi
 
 # BUILDDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.

@@ -174,7 +174,7 @@ fi
 # BEGIN --switch
 
 # Set $DiskuvOCamlHome, $DKMLPARENTHOME_BUILDHOST and other vars
-autodetect_dkmlvars
+autodetect_dkmlvars || true
 
 # Q: What if there was no switch but there was a root?
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
