@@ -264,6 +264,7 @@ $FullFlavorBinaries = $CiFlavorBinaries + @(
     "ocamldoc.opt.exe",
     "ocamlfind.exe",
     "ocamlformat.exe",
+    "ocamlformat-rpc.exe",
     "ocamllex.byte.exe",
     "ocamllex.exe",
     "ocamllex.opt.exe",
