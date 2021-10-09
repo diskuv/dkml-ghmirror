@@ -39,7 +39,7 @@ cd "$DKMLDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-if [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ]; then
+if [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ] && [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/pins.txt ]; then
     echo 'SUCCESS. Already installed'
     exit 0
 fi
@@ -56,3 +56,5 @@ cd "$INSTALLDIR"
 
 # Fetch and install
 log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
+# Trim
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh
