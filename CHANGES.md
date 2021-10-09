@@ -25,7 +25,7 @@ FIRST, to upgrade the system (only necessary on Windows!) run the following in P
 (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
 
 iwr `
-  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.2/distribution-portable.zip" `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.3/distribution-portable.zip" `
   -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
 
 Expand-Archive `
