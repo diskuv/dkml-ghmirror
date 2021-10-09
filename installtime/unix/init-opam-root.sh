@@ -252,9 +252,16 @@ fi
 # to x86-windows.
 platform_vcpkg_triplet
 
+# Locate vcpkg and the vcpkg package installation directory
 VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
 is_unixy_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
 is_unixy_windows_build_machine && VCPKG_WINDOWS=$(cygpath -aw "$VCPKG_UNIX")
+if [ -e vcpkg.json ]; then
+    # Manifest projects use the local vcpkg_installed/ directory
+    VCPKG_INSTALLED_UNIX=vcpkg_installed
+else
+    VCPKG_INSTALLED_UNIX="$VCPKG_UNIX"/installed
+fi
 
 # shellcheck disable=SC2154
 install -d "$VCPKG_UNIX"
@@ -385,15 +392,15 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # Copy pkgconf.exe to pkg-config.exe since not provided
     # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
 
-    install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
-        "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
+    install "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
+        "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
 
     # ---fixup libuv----
 
     # If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
 
-    install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
-        "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
+    install "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
+        "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
 fi
 
 # END install vcpkg packages
