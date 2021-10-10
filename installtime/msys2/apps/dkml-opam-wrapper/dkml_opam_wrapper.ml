@@ -239,6 +239,9 @@ let add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
       | Ok (Error _ as err) -> err
       | Error _ as err -> err
 
+let set_msys2_entries () =
+  OS.Env.set_var "MSYSTEM" (Some "MSYS")
+
 let int_parser = OS.Env.(parser "int" String.to_int)
 
 let main_with_result () =
@@ -262,6 +265,11 @@ let main_with_result () =
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
   let cmd = Cmd.of_list ([Fpath.to_string env_exe] @ cmd_and_args) in
 
+  (* Set MSYS2 environment variables.
+     - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
+       in add_microsoft_visual_studio_entries.
+   *)
+  set_msys2_entries () >>= fun () ->
   (* Remove MSVC environment variables *)
   remove_microsoft_visual_studio_entries () >>= fun () ->
   (* Add MSVC entries *)
