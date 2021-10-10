@@ -61,6 +61,109 @@ autodetect_posix_shell() {
     fi
 }
 
+# Get standard locations of Unix system binaries like `/usr/bin/mv` (or `/bin/mv`).
+#
+# Will not return anything in `/usr/local/bin` or `/usr/sbin`. Use when you do not
+# know whether the PATH has been set correctly, or when you do not know if the
+# system binary exists.
+#
+# At some point in the future, this function will error out if the required system binaries
+# do not exist. Most system binaries are common to all Unix/Linux/macOS installations but
+# some (like `comm`) may need to be installed for proper functioning of DKML.
+#
+# Outputs:
+# - env:DKMLSYS_MV - Location of `mv`
+# - env:DKMLSYS_CHMOD - Location of `chmod`
+# - env:DKMLSYS_UNAME - Location of `uname`
+# - env:DKMLSYS_ENV - Location of `env`
+# - env:DKMLSYS_AWK - Location of `awk`
+# - env:DKMLSYS_SED - Location of `sed`
+# - env:DKMLSYS_COMM - Location of `comm`
+# - env:DKMLSYS_INSTALL - Location of `install`
+# - env:DKMLSYS_RM - Location of `rm`
+# - env:DKMLSYS_SORT - Location of `sort`
+# - env:DKMLSYS_CAT - Location of `cat`
+autodetect_system_binaries() {
+    if [ -z "${DKMLSYS_MV:-}" ]; then
+        if [ -x /usr/bin/mv ]; then
+            DKMLSYS_MV=/usr/bin/mv
+        else
+            DKMLSYS_MV=/bin/mv
+        fi
+    fi
+    if [ -z "${DKMLSYS_CHMOD:-}" ]; then
+        if [ -x /usr/bin/chmod ]; then
+            DKMLSYS_CHMOD=/usr/bin/chmod
+        else
+            DKMLSYS_CHMOD=/bin/chmod
+        fi
+    fi
+    if [ -z "${DKMLSYS_UNAME:-}" ]; then
+        if [ -x /usr/bin/uname ]; then
+            DKMLSYS_UNAME=/usr/bin/uname
+        else
+            DKMLSYS_UNAME=/bin/uname
+        fi
+    fi
+    if [ -z "${DKMLSYS_ENV:-}" ]; then
+        if [ -x /usr/bin/env ]; then
+            DKMLSYS_ENV=/usr/bin/env
+        else
+            DKMLSYS_ENV=/bin/env
+        fi
+    fi
+    if [ -z "${DKMLSYS_AWK:-}" ]; then
+        if [ -x /usr/bin/awk ]; then
+            DKMLSYS_AWK=/usr/bin/awk
+        else
+            DKMLSYS_AWK=/bin/awk
+        fi
+    fi
+    if [ -z "${DKMLSYS_SED:-}" ]; then
+        if [ -x /usr/bin/sed ]; then
+            DKMLSYS_SED=/usr/bin/sed
+        else
+            DKMLSYS_SED=/bin/sed
+        fi
+    fi
+    if [ -z "${DKMLSYS_COMM:-}" ]; then
+        if [ -x /usr/bin/comm ]; then
+            DKMLSYS_COMM=/usr/bin/comm
+        else
+            DKMLSYS_COMM=/bin/comm
+        fi
+    fi
+    if [ -z "${DKMLSYS_INSTALL:-}" ]; then
+        if [ -x /usr/bin/install ]; then
+            DKMLSYS_INSTALL=/usr/bin/install
+        else
+            DKMLSYS_INSTALL=/bin/install
+        fi
+    fi
+    if [ -z "${DKMLSYS_RM:-}" ]; then
+        if [ -x /usr/bin/rm ]; then
+            DKMLSYS_RM=/usr/bin/rm
+        else
+            DKMLSYS_RM=/bin/rm
+        fi
+    fi
+    if [ -z "${DKMLSYS_SORT:-}" ]; then
+        if [ -x /usr/bin/sort ]; then
+            DKMLSYS_SORT=/usr/bin/sort
+        else
+            DKMLSYS_SORT=/bin/sort
+        fi
+    fi
+    if [ -z "${DKMLSYS_CAT:-}" ]; then
+        if [ -x /usr/bin/cat ]; then
+            DKMLSYS_CAT=/usr/bin/cat
+        else
+            DKMLSYS_CAT=/bin/cat
+        fi
+    fi
+    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT
+}
+
 # A function that will execute the shell command with error detection enabled and trace
 # it on standard error if DKML_BUILD_TRACE=ON (which is default)
 #
@@ -68,9 +171,7 @@ autodetect_posix_shell() {
 #   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
 #     set.
 log_shell() {
-    if [ -z "${DKML_POSIX_SHELL:-}" ]; then
-        autodetect_posix_shell
-    fi
+    autodetect_posix_shell
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
         "$DKML_POSIX_SHELL" -eufx "$@"
@@ -154,8 +255,11 @@ is_arg_linux_based_platform() {
 #  env:BOOTSTRAPNAME - Examples include: 100-compile-opam
 #  env:DKMLDIR - The directory with .dkmlroot
 install_reproducible_common() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     install_reproducible_common_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$install_reproducible_common_BOOTSTRAPDIR"
+    "$DKMLSYS_INSTALL" -d "$install_reproducible_common_BOOTSTRAPDIR"
     install_reproducible_file .dkmlroot
     install_reproducible_file installtime/none/emptytop/dune-project
     install_reproducible_file etc/contexts/linux-build/crossplatform-functions.sh
@@ -172,12 +276,15 @@ install_reproducible_common() {
 #       It will be deployed relative to $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
 install_reproducible_file() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     _install_reproducible_file_RELFILE="$1"
     shift
     _install_reproducible_file_RELDIR=$(dirname "$_install_reproducible_file_RELFILE")
     _install_reproducible_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
-    install "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+    "$DKMLSYS_INSTALL" -d "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+    "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
 }
 
 # Install any deterministically generated files that go into your
@@ -191,15 +298,18 @@ install_reproducible_file() {
 #  $2 - The location of the script that will be installed.
 #       It must be specified relative to $DEPLOYDIR_UNIX.
 install_reproducible_generated_file() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     install_reproducible_generated_file_SRCFILE="$1"
     shift
     install_reproducible_generated_file_RELFILE="$1"
     shift
     install_reproducible_generated_file_RELDIR=$(dirname "$install_reproducible_generated_file_RELFILE")
     install_reproducible_generated_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELDIR"/
-    rm -f "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE" # ensure if exists it is a regular file or link but not a directory
-    install "$install_reproducible_generated_file_SRCFILE" "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE"
+    "$DKMLSYS_INSTALL" -d "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELDIR"/
+    "$DKMLSYS_RM" -f "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE" # ensure if exists it is a regular file or link but not a directory
+    "$DKMLSYS_INSTALL" "$install_reproducible_generated_file_SRCFILE" "$install_reproducible_generated_file_BOOTSTRAPDIR"/"$install_reproducible_generated_file_RELFILE"
 }
 
 # Install a README.md file that go into your reproducible build.
@@ -216,11 +326,14 @@ install_reproducible_generated_file() {
 #       It will be deployed as 'README.md' in the bootstrap folder of $DEPLOYDIR_UNIX and it
 #       must be specified as an existing relative path to $DKMLDIR.
 install_reproducible_readme() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     install_reproducible_readme_RELFILE="$1"
     shift
     install_reproducible_readme_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
-    install -d "$install_reproducible_readme_BOOTSTRAPDIR"
-    sed "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$install_reproducible_readme_RELFILE" > "$install_reproducible_readme_BOOTSTRAPDIR"/README.md
+    "$DKMLSYS_INSTALL" -d "$install_reproducible_readme_BOOTSTRAPDIR"
+    "$DKMLSYS_SED" "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$install_reproducible_readme_RELFILE" > "$install_reproducible_readme_BOOTSTRAPDIR"/README.md
 }
 
 # Changes the suffix of a string and print to the standard output.
@@ -242,7 +355,11 @@ change_suffix() {
     shift
     change_suffix_NEW_SUFFIX="$1"
     shift
-    printf "%s" "$change_suffix_TEXT" | awk -v REPLACE="$change_suffix_NEW_SUFFIX" "{ gsub(/$change_suffix_OLD_SUFFIX/,REPLACE); print }"
+
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
+    printf "%s" "$change_suffix_TEXT" | "$DKMLSYS_AWK" -v REPLACE="$change_suffix_NEW_SUFFIX" "{ gsub(/$change_suffix_OLD_SUFFIX/,REPLACE); print }"
 }
 
 # Replaces all occurrences of the search term with a replacement string, and print to the standard output.
@@ -260,14 +377,18 @@ change_suffix() {
 #
 # Any characters can be used in TEXT and REPLACE.
 replace_all() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     replace_all_TEXT="$1"
     shift
     replace_all_SEARCH="$1"
     shift
     replace_all_REPLACE="$1"
     shift
-    replace_all_REPLACE=$(printf "%s" "$replace_all_REPLACE" | sed 's#\\#\\\\#g') # escape all backslashes for awk
-    printf "%s" "$replace_all_TEXT" | awk -v REPLACE="$replace_all_REPLACE" "{ gsub(/$replace_all_SEARCH/,REPLACE); print }"
+    replace_all_REPLACE=$(printf "%s" "$replace_all_REPLACE" | "$DKMLSYS_SED" 's#\\#\\\\#g') # escape all backslashes for awk
+
+    printf "%s" "$replace_all_TEXT" | "$DKMLSYS_AWK" -v REPLACE="$replace_all_REPLACE" "{ gsub(/$replace_all_SEARCH/,REPLACE); print }"
 }
 
 # Install a script that can re-install necessary system packages.
@@ -280,6 +401,9 @@ replace_all() {
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
 install_reproducible_system_packages() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     install_reproducible_system_packages_SCRIPTFILE="$1"
     shift
     install_reproducible_system_packages_PACKAGEFILE=$(change_suffix "$install_reproducible_system_packages_SCRIPTFILE" .sh .packagelist.txt)
@@ -290,16 +414,16 @@ install_reproducible_system_packages() {
     install_reproducible_system_packages_SCRIPTDIR=$(dirname "$install_reproducible_system_packages_SCRIPTFILE")
     install_reproducible_system_packages_BOOTSTRAPRELDIR=$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
     install_reproducible_system_packages_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$install_reproducible_system_packages_BOOTSTRAPRELDIR
-    install -d "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/
+    "$DKMLSYS_INSTALL" -d "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/
 
     if is_msys2_msys_build_machine; then
         # https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#List_of_installed_packages
         pacman -Qqet > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
-        printf "#!/usr/bin/env bash\nexec pacman -S \"\$@\" --needed - < '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE" > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+        printf "#!/bin/sh\nexec pacman -S \"\$@\" --needed - < '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE" > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     elif is_cygwin_build_machine; then
         cygcheck.exe -c -d > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
         {
-            printf "%s\n" "#!/usr/bin/env bash"
+            printf "%s\n" "#!/bin/sh"
             printf "%s\n" "if [ ! -e /usr/local/bin/cyg-get ]; then wget -O /usr/local/bin/cyg-get 'https://gitlab.com/cogline.v3/cygwin/-/raw/2049faf4b565af81937d952292f8ae5008d38765/cyg-get?inline=false'; fi"
             printf "%s\n" "if [ ! -x /usr/local/bin/cyg-get ]; then chmod +x /usr/local/bin/cyg-get; fi"
             printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
@@ -310,7 +434,7 @@ install_reproducible_system_packages() {
         printf "%s\n" "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
         exit 1
     fi
-    chmod 755 "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+    "$DKMLSYS_CHMOD" 755 "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
 }
 
 # Install a script that can relaunch itself in a relocated position.
@@ -325,6 +449,9 @@ install_reproducible_system_packages() {
 #       Must end with `.sh`.
 #  $@ - All remaining arguments are how to invoke the run script ($1).
 install_reproducible_script_with_args() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     install_reproducible_script_with_args_SCRIPTFILE="$1"
     shift
     install_reproducible_script_with_args_RECREATEFILE=$(change_suffix "$install_reproducible_script_with_args_SCRIPTFILE" .sh -noargs.sh)
@@ -337,12 +464,12 @@ install_reproducible_script_with_args() {
     install_reproducible_script_with_args_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$install_reproducible_script_with_args_BOOTSTRAPRELDIR
 
     install_reproducible_file "$install_reproducible_script_with_args_SCRIPTFILE"
-    install -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
-    printf "#!/usr/bin/env bash\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s %s\n" \
+    "$DKMLSYS_INSTALL" -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
+    printf "#!/bin/sh\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s %s\n" \
         "$install_reproducible_script_with_args_BOOTSTRAPRELDIR" \
         "$install_reproducible_script_with_args_BOOTSTRAPRELDIR/$install_reproducible_script_with_args_SCRIPTFILE" \
         "$*" > "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
-    chmod 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
+    "$DKMLSYS_CHMOD" 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
 }
 
 # Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine)
@@ -350,8 +477,11 @@ install_reproducible_script_with_args() {
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 build_machine_arch() {
-    build_machine_arch_MACHINE=$(uname -m)
-    build_machine_arch_SYSTEM=$(uname -s)
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
+    build_machine_arch_MACHINE=$("$DKMLSYS_UNAME" -m)
+    build_machine_arch_SYSTEM=$("$DKMLSYS_UNAME" -s)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
     case "${build_machine_arch_SYSTEM}-${build_machine_arch_MACHINE}" in
         Linux-armv7*)
@@ -463,6 +593,9 @@ set_dkmlparenthomedir() {
 # - env:NUMCPUS . Maximum of 8 if detectable; otherwise 1. Always a number from 1 to 8, even
 #   if on input env:NUMCPUS was set to text.
 autodetect_cpus() {
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     # initialize to 0 if not set
     if [ -z "${NUMCPUS:-}" ]; then
         NUMCPUS=0
@@ -474,8 +607,8 @@ autodetect_cpus() {
         if [ -n "${NUMBER_OF_PROCESSORS:-}" ]; then
             # Windows usually has NUMBER_OF_PROCESSORS
             NUMCPUS="$NUMBER_OF_PROCESSORS"
-        elif nproc --all > "$WORK"/numcpus 2>/dev/null && [ -s "$WORK"/numcpus ]; then
-            NUMCPUS=$(cat "$WORK"/numcpus)
+        elif /usr/bin/nproc --all > "$WORK"/numcpus 2>/dev/null && [ -s "$WORK"/numcpus ]; then
+            NUMCPUS=$("$DKMLSYS_CAT" "$WORK"/numcpus)
         fi
     fi
     # type cast again to a number (in case autodetection produced a string)
@@ -546,10 +679,10 @@ autodetect_vsdev() {
         if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
             return 1
         fi
-        autodetect_vsdev_VSSTUDIODIR=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
-        autodetect_vsdev_VSSTUDIOVCVARSVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
-        autodetect_vsdev_VSSTUDIOWINSDKVER=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE")
-        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$(awk 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
+        autodetect_vsdev_VSSTUDIODIR=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
+        autodetect_vsdev_VSSTUDIOWINSDKVER=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE")
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
     fi
     if [ -x /usr/bin/cygpath ]; then
         autodetect_vsdev_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_vsdev_VSSTUDIODIR")
@@ -626,14 +759,17 @@ autodetect_compiler() {
     # Set DKML_POSIX_SHELL if not already set
     autodetect_posix_shell
 
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     # Initialize output script and variables in case of failure
     if [ "$autodetect_compiler_SEXP" = ON ]; then
         printf '()' > "$autodetect_compiler_LAUNCHER".tmp
-        mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+        "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
     else
-        printf '#!%s\nexec env "$@"\n' "$DKML_POSIX_SHELL" > "$autodetect_compiler_LAUNCHER".tmp
-        chmod +x "$autodetect_compiler_LAUNCHER".tmp
-        mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+        printf '#!%s\nexec %s "$@"\n' "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" > "$autodetect_compiler_LAUNCHER".tmp
+        "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
+        "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
     fi
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_WINDOWS=
@@ -647,7 +783,7 @@ autodetect_compiler() {
     if [ "$#" -ge 1 ]; then
         autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
         if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
-        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | sed 's#\\#\\\\#g')
+        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | "$DKMLSYS_SED" 's#\\#\\\\#g')
         shift
     else
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
@@ -708,7 +844,7 @@ autodetect_compiler() {
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             autodetect_compiler_vsdev_dump_vars() {
-                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x86 >&2
             }
@@ -716,7 +852,7 @@ autodetect_compiler() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=x64 >&2
             }
@@ -729,7 +865,7 @@ autodetect_compiler() {
         # The build host machine is 64-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             autodetect_compiler_vsdev_dump_vars() {
-                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x64 >&2
             }
@@ -737,7 +873,7 @@ autodetect_compiler() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                env PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=x86 >&2
             }
@@ -781,7 +917,8 @@ autodetect_compiler() {
         autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED=""
         autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED=""
     fi
-    awk \
+    # shellcheck disable=SC2016
+    "$DKMLSYS_AWK" \
         -v VCPKG_PREFIX_INCLUDE="$autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED" \
         -v VCPKG_PREFIX_LIB="$autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED" '
     BEGIN{FS="="}
@@ -803,7 +940,8 @@ autodetect_compiler() {
     ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh
 
     # FIFTH, set autodetect_compiler_COMPILER_PATH to the provided PATH
-    awk '
+    # shellcheck disable=SC2016
+    "$DKMLSYS_AWK" '
     BEGIN{FS="="}
 
     $1 == "PATH" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print value}
@@ -815,16 +953,16 @@ autodetect_compiler() {
         cp "$autodetect_compiler_TEMPDIR/winpath.txt" "$autodetect_compiler_TEMPDIR"/unixpath.txt
     fi
     # shellcheck disable=SC2034
-    autodetect_compiler_COMPILER_PATH_UNIX=$(cat "$autodetect_compiler_TEMPDIR"/unixpath.txt)
-    autodetect_compiler_COMPILER_PATH_WIN=$(cat "$autodetect_compiler_TEMPDIR"/winpath.txt)
+    autodetect_compiler_COMPILER_PATH_UNIX=$("$DKMLSYS_CAT" "$autodetect_compiler_TEMPDIR"/unixpath.txt)
+    autodetect_compiler_COMPILER_PATH_WIN=$("$DKMLSYS_CAT" "$autodetect_compiler_TEMPDIR"/winpath.txt)
 
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | awk 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
-    sort -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
-    printf "%s\n" "$PATH" | awk 'BEGIN{RS=":"} {print}' | sort -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
-    comm \
+    printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+    "$DKMLSYS_SORT" -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
+    printf "%s\n" "$PATH" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' | "$DKMLSYS_SORT" -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
+    "$DKMLSYS_COMM" \
         -23 \
         "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt \
         "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt \
@@ -832,7 +970,7 @@ autodetect_compiler() {
     autodetect_compiler_COMPILER_UNIQ_PATH=
     while IFS='' read -r autodetect_compiler_line; do
         # if and only if the $autodetect_compiler_line matches one of the lines in vcvars_uniq.txt
-        if ! printf "%s\n" "$autodetect_compiler_line" | comm -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | awk 'NF>0{exit 1}'; then
+        if ! printf "%s\n" "$autodetect_compiler_line" | "$DKMLSYS_COMM" -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | "$DKMLSYS_AWK" 'NF>0{exit 1}'; then
             if [ -z "$autodetect_compiler_COMPILER_UNIQ_PATH" ]; then
                 autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_line"
             else
@@ -846,7 +984,7 @@ autodetect_compiler() {
         autodetect_compiler_escape() {
             # Each s-exp string must follow OCaml syntax (escape double-quotes and backslashes)
             # Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`
-            sed 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
+            "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
         }
     else
         autodetect_compiler_escape() {
@@ -854,7 +992,7 @@ autodetect_compiler() {
             # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
             # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
             # we need to replace single quotes (') with ('"'"').
-            sed "s#'#'\"'\"'#g" "$@"
+            "$DKMLSYS_SED" "s#'#'\"'\"'#g" "$@"
         }
     fi
     {
@@ -862,7 +1000,7 @@ autodetect_compiler() {
             printf "(\n"
         else
             printf "%s\n" "#!$DKML_POSIX_SHELL"
-            printf "%s\n" "exec env \\"
+            printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
         # Add all but PATH and MSVS_PREFERENCE to launcher environment
@@ -897,8 +1035,8 @@ autodetect_compiler() {
             printf "%s\n" '  "$@"'
         fi
     } > "$autodetect_compiler_LAUNCHER".tmp
-    chmod +x "$autodetect_compiler_LAUNCHER".tmp
-    mv "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
 
     return 0
 }
