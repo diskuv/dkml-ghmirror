@@ -48,7 +48,7 @@ let msvc_as_is_vars =
     "WindowsSDKVersion";
   ]
 
-let prune_path path =
+let prune_path_of_microsoft_visual_studio path =
   String.cuts ~empty:false ~sep:";" path
   |> List.filter (fun entry ->
          let contains s =
@@ -69,6 +69,16 @@ let prune_path path =
            || contains "\\Microsoft.NET\\Framework64\\"
            || contains "\\MSBuild\\Current\\bin\\"))
 
+let prune_path_of_msys2 path =
+  String.cuts ~empty:false ~sep:";" path
+  |> List.filter (fun entry ->
+         let ends_with s =
+           String.is_suffix ~affix:(String.Ascii.lowercase s)
+             (String.Ascii.lowercase entry)
+         in
+         not
+           (ends_with "\\MSYS2\\usr\\bin"))
+
 let remove_microsoft_visual_studio_entries () =
   (* 1. Remove all as-is variables *)
   List.fold_right
@@ -86,7 +96,7 @@ let remove_microsoft_visual_studio_entries () =
   OS.Env.(
     (* 3. Remove MSVC entries from PATH *)
     req_var "PATH" >>= fun path ->
-    set_var "PATH" (Some (String.concat ~sep:";" (prune_path path))))
+    set_var "PATH" (Some (String.concat ~sep:";" (prune_path_of_microsoft_visual_studio path))))
 
 (* Mimics set_dkmlparenthomedir *)
 let get_dkmlparenthomedir () =
@@ -239,8 +249,15 @@ let add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
     | Ok (Error _ as err) -> err
     | Error _ as err -> err
 
-let set_msys2_entries () =
-  OS.Env.set_var "MSYSTEM" (Some "MSYS")
+let set_msys2_entries msys2_dir =
+  (* 1. MSYSTEM = MSYS *)
+  OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
+  (* 2. Remove MSYS2 entries, if any, from PATH *)
+  OS.Env.req_var "PATH" >>= fun path ->
+  OS.Env.set_var "PATH" (Some (String.concat ~sep:";" (prune_path_of_msys2 path))) >>= fun () ->
+  (* 3. Add MSYS2 back to front of PATH *)
+  OS.Env.req_var "PATH" >>= fun path ->
+  OS.Env.set_var "PATH" (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
 
 let int_parser = OS.Env.(parser "int" String.to_int)
 
@@ -265,11 +282,14 @@ let main_with_result () =
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
   let cmd = Cmd.of_list ([Fpath.to_string env_exe] @ cmd_and_args) in
 
-  (* Set MSYS2 environment variables.
+  (* FIRST, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
        in add_microsoft_visual_studio_entries.
+     - This also needs to happen before add_microsoft_visual_studio_entries so that MSVC `link.exe`
+       can be inserted by VsDevCmd.bat before any MSYS2 `link.exe`. (`link.exe` is one example of many
+       possible conflicts).
    *)
-  set_msys2_entries () >>= fun () ->
+  set_msys2_entries msys2_dir >>= fun () ->
   (* Remove MSVC environment variables *)
   remove_microsoft_visual_studio_entries () >>= fun () ->
   (* Add MSVC entries *)
