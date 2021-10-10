@@ -180,6 +180,23 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
     throw "DiskuvOCaml is only supported on 64-bit Windows"
 }
 
+# B. Make sure OCaml variables not in Machine environment variables, which require Administrator access
+# Confer https://gitlab.com/diskuv/diskuv-ocaml/-/issues/4
+$OcamlNonDKMLEnvKeys = @( "OCAMLLIB" )
+$OcamlNonDKMLEnvKeys | ForEach-Object {
+    $x = [System.Environment]::GetEnvironmentVariable($_, "Machine")
+    if (($null -ne $x) -and ("" -ne $x)) {
+        Write-Error -Category PermissionDenied `
+            -Message ("`n`nYou have a System Environment Variable named '$_' that must be removed before proceeding with the installation.`n`n" +
+            "1. Press the Windows Key ⊞, type `"system environment variable`" and click Open.`n" +
+            "2. Click the `"Environment Variables`" button.`n" +
+            "3. In the bottom section titled `"System variables`" select the Variable '$_' and then press `"Delete`".`n" +
+            "4. Restart the installation process.`n`n"
+            )
+        exit 1
+    }
+}
+
 # ----------------------------------------------------------------
 # Calculate deployment id, and exit if -OnlyOutputCacheKey switch
 
@@ -1324,13 +1341,23 @@ try {
 
     $PathModified = $false
     if ($Flavor -eq "Full") {
+        # DiskuvOCamlHome
+        [Environment]::SetEnvironmentVariable("DiskuvOCamlHome", "$ProgramPath", 'User')
+
+        # ---------------------------------------------
+        # Remove any non-DKML OCaml environment entries
+        # ---------------------------------------------
+
+        $OcamlNonDKMLEnvKeys | ForEach-Object { [Environment]::SetEnvironmentVariable($_, "", 'User') }
+
+        # -----------
+        # Modify PATH
+        # -----------
+
         $splitter = [System.IO.Path]::PathSeparator # should be ';' if we are running on Windows (yes, you can run Powershell on other operating systems)
 
         $userpath = [Environment]::GetEnvironmentVariable('PATH', 'User')
         $userpathentries = $userpath -split $splitter # all of the User's PATH in a collection
-
-        # DiskuvOCamlHome
-        [Environment]::SetEnvironmentVariable("DiskuvOCamlHome", "$ProgramPath", 'User')
 
         # Add bin\ to the User's PATH if it isn't already
         if (!($userpathentries -contains $ProgramBinDir)) {
@@ -1344,15 +1371,15 @@ try {
             $PathModified = $true
         }
 
-        # Remove legacy tools\opam\ from the User's PATH
-        $ProgramRelToolDir = "tools\opam"
-        $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
-        if ($userpathentries -contains $ProgramToolOpamDir) {
-            # remove any old deployments
-            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelToolDir
-            foreach ($possibleDir in $PossibleDirs) {
-                $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
-            }
+        # Remove non-DKML OCaml installs "...\OCaml\bin" like C:\OCaml\bin from the User's PATH
+        # Confer: https://gitlab.com/diskuv/diskuv-ocaml/-/issues/4
+        $NonDKMLWildcards = @( "*\OCaml\bin" )
+        $c_old = $userpathentries.Count
+        foreach ($nonDkmlWildcard in $NonDKMLWildcards) {
+            $userpathentries = $userpathentries | Where-Object {$_ -notlike $nonDkmlWildcard}
+        }
+        $c_new = $userpathentries.Count
+        if ($c_old -ne $c_new) {
             $PathModified = $true
         }
 
