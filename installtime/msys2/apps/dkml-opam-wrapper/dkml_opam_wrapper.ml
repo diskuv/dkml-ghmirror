@@ -143,6 +143,9 @@ let get_dkmldeployment_id () =
    [msvc_as_is_vars]. Additionally PATH is updated.
 
    The input [path] is used as a cache key.
+
+   If OPAM_SWITCH_PREFIX is not defined, then <dkmlhome_dir>/system (the Diskuv
+   System opam switch) is used instead.
 *)
 let add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
     =
@@ -156,88 +159,85 @@ let add_microsoft_visual_studio_entries dkmlhome_dir msys2_dir dkmldeployment_id
       (association_list_of_sexp setvars)
   in
   OS.Env.req_var "PATH" >>= fun path ->
-  OS.Env.parse "OPAM_SWITCH_PREFIX" OS.Env.path ~absent:OS.File.null
+  OS.Env.parse "OPAM_SWITCH_PREFIX" OS.Env.path ~absent:Fpath.(dkmlhome_dir / "system")
   >>= fun opam_switch_prefix ->
-  if Fpath.compare OS.File.null opam_switch_prefix = 0 then
-    Rresult.R.error_msgf "OPAM_SWITCH_PREFIX is not an environment variable"
+  Rresult.R.ok opam_switch_prefix >>= fun opam_switch_prefix ->
+  let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
+  let cache_key =
+    (* The cache is made of the deployment id (basically the version of DKML) and the input path *)
+    let ctx = Sha256.init () in
+    Sha256.update_string ctx dkmldeployment_id;
+    Sha256.update_string ctx path;
+    Sha256.(finalize ctx |> to_hex)
+  in
+  let cache_file = Fpath.(cache_dir / (cache_key ^ ".sexp")) in
+  OS.File.exists cache_file >>= fun cache_hit ->
+  if cache_hit then (
+    (* Cache hit *)
+    Logs.info (fun m ->
+        m "Loading compiler cache entry %a" Fpath.pp cache_file);
+    let setvars = Sexp.load_sexp (Fpath.to_string cache_file) in
+    do_set setvars;
+    Ok ())
   else
-    Rresult.R.ok opam_switch_prefix >>= fun opam_switch_prefix ->
-    let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
-    let cache_key =
-      (* The cache is made of the deployment id (basically the version of DKML) and the input path *)
-      let ctx = Sha256.init () in
-      Sha256.update_string ctx dkmldeployment_id;
-      Sha256.update_string ctx path;
-      Sha256.(finalize ctx |> to_hex)
-    in
-    let cache_file = Fpath.(cache_dir / (cache_key ^ ".sexp")) in
-    OS.File.exists cache_file >>= fun cache_hit ->
-    if cache_hit then (
-      (* Cache hit *)
-      Logs.info (fun m ->
-          m "Loading compiler cache entry %a" Fpath.pp cache_file);
-      let setvars = Sexp.load_sexp (Fpath.to_string cache_file) in
-      do_set setvars;
-      Ok ())
-    else
-      (* Cache miss *)
-      let cache_miss tmp_sexp_file _oc _v =
-        let dash =
-          Fpath.(msys2_dir / "usr" / "bin" / "dash.exe" |> to_string)
-        in
-        let crossplatfuncs =
-          Fpath.(
-            dkmlhome_dir / "share" / "dkml" / "functions"
-            / "crossplatform-functions.sh"
-            |> to_string)
-        in
-        let shell_expr =
-          Fmt.str
-            "__source=$(/usr/bin/cygpath -a '%s') && . $__source && \
-             autodetect_compiler --sexp '%a'"
-            crossplatfuncs Fpath.pp tmp_sexp_file
-        in
-        let cmd = Cmd.(v dash % "-c" % shell_expr) in
-        (* Run the shell expression to autodetect the compiler *)
-        (OS.Cmd.run_status cmd >>= function
-         | `Exited status ->
-             if status <> 0 then
-               Rresult.R.error_msgf
-                 "Compiler autodetection failed with exit code %d" status
-             else Rresult.R.ok ()
-         | `Signaled signal ->
-             (* https://stackoverflow.com/questions/1101957/are-there-any-standard-exit-status-codes-in-linux/1535733#1535733 *)
-             exit (128 + signal))
-        >>| fun () ->
-        (* Read the compiler environment variables *)
-        let env_vars =
-          Sexp.load_sexp_conv_exn
-            (Fpath.to_string tmp_sexp_file)
-            association_list_of_sexp
-        in
-        (* Store the as-is and PATH compiler environment variables in an association list *)
-        let setvars =
-          List.filter_map
-            (fun varname ->
-              match List.assoc_opt varname env_vars with
-              | Some varvalue ->
-                  Some Sexp.(List [ Atom varname; Atom varvalue ])
-              | None -> None)
-            ("PATH" :: msvc_as_is_vars)
-        in
-        Sexp.List setvars
+    (* Cache miss *)
+    let cache_miss tmp_sexp_file _oc _v =
+      let dash =
+        Fpath.(msys2_dir / "usr" / "bin" / "dash.exe" |> to_string)
       in
-      match OS.File.with_tmp_oc "dkml-%s.tmp.sexp" cache_miss () with
-      | Ok (Ok setvars) ->
-          do_set setvars;
-          (* Save the cache miss so it is a cache hit next time *)
-          OS.Dir.create cache_dir >>= fun _already_exists ->
-          Logs.info (fun m ->
-              m "Saving compiler cache entry %a" Fpath.pp cache_file);
-          Sexp.save_hum (Fpath.to_string cache_file) setvars;
-          Ok ()
-      | Ok (Error _ as err) -> err
-      | Error _ as err -> err
+      let crossplatfuncs =
+        Fpath.(
+          dkmlhome_dir / "share" / "dkml" / "functions"
+          / "crossplatform-functions.sh"
+          |> to_string)
+      in
+      let shell_expr =
+        Fmt.str
+          "__source=$(/usr/bin/cygpath -a '%s') && . $__source && \
+            autodetect_compiler --sexp '%a'"
+          crossplatfuncs Fpath.pp tmp_sexp_file
+      in
+      let cmd = Cmd.(v dash % "-c" % shell_expr) in
+      (* Run the shell expression to autodetect the compiler *)
+      (OS.Cmd.run_status cmd >>= function
+        | `Exited status ->
+            if status <> 0 then
+              Rresult.R.error_msgf
+                "Compiler autodetection failed with exit code %d" status
+            else Rresult.R.ok ()
+        | `Signaled signal ->
+            (* https://stackoverflow.com/questions/1101957/are-there-any-standard-exit-status-codes-in-linux/1535733#1535733 *)
+            exit (128 + signal))
+      >>| fun () ->
+      (* Read the compiler environment variables *)
+      let env_vars =
+        Sexp.load_sexp_conv_exn
+          (Fpath.to_string tmp_sexp_file)
+          association_list_of_sexp
+      in
+      (* Store the as-is and PATH compiler environment variables in an association list *)
+      let setvars =
+        List.filter_map
+          (fun varname ->
+            match List.assoc_opt varname env_vars with
+            | Some varvalue ->
+                Some Sexp.(List [ Atom varname; Atom varvalue ])
+            | None -> None)
+          ("PATH" :: msvc_as_is_vars)
+      in
+      Sexp.List setvars
+    in
+    match OS.File.with_tmp_oc "dkml-%s.tmp.sexp" cache_miss () with
+    | Ok (Ok setvars) ->
+        do_set setvars;
+        (* Save the cache miss so it is a cache hit next time *)
+        OS.Dir.create cache_dir >>= fun _already_exists ->
+        Logs.info (fun m ->
+            m "Saving compiler cache entry %a" Fpath.pp cache_file);
+        Sexp.save_hum (Fpath.to_string cache_file) setvars;
+        Ok ()
+    | Ok (Error _ as err) -> err
+    | Error _ as err -> err
 
 let set_msys2_entries () =
   OS.Env.set_var "MSYSTEM" (Some "MSYS")
