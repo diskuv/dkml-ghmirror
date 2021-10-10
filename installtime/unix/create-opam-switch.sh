@@ -359,6 +359,7 @@ else
         log_shell "$WORK"/update.sh
     fi
 fi
+install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
 
 # END opam switch create
 # --------------------------------
@@ -405,7 +406,6 @@ if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root
     log_shell "$WORK"/setenv.sh
 
     # Done. Don't repeat anymore
-    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root_version"
 fi
 
@@ -417,7 +417,6 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml
     log_shell "$WORK"/setenv.sh
 
     # Done. Don't repeat anymore
-    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
@@ -444,7 +443,6 @@ if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
     log_shell "$WORK"/wbc.sh
 
     # Done. Don't repeat anymore
-    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version"
 fi
 
@@ -458,6 +456,9 @@ fi
 # switch-state file. And since as an escape hatch we want developer to be able to override
 # the pins, we only insert the pins if there are no other pins.
 # The only thing we force pin is ocaml-variants if we are on Windows.
+#
+# Also, the pins are tied to the $dkml_root_version, so we use $dkml_root_version
+# as a cache key. When the cache key changes (aka an upgrade) the pins are reset.
 
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
@@ -465,12 +466,14 @@ autodetect_posix_shell
 # Set DKMLPARENTHOME_BUILDHOST
 set_dkmlparenthomedir
 
-# We insert our pins if no pinned: [ ] section or it is empty like:
-# pinned: [
-# ]
+# We insert our pins if no pinned: [ ] section
+# OR it is empty like:
+#   pinned: [
+#   ]
+# OR the dkml_root_version changed
 get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned > "$WORK"/pinned
 PINNED_NUMLINES=$(awk 'END{print NR}' "$WORK"/pinned)
-if [ "$PINNED_NUMLINES" -le 2 ]; then
+if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/pins-set.$dkml_root_version" ]; then
     # The pins have to be sorted
     {
         # Input: dune-configurator,2.9.0
@@ -508,6 +511,9 @@ if [ "$PINNED_NUMLINES" -le 2 ]; then
 
     # Reset the switch state
     mv "$WORK"/new-switch-state "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state
+
+    # Done for this DKML version
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/pins-set.$dkml_root_version"
 fi
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
