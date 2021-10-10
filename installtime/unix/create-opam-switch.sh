@@ -365,6 +365,10 @@ fi
 
 # --------------------------------
 # BEGIN opam option
+#
+# Most of these options are tied to the $dkml_root_version, so we use $dkml_root_version
+# as a cache key. If an option does not depend on the version we use ".once" as the cache
+# key.
 
 # Set PLATFORM_VCPKG_TRIPLET
 platform_vcpkg_triplet
@@ -393,22 +397,32 @@ PKG_CONFIG_PATH_ADD=$(printf "%s" "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 # ----
 # 1. PKG_CONFIG_PATH
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
-{
-    cat "$WORK"/nonswitchexec.sh
-    printf "%s" "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
-} > "$WORK"/setenv.sh
-log_shell "$WORK"/setenv.sh
+if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root_version" ]; then
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "%s" "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
+    } > "$WORK"/setenv.sh
+    log_shell "$WORK"/setenv.sh
 
-if is_unixy_windows_build_machine; then
+    # Done. Don't repeat anymore
+    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root_version"
+fi
+
+if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
         printf "%s" "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
+
+    # Done. Don't repeat anymore
+    install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
 if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
-        [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.exist" ] && \
+        [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version" ] && \
         [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" ]; then
     # We can't put dkml-opam-wrapper.exe into Diskuv System switches because dkml-opam-wrapper.exe currently needs a system switch to compile itself.
     printf "%s" "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
@@ -431,7 +445,7 @@ if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
 
     # Done. Don't repeat anymore
     install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.exist"
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version"
 fi
 
 # END opam option
