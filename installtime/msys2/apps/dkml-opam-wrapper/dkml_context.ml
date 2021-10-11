@@ -33,6 +33,14 @@ let get_dkmlvars =
         Fpath.(fp / "dkmlvars.sexp" |> to_string)
         association_list_of_sexp )
 
+(* Get DKML version *)
+let get_dkmlversion =
+  lazy
+    ( Lazy.force get_dkmlvars >>= fun assocl ->
+      match List.assoc_opt "DiskuvOCamlVersion" assocl with
+      | Some v -> Rresult.R.ok v
+      | None -> Rresult.R.error_msg "No DiskuvOCamlVersion in dkmlvars.sexp" )
+
 (* Get MSYS2 directory *)
 let get_msys2_dir =
   lazy

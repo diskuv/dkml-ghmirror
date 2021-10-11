@@ -12,6 +12,7 @@ open Astring
 open Sexplib
 open Dkml_context
 open Opam_context
+open Vcpkg_context
 
 let usage_msg = "dkml-opam-build.exe CMD [ARGS...]\n"
 
@@ -50,21 +51,22 @@ let msvc_as_is_vars =
     "WindowsSDKVersion";
   ]
 
+let contains entry s =
+  String.find_sub ~sub:(String.Ascii.lowercase s) (String.Ascii.lowercase entry)
+  |> Option.is_some
+
+let ends_with entry s =
+  String.is_suffix ~affix:(String.Ascii.lowercase s)
+    (String.Ascii.lowercase entry)
+
 (** [prune_path_of_microsoft_visual_studio ()] removes all Microsoft Visual Studio entries from the environment
     variable PATH *)
 let prune_path_of_microsoft_visual_studio () =
   OS.Env.req_var "PATH" >>= fun path ->
   String.cuts ~empty:false ~sep:";" path
   |> List.filter (fun entry ->
-         let contains s =
-           String.find_sub ~sub:(String.Ascii.lowercase s)
-             (String.Ascii.lowercase entry)
-           |> Option.is_some
-         in
-         let ends_with s =
-           String.is_suffix ~affix:(String.Ascii.lowercase s)
-             (String.Ascii.lowercase entry)
-         in
+         let contains = contains entry in
+         let ends_with = ends_with entry in
          not
            (ends_with "\\Common7\\IDE"
            || ends_with "\\Common7\\Tools"
@@ -80,12 +82,22 @@ let prune_path_of_msys2 () =
   OS.Env.req_var "PATH" >>= fun path ->
   String.cuts ~empty:false ~sep:";" path
   |> List.filter (fun entry ->
-         let ends_with s =
-           String.is_suffix ~affix:(String.Ascii.lowercase s)
-             (String.Ascii.lowercase entry)
-         in
+         let ends_with = ends_with entry in
          not (ends_with "\\MSYS2\\usr\\bin"))
   |> fun paths -> Some (String.concat ~sep:";" paths) |> OS.Env.set_var "PATH"
+
+let prune_envvar_of_vcpkg varname =
+  let varvalue = OS.Env.opt_var varname ~absent:"" in
+  if "" = varvalue then R.ok ()
+  else
+    String.cuts ~empty:false ~sep:";" varvalue
+    |> List.filter (fun entry ->
+           let contains = contains entry in
+           not
+             (contains "\\vcpkg_installed\\"
+             || (contains "\\vcpkg\\" && contains "\\installed\\")))
+    |> fun entries ->
+    Some (String.concat ~sep:";" entries) |> OS.Env.set_var varname
 
 (** Remove every MSVC environment variable from the environment and prune MSVC
     entries from the PATH environment variable. *)
@@ -116,10 +128,12 @@ let remove_microsoft_visual_studio_entries () =
    If OPAM_SWITCH_PREFIX is not defined, then <dkmlhome_dir>/system (the Diskuv
    System opam switch) is used instead.
 *)
-let add_microsoft_visual_studio_entries () =
+let set_msvc_entries cache_keys =
+  (* 1. Remove MSVC entries *)
+  remove_microsoft_visual_studio_entries () >>= fun () ->
+  (* 2. Add MSVC entries *)
   Lazy.force get_msys2_dir >>= fun msys2_dir ->
   Lazy.force get_dkmlhome_dir >>= fun dkmlhome_dir ->
-  Lazy.force get_dkmldeployment_id >>= fun dkmldeployment_id ->
   let do_set setvars =
     List.iter
       (fun (varname, varvalue) ->
@@ -133,9 +147,16 @@ let add_microsoft_visual_studio_entries () =
   Lazy.force get_opam_switch_prefix >>= fun opam_switch_prefix ->
   let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
   let cache_key =
-    (* The cache is made of the deployment id (basically the version of DKML) and the input path *)
+    (* The cache keys may be:
+       - deployment id (basically the version of DKML)
+       - the vcpkg installation path (from DKML_VCPKG_HOST_TRIPLET/DKML_VCPKG_MANIFEST_DIR environment values)
+
+       to which we add:
+
+       - the PATH on entry to this function (minus any MSVC entries)
+    *)
     let ctx = Sha256.init () in
-    Sha256.update_string ctx dkmldeployment_id;
+    List.iter (fun key -> Sha256.update_string ctx key) cache_keys;
     Sha256.update_string ctx path;
     Sha256.(finalize ctx |> to_hex)
   in
@@ -210,7 +231,7 @@ let add_microsoft_visual_studio_entries () =
     Any existing MSYS2 binaries in the PATH will be removed.
   *)
 let set_msys2_entries () =
-  Lazy.force get_msys2_dir >>= fun msys2_dir ->  
+  Lazy.force get_msys2_dir >>= fun msys2_dir ->
   (* 1. MSYSTEM = MSYS *)
   OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
   (* 2. Remove MSYS2 entries, if any, from PATH *)
@@ -219,6 +240,50 @@ let set_msys2_entries () =
   OS.Env.req_var "PATH" >>= fun path ->
   OS.Env.set_var "PATH"
     (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
+
+(* [set_vcpkg_entries cache_keys] will modify INCLUDE and LIB and PKG_CONFIG_PATH and PATH if
+   vcpkg can be detected through [get_vcpkg_installed_dir]. *)
+let set_vcpkg_entries cache_keys =
+  (* 1. Remove vcpkg entries, if any, from INCLUDE and LIB and PKG_CONFIG_PATH *)
+  prune_envvar_of_vcpkg "INCLUDE" >>= fun () ->
+  prune_envvar_of_vcpkg "LIB" >>= fun () ->
+  prune_envvar_of_vcpkg "PKG_CONFIG_PATH" >>= fun () ->
+  prune_envvar_of_vcpkg "PATH" >>= fun () ->
+  (* 2. Add vcpkg to front of INCLUDE and LIB and PKG_CONFIG_PATH and PATH, if vcpkg is available.
+        For PATH, add:
+        * <vcpkg>/bin
+        * <vcpkg>/tools/pkgconf
+  *)
+  Lazy.force get_vcpkg_installed_dir >>= function
+  | None ->
+      Logs.debug (fun m -> m "No vcpkg installed directory");
+      R.ok ("" :: cache_keys)
+  | Some vcpkg_installed_dir ->
+      let vcpkg_installed = Fpath.to_string vcpkg_installed_dir in
+      Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
+      let setenvvar varname dir = function
+        | None -> OS.Env.set_var varname (Some dir)
+        | Some v -> OS.Env.set_var varname (Some (dir ^ ";" ^ v))
+      in
+      OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
+      >>= setenvvar "INCLUDE"
+            Fpath.(vcpkg_installed_dir / "include" |> to_string)
+      >>= fun () ->
+      OS.Env.parse "LIB" OS.Env.(some string) ~absent:None
+      >>= setenvvar "LIB" Fpath.(vcpkg_installed_dir / "lib" |> to_string)
+      >>= fun () ->
+      OS.Env.parse "PKG_CONFIG_PATH" OS.Env.(some string) ~absent:None
+      >>= setenvvar "PKG_CONFIG_PATH"
+            Fpath.(vcpkg_installed_dir / "lib" / "pkgconfig" |> to_string)
+      >>= fun () ->
+      let vcpkg_installed_path =
+        Fpath.(vcpkg_installed_dir / "bin" |> to_string)
+        ^ ";"
+        ^ Fpath.(vcpkg_installed_dir / "tools" / "pkgconf" |> to_string)
+      in
+      OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
+      >>= setenvvar "PATH" vcpkg_installed_path
+      >>| fun () -> vcpkg_installed :: cache_keys
 
 let int_parser = OS.Env.(parser "int" String.to_int)
 
@@ -244,6 +309,8 @@ let main_with_result () =
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
+  Lazy.force get_dkmldeployment_id >>= fun dkmldeployment_id ->
+  let cache_keys = [ dkmldeployment_id ] in
   (* FIRST, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
        in add_microsoft_visual_studio_entries.
@@ -252,10 +319,13 @@ let main_with_result () =
        possible conflicts).
   *)
   set_msys2_entries () >>= fun () ->
-  (* Remove MSVC environment variables *)
-  remove_microsoft_visual_studio_entries () >>= fun () ->
-  (* Add MSVC entries *)
-  add_microsoft_visual_studio_entries () >>= fun () ->
+  (* SECOND, set MSVC entries *)
+  set_msvc_entries cache_keys >>= fun () ->
+  (* THIRD, set vcpkg entries.
+     - Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
+       _after_ MSVC.
+  *)
+  set_vcpkg_entries cache_keys >>= fun _cache_keys ->
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->
