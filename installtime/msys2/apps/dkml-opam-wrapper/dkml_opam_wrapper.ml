@@ -134,114 +134,128 @@ let set_msvc_entries cache_keys =
   (* 1. Remove MSVC entries *)
   remove_microsoft_visual_studio_entries () >>= fun () ->
   (* 2. Add MSVC entries *)
-  Lazy.force get_msys2_dir >>= fun msys2_dir ->
-  Lazy.force get_dkmlhome_dir >>= fun dkmlhome_dir ->
-  let do_set setvars =
-    List.iter
-      (fun (varname, varvalue) ->
-        OS.Env.set_var varname (Some varvalue)
-        |> Rresult.R.error_msg_to_invalid_arg;
-        Logs.debug (fun m ->
-            m "Setting (name,value) = (%s,%s)" varname varvalue))
-      (association_list_of_sexp setvars)
-  in
-  OS.Env.req_var "PATH" >>= fun path ->
-  Lazy.force get_opam_switch_prefix >>= fun opam_switch_prefix ->
-  let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
-  let cache_key =
-    (* The cache keys may be:
-       - deployment id (basically the version of DKML)
-       - the vcpkg installation path (from DKML_VCPKG_HOST_TRIPLET/DKML_VCPKG_MANIFEST_DIR environment values)
+  Lazy.force get_msys2_dir_opt >>= function
+  | None -> R.ok ()
+  | Some msys2_dir -> (
+      Lazy.force get_dkmlhome_dir >>= fun dkmlhome_dir ->
+      let do_set setvars =
+        List.iter
+          (fun (varname, varvalue) ->
+            OS.Env.set_var varname (Some varvalue)
+            |> Rresult.R.error_msg_to_invalid_arg;
 
-       to which we add:
+            Logs.debug (fun m ->
+                m "Setting (name,value) = (%s,%s)" varname varvalue))
+          (association_list_of_sexp setvars)
+      in
+      OS.Env.req_var "PATH" >>= fun path ->
+      Lazy.force get_opam_switch_prefix >>= fun opam_switch_prefix ->
+      let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
+      let cache_key =
+        (* The cache keys may be:
 
-       - the PATH on entry to this function (minus any MSVC entries)
-    *)
-    let ctx = Sha256.init () in
-    List.iter (fun key -> Sha256.update_string ctx key) cache_keys;
-    Sha256.update_string ctx path;
-    Sha256.(finalize ctx |> to_hex)
-  in
-  let cache_file = Fpath.(cache_dir / (cache_key ^ ".sexp")) in
-  OS.File.exists cache_file >>= fun cache_hit ->
-  if cache_hit then (
-    (* Cache hit *)
-    Logs.info (fun m -> m "Loading compiler cache entry %a" Fpath.pp cache_file);
+           - deployment id (basically the version of DKML)
+           - the vcpkg installation path (from DKML_VCPKG_HOST_TRIPLET/DKML_VCPKG_MANIFEST_DIR environment values)
 
-    let setvars = Sexp.load_sexp (Fpath.to_string cache_file) in
-    do_set setvars;
-    Ok ())
-  else
-    (* Cache miss *)
-    let cache_miss tmp_sexp_file _oc _v =
-      let dash = Fpath.(msys2_dir / "usr" / "bin" / "dash.exe" |> to_string) in
+           to which we add:
 
-      let crossplatfuncs =
-        Fpath.(
-          dkmlhome_dir / "share" / "dkml" / "functions"
-          / "crossplatform-functions.sh"
-          |> to_string)
+           - the PATH on entry to this function (minus any MSVC entries)
+        *)
+        let ctx = Sha256.init () in
+        List.iter (fun key -> Sha256.update_string ctx key) cache_keys;
+        Sha256.update_string ctx path;
+        Sha256.(finalize ctx |> to_hex)
       in
-      let shell_expr =
-        Fmt.str
-          "__source=$(/usr/bin/cygpath -a '%s') && . $__source && \
-           autodetect_compiler --sexp '%a'"
-          crossplatfuncs Fpath.pp tmp_sexp_file
-      in
-      let cmd = Cmd.(v dash % "-c" % shell_expr) in
-      (* Run the shell expression to autodetect the compiler *)
-      (OS.Cmd.run_status cmd >>= function
-       | `Exited status ->
-           if status <> 0 then
-             Rresult.R.error_msgf
-               "Compiler autodetection failed with exit code %d" status
-           else Rresult.R.ok ()
-       | `Signaled signal ->
-           (* https://stackoverflow.com/questions/1101957/are-there-any-standard-exit-status-codes-in-linux/1535733#1535733 *)
-           exit (128 + signal))
-      >>| fun () ->
-      (* Read the compiler environment variables *)
-      let env_vars =
-        Sexp.load_sexp_conv_exn
-          (Fpath.to_string tmp_sexp_file)
-          association_list_of_sexp
-      in
-      (* Store the as-is and PATH compiler environment variables in an association list *)
-      let setvars =
-        List.filter_map
-          (fun varname ->
-            match List.assoc_opt varname env_vars with
-            | Some varvalue -> Some Sexp.(List [ Atom varname; Atom varvalue ])
-            | None -> None)
-          ("PATH" :: msvc_as_is_vars)
-      in
-      Sexp.List setvars
-    in
-    match OS.File.with_tmp_oc "dkml-%s.tmp.sexp" cache_miss () with
-    | Ok (Ok setvars) ->
-        do_set setvars;
-        (* Save the cache miss so it is a cache hit next time *)
-        OS.Dir.create cache_dir >>= fun _already_exists ->
+      let cache_file = Fpath.(cache_dir / (cache_key ^ ".sexp")) in
+      OS.File.exists cache_file >>= fun cache_hit ->
+      if cache_hit then (
+        (* Cache hit *)
         Logs.info (fun m ->
-            m "Saving compiler cache entry %a" Fpath.pp cache_file);
-        Sexp.save_hum (Fpath.to_string cache_file) setvars;
-        Ok ()
-    | Ok (Error _ as err) -> err
-    | Error _ as err -> err
+            m "Loading compiler cache entry %a" Fpath.pp cache_file);
+        let setvars = Sexp.load_sexp (Fpath.to_string cache_file) in
+        do_set setvars;
+        Ok ())
+      else
+        (* Cache miss *)
+        let cache_miss tmp_sexp_file _oc _v =
+          let dash =
+            Fpath.(msys2_dir / "usr" / "bin" / "dash.exe" |> to_string)
+          in
+          let crossplatfuncs =
+            Fpath.(
+              dkmlhome_dir / "share" / "dkml" / "functions"
+              / "crossplatform-functions.sh"
+              |> to_string)
+          in
+
+          let shell_expr =
+            Fmt.str
+              "__source=$(/usr/bin/cygpath -a '%s') && . $__source && \
+               autodetect_compiler --sexp '%a'"
+              crossplatfuncs Fpath.pp tmp_sexp_file
+          in
+          let cmd = Cmd.(v dash % "-c" % shell_expr) in
+
+          (* Run the shell expression to autodetect the compiler *)
+          (OS.Cmd.run_status cmd >>= function
+           | `Exited status ->
+               if status <> 0 then
+                 Rresult.R.error_msgf
+                   "Compiler autodetection failed with exit code %d" status
+               else Rresult.R.ok ()
+           | `Signaled signal ->
+               (* https://stackoverflow.com/questions/1101957/are-there-any-standard-exit-status-codes-in-linux/1535733#1535733 *)
+               exit (128 + signal))
+          >>| fun () ->
+          (* Read the compiler environment variables *)
+          let env_vars =
+            Sexp.load_sexp_conv_exn
+              (Fpath.to_string tmp_sexp_file)
+              association_list_of_sexp
+          in
+
+          (* Store the as-is and PATH compiler environment variables in an association list *)
+          let setvars =
+            List.filter_map
+              (fun varname ->
+                match List.assoc_opt varname env_vars with
+                | Some varvalue ->
+                    Some Sexp.(List [ Atom varname; Atom varvalue ])
+                | None -> None)
+              ("PATH" :: msvc_as_is_vars)
+          in
+          Sexp.List setvars
+        in
+
+        match OS.File.with_tmp_oc "dkml-%s.tmp.sexp" cache_miss () with
+        | Ok (Ok setvars) ->
+            do_set setvars;
+
+            (* Save the cache miss so it is a cache hit next time *)
+            OS.Dir.create cache_dir >>= fun _already_exists ->
+            Logs.info (fun m ->
+                m "Saving compiler cache entry %a" Fpath.pp cache_file);
+
+            Sexp.save_hum (Fpath.to_string cache_file) setvars;
+            Ok ()
+        | Ok (Error _ as err) -> err
+        | Error _ as err -> err)
 
 (** Set the MSYSTEM environment variable to MSYS and place MSYS2 binaries at the front of the PATH.
     Any existing MSYS2 binaries in the PATH will be removed.
   *)
 let set_msys2_entries () =
-  Lazy.force get_msys2_dir >>= fun msys2_dir ->
-  (* 1. MSYSTEM = MSYS *)
-  OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
-  (* 2. Remove MSYS2 entries, if any, from PATH *)
-  prune_path_of_msys2 () >>= fun () ->
-  (* 3. Add MSYS2 back to front of PATH *)
-  OS.Env.req_var "PATH" >>= fun path ->
-  OS.Env.set_var "PATH"
-    (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
+  Lazy.force get_msys2_dir_opt >>= function
+  | None -> R.ok ()
+  | Some msys2_dir ->
+      (* 1. MSYSTEM = MSYS *)
+      OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
+      (* 2. Remove MSYS2 entries, if any, from PATH *)
+      prune_path_of_msys2 () >>= fun () ->
+      (* 3. Add MSYS2 back to front of PATH *)
+      OS.Env.req_var "PATH" >>= fun path ->
+      OS.Env.set_var "PATH"
+        (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
 
 (** [probe_os_path_sep] is a lazy function that looks at the PATH and determines what the PATH
     separator should be.
@@ -304,7 +318,10 @@ let set_vcpkg_entries cache_keys =
         | None -> OS.Env.set_var varname (Some dir)
         | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
       in
-      let vcpkg_include_dir = Fpath.(vcpkg_installed_dir / "include" |> to_string) in
+      let vcpkg_include_dir =
+        Fpath.(vcpkg_installed_dir / "include" |> to_string)
+      in
+
       OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
       >>= setenvvar ~path_sep:";" "INCLUDE" vcpkg_include_dir
       >>= fun () ->
@@ -353,8 +370,13 @@ let main_with_result () =
      script and run it accordingly (MSYS2 always uses bash for some reason, instead
      of looking at shebang).
   *)
-  Lazy.force get_msys2_dir >>= fun msys2_dir ->
-  let env_exe = Fpath.(msys2_dir / "usr" / "bin" / "env.exe") in
+  Fpath.of_string "/" >>= fun slash ->
+  (Lazy.force get_msys2_dir_opt >>= function
+   | None -> R.ok Fpath.(slash / "usr" / "bin" / "env.exe")
+   | Some msys2_dir ->
+       Logs.debug (fun m -> m "MSYS2 directory: %a" Fpath.pp msys2_dir);
+       R.ok Fpath.(msys2_dir / "usr" / "bin" / "env.exe"))
+  >>= fun env_exe ->
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
@@ -383,7 +405,6 @@ let main_with_result () =
       m "Environment:@\n%a" Astring.String.Map.dump_string_map current_env);
   Logs.debug (fun m -> m "Current directory: %a" Fpath.pp current_dir);
   Logs.debug (fun m -> m "DKML home directory: %a" Fpath.pp dkmlhome_dir);
-  Logs.debug (fun m -> m "MSYS2 directory: %a" Fpath.pp msys2_dir);
   Logs.info (fun m -> m "Running command: %a" Cmd.pp cmd);
 
   (* Run the command *)

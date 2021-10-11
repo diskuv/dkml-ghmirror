@@ -25,7 +25,19 @@ let get_dkmlparenthomedir =
                 Fpath.(fp / ".local" / "share" / "diskuv-ocaml")
             | Error _ as err -> err)))
 
-(* [get_dkmlvars ()] gets an association list of dkmlvars.sexp *)
+(* [get_dkmlvars_opt] gets an association list of dkmlvars.sexp *)
+let get_dkmlvars_opt =
+  lazy
+    ( Lazy.force get_dkmlparenthomedir >>= fun fp ->
+      OS.File.exists Fpath.(fp / "dkmlvars.sexp") >>| fun exists ->
+      if exists then
+        Some
+          (Sexp.load_sexp_conv_exn
+             Fpath.(fp / "dkmlvars.sexp" |> to_string)
+             association_list_of_sexp)
+      else None )
+
+(* [get_dkmlvars] gets an association list of dkmlvars.sexp *)
 let get_dkmlvars =
   lazy
     ( Lazy.force get_dkmlparenthomedir >>| fun fp ->
@@ -40,6 +52,17 @@ let get_dkmlversion =
       match List.assoc_opt "DiskuvOCamlVersion" assocl with
       | Some v -> Rresult.R.ok v
       | None -> Rresult.R.error_msg "No DiskuvOCamlVersion in dkmlvars.sexp" )
+
+(* Get MSYS2 directory *)
+let get_msys2_dir_opt =
+  lazy
+    (Lazy.force get_dkmlvars_opt >>= function
+     | None -> R.ok None
+     | Some assocl -> (
+         match List.assoc_opt "DiskuvOCamlMSYS2Dir" assocl with
+         | Some v -> Fpath.of_string v >>= fun fp -> Rresult.R.ok (Some fp)
+         | None -> Rresult.R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars.sexp"
+         ))
 
 (* Get MSYS2 directory *)
 let get_msys2_dir =
