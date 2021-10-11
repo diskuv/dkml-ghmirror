@@ -86,7 +86,8 @@ let prune_path_of_msys2 () =
          not (ends_with "\\MSYS2\\usr\\bin"))
   |> fun paths -> Some (String.concat ~sep:";" paths) |> OS.Env.set_var "PATH"
 
-let prune_envvar_of_vcpkg varname =
+let prune_envvar_of_vcpkg ~path_sep varname =
+  let dir_sep = Fpath.dir_sep in
   let varvalue = OS.Env.opt_var varname ~absent:"" in
   if "" = varvalue then R.ok ()
   else
@@ -94,10 +95,11 @@ let prune_envvar_of_vcpkg varname =
     |> List.filter (fun entry ->
            let contains = contains entry in
            not
-             (contains "\\vcpkg_installed\\"
-             || (contains "\\vcpkg\\" && contains "\\installed\\")))
+             (contains (dir_sep ^ "vcpkg_installed" ^ dir_sep)
+             || contains (dir_sep ^ "vcpkg" ^ dir_sep)
+                && contains (dir_sep ^ "installed" ^ dir_sep)))
     |> fun entries ->
-    Some (String.concat ~sep:";" entries) |> OS.Env.set_var varname
+    Some (String.concat ~sep:path_sep entries) |> OS.Env.set_var varname
 
 (** Remove every MSVC environment variable from the environment and prune MSVC
     entries from the PATH environment variable. *)
@@ -241,18 +243,55 @@ let set_msys2_entries () =
   OS.Env.set_var "PATH"
     (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
 
-(* [set_vcpkg_entries cache_keys] will modify INCLUDE and LIB and PKG_CONFIG_PATH and PATH if
-   vcpkg can be detected through [get_vcpkg_installed_dir]. *)
+(** [probe_os_path_sep] is a lazy function that looks at the PATH and determines what the PATH
+    separator should be.
+    We don't use [Sys.win32] except in an edge case, because [Sys.win32] will be true
+    even inside MSYS2. Instead if any semicolon is in the PATH then the PATH separator
+    must be [";"].
+  *)
+let probe_os_path_sep =
+  lazy
+    ( OS.Env.req_var "PATH" >>| fun path ->
+      match
+        ( String.find (fun c -> c = ';') path,
+          String.find (fun c -> c = ':') path )
+      with
+      | None, None -> if Sys.win32 then ";" else ":"
+      | None, Some _ -> ":"
+      | Some _, _ -> ";" )
+
+(* [set_vcpkg_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH if
+   vcpkg can be detected through [get_vcpkg_installed_dir].
+
+  The CPATH, COMPILER_PATH, INCLUDE, LIBRARY_PATH, and LIB variables are modified so that
+  if:
+
+  - MSVC is used, INCLUDE and LIB are recognized
+  - GCC is used, COMPILER_PATH and LIBRARY_PATH are recognized
+    (https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables)
+  - clang is used, CPATH and LIBRARY_PATH are are recognized
+    ( https://clang.llvm.org/docs/CommandGuide/clang.html and https://reviews.llvm.org/D65880)
+ *)
 let set_vcpkg_entries cache_keys =
-  (* 1. Remove vcpkg entries, if any, from INCLUDE and LIB and PKG_CONFIG_PATH *)
-  prune_envvar_of_vcpkg "INCLUDE" >>= fun () ->
-  prune_envvar_of_vcpkg "LIB" >>= fun () ->
-  prune_envvar_of_vcpkg "PKG_CONFIG_PATH" >>= fun () ->
-  prune_envvar_of_vcpkg "PATH" >>= fun () ->
+  (* 1. Remove vcpkg entries, if any, from compiler variables and PKG_CONFIG_PATH.
+      The gcc compiler variables COMPILER_PATH and LIBRARY_PATH are always colon-separated
+      per https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables.
+      This _might_ conflict with clang if clang were run on Windows (very very unlikely)
+      because clang's CPATH is explicitly OS path separated; perhaps clang's LIBRARY_PATH is as
+      well.
+  *)
+  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
+  prune_envvar_of_vcpkg ~path_sep:";" "INCLUDE" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:os_path_sep "CPATH" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:":" "COMPILER_PATH" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:";" "LIB" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:":" "LIBRARY_PATH" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:os_path_sep "PKG_CONFIG_PATH" >>= fun () ->
+  prune_envvar_of_vcpkg ~path_sep:os_path_sep "PATH" >>= fun () ->
   (* 2. Add vcpkg to front of INCLUDE and LIB and PKG_CONFIG_PATH and PATH, if vcpkg is available.
-        For PATH, add:
-        * <vcpkg>/bin
-        * <vcpkg>/tools/pkgconf
+     For PATH, add:
+     * <vcpkg>/bin
+     * <vcpkg>/tools/pkgconf
   *)
   Lazy.force get_vcpkg_installed_dir >>= function
   | None ->
@@ -261,28 +300,38 @@ let set_vcpkg_entries cache_keys =
   | Some vcpkg_installed_dir ->
       let vcpkg_installed = Fpath.to_string vcpkg_installed_dir in
       Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
-      let setenvvar varname dir = function
+      let setenvvar ~path_sep varname dir = function
         | None -> OS.Env.set_var varname (Some dir)
-        | Some v -> OS.Env.set_var varname (Some (dir ^ ";" ^ v))
+        | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
       in
+      let vcpkg_include_dir = Fpath.(vcpkg_installed_dir / "include" |> to_string) in
       OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
-      >>= setenvvar "INCLUDE"
-            Fpath.(vcpkg_installed_dir / "include" |> to_string)
+      >>= setenvvar ~path_sep:";" "INCLUDE" vcpkg_include_dir
       >>= fun () ->
+      OS.Env.parse "CPATH" OS.Env.(some string) ~absent:None
+      >>= setenvvar ~path_sep:os_path_sep "CPATH" vcpkg_include_dir
+      >>= fun () ->
+      OS.Env.parse "COMPILER_PATH" OS.Env.(some string) ~absent:None
+      >>= setenvvar ~path_sep:":" "COMPILER_PATH" vcpkg_include_dir
+      >>= fun () ->
+      let vcpkg_lib_dir = Fpath.(vcpkg_installed_dir / "lib" |> to_string) in
       OS.Env.parse "LIB" OS.Env.(some string) ~absent:None
-      >>= setenvvar "LIB" Fpath.(vcpkg_installed_dir / "lib" |> to_string)
+      >>= setenvvar ~path_sep:";" "LIB" vcpkg_lib_dir
+      >>= fun () ->
+      OS.Env.parse "LIBRARY_PATH" OS.Env.(some string) ~absent:None
+      >>= setenvvar ~path_sep:":" "LIBRARY_PATH" vcpkg_lib_dir
       >>= fun () ->
       OS.Env.parse "PKG_CONFIG_PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar "PKG_CONFIG_PATH"
+      >>= setenvvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
             Fpath.(vcpkg_installed_dir / "lib" / "pkgconfig" |> to_string)
       >>= fun () ->
       let vcpkg_installed_path =
         Fpath.(vcpkg_installed_dir / "bin" |> to_string)
-        ^ ";"
+        ^ os_path_sep
         ^ Fpath.(vcpkg_installed_dir / "tools" / "pkgconf" |> to_string)
       in
       OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar "PATH" vcpkg_installed_path
+      >>= setenvvar ~path_sep:os_path_sep "PATH" vcpkg_installed_path
       >>| fun () -> vcpkg_installed :: cache_keys
 
 let int_parser = OS.Env.(parser "int" String.to_int)
