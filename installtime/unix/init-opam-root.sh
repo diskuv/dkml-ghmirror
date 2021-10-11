@@ -247,8 +247,8 @@ fi
 # vcpkg is architecture specific. Each package it installs is for
 # a specific `--triplet`.
 
-# Set BUILDHOST_ARCH and PLATFORM_VCPKG_TRIPLET.
-# We need PLATFORM_VCPKG_TRIPLET especially for Windows since Windows vcpkg defaults
+# Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
+# We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
 # to x86-windows.
 platform_vcpkg_triplet
 
@@ -352,10 +352,10 @@ if [ "$INSTALL_VCPKG" = ON ]; then
             # the parentheses (see https://github.com/microsoft/vcpkg/issues/12433#issuecomment-928165257). That makes vcpkg
             # unable to locate vswhere.exe, and hence unable to locate most VS Studio installations. So we recreate the
             # variable in PowerShell using CSIDL_PROGRAM_FILESX86 (https://docs.microsoft.com/en-us/windows/win32/shell/csidl).
-            install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$PLATFORM_VCPKG_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
+            install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_WINDOWS\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$DKML_VCPKG_HOST_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
             log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
-            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$PLATFORM_VCPKG_TRIPLET"
+            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET"
         fi
     }
 
@@ -370,7 +370,7 @@ if [ "$INSTALL_VCPKG" = ON ]; then
 
         # 2. Validate we have all necessary dependencies
         # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
-        "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
+        "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$DKML_VCPKG_HOST_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
         run_with_vcpkg_pkgs echo | xargs -n1 | sort -u > "$WORK"/vcpkg.need
         comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
         if [ -s "$WORK"/vcpkg.missing ]; then
@@ -392,15 +392,15 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # Copy pkgconf.exe to pkg-config.exe since not provided
     # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
 
-    install "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
-        "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
+    install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe \
+        "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkg-config.exe
 
     # ---fixup libuv----
 
     # If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
 
-    install "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
-        "$VCPKG_INSTALLED_UNIX"/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
+    install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib \
+        "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/uv.lib
 fi
 
 # END install vcpkg packages

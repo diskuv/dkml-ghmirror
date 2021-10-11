@@ -527,27 +527,27 @@ build_machine_arch() {
 # - env:PLATFORM
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
-# - env:PLATFORM_VCPKG_TRIPLET will contain the correct vcpkg triplet
+# - env:DKML_VCPKG_HOST_TRIPLET will contain the correct vcpkg triplet
 platform_vcpkg_triplet() {
     build_machine_arch
-    export PLATFORM_VCPKG_TRIPLET
+    export DKML_VCPKG_HOST_TRIPLET
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
     # In fact, the list we should be using is base.mk:VCPKG_TRIPLET_*
     case "$PLATFORM-$BUILDHOST_ARCH" in
-        dev-windows_x86)      PLATFORM_VCPKG_TRIPLET=x86-windows ;;
-        dev-windows_x86_64)   PLATFORM_VCPKG_TRIPLET=x64-windows ;;
-        dev-linux_x86)        PLATFORM_VCPKG_TRIPLET=x86-linux ;;
-        dev-linux_x86_64)     PLATFORM_VCPKG_TRIPLET=x64-linux ;;
+        dev-windows_x86)      DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
+        dev-windows_x86_64)   DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
+        dev-linux_x86)        DKML_VCPKG_HOST_TRIPLET=x86-linux ;;
+        dev-linux_x86_64)     DKML_VCPKG_HOST_TRIPLET=x64-linux ;;
         # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
         # Caution: arm64-osx and arm64-ios triplets are Community supported. https://github.com/microsoft/vcpkg/tree/master/triplets/community
         # and https://github.com/microsoft/vcpkg/issues/12258 .
-        dev-darwin_arm64)     PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
-        dev-darwin_x86_64)    PLATFORM_VCPKG_TRIPLET=x64-osx ;;
-        windows_x86-*)        PLATFORM_VCPKG_TRIPLET=x86-windows ;;
-        windows_x86_64-*)     PLATFORM_VCPKG_TRIPLET=x64-windows ;;
-        darwin_arm64-*)       PLATFORM_VCPKG_TRIPLET=arm64-osx ;;
-        darwin_x86_64-*)      PLATFORM_VCPKG_TRIPLET=x64-osx ;;
+        dev-darwin_arm64)     DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
+        dev-darwin_x86_64)    DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
+        windows_x86-*)        DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
+        windows_x86_64-*)     DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
+        darwin_arm64-*)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
+        darwin_x86_64-*)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
         *)
             printf "%s\n" "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1

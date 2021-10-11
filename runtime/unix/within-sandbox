@@ -92,8 +92,17 @@ else
     . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 
-# Set PLATFORM_VCPKG_TRIPLET
+# Set DKML_VCPKG_HOST_TRIPLET
 platform_vcpkg_triplet
+
+# Set DKML_VCPKG_MANIFEST_DIR if necessary
+if [ -e "$TOPDIR/vcpkg.json" ]; then
+    DKML_VCPKG_MANIFEST_DIR="$TOPDIR"
+    if [ -x /usr/bin/cygpath ]; then DKML_VCPKG_MANIFEST_DIR=$(/usr/bin/cygpath -aw "$DKML_VCPKG_MANIFEST_DIR"); fi
+    export DKML_VCPKG_MANIFEST_DIR
+else
+    unset DKML_VCPKG_MANIFEST_DIR
+fi
 
 # Use same technique of dockcross so we can let the developer see their own files with their own user/group
 # shellcheck disable=SC2034
@@ -107,7 +116,7 @@ DOCKER_ARGS=(
     -v "$TOPDIR":/opt/diskuv-ocaml-build-chroot/work
     # use DKML_xxx so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
     --env DKML_ROOT_VERSION="$dkml_root_version"
-    --env DKML_VCPKG_TRIPLET="$PLATFORM_VCPKG_TRIPLET"
+    --env DKML_VCPKG_TRIPLET="$DKML_VCPKG_HOST_TRIPLET"
     --env DKML_TOOLS_DIR="/work/$TOOLSDIR"
     --env DKML_TOOLSCOMMON_DIR="/work/$TOOLSCOMMONDIR"
     # whether to get compilation tools into environment

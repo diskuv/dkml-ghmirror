@@ -86,8 +86,17 @@ else
     . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 
-# Set PLATFORM_VCPKG_TRIPLET
+# Set DKML_VCPKG_HOST_TRIPLET
 platform_vcpkg_triplet
+
+# Set DKML_VCPKG_MANIFEST_DIR if necessary
+if [ -e "$TOPDIR/vcpkg.json" ]; then
+    DKML_VCPKG_MANIFEST_DIR="$TOPDIR"
+    if [ -x /usr/bin/cygpath ]; then DKML_VCPKG_MANIFEST_DIR=$(/usr/bin/cygpath -aw "$DKML_VCPKG_MANIFEST_DIR"); fi
+    export DKML_VCPKG_MANIFEST_DIR
+else
+    unset DKML_VCPKG_MANIFEST_DIR
+fi
 
 # Essential environment values.
 LAUNCHER_ARGS=(
@@ -149,27 +158,13 @@ if [ -n "$PREHOOK" ]; then
     esac
 fi
 
-# Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
-# shellcheck disable=SC2154
-if [ -n "${OPAMROOT:-}" ]; then
-    VCPKG_INSTALLED_PACKAGES="$OPAMROOT/plugins/diskuvocaml/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
-    if [ -x /usr/bin/cygpath ]; then VCPKG_INSTALLED_PACKAGES=$(/usr/bin/cygpath -au "$VCPKG_INSTALLED_PACKAGES"); fi
-    PATH="$VCPKG_INSTALLED_PACKAGES/bin:$VCPKG_INSTALLED_PACKAGES/tools/pkgconf:$PATH"
-else
-    VCPKG_INSTALLED_PACKAGES=
-fi
-
 # Autodetect compiler like Visual Studio on Windows.
 LAUNCHER="$WORK"/launch-compiler.sh
 if [ "$COMPILATION" = ON ]; then
     # If we have an Opam switch with a Opam command wrapper, we don't need to waste a few seconds detecting the compiler.
     if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX"/.dkml/wrap-commands.exist ]; then
         set +e
-        if [ -n "$VCPKG_INSTALLED_PACKAGES" ]; then
-            autodetect_compiler "$LAUNCHER" "$VCPKG_INSTALLED_PACKAGES"
-        else
-            autodetect_compiler "$LAUNCHER"
-        fi
+        autodetect_compiler "$LAUNCHER"
         EXITCODE=$?
         set -e
         if [ $EXITCODE -ne 0 ]; then
@@ -188,10 +183,10 @@ case "$PLATFORM" in
     darwin_arm64)
         # arm64 will be tried first, and then arm64e (Apple Silicon)
         LAUNCHER_ARGS+=(/usr/bin/arch -arch arm64)
-        ;;
+    ;;
     darwin_x86_64)
         LAUNCHER_ARGS+=(/usr/bin/arch -arch x86_64)
-        ;;
+    ;;
 esac
 
 # print PATH for troubleshooting

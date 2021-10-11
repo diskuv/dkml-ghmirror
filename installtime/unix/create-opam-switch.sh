@@ -371,18 +371,6 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
 # as a cache key. If an option does not depend on the version we use ".once" as the cache
 # key.
 
-# Set PLATFORM_VCPKG_TRIPLET
-platform_vcpkg_triplet
-
-if is_unixy_windows_build_machine; then
-    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST\\vcpkg\\$dkml_root_version\\installed\\$PLATFORM_VCPKG_TRIPLET\\lib\\pkgconfig"
-else
-    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET/lib/pkgconfig"
-fi
-
-# Opam `PKG_CONFIG_PATH += "xxx"` requires that `xxx` is a valid Opam string. Escape all the backslashes.
-PKG_CONFIG_PATH_ADD=$(printf "%s" "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
-
 # Two operators: option setenv(OP1)"NAME OP2 VALUE"
 #
 # OP1
@@ -396,18 +384,7 @@ PKG_CONFIG_PATH_ADD=$(printf "%s" "${PKG_CONFIG_PATH_ADD}" | sed 's#\\#\\\\#g')
 #
 # NAME
 # ----
-# 1. PKG_CONFIG_PATH
-# 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
-if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root_version" ]; then
-    {
-        cat "$WORK"/nonswitchexec.sh
-        printf "%s" "  option setenv='PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\"' "
-    } > "$WORK"/setenv.sh
-    log_shell "$WORK"/setenv.sh
-
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-PKG_CONFIG_PATH.$dkml_root_version"
-fi
+# 1. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {

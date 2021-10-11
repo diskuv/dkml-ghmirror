@@ -28,7 +28,7 @@ trap 'rm -rf "$WORK"' EXIT
 # _common_tool.sh functions expect us to be in $TOPDIR. We'll change directories later.
 cd "$TOPDIR"
 
-# Set PLATFORM_VCPKG_TRIPLET
+# Set DKML_VCPKG_HOST_TRIPLET
 platform_vcpkg_triplet
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
