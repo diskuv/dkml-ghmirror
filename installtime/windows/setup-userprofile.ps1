@@ -927,9 +927,12 @@ try {
         # dkmlvars.* (DiskuvOCaml variables) are scripts that set variables about the deployment.
         $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
         $CygwinVarsArray = @(
+            # Every dkml variable is defined except DiskuvOCamlMSYS2Dir
             "DiskuvOCamlVarsVersion=1",
             "DiskuvOCamlHome='$ProgramCygwinAbsPath'",
-            "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'"
+            "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'",
+            "DiskuvOCamlDeploymentId='$DeploymentId'",
+            "DiskuvOCamlVersion='$dkml_root_version'"
         )
         $CygwinVarsContents = $CygwinVarsArray -join [environment]::NewLine
         $CygwinVarsContentsOnOneLine = $CygwinVarsArray -join " "
@@ -1083,7 +1086,8 @@ try {
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
         "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'",
         "DiskuvOCamlMSYS2Dir='/'",
-        "DiskuvOCamlDeploymentId='$DeploymentId'"
+        "DiskuvOCamlDeploymentId='$DeploymentId'",
+        "DiskuvOCamlVersion='$dkml_root_version'"
     )
     $UnixVarsContents = $UnixVarsArray -join [environment]::NewLine
     $UnixVarsContentsOnOneLine = $UnixVarsArray -join " "
@@ -1093,6 +1097,7 @@ try {
 `$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin'
 `$env:DiskuvOCamlMSYS2Dir = '$MSYS2Dir'
 `$env:DiskuvOCamlDeploymentId = '$DeploymentId'
+`$env:DiskuvOCamlVersion = '$dkml_root_version'
 "@
     $CmdVarsContents = @"
 `@SET DiskuvOCamlVarsVersion=1
@@ -1100,6 +1105,7 @@ try {
 `@SET DiskuvOCamlBinaryPaths=$ProgramPath\bin
 `@SET DiskuvOCamlMSYS2Dir=$MSYS2Dir
 `@SET DiskuvOCamlDeploymentId=$DeploymentId
+`@SET DiskuvOCamlVersion=$dkml_root_version
 "@
 
     $SexpVarsContents = @"
@@ -1109,6 +1115,7 @@ try {
 `("DiskuvOCamlBinaryPaths" "$($ProgramPath.Replace('\', '\\'))\\bin")
 `("DiskuvOCamlMSYS2Dir" "$($MSYS2Dir.Replace('\', '\\'))")
 `("DiskuvOCamlDeploymentId" "$DeploymentId")
+`("DiskuvOCamlVersion" "$dkml_root_version")
 `)
 "@
 
