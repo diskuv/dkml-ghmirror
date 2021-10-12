@@ -47,3 +47,11 @@ log_trace "$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
 
 # END opam init
 # -----------------------
+
+# -----------------------
+# BEGIN configure opam plugins
+
+log_trace "$DKMLDIR"/installtime/unix/configure-opam-plugins.sh -p "$PLATFORM"
+
+# END configure opam plugins
+# -----------------------

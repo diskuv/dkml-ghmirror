@@ -359,10 +359,11 @@ else
         log_shell "$WORK"/update.sh
     fi
 fi
-install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
 
 # END opam switch create
 # --------------------------------
+
+install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml/opam-cache
 
 # --------------------------------
 # BEGIN opam option
@@ -386,7 +387,7 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml
 # ----
 # 1. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
-if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
+if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
         printf "%s" "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
@@ -394,14 +395,14 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml
     log_shell "$WORK"/setenv.sh
 
     # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/setenv-LUV_USE_SYSTEM_LIBUV.once"
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
 if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
-        [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version" ] && \
-        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\tools\\apps\\with-dkml.exe" ]; then
+        [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/wrap-commands.$dkml_root_version" ] && \
+        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\bin\\with-dkml.exe" ]; then
     # We can't put with-dkml.exe into Diskuv System switches because with-dkml.exe currently needs a system switch to compile itself.
-    printf "%s" "$DiskuvOCamlHome\\tools\\apps\\with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
+    printf "%s" "$DiskuvOCamlHome\\bin\\with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
     DOW_PATH=$(cat "$WORK"/dow.path)
     {
         cat "$WORK"/nonswitchexec.sh
@@ -420,7 +421,7 @@ if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
     log_shell "$WORK"/wbc.sh
 
     # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version"
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/wrap-commands.$dkml_root_version"
 fi
 
 # END opam option
@@ -450,7 +451,7 @@ set_dkmlparenthomedir
 # OR the dkml_root_version changed
 get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned > "$WORK"/pinned
 PINNED_NUMLINES=$(awk 'END{print NR}' "$WORK"/pinned)
-if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/pins-set.$dkml_root_version" ]; then
+if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/pins-set.$dkml_root_version" ]; then
     # The pins have to be sorted
     {
         # Input: dune-configurator,2.9.0
@@ -490,7 +491,7 @@ if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/p
     mv "$WORK"/new-switch-state "$OPAMSWITCHFINALDIR_BUILDHOST"/.opam-switch/switch-state
 
     # Done for this DKML version
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/pins-set.$dkml_root_version"
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/pins-set.$dkml_root_version"
 fi
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version

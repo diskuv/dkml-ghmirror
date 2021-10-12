@@ -389,7 +389,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 17
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -1163,9 +1163,6 @@ try {
     $global:ProgressActivity = "Initialize Opam Package Manager"
     Write-ProgressStep
 
-    $OpamInitTempPath = "$TempPath\opaminit"
-    $OpamInitTempMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$OpamInitTempPath"
-
     # Upgrades. Possibly ask questions to delete things, so no progress indicator
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -ForceConsole `
@@ -1173,7 +1170,6 @@ try {
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
-        if (!(Test-Path -Path $OpamInitTempPath)) { New-Item -Path $OpamInitTempPath -ItemType Directory | Out-Null }
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' -p dev"
     }
@@ -1217,6 +1213,21 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
+    # BEGIN plugin configure
+
+    $global:ProgressActivity = "Configure Opam Plugins"
+    Write-ProgressStep
+
+    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
+    if (!$global:SkipOpamSetup) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\configure-opam-plugins.sh' -p dev"
+    }
+
+    # END plugin configure
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
     # BEGIN opam install required `diskuv-system` packages
 
     if ($StopBeforeInstallSystemSwitch) {
@@ -1257,16 +1268,15 @@ try {
         -Command ("set -x && install '$DkmlPath\etc\contexts\linux-build\crossplatform-functions.sh' '$FunctionsDir\crossplatform-functions.sh'")
 
     # Only apps, not bootstrap-apps, are installed.
-    # And we only need dkml-findup.exe and with-dkml.exe for the CI Flavor.
+    # And we only need dkml-findup.exe for the CI Flavor.
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe with-dkml/with_dkml.exe")
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
-            "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe' && " +
-            "install '$AppsCachePath\default\with-dkml\with_dkml.exe' '$AppsBinDir\with-dkml.exe'")
+            "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
     if ($Flavor -eq "Full") {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
@@ -1282,7 +1292,7 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN install `diskuv-system` to Programs
+    # BEGIN install `diskuv-system` and `with-dkml` to Programs
 
     $global:ProgressActivity = "Install diskuv-system binaries"
     Write-ProgressStep
@@ -1297,6 +1307,12 @@ try {
             Copy-Item -Path "$DiskuvSystemDir\bin\$binary" -Destination $ProgramBinDir
         }
     }
+
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && "+
+            "OPAMVARROOT=`$('$ProgramBinDir\opam.exe' var root) && " +
+            "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with_dkml.exe`" '$ProgramBinDir\with-dkml.exe'")
+
 
     # END opam install `diskuv-system` to Programs
     # ----------------------------------------------------------------
