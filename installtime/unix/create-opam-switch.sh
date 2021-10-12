@@ -182,7 +182,7 @@ autodetect_dkmlvars || true
 
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-    # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
+    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND and DKMLPLUGIN_BUILDHOST
     set_opamrootdir
 
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
@@ -191,7 +191,7 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     printf "%s\n" "  -s \\" >> "$WORK"/nonswitchexec.sh
 else
     if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
-    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
+    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL and DKMLPLUGIN_BUILDHOST
     set_opamrootandswitchdir
 
     printf "%s\n" "  -p $PLATFORM \\" >> "$WORK"/nonswitchexec.sh
@@ -387,6 +387,9 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml/opam-cache
 # ----
 # 1. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
+WITHDKML_UNIX="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
+is_unixy_windows_build_machine && WITHDKML_UNIX=$(cygpath -au "$WITHDKML_UNIX")
+
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
@@ -398,11 +401,11 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
-if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
+if [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
         [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/wrap-commands.$dkml_root_version" ] && \
-        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\bin\\with-dkml.exe" ]; then
+        [ -e "$WITHDKML_UNIX/with-dkml.exe" ]; then
     # We can't put with-dkml.exe into Diskuv System switches because with-dkml.exe currently needs a system switch to compile itself.
-    printf "%s" "$DiskuvOCamlHome\\bin\\with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
+    printf "%s" "$WITHDKML_UNIX/with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
     DOW_PATH=$(cat "$WORK"/dow.path)
     {
         cat "$WORK"/nonswitchexec.sh
