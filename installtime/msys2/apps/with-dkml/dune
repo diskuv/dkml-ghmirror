@@ -1,3 +1,3 @@
 (executable
- (name dkml_opam_wrapper)
+ (name with_dkml)
  (libraries bos logs logs.fmt fmt.tty sexplib sha))

@@ -3,8 +3,8 @@ To test on Windows:
   1. Make sure $DiskuvOCamlHome/share/dkml/functions/crossplatform-functions.sh exists.
   2. Run in MSYS2:
     eval $(opam env --switch "$DiskuvOCamlHome/system" --set-switch)
-    dune build --root installtime/msys2/apps/ dkml-opam-wrapper/dkml_opam_wrapper.exe
-    DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/dkml-opam-wrapper/dkml_opam_wrapper.exe sleep 5
+    dune build --root installtime/msys2/apps/ with-dkml/with_dkml.exe
+    DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
 *)
 open Bos
 open Rresult
@@ -14,7 +14,7 @@ open Dkml_context
 open Opam_context
 open Vcpkg_context
 
-let usage_msg = "dkml-opam-build.exe CMD [ARGS...]\n"
+let usage_msg = "with-dkml.exe CMD [ARGS...]\n"
 
 (* [msvc_as_is_vars] is the list of environment variables created by VsDevCmd.bat that
    should always be inserted into the environment as-is.

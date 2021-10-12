@@ -230,8 +230,8 @@ case "$subcommand" in
     exec)
         # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`
         # and `opam remove`.
-        if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ] && [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sexp" ]; then
-            DOW="$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe"
+        if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/with-dkml.exe" ] && [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sexp" ]; then
+            DOW="$DiskuvOCamlHome/tools/apps/with-dkml.exe"
             if [ -x /usr/bin/cygpath ]; then
                 DOW=$(/usr/bin/cygpath -aw "$DOW")
             fi

@@ -240,6 +240,12 @@ fi
 # In Diskuv OCaml each architecture gets its own Opam root.
 
 # -----------------------
+# BEGIN install with-dkml (with-dkml)
+
+# END install with-dkml (with-dkml)
+# -----------------------
+
+# -----------------------
 # BEGIN install vcpkg
 
 # Q: Why is vcpkg here rather than in DiskuvOCamlHome?

@@ -399,9 +399,9 @@ fi
 
 if is_unixy_windows_build_machine && [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
         [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/wrap-commands.$dkml_root_version" ] && \
-        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" ]; then
-    # We can't put dkml-opam-wrapper.exe into Diskuv System switches because dkml-opam-wrapper.exe currently needs a system switch to compile itself.
-    printf "%s" "$DiskuvOCamlHome\\tools\\apps\\dkml-opam-wrapper.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
+        [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome\\tools\\apps\\with-dkml.exe" ]; then
+    # We can't put with-dkml.exe into Diskuv System switches because with-dkml.exe currently needs a system switch to compile itself.
+    printf "%s" "$DiskuvOCamlHome\\tools\\apps\\with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
     DOW_PATH=$(cat "$WORK"/dow.path)
     {
         cat "$WORK"/nonswitchexec.sh

@@ -106,13 +106,13 @@ rm -rf "$WORK"
 set --
 
 # Select shell
-if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" ]; then
+if [ -n "${DiskuvOCamlHome:-}" ] && [ -e "$DiskuvOCamlHome/tools/apps/with-dkml.exe" ]; then
     if [ -x /usr/bin/cygpath ]; then
         exec_shell_SHELL=$(/usr/bin/cygpath -aw "$SHELL")
     else
         exec_shell_SHELL="$SHELL"
     fi
-    set -- "$DiskuvOCamlHome/tools/apps/dkml-opam-wrapper.exe" "$exec_shell_SHELL" "$@"
+    set -- "$DiskuvOCamlHome/tools/apps/with-dkml.exe" "$exec_shell_SHELL" "$@"
 else
     set -- "$SHELL" "$@"
 fi
