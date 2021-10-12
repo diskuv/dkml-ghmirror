@@ -1,10 +1,17 @@
 (*
-To test on Windows:
+To setup on Unix/macOS:
+  eval $(opam env --switch diskuv-system --set-switch)
+  # or: eval $(opam env) && opam install dune bos logs fmt sexplib sha
+  opam install ocaml-lsp-server ocamlformat ocamlformat-rpc # optional, for vscode or emacs
+
+To setup on Windows:
   1. Make sure $DiskuvOCamlHome/share/dkml/functions/crossplatform-functions.sh exists.
   2. Run in MSYS2:
     eval $(opam env --switch "$DiskuvOCamlHome/system" --set-switch)
+
+To test use x64-windows or arm64-osx for the DKML_VCPKG_HOST_TRIPLET (or leave that variable out):
     dune build --root installtime/msys2/apps/ with-dkml/with_dkml.exe
-    DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
+    DKML_VCPKG_HOST_TRIPLET=x64-windows DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
 *)
 open Bos
 open Rresult
@@ -307,7 +314,7 @@ let set_vcpkg_entries cache_keys =
      * <vcpkg>/bin
      * <vcpkg>/tools/pkgconf
   *)
-  Lazy.force get_vcpkg_installed_dir >>= function
+  Lazy.force get_vcpkg_installed_dir_opt >>= function
   | None ->
       Logs.debug (fun m -> m "No vcpkg installed directory");
       R.ok ("" :: cache_keys)
@@ -316,6 +323,7 @@ let set_vcpkg_entries cache_keys =
       Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
       let setenvvar ~path_sep varname dir = function
         | None -> OS.Env.set_var varname (Some dir)
+        | Some v when "" = v -> OS.Env.set_var varname (Some dir)
         | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
       in
       let vcpkg_include_dir =
@@ -372,7 +380,7 @@ let main_with_result () =
   *)
   Fpath.of_string "/" >>= fun slash ->
   (Lazy.force get_msys2_dir_opt >>= function
-   | None -> R.ok Fpath.(slash / "usr" / "bin" / "env.exe")
+   | None -> R.ok Fpath.(slash / "usr" / "bin" / "env")
    | Some msys2_dir ->
        Logs.debug (fun m -> m "MSYS2 directory: %a" Fpath.pp msys2_dir);
        R.ok Fpath.(msys2_dir / "usr" / "bin" / "env.exe"))
@@ -384,8 +392,8 @@ let main_with_result () =
   >>= fun () ->
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
-  Lazy.force get_dkmldeployment_id >>= fun dkmldeployment_id ->
-  let cache_keys = [ dkmldeployment_id ] in
+  Lazy.force get_dkmlversion >>= fun dkmlversion ->
+  let cache_keys = [ dkmlversion ] in
   (* FIRST, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
        in add_microsoft_visual_studio_entries.
@@ -404,11 +412,14 @@ let main_with_result () =
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->
-  Lazy.force get_dkmlhome_dir >>= fun dkmlhome_dir ->
   Logs.debug (fun m ->
       m "Environment:@\n%a" Astring.String.Map.dump_string_map current_env);
   Logs.debug (fun m -> m "Current directory: %a" Fpath.pp current_dir);
-  Logs.debug (fun m -> m "DKML home directory: %a" Fpath.pp dkmlhome_dir);
+  (Lazy.force get_dkmlhome_dir_opt >>| function
+   | None -> ()
+   | Some dkmlhome_dir ->
+       Logs.debug (fun m -> m "DKML home directory: %a" Fpath.pp dkmlhome_dir))
+  >>= fun () ->
   Logs.info (fun m -> m "Running command: %a" Cmd.pp cmd);
 
   (* Run the command *)

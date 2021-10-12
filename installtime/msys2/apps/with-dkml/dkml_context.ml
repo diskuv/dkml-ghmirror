@@ -50,8 +50,8 @@ let get_dkmlversion =
   lazy
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlVersion" assocl with
-      | Some v -> Rresult.R.ok v
-      | None -> Rresult.R.error_msg "No DiskuvOCamlVersion in dkmlvars.sexp" )
+      | Some v -> R.ok v
+      | None -> R.error_msg "No DiskuvOCamlVersion in dkmlvars.sexp" )
 
 (* Get MSYS2 directory *)
 let get_msys2_dir_opt =
@@ -60,31 +60,31 @@ let get_msys2_dir_opt =
      | None -> R.ok None
      | Some assocl -> (
          match List.assoc_opt "DiskuvOCamlMSYS2Dir" assocl with
-         | Some v -> Fpath.of_string v >>= fun fp -> Rresult.R.ok (Some fp)
-         | None -> Rresult.R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars.sexp"
-         ))
+         | Some v -> Fpath.of_string v >>= fun fp -> R.ok (Some fp)
+         | None -> R.ok None))
 
 (* Get MSYS2 directory *)
 let get_msys2_dir =
   lazy
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlMSYS2Dir" assocl with
-      | Some v -> Fpath.of_string v >>= fun fp -> Rresult.R.ok fp
-      | None -> Rresult.R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars.sexp" )
+      | Some v -> Fpath.of_string v >>= fun fp -> R.ok fp
+      | None -> R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars.sexp" )
+
+(* Get Diskuv OCaml home directory *)
+let get_dkmlhome_dir_opt =
+  lazy
+    (Lazy.force get_dkmlvars_opt >>= function
+     | None -> R.ok None
+     | Some assocl -> (
+         match List.assoc_opt "DiskuvOCamlHome" assocl with
+         | Some v -> Fpath.of_string v >>= fun fp -> R.ok (Some fp)
+         | None -> R.ok None))
 
 (* Get Diskuv OCaml home directory *)
 let get_dkmlhome_dir =
   lazy
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlHome" assocl with
-      | Some v -> Fpath.of_string v >>= fun fp -> Rresult.R.ok fp
-      | None -> Rresult.R.error_msg "No DiskuvOCamlHome in dkmlvars.sexp" )
-
-(* Get Diskuv OCaml deployment id, which can be used as part of a cache key *)
-let get_dkmldeployment_id =
-  lazy
-    ( Lazy.force get_dkmlvars >>= fun assocl ->
-      match List.assoc_opt "DiskuvOCamlDeploymentId" assocl with
-      | Some v -> Rresult.R.ok v
-      | None ->
-          Rresult.R.error_msg "No DiskuvOCamlDeploymentId in dkmlvars.sexp" )
+      | Some v -> Fpath.of_string v >>= fun fp -> R.ok fp
+      | None -> R.error_msg "No DiskuvOCamlHome in dkmlvars.sexp" )

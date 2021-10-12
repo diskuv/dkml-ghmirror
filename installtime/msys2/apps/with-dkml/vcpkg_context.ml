@@ -2,7 +2,7 @@ open Bos
 open Rresult
 open Opam_context
 
-(** [get_vcpkg_installed_dir] is a lazy function that gets installed headers, binaries
+(** [get_vcpkg_installed_dir_opt] is a lazy function that gets installed headers, binaries
     and libraries of vcpkg.
 
     Specification:
@@ -14,7 +14,7 @@ open Opam_context
       Opam root (<env:LOCALAPPDATA>/opam)
     * None otherwise
   *)
-let get_vcpkg_installed_dir =
+let get_vcpkg_installed_dir_opt =
   lazy
     (let vcpkg_host_triplet =
        OS.Env.opt_var "DKML_VCPKG_HOST_TRIPLET" ~absent:""
