@@ -97,24 +97,27 @@ set_opamrootdir
 # -----------------------
 # BEGIN install with-dkml (with-dkml)
 
-# Compile with Dune into temp build directory
-WITHDKML_TMP_UNIX="$WORK"/with-dkml
-APPS_WINDOWS="$DKMLDIR"/installtime/msys2/apps
-if [ -x /usr/bin/cygpath ]; then
-    WITHDKML_TMP_WINDOWS=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
-    APPS_WINDOWS=$(/usr/bin/cygpath -aw "$APPS_WINDOWS")
-else
-    WITHDKML_TMP_WINDOWS="$WITHDKML_TMP_UNIX"
-fi
-install -d "$WITHDKML_TMP_UNIX"
-"$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
-
-# Place in plugins
 # shellcheck disable=SC2154
 WITHDKML_UNIX="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
 is_unixy_windows_build_machine && WITHDKML_UNIX=$(cygpath -au "$WITHDKML_UNIX")
-install -d "$WITHDKML_UNIX"/
-install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKML_UNIX"/
+
+if [ ! -x "$WITHDKML_UNIX"/with-dkml.exe ]; then
+    # Compile with Dune into temp build directory
+    WITHDKML_TMP_UNIX="$WORK"/with-dkml
+    APPS_WINDOWS="$DKMLDIR"/installtime/msys2/apps
+    if [ -x /usr/bin/cygpath ]; then
+        WITHDKML_TMP_WINDOWS=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
+        APPS_WINDOWS=$(/usr/bin/cygpath -aw "$APPS_WINDOWS")
+    else
+        WITHDKML_TMP_WINDOWS="$WITHDKML_TMP_UNIX"
+    fi
+    install -d "$WITHDKML_TMP_UNIX"
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+
+    # Place in plugins
+    install -d "$WITHDKML_UNIX"/
+    install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKML_UNIX"/with-dkml.exe
+fi
 
 # END install with-dkml (with-dkml)
 # -----------------------
