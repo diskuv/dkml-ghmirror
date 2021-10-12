@@ -79,9 +79,33 @@ cd "$TOPDIR"
 # So ... try to do as much as possible in this section (or "ON-DEMAND OPAM ROOT INSTALLATIONS" below).
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Set DKMLPARENTHOME_BUILDHOST
 # TODO: These implementation won't work in containers; needs a mount point for the opam repositories, and
 # an @@EXPAND_DKMLPARENTHOME@@ macro
 set_dkmlparenthomedir
+
+# -------------------
+# BEGIN dkmlvars.sexp
+#
+# Windows defines many variables in setup-userprofile.ps1. Since setup-userprofile.ps1 will call this script
+# on Windows, and dkmlvars.sexp should only be written at the end of a successful install, we explicitly only
+# set dkmlvars.sexp for non-Windows.
+# Some don't make sense for Unix (MSYS2Dir, Home) and some we don't have (DeploymentId).
+
+if ! is_unixy_windows_build_machine && [ ! -e "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp ] ; then
+    install -d "$DKMLPARENTHOME_BUILDHOST"
+    # shellcheck disable=SC2154
+    cat > "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp <<EOF
+(
+("DiskuvOCamlVarsVersion" "1")
+("DiskuvOCamlVersion" "$dkml_root_version")
+)
+EOF
+    mv "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp
+fi
+
+# END dkmlvars.sexp
+# -------------------
 
 # -----------------------
 # BEGIN install opam repositories
