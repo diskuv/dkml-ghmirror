@@ -19,10 +19,15 @@
 set -euf
 
 VCPKG_VER="2021.05.12"
+VCPKG_CHECKSUM="907f26a5357c30e255fda9427f1388a39804f607a11fa4c083cc740cb268f5dc"
 run_with_vcpkg_pkgs() {
     run_with_vcpkg_pkgs_CMD="$1"
     shift
-    "$run_with_vcpkg_pkgs_CMD" pkgconf libffi libuv
+    if is_unixy_windows_build_machine; then
+        "$run_with_vcpkg_pkgs_CMD" pkgconf libffi libuv
+    else
+        "$run_with_vcpkg_pkgs_CMD" libffi libuv
+    fi
 }
 
 # ------------------
@@ -144,14 +149,7 @@ install -d "$VCPKG_UNIX"
 if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
     if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
         # Download vcpkg
-        if [ ! -e "$VCPKG_UNIX"/src.tar.gz ]; then
-            if [ "${CI:-}" = true ]; then
-                log_trace wget -q "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
-            else
-                log_trace wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
-            fi
-            mv "$VCPKG_UNIX"/src.tar.gz.tmp "$VCPKG_UNIX"/src.tar.gz
-        fi
+        downloadfile "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" "$VCPKG_UNIX"/src.tar.gz "$VCPKG_CHECKSUM"
 
         # Expand archive
         log_trace tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
@@ -264,18 +262,26 @@ if [ "$INSTALL_VCPKG" = ON ]; then
 
     # ---fixup pkgconf----
 
-    # Copy pkgconf.exe to pkg-config.exe since not provided
+    # (Windows) Copy pkgconf.exe to pkg-config.exe since not provided
     # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
 
-    install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe \
-        "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkg-config.exe
+    if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe ]; then
+        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe \
+            "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkg-config.exe
+    fi
 
     # ---fixup libuv----
 
     # If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
 
-    install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib \
-        "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/uv.lib
+    if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib ]; then
+        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib \
+            "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/uv.lib
+    fi
+    if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/liblibuv.a ]; then
+        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/liblibuv.a \
+            "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.a
+    fi
 fi
 
 # END install vcpkg packages

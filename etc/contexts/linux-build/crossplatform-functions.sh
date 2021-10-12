@@ -646,7 +646,7 @@ autodetect_cpus() {
 # - env:VSDEV_HOME_WINDOWS is the Visual Studio installation directory containing VC and Common7 subfolders,
 #   if and only if Visual Studio was detected. Empty otherwise
 # Return Values:
-# - 0: Success
+# - 0: Success or a non-Windows machine. A non-Windows machine will have all outputs set to blank
 # - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
 autodetect_vsdev() {
     # Set DKMLPARENTHOME_BUILDHOST
@@ -657,6 +657,9 @@ autodetect_vsdev() {
     export VSDEV_VCVARSVER=
     export VSDEV_WINSDKVER=
     export VSDEV_MSVSPREFERENCE=
+    if ! is_unixy_windows_build_machine; then
+        return 0
+    fi
     if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
         autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
         autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
@@ -1048,4 +1051,55 @@ log_trace() {
     else
         "$@"
     fi
+}
+
+# [sha256check FILE SUM] checks that the file FILE has a SHA256 checksum (hex encoded) of SUM.
+# The function will return nonzero (and exit with failure if `set -e` is enabled) if the checksum does not match.
+sha256check() {
+    sha256check_FILE="$1"
+    shift
+    sha256check_SUM="$1"
+    shift
+    if [ -x /usr/bin/shasum ]; then
+        printf "%s  %s" "$sha256check_SUM" "$sha256check_FILE" | /usr/bin/shasum -a 256 -c
+    elif [ -x /usr/bin/sha256sum ]; then
+        printf "%s  %s" "$sha256check_SUM" "$sha256check_FILE" | /usr/bin/sha256sum -c
+    else
+        printf "FATAL: %s\n" "No sha256 checksum utility found" >&2
+        exit 1
+    fi
+}
+
+# [downloadfile URL FILE SUM] downloads from URL into FILE and verifies the SHA256 checksum of SUM.
+# If the FILE already exists with the correct checksum it is not redownloaded.
+# The function will exit with failure if the checksum does not match.
+downloadfile() {
+    downloadfile_URL="$1"
+    shift
+    downloadfile_FILE="$1"
+    shift
+    downloadfile_SUM="$1"
+    shift
+    if [ -x /usr/bin/curl ]; then
+        downloadfile_CURL=/usr/bin/curl
+    else
+        printf "%s\n" "Found no /usr/bin/curl to download files" >&2
+    fi
+    if [ -e "$downloadfile_FILE" ]; then
+        if sha256check "$downloadfile_FILE" "$downloadfile_SUM"; then
+            return 0
+        else
+            rm -f "$downloadfile_FILE"
+        fi
+    fi
+    if [ "${CI:-}" = true ]; then
+        log_trace "$downloadfile_CURL" -L -s "$downloadfile_URL" -o "$downloadfile_FILE".tmp
+    else
+        log_trace "$downloadfile_CURL" -L "$downloadfile_URL" -o "$downloadfile_FILE".tmp
+    fi
+    if ! sha256check "$downloadfile_FILE".tmp "$downloadfile_SUM"; then
+        printf "%s\n" "FATAL: Encountered a corrupted or compromised download from $downloadfile_URL" >&2
+        exit 1
+    fi
+    mv "$downloadfile_FILE".tmp "$downloadfile_FILE"
 }
