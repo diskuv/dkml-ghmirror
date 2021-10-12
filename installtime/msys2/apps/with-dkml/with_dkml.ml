@@ -378,6 +378,10 @@ let main_with_result () =
        R.ok Fpath.(msys2_dir / "usr" / "bin" / "env.exe"))
   >>= fun env_exe ->
   let cmd_and_args = List.tl (Array.to_list Sys.argv) in
+  (if [] = cmd_and_args then
+   R.error_msgf "You need to supply a command, like `%s bash`" OS.Arg.exec
+  else R.ok ())
+  >>= fun () ->
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
   Lazy.force get_dkmldeployment_id >>= fun dkmldeployment_id ->
