@@ -438,8 +438,13 @@ set_opamrootdir() {
 
 # Select the 'diskuv-system' switch.
 #
+# On Windows (anything with a DiskuvOCamlHome environment variable) the system will be a local
+# Opam switch inside DiskuvOCamlHome/system. Otherwise the system will be the global Opam switch
+# `diskuv-system`.
+#
 # Inputs:
-# - env:DiskuvOCamlHome - Typically you get this from `autodetect_dkmlvars`
+# - env:DiskuvOCamlHome - Typically you get this from `autodetect_dkmlvars || true`. It will not set
+#   the variable on non-Windows system, which is supported.
 # Outputs:
 # - env:OPAMSWITCHFINALDIR_BUILDHOST - Either:
 #     The path to the switch that represents the build directory that is usable only on the
@@ -451,11 +456,20 @@ set_opamrootdir() {
 #     The name of a global switch that represents the build directory.
 #     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
 set_opamswitchdir_of_system() {
+    # Set OPAMROOTDIR_BUILDHOST
+    set_opamrootdir
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
-    # shellcheck disable=SC2034
-    OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/system/_opam"
-    # shellcheck disable=SC2034
-    OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/system"
+    if [ -n "${DiskuvOCamlHome:-}" ]; then
+        # shellcheck disable=SC2034
+        OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/system/_opam"
+        # shellcheck disable=SC2034
+        OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/system"
+    else
+        # shellcheck disable=SC2034
+        OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-system"
+        # shellcheck disable=SC2034
+        OPAMSWITCHDIR_EXPAND="diskuv-system"
+    fi
 }
 
 # is_empty_opam_switch_present SWITCHDIR

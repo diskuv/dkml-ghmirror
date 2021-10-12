@@ -238,14 +238,10 @@ else {
         "mingw64-i686-runtime",
         "mingw64-i686-winpthreads")
 }
-$CiFlavorPackages = @(
-    # Dune is needed to compile dkml-findup.exe
-    "dune.2.9.0",
-    # Bos, sha and sexplib is needed to compile with-dkml.exe
-    "bos.0.2.0",
-    "sha.1.14",
-    "sexplib.v0.14.0"
-)
+$CiFlavorPackages = Get-Content -Path $DkmlPath\installtime\none\ci-flavor-packages.txt | Where-Object {
+    # Remove blank lines and comments
+    "" -ne $_.Trim() -and -not $_.StartsWith("#")
+} | ForEach-Object { $_.Trim() }
 $CiFlavorBinaries = @(
     "dune.exe"
 )
@@ -389,7 +385,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 17
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -1190,26 +1186,6 @@ try {
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN opam switch create diskuv-system
-
-    if ($StopBeforeCreateSystemSwitch) {
-        Write-Host "Stopping before being completed finished due to -StopBeforeCreateSystemSwitch switch"
-        exit 0
-    }
-
-    $global:ProgressActivity = "Create diskuv-system local Opam switch"
-    Write-ProgressStep
-
-    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
-    if (!$global:SkipOpamSetup) {
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -y -s -b Release"
-    }
-
-    # END opam switch create diskuv-system
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
