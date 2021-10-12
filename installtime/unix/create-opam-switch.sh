@@ -409,17 +409,17 @@ if [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
     DOW_PATH=$(cat "$WORK"/dow.path)
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  option wrap-build-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+        printf "  option wrap-build-commands='[\"%s\"]' " "$DOW_PATH"
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  option wrap-install-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+        printf "  option wrap-install-commands='[\"%s\"]' " "$DOW_PATH"
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  option wrap-remove-commands='[\"%s\"] %s' " "$DOW_PATH" '{os = "win32"}'
+        printf "  option wrap-remove-commands='[\"%s\"]' " "$DOW_PATH"
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
 
