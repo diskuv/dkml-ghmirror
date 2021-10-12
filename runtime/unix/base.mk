@@ -193,7 +193,7 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call SHELL_platform_template,$
 define SHELL_platform_buildtype_template
 .PHONY: shell-$(1)-$(2)
 shell-$(1)-$(2):
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' "$$$$SHELL" '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' "$$$$SHELL" '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
 	@exit 0
 endef
 $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
@@ -224,7 +224,7 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 
 .PHONY: init-dev
 init-dev:
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
 .PHONY: prepare-dev
 prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
@@ -233,9 +233,9 @@ define PREPARE_buildtype_template
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform dev; then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
 	fi
 
   .PHONY: prepare-all-$(1)
@@ -247,8 +247,8 @@ define PREPARE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
-	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
+	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
   prepare-$(1): prepare-$(1)-$(BUILDTYPE_DEFAULT)
@@ -259,9 +259,9 @@ define PREPARE_platform_buildtype_template
   .PHONY: prepare-$(1)-$(2)
   prepare-$(1)-$(2): init-$(1)
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_WINDOWS); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_LINUX); \
 	fi
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
@@ -378,9 +378,9 @@ define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
   build-$(1)-$(2): prepare-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
@@ -390,11 +390,11 @@ define BUILD_platform_buildtype_template
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
 		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
 		fi; \
 	fi
 endef
