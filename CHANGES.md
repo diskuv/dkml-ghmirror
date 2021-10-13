@@ -1,3 +1,53 @@
+## 0.2.5 (2021-10-13)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+* (Windows) New binary `with-dkml` will drop you into a MSYS2 shell (ex. `with-dkml bash`) or do a build
+  (ex. `with-dkml dune build`) directly from a Command Prompt or PowerShell. The MSVC compiler
+  chosen at installation time will be available for use
+* All OS-es, not just Windows, are configured to use `with-dkml` as a Opam wrapper to enable versioned vcpkg
+  libraries to override system libraries. GCC and clang environment variables will be automatically set
+  to find vcpkg
+* (Security) Sha256 verified download of vcpkg installer
+
+### Upgrading from v0.2.0/.../v0.2.4 to v0.2.5
+
+You will need to:
+* *(Windows only)* upgrade your *Diskuv OCaml* system
+* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+  which can be done at your leisure **before** the next system upgrade
+
+FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
+
+```powershell
+(Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+
+iwr `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.5/distribution-portable.zip" `
+  -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+
+Expand-Archive `
+  -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+  -DestinationPath ~\DiskuvOCamlProjects `
+  -Force;
+
+~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+```
+
+SECOND, in each of your Local Project directories (both Windows + Linux/macOS), do the following:
+
+```bash
+git -C vendor/diskuv-ocaml fetch
+git -C vendor/diskuv-ocaml reset --hard v0.2.5
+git commit -m "Upgrade diskuv-ocaml to 0.2.5" vendor/diskuv-ocaml
+./makeit prepare-dev
+```
+
 ## 0.2.4 (2021-10-10)
 
 > The *Diskuv OCaml* distribution is available under the

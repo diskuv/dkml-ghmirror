@@ -368,7 +368,7 @@ The last step is to update the Opam package repository with our newly copied pat
 
 .. code-block:: shell-session
 
-    [core_kernel.v0.14.2]$ opam update diskuv-0.2.4
+    [core_kernel.v0.14.2]$ opam update diskuv-0.2.5
 
 Creating your own package patches
 ---------------------------------
@@ -378,7 +378,7 @@ Creating your own package patches
     in ``etc/opam-repositories/diskuv-opam-repo`` and has
     ``patches: [...]`` in its ``opam`` file. You may be able to remove
     the ``patches`` clause and then do a
-    ``opam update diskuv-0.2.4 && opam upgrade`` before doing any of these
+    ``opam update diskuv-0.2.5 && opam upgrade`` before doing any of these
     instructions, but that procedure has not been tested.
 
 The https://gitlab.com/diskuv/diskuv-ocaml repository has a `etc/opam-repositories/diskuv-opam-repo` folder
@@ -490,7 +490,7 @@ NINTH, update your Opam switch with your new ``diskuv-opam-repo`` patch:
 
 .. code:: bash
 
-    opam update diskuv-0.2.4
+    opam update diskuv-0.2.5
 
 *See `Troubleshooting: opam update diskuv <#opam-update-diskuv>`__ if
 this fails*
@@ -510,14 +510,14 @@ Troubleshooting
 opam update diskuv
 ^^^^^^^^^^^^^^^^^^
 
-If after ``opam update diskuv-0.2.4`` you get:
+If after ``opam update diskuv-0.2.5`` you get:
 
 .. code:: text
 
     [diskuv] synchronised from file://Z:/somewhere/etc/opam-repositories/diskuv-opam-repo
     [ERROR] Could not update repository "diskuv": "Z:\\somewhere\\build\\_tools\\common\\MSYS2\\usr\\bin\\patch.exe -p1 -i C:\\Users\\user\\.opam\\log\\patch-28544-5495c0" exited with code 1
 
-then rerun the command as ``opam update diskuv-0.2.4 -vv``. That will give you
+then rerun the command as ``opam update diskuv-0.2.5 -vv``. That will give you
 something like:
 
 .. code:: text
@@ -543,7 +543,7 @@ showing a broken package. Just remove the broken package with
     opam remove dune-configurator
     opam pin remove dune-configurator
 
-    opam update diskuv-0.2.4
+    opam update diskuv-0.2.5
 
 in the example above.
 
@@ -551,13 +551,13 @@ If that still doesn't work just do:
 
 .. code:: bash
 
-    opam repository remove diskuv-0.2.4 --all
+    opam repository remove diskuv-0.2.5 --all
 
     # On Windows do: ./makeit init-dev
     make init-dev
 
-    opam repository priority diskuv-0.2.4 1 --all
-    opam update diskuv-0.2.4
+    opam repository priority diskuv-0.2.5 1 --all
+    opam update diskuv-0.2.5
 
 which will rebuild your repository.
 
