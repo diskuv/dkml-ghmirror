@@ -321,7 +321,7 @@ $MSYS2Hash = Get-Sha256Hex16OfText -Text ($DV_MSYS2PackagesArch -join ',')
 $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
 $BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
-$DeploymentId = "opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
+$DeploymentId = "v-$dkml_root_version;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
 
 if ($OnlyOutputCacheKey) {
     Write-Output $DeploymentId
