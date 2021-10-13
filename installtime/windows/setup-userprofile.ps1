@@ -1287,7 +1287,7 @@ try {
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
             "OPAMVARROOT=`$('$ProgramBinDir\opam.exe' var root) && " +
-            "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with_dkml.exe`" '$ProgramBinDir\with-dkml.exe'")
+            "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with-dkml.exe`" '$ProgramBinDir\with-dkml.exe'")
 
 
     # END opam install `diskuv-system` to Programs
