@@ -116,7 +116,7 @@ if [ ! -x "$WITHDKML_UNIX"/with-dkml.exe ]; then
 
     # Place in plugins
     install -d "$WITHDKML_UNIX"/
-    install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKML_UNIX"/with-dkml.exe
+    install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKMLEXE_BUILDHOST"
 fi
 
 # END install with-dkml (with-dkml)
