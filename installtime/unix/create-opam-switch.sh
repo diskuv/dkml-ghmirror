@@ -388,7 +388,13 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml/opam-cache
 # 1. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
 WITHDKML_UNIX="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
-is_unixy_windows_build_machine && WITHDKML_UNIX=$(cygpath -au "$WITHDKML_UNIX")
+WITHDKML_WINDOWS="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
+WITHDKML_SEP="/"
+if [ -x /usr/bin/cygpath ]; then
+    WITHDKML_UNIX=$(cygpath -au "$WITHDKML_UNIX")
+    WITHDKML_WINDOWS=$(cygpath -aw "$WITHDKML_UNIX")
+    WITHDKML_SEP="\\"
+fi
 
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
@@ -405,7 +411,7 @@ if [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
         [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/wrap-commands.$dkml_root_version" ] && \
         [ -e "$WITHDKML_UNIX/with-dkml.exe" ]; then
     # We can't put with-dkml.exe into Diskuv System switches because with-dkml.exe currently needs a system switch to compile itself.
-    printf "%s" "$WITHDKML_UNIX/with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
+    printf "%s" "$WITHDKML_WINDOWS${WITHDKML_SEP}with-dkml.exe" | sed 's/\\/\\\\/g' > "$WORK"/dow.path
     DOW_PATH=$(cat "$WORK"/dow.path)
     {
         cat "$WORK"/nonswitchexec.sh
