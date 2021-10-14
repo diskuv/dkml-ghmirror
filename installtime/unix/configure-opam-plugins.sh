@@ -165,12 +165,12 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
             # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
             #             for command line arguments. Only -disableMetrics is recognized.
             log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
-        elif is_reproducible_platform; then
-            # Use cmake and ninja from the system if we are in a reproducible Linux container.
-            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
         elif is_arg_darwin_based_platform "$PLATFORM"; then
             # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
+        elif is_reproducible_platform; then
+            # Use cmake and ninja from the system if we are in a reproducible Linux container.
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
         else
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi

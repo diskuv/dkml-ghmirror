@@ -31,6 +31,9 @@
 #
 #################################################
 
+# Inputs:
+# - env:PLATFORM
+# Returns 0 (success) if the PLATFORM is `dev`
 is_dev_platform() {
     if [ "$PLATFORM" = "dev" ]; then
         return 0
@@ -38,11 +41,18 @@ is_dev_platform() {
     return 1
 }
 
+# Checks whether the platform should be running in a reproducible Docker container.
+#
+# As of Oct 13, 2021 only Linux build hosts can run in Docker containers.
+#
+# Inputs:
+# - env:PLATFORM
+# Returns 0 (success) if the PLATFORM is not `dev` and is a Linux based platform.
 is_reproducible_platform() {
     if [ "$PLATFORM" = "dev" ]; then
         return 1
     fi
-    return 0
+    is_arg_linux_based_platform "$PLATFORM"
 }
 
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
