@@ -229,8 +229,11 @@ case "$subcommand" in
     ;;
     exec)
         # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`
-        # and `opam remove`.
-        if [ -e "$WITHDKMLEXE_BUILDHOST" ]; then
+        # and `opam remove`. So we directly use it here.
+        # There is one edge case: during Windows setup-userprofile.ps1 the dkmlvars.sexp will not exist until the
+        # very end of a successful setup-userprofile.ps1; we do _not_ use the wrapper since it will fail without
+        # dkmlvars.sexp (or worse, it will use an _old_ dkmlvars.sexp).
+        if [ -e "$WITHDKMLEXE_BUILDHOST" ] && [ "${WITHDKML_ENABLE:-ON}" = ON ]; then
             if [ "$1" = "--" ]; then
                 shift
                 exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "$WITHDKMLEXE_BUILDHOST" "$@"

@@ -1249,7 +1249,7 @@ try {
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+            "env $UnixVarsContentsOnOneLine WITHDKML_ENABLE=OFF TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
             "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
@@ -1257,7 +1257,7 @@ try {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
+            "env $UnixVarsContentsOnOneLine WITHDKML_ENABLE=OFF TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
