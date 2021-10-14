@@ -24,9 +24,9 @@ run_with_vcpkg_pkgs() {
     run_with_vcpkg_pkgs_CMD="$1"
     shift
     if is_unixy_windows_build_machine; then
-        "$run_with_vcpkg_pkgs_CMD" --debug pkgconf libffi libuv
+        "$run_with_vcpkg_pkgs_CMD" pkgconf libffi libuv
     else
-        "$run_with_vcpkg_pkgs_CMD" --debug libffi libuv
+        "$run_with_vcpkg_pkgs_CMD" libffi libuv
     fi
 }
 
