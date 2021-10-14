@@ -248,6 +248,25 @@ is_arg_linux_based_platform() {
     esac
 }
 
+# macOS and iOS are Darwin based platforms
+# Inputs:
+# - $1 - The PLATFORM
+# Outputs:
+# - BUILDHOST_ARCH
+is_arg_darwin_based_platform() {
+    build_machine_arch
+    case "$1" in
+        darwin_*)  return 0;;
+        dev)
+            case "$BUILDHOST_ARCH" in
+                darwin_*)  return 0;;
+                *)         return 1;;
+            esac
+            ;;
+        *)          return 1;;
+    esac
+}
+
 # Install files that will always be in a reproducible build.
 #
 # Inputs:
