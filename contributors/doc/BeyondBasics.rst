@@ -203,7 +203,7 @@ If you haven't already, download and install `Visual Studio Code <https://code.v
 its website. For Windows 64-bit you will want to choose the "User Installer" "64-bit" button underneath
 the Windows button, unless you have Administrator access to your PC (then "System Installer" is usually the right choice):
 
-.. image:: LocalProject-VisualStudio-Windows.png
+.. image:: SdkProject-VisualStudio-Windows.png
   :width: 300
 
 Windows `Development Environment Virtual Machine <https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/>`_
