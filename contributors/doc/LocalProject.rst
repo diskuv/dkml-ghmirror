@@ -169,9 +169,6 @@ Visual Studio Code Development
    press Shift + Alt + F (or go to View > Command Palette and type "Format Document").
    You should see your code reformatted.
 
-At this point you should be able to complete the first
-`5 chapters of Real World OCaml <https://dev.realworldocaml.org/toc.html>`_.
-
 Finished?
 
 .. warning::

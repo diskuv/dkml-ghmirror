@@ -166,8 +166,8 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 
 Sit back while it compiles your new package.
 
-A First Hour with OCaml
------------------------
+Learn OCaml - A First Hour with OCaml
+-------------------------------------
 
 You are almost ready to follow
 the tutorial `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tutorials/a_first_hour_with_ocaml.html>`_.
@@ -258,5 +258,14 @@ You may get a lot of warnings/noise, but the highlighted lines will show you tha
 
 Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
 
-:ref:`SDKProjects`, which let you edit code in an IDE and import code packages, are
-the topic of the next section.
+Next Steps?
+-----------
+
+Once you feel you are an intermediate OCaml user (likely you've spent a few weeks getting comfortable with OCaml), you may want
+to create your own OCaml-based application. :ref:`SDKProjects`, which let you edit code for your application in an IDE,
+import open-source code packages and build your application, are the topic of the next section.
+
+SDK Projects are **intermediate level difficulty**, so make sure you are comfortable with OCaml by going through:
+
+* `Learn OCaml tutorials <https://ocaml.org/learn/tutorials/>`_
+* `Part 1 of Real World OCaml <https://dev.realworldocaml.org/toc.html>`_
