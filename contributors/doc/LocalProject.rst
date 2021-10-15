@@ -1,7 +1,7 @@
-.. _Local Projects:
+.. _SDKProjects:
 
-Local Projects
-==============
+SDK Projects
+============
 
 Starter
 -------
@@ -68,12 +68,12 @@ typing Ctrl-C or Enter + Ctrl-Z:
     > 94.5
     > Total: 100.5
 
-Recap: You fetched a Local Project, built its code and all of its dependencies, and then ran
+Recap: You fetched a SDK Project, built its code and all of its dependencies, and then ran
 the resulting application!
 
 In your own projects you will likely be making edits, and then building, and then repeating
 the edit and build steps over and over again. Since you already did ``build-dev`` once, use the
-following to "quickly" build your Local Project:
+following to "quickly" build your SDK Project:
 
 .. code-block:: ps1con
 
@@ -81,84 +81,6 @@ following to "quickly" build your Local Project:
 
 The next section `Integrated Development Environment (IDE)` will go over how
 to automatically and almost instantaneously build your code whenever you make an edit.
-
-Integrated Development Environment (IDE)
-----------------------------------------
-
-Installing
-~~~~~~~~~~
-
-.. sidebar:: Visual Studio Code is optional.
-
-  Using Visual Studio Code is optional but strongly recommended! The only other development environment
-  that supports OCaml well is Emacs.
-
-Installing an IDE like Visual Studio Code will let you navigate the code in your Local Projects, see
-the source code with syntax highlighting (color), get auto-complete to help you write your own code,
-and inspect the types within your code.
-
-If you haven't already, download and install `Visual Studio Code <https://code.visualstudio.com/Download>`_ from
-its website. For Windows 64-bit you will want to choose the "User Installer" "64-bit" button underneath
-the Windows button, unless you have Administrator access to your PC (then "System Installer" is usually the right choice):
-
-.. image:: LocalProject-VisualStudio-Windows.png
-  :width: 300
-
-Windows `Development Environment Virtual Machine <https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/>`_
-users (you will know if you are one of them) already have Visual Studio Code bundled
-in the virtual machine.
-
-OCaml Plugin
-~~~~~~~~~~~~
-
-Once you have Visual Studio Code, you will want the OCaml plugin.
-Open a *new* PowerShell session and type:
-
-.. code-block:: ps1con
-    :emphasize-lines: 5,8
-
-    PS1> iwr `
-            "https://github.com/diskuv/vscode-ocaml-platform/releases/download/v1.8.5-diskuvocaml/ocaml-platform.vsix" `
-            -OutFile "$env:TEMP\ocaml-platform.vsix"
-    PS1> code --install-extension "$env:TEMP\ocaml-platform.vsix"
-    >> Installing extensions...
-    >> (node:16672) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
-    >> (Use `Code --trace-deprecation ...` to show where the warning was created)
-    >> Extension 'ocaml-platform.vsix' was successfully installed.
-    >> (node:16672) UnhandledPromiseRejectionWarning: Canceled: Canceled
-    >>     at D (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:5:1157)
-    >>     at O.cancel (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:62880)
-    >>     at O.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63012)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63274)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:11:7330)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3843
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3942
-    >>     at Object.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:762)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3788)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41520
-    >>     at Map.forEach (<anonymous>)
-    >>     at Ne.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41496)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at S.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at Object.M [as main] (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:17:38649)
-    >>     at async N (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:12:13842)
-    >> (node:16672) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
-    >> (node:16672) [DEP0018] DeprecationWarning: Unhandled promise rejections are deprecated. In the future, promise rejections that are not handled will terminate the Node.js process with a non-zero exit code.
-
-You may get a lot of warnings/noise, but the highlighted lines will show you that the installation was successful.
-
-Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
-
-*Advanced Users: Diskuv OCaml has made a change to the OCaml plugin to better support Windows,
-but a new version of the plugin has yet to be released.  Until it is released,
-we have given you a pre-release version.*
 
 Visual Studio Code Development
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -252,7 +174,7 @@ At this point you should be able to complete the first
 
 Finished?
 
-*TODO* Missing a tool to make your own Local Project.
+*TODO* Missing a tool to make your own SDK Project.
 
 Directory Layout
 ----------------
@@ -402,7 +324,7 @@ Here is an example from the ``diskuv-ocaml-starter`` local project:
                 ├── 4-dev-ReleaseCompatFuzz.ocamlopt_flags.sexp
                 └── 4-dev-ReleaseCompatPerf.ocamlopt_flags.sexp
 
-Setting Up An Existing Git Repository As a Local Project
+Setting Up An Existing Git Repository As a SDK Project
 --------------------------------------------------------
 
 The directory structure does _not_ need to look like the standard layout.
@@ -449,3 +371,89 @@ Run:
 
 If there is an upgrade of ``Diskuv OCaml`` available it will automate as much as possible,
 and if necessary give you further instructions to complete the upgrade.
+
+CMake
+-----
+
+.. note::
+
+    "Win32" refers to executables that can be installed using a .MSI or
+    a .EXE. More formally they are "PE32/PE32+ executables". "UWP" is
+    the Universal Windows Platform, which are executables that can be
+    downloaded from the Windows Store. To complicate things further,
+    in 2021 the Windows Store started accepting regular Win32 (not UWP) games
+    in the Windows Store.
+
+For 32 bit Intel/AMD Win32 builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\x86-windows-msvc\Debug"
+    cmake -S . -B $BuildDir -A Win32
+    cmake --build $BuildDir
+
+For 64 bit Intel/AMD Win32 builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\x64-windows-msvc\Debug"
+    cmake -S . -B $BuildDir -A x64
+    cmake --build $BuildDir
+
+For 32 bit ARM Win32 builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\arm-windows-msvc\Debug"
+    cmake -S . -B $BuildDir -A arm
+    cmake --build $BuildDir
+
+For 64 bit ARM Win32 builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\arm64-windows-msvc\Debug"
+    cmake -S . -B $BuildDir -A arm64
+    cmake --build $BuildDir
+
+*Doesn't produce UWP*. For 32 bit Intel/AMD UWP builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\x86-uwp-msvc\Debug"
+    cmake -S . -B $BuildDir -DVCPKG_TARGET_TRIPLET="x86-uwp"
+    cmake --build $BuildDir
+
+*Doesn't produce UWP*. For 64 bit Intel/AMD UWP builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\x64-uwp-msvc\Debug"
+    cmake -S . -B $BuildDir -DVCPKG_TARGET_TRIPLET="x64-uwp"
+    cmake --build $BuildDir
+
+*Doesn't produce UWP*. For 32 bit ARM UWP builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\arm-uwp-msvc\Debug"
+    cmake -S . -B $BuildDir -DVCPKG_TARGET_TRIPLET="arm-uwp"
+    cmake --build $BuildDir
+
+*Doesn't produce UWP*. For 64 bit ARM UWP builds:
+
+.. code:: powershell
+
+    $BuildDir = "build\arm64-uwp-msvc\Debug"
+    cmake -S . -B $BuildDir -DVCPKG_TARGET_TRIPLET="arm64-uwp"
+    cmake --build $BuildDir
+
+    The build systems are defined at
+    https://github.com/microsoft/vcpkg/tree/master/triplets and
+    https://github.com/microsoft/vcpkg/tree/master/triplets/community.
+
+Installing is:
+
+.. code:: powershell
+
+    cmake --install $BuildDir

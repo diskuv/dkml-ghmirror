@@ -1,11 +1,8 @@
-OPAM Integration
+Opam Integration
 ================
 
-Opam
-----
-
 Repositories
-~~~~~~~~~~~~
+------------
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
@@ -35,20 +32,56 @@ that has no MinGW patches.
 The ``default`` repository is the central Opam repository. Most of your packages are unpatched and
 will come directly from this repository.
 
-opam root
-~~~~~~~~~
+Opam Root
+---------
 
 Each `Opam root <http://opam.ocaml.org/doc/Manual.html#opam-root>`_ created by *Diskuv OCaml* includes
 a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
 
-For Unix systems it is empty.
-
-For Windows systems it contains:
+It contains:
 
 * `vcpkg <https://vcpkg.io>`_ which has the C/C++ packages needed by some OCaml packages
 
+Switches
+--------
+
+``diskuv-boot-DO-NOT-DELETE`` Global Switch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+OCaml IDEs like Visual Studio Code with the OCaml Platform Extension
+work best when there is at least one global Opam switch installed and
+selected. The installation will install ``diskuv-boot-DO-NOT-DELETE``
+with no OCaml packages.
+
+This switch is reserved for future use so do not delete it.
+
+    (Expert Users) The OCaml Platform Extension, for example, will
+    execute ``opam var root`` which will fail if no (global) Opam switch
+    has been selected. But you won't be able to pick any external (also
+    known as 'local') Opam switches because ``opam var root`` failed.
+    With a global switch that problem goes away.
+
+``diskuv-system`` Local Switch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+OCaml package directories, C header "include" directories and other
+critical locations are hardcoded into essential OCaml executables like
+``ocamlc.exe`` during ``opam switch create`` and ``opam install``. If we
+move the Opam switch that contains ``ocamlc`` many of your OCaml builds
+will break.
+
+``diskuv-system`` is the Opam switch for ``ocamlc`` and other essentials
+that is built in its final resting place during installation and never
+moved after. If and when we need to deploy new versions of the
+essentials we use a new directory and rebuild all of the OCaml packages
+from scratch.
+
+The system applications, along with Opam itself, are installed in your User
+Profile. Since they are also available on your PATH, you can just type
+``dune``, ``utop``, ``ocamlformat``, ``opam``, etc.
+
 Global Variables
-~~~~~~~~~~~~~~~~
+----------------
 
 .. note::
 
@@ -82,8 +115,15 @@ C Compiler
 The Microsoft compiler and linker environment variables must be setup before use. Microsoft provides
 a ``vcvarsall.bat`` and ``vsdevcmd.bat`` scripts to set environment variables.
 
-We also want to include vcpkg C headers and C libraries by default, so the Microsoft
-provided environment variables ``INCLUDE`` and ``LIBS`` are adjusted to include vcpkg.
+We also want to include vcpkg C headers and C libraries by default, so the following
+are adjusted to include vcpkg:
+
+* the Microsoft environment variables ``INCLUDE`` and ``LIBS``
+* the GNU GCC environment variables ``COMPILER_PATH`` and ``LIBRARY_PATH``.
+  Confer with `GCC Environment Variables <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
+* the Apple clang environment variables ``CPATH`` and ``LIBRARY_PATH``.
+  Confer with `clang Command Guide <https://clang.llvm.org/docs/CommandGuide/clang.html>`_ and
+  `LLVM LIBRARY_PATH review <https://reviews.llvm.org/D65880>`_.
 
 In *Diskuv OCaml* most targets (``./makeit shell-dev``, ``./makeit build-dev``, etc.)
 have their environment variables automatically set for Microsoft C compilation inside MSYS2 in a manner

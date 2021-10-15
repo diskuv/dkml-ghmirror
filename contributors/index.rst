@@ -10,6 +10,7 @@ Getting Started with Diskuv OCaml
    :caption: Table of Contents
 
    self
+   doc/BeyondBasics
    doc/LocalProject
    doc/CommandReference
    doc/Troubleshooting
@@ -283,8 +284,7 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
 
     utop #> #quit ;;
 
-:ref:`Local Projects`, which let you edit code in an IDE and import code packages, are
-the topic of the next section.
+:ref:`BeyondBasics` is the topic of the next section.
 
 Indices and tables
 ==================
