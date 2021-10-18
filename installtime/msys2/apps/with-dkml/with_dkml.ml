@@ -58,13 +58,19 @@ let msvc_as_is_vars =
     "WindowsSDKVersion";
   ]
 
+let platform_path_norm s = match Os_context.host_os with
+| IOS | Mac | Windows -> String.Ascii.lowercase s
+| Android | Linux -> s
+
 let contains entry s =
-  String.find_sub ~sub:(String.Ascii.lowercase s) (String.Ascii.lowercase entry)
+  String.find_sub ~sub:(platform_path_norm s) (platform_path_norm entry)
   |> Option.is_some
 
+let starts_with entry s =
+  String.is_prefix ~affix:(platform_path_norm s) (platform_path_norm entry)
+
 let ends_with entry s =
-  String.is_suffix ~affix:(String.Ascii.lowercase s)
-    (String.Ascii.lowercase entry)
+  String.is_suffix ~affix:(platform_path_norm s) (platform_path_norm entry)
 
 (** [prune_path_of_microsoft_visual_studio ()] removes all Microsoft Visual Studio entries from the environment
     variable PATH *)
@@ -93,18 +99,17 @@ let prune_path_of_msys2 () =
          not (ends_with "\\MSYS2\\usr\\bin"))
   |> fun paths -> Some (String.concat ~sep:";" paths) |> OS.Env.set_var "PATH"
 
-let prune_envvar_of_vcpkg ~path_sep varname =
-  let dir_sep = Fpath.dir_sep in
+(** [prune_envvar ~f ~path_sep varname] sets the environment variables named [varname] to
+   be all the path entries that satisfy the predicate f.
+   Path entries are separated from each other by [~path_sep].
+   The order of the path entries is preserved.
+*)
+let prune_envvar ~f ~path_sep varname =
   let varvalue = OS.Env.opt_var varname ~absent:"" in
   if "" = varvalue then R.ok ()
   else
-    String.cuts ~empty:false ~sep:";" varvalue
-    |> List.filter (fun entry ->
-           let contains = contains entry in
-           not
-             (contains (dir_sep ^ "vcpkg_installed" ^ dir_sep)
-             || contains (dir_sep ^ "vcpkg" ^ dir_sep)
-                && contains (dir_sep ^ "installed" ^ dir_sep)))
+    String.cuts ~empty:false ~sep:path_sep varvalue
+    |> List.filter f
     |> fun entries ->
     Some (String.concat ~sep:path_sep entries) |> OS.Env.set_var varname
 
@@ -281,6 +286,96 @@ let probe_os_path_sep =
       | None, Some _ -> ":"
       | Some _, _ -> ";" )
 
+let prune_entries f =
+  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
+  prune_envvar ~f ~path_sep:";" "INCLUDE" >>= fun () ->
+  prune_envvar ~f ~path_sep:os_path_sep "CPATH" >>= fun () ->
+  prune_envvar ~f ~path_sep:":" "COMPILER_PATH" >>= fun () ->
+  prune_envvar ~f ~path_sep:";" "LIB" >>= fun () ->
+  prune_envvar ~f ~path_sep:":" "LIBRARY_PATH" >>= fun () ->
+  prune_envvar ~f ~path_sep:os_path_sep "PKG_CONFIG_PATH" >>= fun () ->
+  prune_envvar ~f ~path_sep:os_path_sep "PATH"
+
+let add_entries ~tools installed_dir =
+  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
+    let setenvvar ~path_sep varname dir = function
+  | None -> OS.Env.set_var varname (Some dir)
+  | Some v when "" = v -> OS.Env.set_var varname (Some dir)
+  | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
+  in
+  let include_dir =
+    Fpath.(installed_dir / "include" |> to_string)
+  in
+  OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:";" "INCLUDE" include_dir
+  >>= fun () ->
+  OS.Env.parse "CPATH" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:os_path_sep "CPATH" include_dir
+  >>= fun () ->
+  OS.Env.parse "COMPILER_PATH" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:":" "COMPILER_PATH" include_dir
+  >>= fun () ->
+  let lib_dir = Fpath.(installed_dir / "lib" |> to_string) in
+  OS.Env.parse "LIB" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:";" "LIB" lib_dir
+  >>= fun () ->
+  OS.Env.parse "LIBRARY_PATH" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:":" "LIBRARY_PATH" lib_dir
+  >>= fun () ->
+  OS.Env.parse "PKG_CONFIG_PATH" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
+        Fpath.(installed_dir / "lib" / "pkgconfig" |> to_string)
+  >>= fun () -> (
+  if tools then (
+  OS.Path.query Fpath.(installed_dir / "tools" / "$(tool)" / "$(file).exe")
+  >>= fun matches ->
+  R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
+  >>= fun tools_with_exe ->
+  OS.Path.query Fpath.(installed_dir / "tools" / "$(tool)" / "$(file).dll")
+  >>= fun matches ->
+  R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
+  >>| fun tools_with_dll ->
+  List.sort_uniq String.compare (tools_with_exe @ tools_with_dll))
+  else (R.ok []))
+  >>= fun uniq_tools ->
+  let installed_path =
+    Fpath.(installed_dir / "bin" |> to_string)
+    ^ List.fold_left (fun acc b -> acc ^ os_path_sep ^ Fpath.(installed_dir / "tools" / b |> to_string)) "" uniq_tools
+  in
+  OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
+  >>= setenvvar ~path_sep:os_path_sep "PATH" installed_path
+
+(* [set_3p_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH if
+   environment variable DKML_3P_INSTALL exists.
+
+  The CPATH, COMPILER_PATH, INCLUDE, LIBRARY_PATH, and LIB variables are modified so that
+  if:
+
+  - MSVC is used, INCLUDE and LIB are recognized
+  - GCC is used, COMPILER_PATH and LIBRARY_PATH are recognized
+    (https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables)
+  - clang is used, CPATH and LIBRARY_PATH are are recognized
+    ( https://clang.llvm.org/docs/CommandGuide/clang.html and https://reviews.llvm.org/D65880)
+ *)
+let set_3p_entries cache_keys =
+  OS.Env.parse "DKML_3P_INSTALL" OS.Env.path ~absent:OS.File.null >>= fun threep ->
+  if (Fpath.compare OS.File.null threep = 0) then R.ok ("" :: cache_keys)
+  else
+    (* 1. Remove 3p entries, if any, from compiler variables and PKG_CONFIG_PATH.
+        The gcc compiler variables COMPILER_PATH and LIBRARY_PATH are always colon-separated
+        per https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables.
+        This _might_ conflict with clang if clang were run on Windows (very very unlikely)
+        because clang's CPATH is explicitly OS path separated; perhaps clang's LIBRARY_PATH is as
+        well.
+    *)
+    let f = (fun entry -> let fp = Fpath.of_string entry in if R.is_error fp then false else not Fpath.(is_prefix threep (R.get_ok fp))) in
+    prune_entries f >>= fun () ->
+    (* 2. Add DKML_3P_INSTALL directories to front of INCLUDE,LIB,...,PKG_CONFIG_PATH and PATH *)
+    let threep_installed = Fpath.to_string threep in
+    Logs.debug (fun m -> m "third-party installed directory = %s" threep_installed);
+    add_entries ~tools:false threep
+    >>| fun () -> threep_installed :: cache_keys
+
 (* [set_vcpkg_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH if
    vcpkg can be detected through [get_vcpkg_installed_dir].
 
@@ -301,18 +396,18 @@ let set_vcpkg_entries cache_keys =
       because clang's CPATH is explicitly OS path separated; perhaps clang's LIBRARY_PATH is as
       well.
   *)
-  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
-  prune_envvar_of_vcpkg ~path_sep:";" "INCLUDE" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:os_path_sep "CPATH" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:":" "COMPILER_PATH" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:";" "LIB" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:":" "LIBRARY_PATH" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:os_path_sep "PKG_CONFIG_PATH" >>= fun () ->
-  prune_envvar_of_vcpkg ~path_sep:os_path_sep "PATH" >>= fun () ->
-  (* 2. Add vcpkg to front of INCLUDE and LIB and PKG_CONFIG_PATH and PATH, if vcpkg is available.
+  let dir_sep = Fpath.dir_sep in
+  let f = (fun entry ->
+    let contains = contains entry in
+    not
+      (contains (dir_sep ^ "vcpkg_installed" ^ dir_sep)
+      || contains (dir_sep ^ "vcpkg" ^ dir_sep)
+         && contains (dir_sep ^ "installed" ^ dir_sep))) in
+  prune_entries f >>= fun () ->
+  (* 2. Add vcpkg to front of INCLUDE,LIB,...,PKG_CONFIG_PATH and PATH, if vcpkg is available.
      For PATH, add:
      * <vcpkg>/bin
-     * <vcpkg>/tools/pkgconf
+     * <vcpkg>/tools/pkgconf and whatever other tools exist
   *)
   Lazy.force get_vcpkg_installed_dir_opt >>= function
   | None ->
@@ -321,50 +416,7 @@ let set_vcpkg_entries cache_keys =
   | Some vcpkg_installed_dir ->
       let vcpkg_installed = Fpath.to_string vcpkg_installed_dir in
       Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
-      let setenvvar ~path_sep varname dir = function
-        | None -> OS.Env.set_var varname (Some dir)
-        | Some v when "" = v -> OS.Env.set_var varname (Some dir)
-        | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
-      in
-      let vcpkg_include_dir =
-        Fpath.(vcpkg_installed_dir / "include" |> to_string)
-      in
-
-      OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:";" "INCLUDE" vcpkg_include_dir
-      >>= fun () ->
-      OS.Env.parse "CPATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:os_path_sep "CPATH" vcpkg_include_dir
-      >>= fun () ->
-      OS.Env.parse "COMPILER_PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:":" "COMPILER_PATH" vcpkg_include_dir
-      >>= fun () ->
-      let vcpkg_lib_dir = Fpath.(vcpkg_installed_dir / "lib" |> to_string) in
-      OS.Env.parse "LIB" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:";" "LIB" vcpkg_lib_dir
-      >>= fun () ->
-      OS.Env.parse "LIBRARY_PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:":" "LIBRARY_PATH" vcpkg_lib_dir
-      >>= fun () ->
-      OS.Env.parse "PKG_CONFIG_PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
-            Fpath.(vcpkg_installed_dir / "lib" / "pkgconfig" |> to_string)
-      >>= fun () ->
-      OS.Path.query Fpath.(vcpkg_installed_dir / "tools" / "$(tool)" / "$(file).exe")
-      >>= fun matches ->
-      R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
-      >>= fun tools_with_exe ->
-      OS.Path.query Fpath.(vcpkg_installed_dir / "tools" / "$(tool)" / "$(file).dll")
-      >>= fun matches ->
-      R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
-      >>= fun tools_with_dll ->
-      let uniq_tools = List.sort_uniq String.compare (tools_with_exe @ tools_with_dll) in
-      let vcpkg_installed_path =
-        Fpath.(vcpkg_installed_dir / "bin" |> to_string)
-        ^ List.fold_left (fun acc b -> acc ^ os_path_sep ^ Fpath.(vcpkg_installed_dir / "tools" / b |> to_string)) "" uniq_tools
-      in
-      OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
-      >>= setenvvar ~path_sep:os_path_sep "PATH" vcpkg_installed_path
+      add_entries ~tools:true vcpkg_installed_dir
       >>| fun () -> vcpkg_installed :: cache_keys
 
 let int_parser = OS.Env.(parser "int" String.to_int)
@@ -417,6 +469,8 @@ let main_with_result () =
        _after_ MSVC.
   *)
   set_vcpkg_entries cache_keys >>= fun _cache_keys ->
+  (* FOURTH, set third-party (3p) entries. *)
+  set_3p_entries cache_keys >>= fun _cache_keys ->
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->

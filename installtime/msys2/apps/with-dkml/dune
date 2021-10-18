@@ -1,3 +1,10 @@
+(rule
+ (targets os_context.ml)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))
+
 (executable
  (name with_dkml)
  (libraries bos logs logs.fmt fmt.tty sexplib sha))

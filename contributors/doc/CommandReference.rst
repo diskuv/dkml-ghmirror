@@ -7,7 +7,18 @@ with-dkml.exe
 Summary
     Runs a specified command with an appropriate environment for a
     Microsoft/Apple/GNU compiler that includes headers and libraries
-    of optionally vcpkg and optionally an :ref:`SDK Project <SDKProjects>`.
+    of optionally vcpkg and optionally third-party C packages.
+
+    The ``DKML_3P_INSTALL`` environment variable, if defined, enables
+    the third-party C package feature. The typical use case is that
+    ``DKML_3P_INSTALL`` is set to a `CMake install tree <https://cliutils.gitlab.io/modern-cmake/chapters/install/installing.html>`_
+    which can be built from either vendored (git submodule) packages or
+    imported CMake targets. Using ``DKML_3P_INSTALL`` means you do not
+    have to rely on vcpkg packages. The ``bin``, ``include``, ``lib`` and
+    ``lib/pkgconfig`` subdirectories of ``DKML_3P_INSTALL`` will be incorporated
+    into the environment variables.
+
+    An :ref:`SDK Project <SDKProjects>` automatically sets ``DKML_3P_INSTALL``.
 
 Usage
     .. code-block:: bash
@@ -23,6 +34,15 @@ Examples
 
         # Run Opam
         with-dkml opam
+
+Configuration File ``dkmlvars.sexp``
+    This file must exist in one of the following directories:
+
+    1. ``$LOCALAPPDATA/Programs/DiskuvOCaml/``
+    2. ``$XDG_DATA_HOME/diskuv-ocaml/``
+    3. ``$HOME/.local/share/diskuv-ocaml/``
+
+    The directories are checked in order, and the first directory that contains ``dkmlvars.sexp`` is used.
 
 Argument CMD
     The name of the command to run. On Windows the command may come from MSYS2 (ex. ``bash``).
@@ -47,9 +67,9 @@ Sequence of operations
        - (MSVC) Stripped of all path entries that end with ``\Common7\IDE`` or ``\Common7\Tools`` or ``\MSBuild\Current\Bin``
        - (MSVC) Stripped of all path entries that contain ``\VC\Tools\MSVC\``, ``\Windows Kits\10\bin\``, ``\Microsoft.NET\Framework64\`` or ``\MSBuild\Current\bin\``
 
-    #. If and only if there is a configured MSYS2 environment, the ``VsDevCmd.bat``
+    #. If and only if there is a ``DiskuvOCamlMSYS2Dir`` configuration value in ``dkmlvars.sexp``, the ``VsDevCmd.bat``
        Microsoft batch script is run. The following environment variables are
-       captured and passed to the ``CMD``:
+       captured and passed to the ``CMD ARGS``:
 
        * ``PATH``
        * ``DevEnvDir``
@@ -141,27 +161,61 @@ Sequence of operations
 
              /usr/bin:/bin
 
+       c. Stripped of all entries that are the optional environment value ``DKML_3P_INSTALL`` or any of its subdirectories. For example, if the existing PATH is
+
+          .. code-block:: doscon
+
+             C:\Project\tools\local\bin;C:\WINDOWS\system32;C:\WINDOWS
+
+          and the environment value ``DKML_3P_INSTALL`` is ``C:\Project\tools\local``, the stripped PATH will be
+
+          .. code-block:: doscon
+
+             C:\WINDOWS\system32;C:\WINDOWS
+
+          Similarly on Unix if the existing PATH is
+
+          .. code-block:: bash
+
+             /home/user/project/tools/local/bin:/usr/bin:/bin
+
+          the stripped PATH will be
+
+          .. code-block:: bash
+
+             /usr/bin:/bin
+
        c. If and only if vcpkg is configured, then:
 
-          * ``<vcpkg_dir>/include`` is added to the ``INCLUDE`` environment value which is used
+          * ``<vcpkg_installed>/include`` is added to the ``INCLUDE`` environment value which is used
             `as system header paths by Microsoft's 'cl.exe' compiler <https://docs.microsoft.com/en-us/cpp/build/reference/cl-environment-variables?view=msvc-160>`_
-          * ``<vcpkg_dir>/include`` is added to the ``CPATH`` environment value which is used
+          * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment value which is used
             `as system header paths by Apple's 'clang' compiler <https://clang.llvm.org/docs/CommandGuide/clang.html>`_
-          * ``<vcpkg_dir>/include`` is added to the ``COMPILER_PATH`` environment value which is used
+          * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment value which is used
             `as system header paths by GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
-          * ``<vcpkg_dir>/lib`` is added to the ``LIB`` environment value which is used
+          * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment value which is used
             `as system library paths by Microsoft's 'link.exe' linker <https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-160#link-environment-variables>`_
-          * ``<vcpkg_dir>/lib`` is added to the ``LIBRARY_PATH`` environment value which is used
+          * ``<vcpkg_installed>/lib`` is added to the ``LIBRARY_PATH`` environment value which is used
             as system library paths by `GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
             and by `Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
-          * ``<vcpkg_dir>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value which is used
+          * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value which is used
             to locate package header and library information by
             `pkg-config <https://linux.die.net/man/1/pkg-config>`_ and
             `pkgconf <https://github.com/pkgconf/pkgconf#readme>`_
-          * ``<vcpkg_dir>/bin`` is added to the ``PATH`` environment value
-          * ``<vcpkg_dir>/tools/<subdir>`` is added to the ``PATH`` environment value, for any ``<subdir>``
+          * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment value
+          * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment value, for any ``<subdir>``
             containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
             ``tools/pkgconf/pkgconf-3.dll``.
+        
+       d. If and only if the optional environment value ``DKML_3P_INSTALL`` is defined, then
+
+          * ``$DKML_3P_INSTALL/include`` is added to the ``INCLUDE`` environment value
+          * ``$DKML_3P_INSTALL/include`` is added to the ``CPATH`` environment value
+          * ``$DKML_3P_INSTALL/include`` is added to the ``COMPILER_PATH`` environment value
+          * ``$DKML_3P_INSTALL/lib`` is added to the ``LIB`` environment value
+          * ``$DKML_3P_INSTALL/lib`` is added to the ``LIBRARY_PATH`` environment value
+          * ``$DKML_3P_INSTALL/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value
+          * ``$DKML_3P_INSTALL/bin`` is added to the ``PATH`` environment value
 
 Windows - Inside MSYS2 Shell
 ----------------------------
