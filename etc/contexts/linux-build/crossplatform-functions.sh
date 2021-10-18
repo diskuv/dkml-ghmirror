@@ -658,6 +658,9 @@ autodetect_cpus() {
 # - env:DKML_VSSTUDIO_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
 #   value that can locate the Visual Studio installation in DKML_VSSTUDIO_DIR when
 #   https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
+# - env:DKML_VSSTUDIO_CMAKEGENERATOR - Optional. If provided it must be a CMake Generator that makes use of
+#   the Visual Studio installation in DKML_VSSTUDIO_DIR. Example: `Visual Studio 16 2019`.
+#   Full list at https://cmake.org/cmake/help/v3.22/manual/cmake-generators.7.html#visual-studio-generators
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
@@ -676,35 +679,32 @@ autodetect_vsdev() {
     export VSDEV_VCVARSVER=
     export VSDEV_WINSDKVER=
     export VSDEV_MSVSPREFERENCE=
+    export VSDEV_CMAKEGENERATOR=
     if ! is_unixy_windows_build_machine; then
         return 0
     fi
-    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ]; then
+    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ] && [ -n "${DKML_VSSTUDIO_CMAKEGENERATOR:-}" ]; then
         autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
         autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
         autodetect_vsdev_VSSTUDIOWINSDKVER=$DKML_VSSTUDIO_WINSDKVER
         autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
+        autodetect_vsdev_VSSTUDIOCMAKEGENERATOR=$DKML_VSSTUDIO_CMAKEGENERATOR
     else
         autodetect_vsdev_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then
-            return 1
-        fi
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then return 1; fi
         autodetect_vsdev_VSSTUDIO_VCVARSVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.vcvars_ver.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE" ]; then
-            return 1
-        fi
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE" ]; then return 1; fi
         autodetect_vsdev_VSSTUDIO_WINSDKVERFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.winsdk.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE" ]; then
-            return 1
-        fi
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE" ]; then return 1; fi
         autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.msvs_preference.txt"
-        if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then
-            return 1
-        fi
+        if [ ! -e "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE" ]; then return 1; fi
+        autodetect_vsdev_VSSTUDIOCMAKEGENERATORFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.cmake_generator.txt"
+        if [ ! -e "$autodetect_vsdev_VSSTUDIOCMAKEGENERATORFILE" ]; then return 1; fi
         autodetect_vsdev_VSSTUDIODIR=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_DIRFILE")
         autodetect_vsdev_VSSTUDIOVCVARSVER=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_VCVARSVERFILE")
         autodetect_vsdev_VSSTUDIOWINSDKVER=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_WINSDKVERFILE")
         autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIO_MSVSPREFERENCEFILE")
+        autodetect_vsdev_VSSTUDIOCMAKEGENERATOR=$("$DKMLSYS_AWK" 'BEGIN{RS="\r\n"} {print; exit}' "$autodetect_vsdev_VSSTUDIOCMAKEGENERATORFILE")
     fi
     if [ -x /usr/bin/cygpath ]; then
         autodetect_vsdev_VSSTUDIODIR=$(/usr/bin/cygpath -au "$autodetect_vsdev_VSSTUDIODIR")
@@ -718,6 +718,7 @@ autodetect_vsdev() {
     VSDEV_VCVARSVER="$autodetect_vsdev_VSSTUDIOVCVARSVER"
     VSDEV_WINSDKVER="$autodetect_vsdev_VSSTUDIOWINSDKVER"
     VSDEV_MSVSPREFERENCE="$autodetect_vsdev_VSSTUDIOMSVSPREFERENCE"
+    VSDEV_CMAKEGENERATOR="$autodetect_vsdev_VSSTUDIOCMAKEGENERATOR"
 }
 
 # Detects a compiler like Visual Studio and sets its variables.
@@ -1039,6 +1040,13 @@ autodetect_compiler() {
             printf "%s\n" "  (\"MSVS_PREFERENCE\" \"$VSDEV_MSVSPREFERENCE\")"
         else
             printf "%s\n" "  MSVS_PREFERENCE='$VSDEV_MSVSPREFERENCE' \\"
+        fi
+
+        # Add CMAKE_GENERATOR_RECOMMENDED
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf "%s\n" "  (\"CMAKE_GENERATOR_RECOMMENDED\" \"$VSDEV_CMAKEGENERATOR\")"
+        else
+            printf "%s\n" "  CMAKE_GENERATOR_RECOMMENDED='$VSDEV_CMAKEGENERATOR' \\"
         fi
 
         # Add PATH

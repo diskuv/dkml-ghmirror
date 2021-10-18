@@ -214,6 +214,21 @@ function Get-VisualStudioProperties {
     )
     $MsvsPreference = ("" + $VisualStudioInstallation.InstallationVersion.Major + "." + $VisualStudioInstallation.InstallationVersion.Minor)
 
+    # From https://cmake.org/cmake/help/v3.22/manual/cmake-generators.7.html#visual-studio-generators
+    $CMakeVsYear = switch ($VisualStudioInstallation.InstallationVersion.Major)
+    {
+        8 {"2005"}
+        9 {"2008"}
+        10 {"2010"}
+        11 {"2012"}
+        12 {"2013"}
+        14 {"2015"}
+        15 {"2017"}
+        16 {"2019"}
+        17 {"2022"}
+    }
+    $CMakeGenerator = ("Visual Studio " + $VisualStudioInstallation.InstallationVersion.Major + " " + $CMakeVsYear)
+
     $VcVarsVerCandidates = $VisualStudioInstallation.Packages | Where-Object {
         $_.Id -eq "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64" -or
         $VcVarsCompatibleComponents.Contains($_.Id)
@@ -235,6 +250,7 @@ function Get-VisualStudioProperties {
     @{
         InstallPath = $VisualStudioInstallation.InstallationPath;
         MsvsPreference = "VS$MsvsPreference";
+        CMakeGenerator = "$CMakeGenerator";
         VcVarsVer = $VcVarsVerChoice;
         WinSdkVer = $Windows10SdkFullVer;
     }

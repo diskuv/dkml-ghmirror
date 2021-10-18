@@ -435,11 +435,13 @@ $VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
 $VisualStudioVcVarsVerPath = "$ProgramParentPath\vsstudio.vcvars_ver.txt"
 $VisualStudioWinSdkVerPath = "$ProgramParentPath\vsstudio.winsdk.txt"
 $VisualStudioMsvsPreferencePath = "$ProgramParentPath\vsstudio.msvs_preference.txt"
+$VisualStudioCMakeGeneratorPath = "$ProgramParentPath\vsstudio.cmake_generator.txt"
 [System.IO.File]::WriteAllText($VisualStudioDirPath, "$($VisualStudioProps.InstallPath)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioJsonPath, ($CompatibleVisualStudios | ConvertTo-Json -Depth 5), $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioVcVarsVerPath, "$($VisualStudioProps.VcVarsVer)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioWinSdkVerPath, "$($VisualStudioProps.WinSdkVer)", $Utf8NoBomEncoding)
 [System.IO.File]::WriteAllText($VisualStudioMsvsPreferencePath, "$($VisualStudioProps.MsvsPreference)", $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioCMakeGeneratorPath, "$($VisualStudioProps.CMakeGenerator)", $Utf8NoBomEncoding)
 
 # END Visual Studio Setup PowerShell Module
 # ----------------------------------------------------------------
