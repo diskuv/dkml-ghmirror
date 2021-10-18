@@ -119,7 +119,7 @@ Visual Studio Code Development
 
 4. Open another Terminal. In this terminal you can quickly test some pieces of your code.
    To test ``lib/dune`` and ``lib/terminal_color.ml`` which come directly from the
-   `Real World OCaml book <https://dev.realworldocaml.org/variants.html>`_ you would type:
+   `Variants chapter of the Real World OCaml book <https://dev.realworldocaml.org/variants.html>`_ you would type:
 
    .. code-block:: ps1con
 
@@ -292,7 +292,7 @@ Here is an example from the ``diskuv-ocaml-starter`` local project:
     #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
 
 ``buildconfig/dune/``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 ::
 

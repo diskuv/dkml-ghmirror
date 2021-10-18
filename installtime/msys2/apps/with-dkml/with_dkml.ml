@@ -350,10 +350,18 @@ let set_vcpkg_entries cache_keys =
       >>= setenvvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
             Fpath.(vcpkg_installed_dir / "lib" / "pkgconfig" |> to_string)
       >>= fun () ->
+      OS.Path.query Fpath.(vcpkg_installed_dir / "tools" / "$(tool)" / "$(file).exe")
+      >>= fun matches ->
+      R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
+      >>= fun tools_with_exe ->
+      OS.Path.query Fpath.(vcpkg_installed_dir / "tools" / "$(tool)" / "$(file).dll")
+      >>= fun matches ->
+      R.ok (List.map (fun (_fp, pat) -> Astring.String.Map.get "tool" pat) matches)
+      >>= fun tools_with_dll ->
+      let uniq_tools = List.sort_uniq String.compare (tools_with_exe @ tools_with_dll) in
       let vcpkg_installed_path =
         Fpath.(vcpkg_installed_dir / "bin" |> to_string)
-        ^ os_path_sep
-        ^ Fpath.(vcpkg_installed_dir / "tools" / "pkgconf" |> to_string)
+        ^ List.fold_left (fun acc b -> acc ^ os_path_sep ^ Fpath.(vcpkg_installed_dir / "tools" / b |> to_string)) "" uniq_tools
       in
       OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
       >>= setenvvar ~path_sep:os_path_sep "PATH" vcpkg_installed_path
