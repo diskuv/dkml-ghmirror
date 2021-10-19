@@ -1152,6 +1152,8 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam init
+    #
+    # init-opam-root.sh will create the system switch automatically
 
     if ($StopBeforeInitOpam) {
         Write-Host "Stopping before being completed finished due to -StopBeforeInitOpam switch"
@@ -1192,6 +1194,9 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN plugin configure
+    #
+    # The system switch will have already been created earlier by "opam init" section. Just with
+    # the CI flavor packages which is all that is necessary to compile the plugins.
 
     $global:ProgressActivity = "Configure Opam Plugins"
     Write-ProgressStep
@@ -1207,6 +1212,9 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam install required `diskuv-system` packages
+    #
+    # The system switch will have already been created earlier by "opam init" section, but it would
+    # only have the CI flavor packages.
 
     if ($StopBeforeInstallSystemSwitch) {
         Write-Host "Stopping before being completed finished due to -StopBeforeInstallSystemSwitch switch"
