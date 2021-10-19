@@ -58,6 +58,14 @@ let msvc_as_is_vars =
     "WindowsSDKVersion";
   ]
 
+(* [autodetect_compiler_as_is_vars] is the list of environment variables created by autodetect_compiler
+   in crossplatform-function.sh that should always be inserted into the environment as-is. *)
+let autodetect_compiler_as_is_vars =
+  [
+    "MSVS_PREFERENCE";
+    "CMAKE_GENERATOR_RECOMMENDED"
+  ]
+
 let platform_path_norm s = match Os_context.host_os with
 | IOS | Mac | Windows -> String.Ascii.lowercase s
 | Android | Linux -> s
@@ -120,7 +128,7 @@ let remove_microsoft_visual_studio_entries () =
   List.fold_right
     (fun varname acc ->
       match acc with Ok () -> OS.Env.set_var varname None | Error _ -> acc)
-    msvc_as_is_vars (Ok ())
+    (msvc_as_is_vars @ autodetect_compiler_as_is_vars) (Ok ())
   >>= fun () ->
   (* 2. Remove VSCMD_ variables *)
   OS.Env.current () >>= fun old_env ->
@@ -135,7 +143,7 @@ let remove_microsoft_visual_studio_entries () =
 
 (* [add_microsoft_visual_studio_entries ()] updates the environment to include
    Microsoft Visual Studio entries like LIB, INCLUDE and the others listed in
-   [msvc_as_is_vars]. Additionally PATH is updated.
+   [msvc_as_is_vars] and in [autodetect_compiler_as_is_vars]. Additionally PATH is updated.
 
    The PATH environment variable on entry is used as a cache key.
 
@@ -225,6 +233,7 @@ let set_msvc_entries cache_keys =
               (Fpath.to_string tmp_sexp_file)
               association_list_of_sexp
           in
+          Logs.debug (fun m -> m "autodetect_compiler output vars:@\n%a" Fmt.(list (Dump.pair string string)) env_vars);
 
           (* Store the as-is and PATH compiler environment variables in an association list *)
           let setvars =
@@ -234,7 +243,7 @@ let set_msvc_entries cache_keys =
                 | Some varvalue ->
                     Some Sexp.(List [ Atom varname; Atom varvalue ])
                 | None -> None)
-              ("PATH" :: msvc_as_is_vars)
+              ("PATH" :: (msvc_as_is_vars @ autodetect_compiler_as_is_vars))
           in
           Sexp.List setvars
         in

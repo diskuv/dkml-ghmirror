@@ -1026,7 +1026,7 @@ autodetect_compiler() {
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
-        # Add all but PATH and MSVS_PREFERENCE to launcher environment
+        # Add all but PATH and MSVS_PREFERENCE and CMAKE_GENERATOR_RECOMMENDED to launcher environment
         autodetect_compiler_escape "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
             if [ "$autodetect_compiler_SEXP" = ON ]; then
                 printf "%s\n" "  (\"$autodetect_compiler_line\")";

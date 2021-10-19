@@ -36,13 +36,33 @@ Examples
         with-dkml opam
 
 Configuration File ``dkmlvars.sexp``
-    This file must exist in one of the following directories:
+   This file must exist in one of the following directories:
 
-    1. ``$LOCALAPPDATA/Programs/DiskuvOCaml/``
-    2. ``$XDG_DATA_HOME/diskuv-ocaml/``
-    3. ``$HOME/.local/share/diskuv-ocaml/``
+   1. ``$LOCALAPPDATA/Programs/DiskuvOCaml/``
+   2. ``$XDG_DATA_HOME/diskuv-ocaml/``
+   3. ``$HOME/.local/share/diskuv-ocaml/``
 
-    The directories are checked in order, and the first directory that contains ``dkmlvars.sexp`` is used.
+   The directories are checked in order, and the first directory that contains ``dkmlvars.sexp`` is used.
+
+   The value will have been set automatically by the Windows Diskuv OCaml installer or by ``makeit init-dev``
+   of :ref:`SDKProjects` for non-Windows OSes.
+
+Configuration File ``vsstudio.msvs_preference.txt``
+   This file is located using the same directory search as ``dkmlvars.sexp``.
+   It only needs to be present when Visual Studio has been detected, and is set automatically by
+   the Diskuv OCaml installer.
+
+   The value is the ``MSVS_PREFERENCE`` environment variable that must be set
+   to locate the Visual Studio installation when https://github.com/metastack/msvs-tools's or
+   Opam's ``msvs-detect`` is invoked. Example: `VS16.6`
+
+Configuration File ``vsstudio.cmake_generator.txt``
+   This file is located using the same directory search as ``dkmlvars.sexp``.
+   It only needs to be present when Visual Studio has been detected, and is set automatically by
+   the Windows Diskuv OCaml installer.
+
+   The value is a recommendation for which `CMake Generator <https://cmake.org/cmake/help/v3.22/manual/cmake-generators.7.html#visual-studio-generators>`_
+   to use when setting up a CMake project initially.
 
 Argument CMD
     The name of the command to run. On Windows the command may come from MSYS2 (ex. ``bash``).
@@ -50,6 +70,8 @@ Argument CMD
     or part of the modified PATH.
 
 Sequence of operations
+    #. If and only if the configuration file ``vsstudio.msvs_preference.txt`` exists then the ``MSVS_PREFERENCE`` environment variable will be set to its value
+    #. If and only if the configuration file ``vsstudio.cmake_generator.txt`` exists then the ``CMAKE_GENERATOR_RECOMMENDED`` environment variable will be set to its value
     #. The existing environment variable PATH is:
 
        - (MSYS2) Stripped of all path entries that end with ``\MSYS2\usr\bin``. For example, if the existing PATH is
@@ -206,7 +228,7 @@ Sequence of operations
           * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment value, for any ``<subdir>``
             containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
             ``tools/pkgconf/pkgconf-3.dll``.
-        
+
        d. If and only if the optional environment value ``DKML_3P_INSTALL`` is defined, then
 
           * ``$DKML_3P_INSTALL/include`` is added to the ``INCLUDE`` environment value
