@@ -164,6 +164,36 @@ VCPKG_TRIPLET_linux_arm64      = arm64-linux-static
 VCPKG_TRIPLET_linux_x86_64     = x64-linux-static
 VCPKG_TRIPLET_windows_x86      = x86-windows
 VCPKG_TRIPLET_windows_x86_64   = x64-windows
+# cmake -A <platform-name>
+CMAKE_PLATFORM_android_arm64v8a =
+CMAKE_PLATFORM_android_arm32v7a =
+CMAKE_PLATFORM_android_x86      =
+CMAKE_PLATFORM_android_x86_64   =
+CMAKE_PLATFORM_darwin_arm64     =
+CMAKE_PLATFORM_darwin_x86_64    =
+CMAKE_PLATFORM_linux_arm32v6    =
+CMAKE_PLATFORM_linux_arm32v7    =
+CMAKE_PLATFORM_linux_arm64      =
+CMAKE_PLATFORM_linux_x86_64     =
+CMAKE_PLATFORM_windows_arm32    = ARM
+CMAKE_PLATFORM_windows_arm64    = ARM64
+CMAKE_PLATFORM_windows_x86      = Win32
+CMAKE_PLATFORM_windows_x86_64   = x64
+# cmake -T <toolset-name>
+CMAKE_TOOLSET_android_arm64v8a =
+CMAKE_TOOLSET_android_arm32v7a =
+CMAKE_TOOLSET_android_x86      =
+CMAKE_TOOLSET_android_x86_64   =
+CMAKE_TOOLSET_darwin_arm64     =
+CMAKE_TOOLSET_darwin_x86_64    =
+CMAKE_TOOLSET_linux_arm32v6    =
+CMAKE_TOOLSET_linux_arm32v7    =
+CMAKE_TOOLSET_linux_arm64      =
+CMAKE_TOOLSET_linux_x86_64     =
+CMAKE_TOOLSET_windows_arm32    =
+CMAKE_TOOLSET_windows_arm64    =
+CMAKE_TOOLSET_windows_x86      =
+CMAKE_TOOLSET_windows_x86_64   =
 
 # All of the build types.
 # When modifying, edit:
@@ -201,15 +231,15 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES),
 ))
 
 # -----------------------------------------------------------------------------
-# prepare-dev|prepare-dev-BUILDTYPE|prepare-PLATFORM|prepare-PLATFORM-BUILDTYPE|
-# prepare-all|prepare-all-BUILDTYPE
+# configure-dev|configure-dev-BUILDTYPE|configure-PLATFORM|configure-PLATFORM-BUILDTYPE|
+# configure-all|configure-all-BUILDTYPE
 #
-# prepare-dev prepares the dev platform for build type 'Debug'
-# prepare-dev-BUILDTYPE prepares the dev platform for build type BUILDTYPE
-# prepare-PLATFORM prepares PLATFORM's platform for build type 'Debug'
-# prepare-PLATFORM-BUILDTYPE prepares PLATFORM's platform for build type BUILDTYPE
-# prepare-all prepares all platforms (except dev) for build type 'Debug'
-# prepare-all-BUILDTYPE prepares all platforms (except dev) for build type BUILDTYPE
+# configure-dev prepares the dev platform for build type 'Debug'
+# configure-dev-BUILDTYPE prepares the dev platform for build type BUILDTYPE
+# configure-PLATFORM prepares PLATFORM's platform for build type 'Debug'
+# configure-PLATFORM-BUILDTYPE prepares PLATFORM's platform for build type BUILDTYPE
+# configure-all prepares all platforms (except dev) for build type 'Debug'
+# configure-all-BUILDTYPE prepares all platforms (except dev) for build type BUILDTYPE
 #
 # The many recipes are defined so that `make -j` recipe-based parallelization works well
 
@@ -226,38 +256,38 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 init-dev:
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
-.PHONY: prepare-dev
-prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
+.PHONY: configure-dev
+configure-dev: configure-dev-$(BUILDTYPE_DEFAULT)
 
-define PREPARE_buildtype_template
-  .PHONY: prepare-dev-$(1)
-  prepare-dev-$(1): init-dev
+define CONFIGURE_buildtype_template
+  .PHONY: configure-dev-$(1)
+  configure-dev-$(1): init-dev
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform dev; then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
 	fi
 
-  .PHONY: prepare-all-$(1)
-  prepare-all-$(1): $(foreach platform,$(DKML_PLATFORMS),prepare-$(platform)-$(1))
+  .PHONY: configure-all-$(1)
+  configure-all-$(1): $(foreach platform,$(DKML_PLATFORMS),configure-$(platform)-$(1))
 endef
-$(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call PREPARE_buildtype_template,$(buildtype))))
+$(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call CONFIGURE_buildtype_template,$(buildtype))))
 
-define PREPARE_platform_template
+define CONFIGURE_platform_template
   .PHONY: init-$(1)
   init-$(1):
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
+	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
-  .PHONY: prepare-$(1)
-  prepare-$(1): prepare-$(1)-$(BUILDTYPE_DEFAULT)
+  .PHONY: configure-$(1)
+  configure-$(1): configure-$(1)-$(BUILDTYPE_DEFAULT)
 endef
-$(foreach platform,$(DKML_PLATFORMS),$(eval $(call PREPARE_platform_template,$(platform))))
+$(foreach platform,$(DKML_PLATFORMS),$(eval $(call CONFIGURE_platform_template,$(platform))))
 
-define PREPARE_platform_buildtype_template
-  .PHONY: prepare-$(1)-$(2)
-  prepare-$(1)-$(2): init-$(1)
+define CONFIGURE_platform_buildtype_template
+  .PHONY: configure-$(1)-$(2)
+  configure-$(1)-$(2): init-$(1)
 	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_WINDOWS); \
 	else \
@@ -265,10 +295,10 @@ define PREPARE_platform_buildtype_template
 	fi
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
-    $(eval $(call PREPARE_platform_buildtype_template,$(platform),$(buildtype))) \
+    $(eval $(call CONFIGURE_platform_buildtype_template,$(platform),$(buildtype))) \
 ))
 
-prepare-all: $(foreach platform,$(DKML_PLATFORMS),prepare-$(platform))
+configure-all: $(foreach platform,$(DKML_PLATFORMS),configure-$(platform))
 
 # -----------------------------------------------------------------------------
 # clean-dev|clean-dev-BUILDTYPE|clean-PLATFORM|clean-PLATFORM-BUILDTYPE|
@@ -335,7 +365,7 @@ $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 #
 # ... and ...
 #
-# quickbuild-* does the same as build-* except does not invoke the prepare-* steps (which was already expected)
+# quickbuild-* does the same as build-* except does not invoke the configure-* steps (which was already expected)
 #
 # ... and ...
 #
@@ -376,13 +406,22 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call BUILD_platform_template,$(pla
 
 define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
-  quickbuild-$(1)-$(2):
+  build_pure_c-$(1)-$(2):
+	@if [ -e CMakeLists.txt ]; then \
+		export PLATFORM="$(1)" && export BUILDTYPE="$(2)" && \
+		. '$(DKML_DIR)/runtime/unix/_common_build.sh' && \
+		set_opamrootandswitchdir && \
+		GENERATOR=`OPAM_SWITCH_PREFIX="$$$$OPAMSWITCHFINALDIR_BUILDHOST" "$$$$WITHDKMLEXE_BUILDHOST" sh -c 'echo $$$$CMAKE_GENERATOR_RECOMMENDED'` && \
+		if [ "dev" = "$(1)" ]; then cmake -B build/$(1)/$(2) -G "$$$$GENERATOR"; \
+		else cmake -B build/$(1)/$(2) -G "$$$$GENERATOR" -T "$(CMAKE_TOOLSET_$(1))" -A "$(CMAKE_PLATFORM_$(1))"; fi \
+	fi
+  quickbuild-$(1)-$(2): build_pure_c-$(1)-$(2)
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
-  build-$(1)-$(2): prepare-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
+  build-$(1)-$(2): configure-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
 	@BUILD_ROOT_UNIX="$$$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$$$(/usr/bin/cygpath -u "$$$$BUILD_ROOT_UNIX"); fi && \
 	if [ -e "$$$$BUILD_ROOT_UNIX/$(1)/$(2)/_opam/bin/dune" ]; then \
@@ -408,13 +447,13 @@ test-all: $(foreach platform,dev $(DKML_PLATFORMS),test-$(platform))
 
 # update-dev is for a developer to update their own machine
 .PHONY: update-dev
-update-dev: prepare-dev
+update-dev: configure-dev
 	opam update --switch build/dev
 
 # update-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
 define UPDATE_template
   .PHONY: update-$(1)
-  update-$(1): prepare-$(1)
+  update-$(1): configure-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
 		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam update; fi
 	)
@@ -427,7 +466,7 @@ update-all: $(foreach platform,$(DKML_PLATFORMS),update-$(platform))
 
 # upgrade-dev is for a developer to upgrade their own machine
 .PHONY: upgrade-dev
-upgrade-dev: prepare-dev
+upgrade-dev: configure-dev
 	$(foreach buildtype,$(DKML_BUILDTYPES),
 		'$(DKML_DIR)/runtime/unix/within-dev' -b $(buildtype) opam upgrade;
 	)
@@ -435,7 +474,7 @@ upgrade-dev: prepare-dev
 # upgrade-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
 define UPGRADE_template
   .PHONY: upgrade-$(1)
-  upgrade-$(1): prepare-$(1)
+  upgrade-$(1): configure-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
 		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev' -p $(1) -b $(2) opam upgrade; fi
 	)
