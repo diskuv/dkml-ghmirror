@@ -63,7 +63,8 @@ let msvc_as_is_vars =
 let autodetect_compiler_as_is_vars =
   [
     "MSVS_PREFERENCE";
-    "CMAKE_GENERATOR_RECOMMENDED"
+    "CMAKE_GENERATOR_RECOMMENDED";
+    "CMAKE_GENERATOR_INSTANCE_RECOMMENDED"
   ]
 
 let platform_path_norm s = match Os_context.host_os with

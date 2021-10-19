@@ -640,7 +640,7 @@ autodetect_cpus() {
     export NUMCPUS
 }
 
-# Set VSDEV_HOME_UNIX and VSDEV_HOME_WINDOWS
+# Set VSDEV_HOME_UNIX and VSDEV_HOME_BUILDHOST
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
@@ -665,8 +665,8 @@ autodetect_cpus() {
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
 #   if and only if Visual Studio was detected. Empty otherwise
-# - env:VSDEV_HOME_WINDOWS is the Visual Studio installation directory containing VC and Common7 subfolders,
-#   if and only if Visual Studio was detected. Empty otherwise
+# - env:VSDEV_HOME_BUILDHOST is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Will be Windows path if Windows. Empty if Visual Studio not detected.
 # Return Values:
 # - 0: Success or a non-Windows machine. A non-Windows machine will have all outputs set to blank
 # - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
@@ -675,7 +675,7 @@ autodetect_vsdev() {
     set_dkmlparenthomedir
 
     export VSDEV_HOME_UNIX=
-    export VSDEV_HOME_WINDOWS=
+    export VSDEV_HOME_BUILDHOST=
     export VSDEV_VCVARSVER=
     export VSDEV_WINSDKVER=
     export VSDEV_MSVSPREFERENCE=
@@ -711,9 +711,9 @@ autodetect_vsdev() {
     fi
     VSDEV_HOME_UNIX="$autodetect_vsdev_VSSTUDIODIR"
     if [ -x /usr/bin/cygpath ]; then
-        VSDEV_HOME_WINDOWS=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
+        VSDEV_HOME_BUILDHOST=$(/usr/bin/cygpath -aw "$VSDEV_HOME_UNIX")
     else
-        VSDEV_HOME_WINDOWS="$VSDEV_HOME_UNIX"
+        VSDEV_HOME_BUILDHOST="$VSDEV_HOME_UNIX"
     fi
     VSDEV_VCVARSVER="$autodetect_vsdev_VSSTUDIOVCVARSVER"
     VSDEV_WINSDKVER="$autodetect_vsdev_VSSTUDIOWINSDKVER"
@@ -763,8 +763,16 @@ autodetect_vsdev() {
 #   compiling OCaml. Aligns with the PLATFORM variable that was specified, especially for cross-compilation.
 # - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
 #   if and only if Visual Studio was detected. Empty otherwise
-# - env:VSDEV_HOME_WINDOWS is the Visual Studio installation directory containing VC and Common7 subfolders,
-#   if and only if Visual Studio was detected. Empty otherwise
+# - env:VSDEV_HOME_BUILDHOST is the Visual Studio installation directory containing VC and Common7 subfolders,
+#   if and only if Visual Studio was detected. Will be Windows path if Windows. Empty if Visual Studio not detected.
+# Launcher/s-exp Environment:
+# - MSVS_PREFERENCE will be set for https://github.com/metastack/msvs-tools or Opam's `msvs-detect` to detect
+#   which Visual Studio installation to use. Example: `VS16.6`
+# - CMAKE_GENERATOR_RECOMMENDED will be set for build scripts to use a sensible generator in `cmake -G <generator>` if there
+#   is not a more appropriate value. Example: `Visual Studio 16 2019`
+# - CMAKE_GENERATOR_INSTANCE_RECOMMENDED will be set for build scripts to use a sensible generator instance in
+#   `cmake -G ... -D CMAKE_GENERATOR_INSTANCE=<generator instance>`. Only set for Visual Studio where it is the absolute
+#   path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
 # Return Values:
 # - 0: Success
 # - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
@@ -795,7 +803,7 @@ autodetect_compiler() {
         "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
     fi
     export VSDEV_HOME_UNIX=
-    export VSDEV_HOME_WINDOWS=
+    export VSDEV_HOME_BUILDHOST=
 
     # Host triplet:
     #   (TODO: Better link)
@@ -1026,7 +1034,7 @@ autodetect_compiler() {
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
-        # Add all but PATH and MSVS_PREFERENCE and CMAKE_GENERATOR_RECOMMENDED to launcher environment
+        # Add all but PATH and MSVS_PREFERENCE, CMAKE_GENERATOR_RECOMMENDED and CMAKE_GENERATOR_INSTANCE_RECOMMENDED to launcher environment
         autodetect_compiler_escape "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
             if [ "$autodetect_compiler_SEXP" = ON ]; then
                 printf "%s\n" "  (\"$autodetect_compiler_line\")";
@@ -1042,11 +1050,14 @@ autodetect_compiler() {
             printf "%s\n" "  MSVS_PREFERENCE='$VSDEV_MSVSPREFERENCE' \\"
         fi
 
-        # Add CMAKE_GENERATOR_RECOMMENDED
+        # Add CMAKE_GENERATOR_RECOMMENDED and CMAKE_GENERATOR_INSTANCE_RECOMMENDED
         if [ "$autodetect_compiler_SEXP" = ON ]; then
+            autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED=$(printf "%s" "$VSDEV_HOME_BUILDHOST" | autodetect_compiler_escape)
             printf "%s\n" "  (\"CMAKE_GENERATOR_RECOMMENDED\" \"$VSDEV_CMAKEGENERATOR\")"
+            printf "%s\n" "  (\"CMAKE_GENERATOR_INSTANCE_RECOMMENDED\" \"$autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED\")"
         else
             printf "%s\n" "  CMAKE_GENERATOR_RECOMMENDED='$VSDEV_CMAKEGENERATOR' \\"
+            printf "%s\n" "  CMAKE_GENERATOR_INSTANCE_RECOMMENDED='$VSDEV_HOME_BUILDHOST' \\"
         fi
 
         # Add PATH

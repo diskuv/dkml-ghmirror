@@ -195,12 +195,12 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     install -d "$VCPKG_UNIX"/downloads
     touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
-    # Set DKMLPARENTHOME_BUILDHOST and autodetect VSDEV_HOME_WINDOWS
+    # Set DKMLPARENTHOME_BUILDHOST and autodetect VSDEV_HOME_BUILDHOST
     autodetect_vsdev
 
     # Set VCPKG_VISUAL_STUDIO_PATH
     if is_unixy_windows_build_machine; then
-        VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_WINDOWS:-}"
+        VCPKG_VISUAL_STUDIO_PATH="${VSDEV_HOME_BUILDHOST:-}"
     else
         VCPKG_VISUAL_STUDIO_PATH=""
     fi
