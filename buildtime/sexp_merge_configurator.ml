@@ -57,7 +57,7 @@ let merge_config (config_lst : string list) : string =
   "(\n" ^ String.concat "\n" config_lst ^ "\n)"
 
 let () =
-  match String.split_on_char '-' dune_profile with
+  match String.split_on_char profile_separator dune_profile with
   | platform :: build_type_rst ->
       let build_type =
         String.concat (String.make 1 profile_separator) build_type_rst
