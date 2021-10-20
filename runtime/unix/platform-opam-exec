@@ -204,6 +204,16 @@ if [ "$ADD_SWITCH_OPTS" = ON ] &&
     OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
 fi
 
+# Use 3p_installed for with-dkml.exe
+WITHDKMLENV=(env)
+if [ -n "$PLATFORM" ] && [ -n "${BUILDTYPE:-}" ]; then
+    THREEP="$TOPDIR/3p_installed/default/$PLATFORM-$BUILDTYPE"
+    if [ -x /usr/bin/cygpath ]; then
+        THREEP=$(/usr/bin/cygpath -aw "$THREEP")
+    fi
+    WITHDKMLENV+=( DKML_3P_INSTALL="$THREEP" )
+fi
+
 # END --switch
 # ------------
 
@@ -236,9 +246,9 @@ case "$subcommand" in
         if [ -e "$WITHDKMLEXE_BUILDHOST" ] && [ "${WITHDKML_ENABLE:-ON}" = ON ]; then
             if [ "$1" = "--" ]; then
                 shift
-                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             else
-                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             fi
         else
             exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
