@@ -73,180 +73,210 @@ Configuration File ``vsstudio.cmake_generator.txt``
    to use when setting up a CMake project initially.
 
 Argument CMD
-    The name of the command to run. On Windows the command may come from MSYS2 (ex. ``bash``).
-    The command does *not* need to an absolute path if it already part of the existing PATH
-    or part of the modified PATH.
+   The name of the command to run. On Windows the command may come from MSYS2 (ex. ``bash``).
+   The command does *not* need to an absolute path if it already part of the existing PATH
+   or part of the modified PATH.
 
 Sequence of operations
-    #. If and only if the configuration file ``vsstudio.msvs_preference.txt`` exists then the ``MSVS_PREFERENCE`` environment variable will be set to its value
-    #. If and only if the configuration file ``vsstudio.cmake_generator.txt`` exists then the ``CMAKE_GENERATOR_RECOMMENDED`` environment variable will be set to its value
-    #. If and only if the configuration file ``vsstudio.dir.txt`` exists then the ``CMAKE_GENERATOR_INSTANCE_RECOMMENDED`` environment variable will be set to its value
-    #. The existing environment variable PATH is:
+   #. The environment variable ``DKML_TARGET_PLATFORM`` will be detected through compiler probing and set to one of:
 
-       - (MSYS2) Stripped of all path entries that end with ``\MSYS2\usr\bin``. For example, if the existing PATH is
+      - ``android_arm64v8a``
+      - ``android_arm32v7a``
+      - ``android_x86``
+      - ``android_x86_64``
+      - ``darwin_arm64``
+      - ``darwin_x86_64``
+      - ``linux_arm64``
+      - ``linux_arm32v6``
+      - ``linux_arm32v7``
+      - ``linux_x86_64``
+      - ``windows_x86_64``
+      - ``windows_x86``
+      - ``windows_arm64``
+      - ``windows_arm32``
+
+      The compiler probing is done when with-dkml is compiled. During the Diskuv OCaml installation time on Windows there is a
+      ``with-dkml`` placed on the PATH; that will use the Visual Studio compiler detected at installation time.
+
+      An :ref:`SDK Project <SDKProjects>` supports cross-compilation and can have many ``with-dkml`` binaries. Any
+      ``./makeit *-<platform>-<buildtype>`` target like ``./makeit build-windows_x86-Debug`` or ``./makeit build-dev`` will first
+      call a ``./makeit init-<platform>`` target; that will compile a ``with-dkml`` binary using a compiler specific to the given
+      ``<platform>``. That means that ``DKML_TARGET_PLATFORM`` will be ``<platform>``, except ``DKML_TARGET_PLATFORM`` will
+      be the results of probing the system compiler if ``<platform> = "dev"``.
+
+      .. warning::
+
+         Only ``windows_x86_64``, ``darwin_arm64`` and ``darwin_x86_64`` are supported today.
+
+   #. If and only if the configuration file ``vsstudio.msvs_preference.txt`` exists then the ``MSVS_PREFERENCE`` environment variable will be set to its value
+   #. If and only if the configuration file ``vsstudio.cmake_generator.txt`` exists then the ``CMAKE_GENERATOR_RECOMMENDED`` environment variable will be set to its value
+   #. If and only if the configuration file ``vsstudio.dir.txt`` exists then the ``CMAKE_GENERATOR_INSTANCE_RECOMMENDED`` environment variable will be set to its value
+   #. The existing environment variable PATH is:
+
+      - (MSYS2) Stripped of all path entries that end with ``\MSYS2\usr\bin``. For example, if the existing PATH is
+
+        .. code-block:: doscon
+
+           C:\Program Files\Miniconda3\Scripts;C:\MSYS2\usr\bin;C:\WINDOWS\system32;C:\WINDOWS
+
+        the stripped PATH will be
+
+        .. code-block:: doscon
+
+           C:\Program Files\Miniconda3\Scripts;C:\WINDOWS\system32;C:\WINDOWS
+
+      - (MSVC) Stripped of all path entries that end with ``\Common7\IDE`` or ``\Common7\Tools`` or ``\MSBuild\Current\Bin``
+      - (MSVC) Stripped of all path entries that contain ``\VC\Tools\MSVC\``, ``\Windows Kits\10\bin\``, ``\Microsoft.NET\Framework64\`` or ``\MSBuild\Current\bin\``
+
+   #. If and only if there is a ``DiskuvOCamlMSYS2Dir`` configuration value in ``dkmlvars.sexp``, the ``VsDevCmd.bat``
+      Microsoft batch script is run. The following environment variables are
+      captured and passed to the ``CMD ARGS``:
+
+      * ``PATH``
+      * ``DevEnvDir``
+      * ``ExtensionSdkDir``
+      * ``Framework40Version``
+      * ``FrameworkDir``
+      * ``Framework64``
+      * ``FrameworkVersion``
+      * ``FrameworkVersion64``
+      * ``INCLUDE``
+      * ``LIB``
+      * ``LIBPATH``
+      * ``UCRTVersion``
+      * ``UniversalCRTSdkDir``
+      * ``VCIDEInstallDir``
+      * ``VCINSTALLDIR``
+      * ``VCToolsInstallDir``
+      * ``VCToolsRedistDir``
+      * ``VCToolsVersion``
+      * ``VisualStudioVersion``
+      * ``VS140COMNTOOLS``
+      * ``VS150COMNTOOLS``
+      * ``VS160COMNTOOLS``
+      * ``VSINSTALLDIR``
+      * ``WindowsLibPath``
+      * ``WindowsSdkBinPath``
+      * ``WindowsSdkDir``
+      * ``WindowsSDKLibVersion``
+      * ``WindowsSdkVerBinPath``
+      * ``WindowsSDKVersion``
+
+   #. The following environment variables:
+
+      * INCLUDE
+      * CPATH
+      * COMPILER_PATH
+      * LIB
+      * LIBRARY_PATH
+      * PKG_CONFIG_PATH
+      * PATH
+
+      are:
+
+      a. Stripped of all entries that contain a subdirectory ``vcpkg_installed``. For example, if the existing PATH is
 
          .. code-block:: doscon
 
-            C:\Program Files\Miniconda3\Scripts;C:\MSYS2\usr\bin;C:\WINDOWS\system32;C:\WINDOWS
+            C:\project\vcpkg_installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
 
          the stripped PATH will be
 
          .. code-block:: doscon
 
-            C:\Program Files\Miniconda3\Scripts;C:\WINDOWS\system32;C:\WINDOWS
+            C:\WINDOWS\system32;C:\WINDOWS
 
-       - (MSVC) Stripped of all path entries that end with ``\Common7\IDE`` or ``\Common7\Tools`` or ``\MSBuild\Current\Bin``
-       - (MSVC) Stripped of all path entries that contain ``\VC\Tools\MSVC\``, ``\Windows Kits\10\bin\``, ``\Microsoft.NET\Framework64\`` or ``\MSBuild\Current\bin\``
+         Similarly on Unix if the existing PATH is
 
-    #. If and only if there is a ``DiskuvOCamlMSYS2Dir`` configuration value in ``dkmlvars.sexp``, the ``VsDevCmd.bat``
-       Microsoft batch script is run. The following environment variables are
-       captured and passed to the ``CMD ARGS``:
+         .. code-block:: bash
 
-       * ``PATH``
-       * ``DevEnvDir``
-       * ``ExtensionSdkDir``
-       * ``Framework40Version``
-       * ``FrameworkDir``
-       * ``Framework64``
-       * ``FrameworkVersion``
-       * ``FrameworkVersion64``
-       * ``INCLUDE``
-       * ``LIB``
-       * ``LIBPATH``
-       * ``UCRTVersion``
-       * ``UniversalCRTSdkDir``
-       * ``VCIDEInstallDir``
-       * ``VCINSTALLDIR``
-       * ``VCToolsInstallDir``
-       * ``VCToolsRedistDir``
-       * ``VCToolsVersion``
-       * ``VisualStudioVersion``
-       * ``VS140COMNTOOLS``
-       * ``VS150COMNTOOLS``
-       * ``VS160COMNTOOLS``
-       * ``VSINSTALLDIR``
-       * ``WindowsLibPath``
-       * ``WindowsSdkBinPath``
-       * ``WindowsSdkDir``
-       * ``WindowsSDKLibVersion``
-       * ``WindowsSdkVerBinPath``
-       * ``WindowsSDKVersion``
+            /home/user/project/vcpkg_installed/tools/pkg_config:/usr/bin:/bin
 
-    #. The following environment variables:
+         the stripped PATH will be
 
-       * INCLUDE
-       * CPATH
-       * COMPILER_PATH
-       * LIB
-       * LIBRARY_PATH
-       * PKG_CONFIG_PATH
-       * PATH
+         .. code-block:: bash
 
-       are:
+            /usr/bin:/bin
 
-       a. Stripped of all entries that contain a subdirectory ``vcpkg_installed``. For example, if the existing PATH is
+      b. Stripped of all entries that contain both the subdirectories ``vcpkg`` and ``installed``. For example, if the existing PATH is
 
-          .. code-block:: doscon
+         .. code-block:: doscon
 
-             C:\project\vcpkg_installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
+            C:\Program Files\vcpkg\installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
 
-          the stripped PATH will be
+         the stripped PATH will be
 
-          .. code-block:: doscon
+         .. code-block:: doscon
 
-             C:\WINDOWS\system32;C:\WINDOWS
+            C:\WINDOWS\system32;C:\WINDOWS
 
-          Similarly on Unix if the existing PATH is
+         Similarly on Unix if the existing PATH is
 
-          .. code-block:: bash
+         .. code-block:: bash
 
-             /home/user/project/vcpkg_installed/tools/pkg_config:/usr/bin:/bin
+            /usr/local/share/vcpkg/installed/tools/pkg_config:/usr/bin:/bin
 
-          the stripped PATH will be
+         the stripped PATH will be
 
-          .. code-block:: bash
+         .. code-block:: bash
 
-             /usr/bin:/bin
+            /usr/bin:/bin
 
-       b. Stripped of all entries that contain both the subdirectories ``vcpkg`` and ``installed``. For example, if the existing PATH is
+      c. Stripped of all entries that are the optional environment value ``DKML_3P_INSTALL`` or any of its subdirectories. For example, if the existing PATH is
 
-          .. code-block:: doscon
+         .. code-block:: doscon
 
-             C:\Program Files\vcpkg\installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
+            C:\Project\tools\local\bin;C:\WINDOWS\system32;C:\WINDOWS
 
-          the stripped PATH will be
+         and the environment value ``DKML_3P_INSTALL`` is ``C:\Project\tools\local``, the stripped PATH will be
 
-          .. code-block:: doscon
+         .. code-block:: doscon
 
-             C:\WINDOWS\system32;C:\WINDOWS
+            C:\WINDOWS\system32;C:\WINDOWS
 
-          Similarly on Unix if the existing PATH is
+         Similarly on Unix if the existing PATH is
 
-          .. code-block:: bash
+         .. code-block:: bash
 
-             /usr/local/share/vcpkg/installed/tools/pkg_config:/usr/bin:/bin
+            /home/user/project/tools/local/bin:/usr/bin:/bin
 
-          the stripped PATH will be
+         the stripped PATH will be
 
-          .. code-block:: bash
+         .. code-block:: bash
 
-             /usr/bin:/bin
+            /usr/bin:/bin
 
-       c. Stripped of all entries that are the optional environment value ``DKML_3P_INSTALL`` or any of its subdirectories. For example, if the existing PATH is
+      c. If and only if vcpkg is configured, then:
 
-          .. code-block:: doscon
+         * ``<vcpkg_installed>/include`` is added to the ``INCLUDE`` environment value which is used
+           `as system header paths by Microsoft's 'cl.exe' compiler <https://docs.microsoft.com/en-us/cpp/build/reference/cl-environment-variables?view=msvc-160>`_
+         * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment value which is used
+           `as system header paths by Apple's 'clang' compiler <https://clang.llvm.org/docs/CommandGuide/clang.html>`_
+         * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment value which is used
+           `as system header paths by GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
+         * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment value which is used
+           `as system library paths by Microsoft's 'link.exe' linker <https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-160#link-environment-variables>`_
+         * ``<vcpkg_installed>/lib`` is added to the ``LIBRARY_PATH`` environment value which is used
+           as system library paths by `GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
+           and by `Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
+         * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value which is used
+           to locate package header and library information by
+           `pkg-config <https://linux.die.net/man/1/pkg-config>`_ and
+           `pkgconf <https://github.com/pkgconf/pkgconf#readme>`_
+         * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment value
+         * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment value, for any ``<subdir>``
+           containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
+           ``tools/pkgconf/pkgconf-3.dll``.
 
-             C:\Project\tools\local\bin;C:\WINDOWS\system32;C:\WINDOWS
+      d. If and only if the optional environment value ``DKML_3P_INSTALL`` is defined, then
 
-          and the environment value ``DKML_3P_INSTALL`` is ``C:\Project\tools\local``, the stripped PATH will be
-
-          .. code-block:: doscon
-
-             C:\WINDOWS\system32;C:\WINDOWS
-
-          Similarly on Unix if the existing PATH is
-
-          .. code-block:: bash
-
-             /home/user/project/tools/local/bin:/usr/bin:/bin
-
-          the stripped PATH will be
-
-          .. code-block:: bash
-
-             /usr/bin:/bin
-
-       c. If and only if vcpkg is configured, then:
-
-          * ``<vcpkg_installed>/include`` is added to the ``INCLUDE`` environment value which is used
-            `as system header paths by Microsoft's 'cl.exe' compiler <https://docs.microsoft.com/en-us/cpp/build/reference/cl-environment-variables?view=msvc-160>`_
-          * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment value which is used
-            `as system header paths by Apple's 'clang' compiler <https://clang.llvm.org/docs/CommandGuide/clang.html>`_
-          * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment value which is used
-            `as system header paths by GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
-          * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment value which is used
-            `as system library paths by Microsoft's 'link.exe' linker <https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-160#link-environment-variables>`_
-          * ``<vcpkg_installed>/lib`` is added to the ``LIBRARY_PATH`` environment value which is used
-            as system library paths by `GNU's 'gcc' compiler <https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables>`_
-            and by `Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
-          * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value which is used
-            to locate package header and library information by
-            `pkg-config <https://linux.die.net/man/1/pkg-config>`_ and
-            `pkgconf <https://github.com/pkgconf/pkgconf#readme>`_
-          * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment value
-          * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment value, for any ``<subdir>``
-            containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
-            ``tools/pkgconf/pkgconf-3.dll``.
-
-       d. If and only if the optional environment value ``DKML_3P_INSTALL`` is defined, then
-
-          * ``$DKML_3P_INSTALL/include`` is added to the ``INCLUDE`` environment value
-          * ``$DKML_3P_INSTALL/include`` is added to the ``CPATH`` environment value
-          * ``$DKML_3P_INSTALL/include`` is added to the ``COMPILER_PATH`` environment value
-          * ``$DKML_3P_INSTALL/lib`` is added to the ``LIB`` environment value
-          * ``$DKML_3P_INSTALL/lib`` is added to the ``LIBRARY_PATH`` environment value
-          * ``$DKML_3P_INSTALL/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value
-          * ``$DKML_3P_INSTALL/bin`` is added to the ``PATH`` environment value
+         * ``$DKML_3P_INSTALL/include`` is added to the ``INCLUDE`` environment value
+         * ``$DKML_3P_INSTALL/include`` is added to the ``CPATH`` environment value
+         * ``$DKML_3P_INSTALL/include`` is added to the ``COMPILER_PATH`` environment value
+         * ``$DKML_3P_INSTALL/lib`` is added to the ``LIB`` environment value
+         * ``$DKML_3P_INSTALL/lib`` is added to the ``LIBRARY_PATH`` environment value
+         * ``$DKML_3P_INSTALL/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment value
+         * ``$DKML_3P_INSTALL/bin`` is added to the ``PATH`` environment value
 
 Windows - Inside MSYS2 Shell
 ----------------------------

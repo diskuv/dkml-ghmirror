@@ -91,17 +91,13 @@ cd "$TOPDIR"
 #
 # In Diskuv OCaml each architecture gets its own Opam root.
 
-# Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and DKMLPLUGIN_BUILDHOST
+# Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and WITHDKMLEXE(DIR)_BUILDHOST
 set_opamrootdir
 
 # -----------------------
 # BEGIN install with-dkml (with-dkml)
 
-# shellcheck disable=SC2154
-WITHDKML_UNIX="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
-is_unixy_windows_build_machine && WITHDKML_UNIX=$(cygpath -au "$WITHDKML_UNIX")
-
-if [ ! -x "$WITHDKML_UNIX"/with-dkml.exe ]; then
+if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
     # Compile with Dune into temp build directory
     WITHDKML_TMP_UNIX="$WORK"/with-dkml
     APPS_WINDOWS="$DKMLDIR"/installtime/msys2/apps
@@ -115,7 +111,7 @@ if [ ! -x "$WITHDKML_UNIX"/with-dkml.exe ]; then
     "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
 
     # Place in plugins
-    install -d "$WITHDKML_UNIX"/
+    install -d "$WITHDKMLEXEDIR_BUILDHOST"
     install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKMLEXE_BUILDHOST"
 fi
 

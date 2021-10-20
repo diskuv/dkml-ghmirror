@@ -413,13 +413,15 @@ autodetect_dkmlvars() {
 # - env:DKMLPLUGIN_BUILDHOST - Plugin directory for config/installations connected to the Opam root
 # - env:DKMLPLUGIN_EXPAND - The plugin directory that works as an argument to `exec_in_platform`
 # - env:WITHDKMLEXE_BUILDHOST - The plugin binary 'with-dkml.exe'
+# - env:WITHDKMLEXEDIIR_BUILDHOST - The directory containing the plugin binary 'with-dkml.exe'
 set_opamrootdir() {
     if is_arg_linux_based_platform "$PLATFORM"; then
         # In a reproducible container ...
         OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
         DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
         OPAMROOTDIR_EXPAND="@@EXPAND_TOPDIR@@/$OPAMROOTDIR_BUILDHOST"
-        WITHDKMLEXE_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version/with-dkml.exe"
+        WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
+        WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
     else
         if is_unixy_windows_build_machine; then
             if [ -n "${OPAMROOT:-}" ]; then
@@ -431,7 +433,8 @@ set_opamrootdir() {
                 OPAMROOTDIR_BUILDHOST="${LOCALAPPDATA}\\opam"
             fi
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
-            WITHDKMLEXE_BUILDHOST="$DKMLPLUGIN_BUILDHOST\\with-dkml\\$dkml_root_version\\with-dkml.exe"
+            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST\\with-dkml\\$dkml_root_version"
+            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST\\with-dkml.exe"
         else
             if [ -n "${OPAMROOT:-}" ]; then
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
@@ -441,8 +444,9 @@ set_opamrootdir() {
             fi
             # shellcheck disable=SC2034
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
+            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
             # shellcheck disable=SC2034
-            WITHDKMLEXE_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version/with-dkml.exe"
+            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
         fi
         # shellcheck disable=SC2034
         OPAMROOTDIR_EXPAND="$OPAMROOTDIR_BUILDHOST"

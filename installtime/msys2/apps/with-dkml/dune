@@ -1,5 +1,5 @@
 (rule
- (targets os_context.ml)
+ (targets target_context.ml)
  (deps
   (:discover config/discover.exe))
  (action

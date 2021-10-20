@@ -67,9 +67,10 @@ let autodetect_compiler_as_is_vars =
     "CMAKE_GENERATOR_INSTANCE_RECOMMENDED"
   ]
 
-let platform_path_norm s = match Os_context.host_os with
-| IOS | Mac | Windows -> String.Ascii.lowercase s
-| Android | Linux -> s
+let platform_path_norm s = match (Lazy.force Target_context.V1.get_os) with
+| Ok IOS | Ok OSX | Ok Windows -> String.Ascii.lowercase s
+| Ok Android | Ok Linux -> s
+| Error e -> failwith e
 
 let contains entry s =
   String.find_sub ~sub:(platform_path_norm s) (platform_path_norm entry)
@@ -463,7 +464,10 @@ let main_with_result () =
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
   Lazy.force get_dkmlversion >>= fun dkmlversion ->
-  let cache_keys = [ dkmlversion ] in
+  Lazy.force Target_context.V1.get_platform_name >>= fun platform_name ->
+  let cache_keys = [ dkmlversion; platform_name ] in
+  (* ZEROTH, set DKML_TARGET_PLATFORM *)
+  OS.Env.set_var "DKML_TARGET_PLATFORM" (Some platform_name) >>= fun () ->
   (* FIRST, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
        in add_microsoft_visual_studio_entries.

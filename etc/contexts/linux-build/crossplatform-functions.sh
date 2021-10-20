@@ -491,8 +491,21 @@ install_reproducible_script_with_args() {
     "$DKMLSYS_CHMOD" 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
 }
 
-# Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine)
-# For now only tested in Linux/Windows x86/x86_64.
+# DEPRECATED.
+#
+# Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine).
+# ARCH is also called the PLATFORM.
+# For now only tested in Linux/Windows x86/x86_64 and Apple x86_64/arm64.
+#
+# Why is this deprecated? You should be using with-dkml.exe instead which supports cross-compilation
+# if with-dkml has been compiled with your desired C compiler (this is done automatically in an SDK Project).
+# Use:
+#    with-dkml sh -c 'printf "%s" $DKML_TARGET_PLATFORM'
+# to find the platform you should be using.
+#
+# If you use this build_machine_arch() function instead, it uses `uname` probing which sometimes is inaccurate
+# during cross-compilation.
+#
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 build_machine_arch() {

@@ -105,7 +105,10 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 # 	linux_arm32v6 \
 # 	linux_arm32v7 \
 # 	linux_x86_64 \
-# 	windows_x86_64
+# 	windows_x86_64 \
+# 	windows_x86 \
+# 	windows_arm64 \
+# 	windows_arm32
 DKML_PLATFORMS ?=
 
 NOTAPPLICABLE = notapplicable
