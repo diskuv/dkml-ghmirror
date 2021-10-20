@@ -77,6 +77,15 @@ usage() {
     echo "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
     echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
     echo "    -y Say yes to all questions" >&2
+    echo "Post Create Switch Hook:" >&2
+    echo "    If (-t OPAMSWITCH) is specified, and OPAMSWITCH/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
+    echo "    then the Opam commands in hook-switch-postcreate.txt will be executed." >&2
+    echo "    If (-t OPAMSWITCH) is not specified, and <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
+    echo "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.txt" >&2
+    echo "    will be executed." >&2
+    echo "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
+    echo "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
+    echo "    Example: opam pin add --yes opam-lib https://github.com/ocaml/opam.git#1.2" >&2
 }
 
 PLATFORM=
@@ -507,4 +516,31 @@ if is_unixy_windows_build_machine; then
 fi
 
 # END opam pin add
+# --------------------------------
+
+# --------------------------------
+# BEGIN opam post create hook
+
+if [ -n "$TARGET_OPAMSWITCH" ] && [ -e "$TARGET_OPAMSWITCH"/buildconfig/opam/hook-switch-postcreate.txt ]; then
+    HOOK_POSTCREATE="$TARGET_OPAMSWITCH"/buildconfig/opam/hook-switch-postcreate.txt
+elif [ -z "$TARGET_OPAMSWITCH" ] && [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
+    HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt
+else
+    HOOK_POSTCREATE=
+fi
+if [ -n "$HOOK_POSTCREATE" ]; then
+    HOOK_KEY_POSTCREATE=$(md5sum "$HOOK_POSTCREATE" | awk '{print $1}')
+    if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
+        {
+            cat "$WORK"/nonswitchexec.sh
+            printf "  exec -- %s '%s'" "$DKML_POSIX_SHELL" "$HOOK_POSTCREATE"
+        } > "$WORK"/postcreate.sh
+        log_shell "$WORK"/postcreate.sh
+
+        # Done until the next DKML version or the next update to the hook
+        touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE"
+    fi
+fi
+
+# END opam post create hook
 # --------------------------------
