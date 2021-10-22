@@ -225,20 +225,8 @@ export OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS=4.12.0+options+dkml+msvc64
 #   @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing dkmlvars.sh.
 #     Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
-#   @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@: The directory containing dkmlvars.sh.
-#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#     The directory will always be Unix style (ex. /home/user).
-#   @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@: The directory containing bin/ocaml.
-#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#     The directory will always be mixed style (ex. C:/home/user).
 #   @@EXPAND_TOPDIR@@: The top project directory containing `dune-project`.
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
-#   @@EXPAND_TOPDIR_UNIX@@: The top project directory containing `dune-project`.
-#     The directory will always be Unix style (ex. /home/user).
-#   @@EXPAND_DKMLDIR@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
-#     When running in MSYS2 the directory will be Windows style (ex. C:\)
-#   @@EXPAND_DKMLDIR_UNIX@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
-#     The directory will always be Unix style (ex. /home/user).
 exec_in_platform() {
     _exec_dev_or_arch_helper "$PLATFORM" "$@"
 }
@@ -254,20 +242,8 @@ exec_in_platform() {
 # @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing bin/ocaml.
 #   Only available when `is_unixy_windows_build_machine` is true (return code 0).
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
-# @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@: The directory containing bin/ocaml.
-#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#   The directory will always be Unix style (ex. /home/user).
-# @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@: The directory containing bin/ocaml.
-#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#   The directory will always be mixed style (ex. C:/home/user).
 # @@EXPAND_TOPDIR@@: The top directory containing dune-project.
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
-# @@EXPAND_TOPDIR_UNIX@@: The top project directory containing `dune-project`.
-#   The directory will always be Unix style (ex. /home/user).
-# @@EXPAND_DKMLDIR@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
-#   When running in MSYS2 the directory will be Windows style (ex. C:\)
-# @@EXPAND_DKMLDIR_UNIX@@: The directory containing the vendored `diskuv-ocaml/.dkmlroot`.
-#   The directory will always be Unix style (ex. /home/user).
 exec_dev_or_multiarch() {
     build_machine_arch
     _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
@@ -292,59 +268,43 @@ _exec_dev_or_arch_helper() {
         fi
         if [ -x /usr/bin/cygpath ]; then
             _exec_dev_or_arch_helper_ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
-            _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX=$(/usr/bin/cygpath -au "$TOPDIR")
-            _exec_dev_or_arch_helper_ACTUALDKMLDIR=$(/usr/bin/cygpath -aw "$DKMLDIR")
-            _exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX=$(/usr/bin/cygpath -au "$DKMLDIR")
             _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
-            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
-            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED=$(/usr/bin/cygpath -am "$DiskuvOCamlHome")
         else
             _exec_dev_or_arch_helper_ACTUALTOPDIR="$TOPDIR"
-            _exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX="$TOPDIR"
-            _exec_dev_or_arch_helper_ACTUALDKMLDIR="$DKMLDIR"
-            _exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX="$DKMLDIR"
         fi
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
-            if is_unixy_windows_build_machine; then
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX}")
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED}")
+            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+                if is_unixy_windows_build_machine; then
+                    _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
+                fi
             fi
             printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
-            if is_unixy_windows_build_machine; then
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_UNIX}")
-                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME_MIXED}")
+            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+                if is_unixy_windows_build_machine; then
+                    ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
+                fi
             fi
         fi
         echo "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "/work")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
+            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
+                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
+            fi
             printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "/work")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "/work")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@ "/opt/diskuv-ocaml")
+            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "/work")
+                ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
+            fi
         fi
         echo "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     fi
@@ -491,8 +451,12 @@ set_opamswitchdir_of_system() {
     if [ -n "${DiskuvOCamlHome:-}" ]; then
         # shellcheck disable=SC2034
         OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/system/_opam"
-        # shellcheck disable=SC2034
-        OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/system"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            # shellcheck disable=SC2034
+            OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/system"
+        else
+            OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome/system"
+        fi
     else
         # shellcheck disable=SC2034
         OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-system"
