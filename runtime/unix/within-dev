@@ -13,9 +13,14 @@ usage() {
     echo "Usage:" >&2
     echo "    within-dev -h                          Display this help message." >&2
     echo "    within-dev -h                          Display this help message." >&2
-    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE] command ...  Run the command and any arguments in the dev platform." >&2
-    echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and BUILDDIR will be based on this" >&2
-    echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the dev platform" >&2
+    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
+    echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
+    echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
+    echo "    within-dev -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
+    echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    echo "          Defaults to ON; ie. using Opam 2.2+ default root" >&2
+    echo "       -d STATEDIR: DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be subdirectories." >&2
+    echo "          If -u is ON (default) then DKML_DUNE_BUILD_DIR will be _build/ dir of the project" >&2
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
@@ -34,12 +39,20 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# shellcheck disable=SC2034
-export PLATFORM=dev
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # shellcheck disable=SC2034
+    export PLATFORM=dev
+fi
 BUILDTYPE=
 PREHOOK=
 COMPILATION=ON
-while getopts ":hb:p:1:n" opt; do
+STATEDIR=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
+while getopts ":hb:p:1:nu:d:" opt; do
     case ${opt} in
         h )
             usage
@@ -57,6 +70,12 @@ while getopts ":hb:p:1:n" opt; do
         ;;
         n )
             COMPILATION=OFF
+        ;;
+        d )
+            STATEDIR=$OPTARG
+        ;;
+        u )
+            USERMODE=$OPTARG
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -78,7 +97,12 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
+# echo "TODO: REMOVE LOGGING B" >&2; set -x
+
+if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # shellcheck disable=SC1091
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
+elif [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -86,44 +110,48 @@ else
     . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 
-# Set DKML_VCPKG_HOST_TRIPLET
-platform_vcpkg_triplet
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # Set DKML_VCPKG_HOST_TRIPLET
+    platform_vcpkg_triplet
+fi
 
 # Set DKML_VCPKG_MANIFEST_DIR if necessary
-if [ -e "$TOPDIR/vcpkg.json" ]; then
-    DKML_VCPKG_MANIFEST_DIR="$TOPDIR"
-    if [ -x /usr/bin/cygpath ]; then DKML_VCPKG_MANIFEST_DIR=$(/usr/bin/cygpath -aw "$DKML_VCPKG_MANIFEST_DIR"); fi
-    export DKML_VCPKG_MANIFEST_DIR
-else
-    unset DKML_VCPKG_MANIFEST_DIR
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -e "$TOPDIR/vcpkg.json" ]; then
+        DKML_VCPKG_MANIFEST_DIR="$TOPDIR"
+        if [ -x /usr/bin/cygpath ]; then DKML_VCPKG_MANIFEST_DIR=$(/usr/bin/cygpath -aw "$DKML_VCPKG_MANIFEST_DIR"); fi
+        export DKML_VCPKG_MANIFEST_DIR
+    else
+        unset DKML_VCPKG_MANIFEST_DIR
+    fi
 fi
 
 # Essential environment values.
-LAUNCHER_ARGS=(
-    # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
-    DKML_TOOLS_DIR="${BUILD_BASEPATH}$TOOLSDIR"
-    DKML_TOOLSCOMMON_DIR="${BUILD_BASEPATH}$TOOLSCOMMONDIR"
-)
-
-# give builds access to tools
-ENV_PATH_PREFIX="${BUILD_BASEPATH}$TOOLSDIR/local/bin:${BUILD_BASEPATH}$TOOLSCOMMONDIR/local/bin"
-ENV_PATH_SUFFIX=
+LAUNCHER_ARGS=()
 
 # On Windows always disable the Automatic Unix ⟶ Windows Path Conversion
 # described at https://www.msys2.org/docs/filesystem-paths/
 disambiguate_filesystem_paths
 
-# If and only if [-b BUILDDIR] specified
-if [ -n "${BUILDTYPE:-}" ]; then
+# If and only if [-b DKML_DUNE_BUILD_DIR] specified
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "${BUILDTYPE:-}" ]; then
+        LAUNCHER_ARGS+=(
+            DKML_DUNE_BUILD_DIR="${BUILD_BASEPATH}$DKML_DUNE_BUILD_DIR"
+        )
+    fi
+else
     LAUNCHER_ARGS+=(
-        DK_BUILD_DIR="${BUILD_BASEPATH}$BUILDDIR"
+        DKML_DUNE_BUILD_DIR="$DKML_DUNE_BUILD_DIR"
     )
 fi
 
 # Autodetect DKMLVARS and add to PATH
 autodetect_dkmlvars || true
 if [ -n "${DiskuvOCamlBinaryPaths:-}" ]; then
-    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths:$ENV_PATH_PREFIX"
+    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths"
+else
+    ENV_PATH_PREFIX=
 fi
 
 # Set PATH and run any prehooks
@@ -132,7 +160,9 @@ fi
 # (https://social.msdn.microsoft.com/Forums/vstudio/en-US/21821c4a-b415-4b55-8779-1d22694a8f82/microsoft-was-unexpected-at-this-time?forum=vssetup).
 # That will happen if we have trailing slashes in our PATH (which Opam.exe internally cygpaths
 # and escapes). Regardless, even if this didn't happen we still want normalized PATHs.
-PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX"
+if [ -n "$ENV_PATH_PREFIX" ]; then
+    PATH="$ENV_PATH_PREFIX:$PATH"
+fi
 PATH=$(echo "$PATH" | PATH="/usr/bin:/bin:$PATH" sed 's#/:#:#g; s#/$##') # remove trailing slashes
 if [ -n "$PREHOOK" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
@@ -196,4 +226,5 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)
+set +u # allow empty LAUNCHER_ARGS
 log_shell "$LAUNCHER" "${LAUNCHER_ARGS[@]}" "$@"

@@ -37,9 +37,6 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-BINDIR="$TOOLSDIR/local/bin" # executables placed here are automatically added to build's PATH
-install -d "$BINDIR"
-
 # -----------------------
 # BEGIN opam init
 

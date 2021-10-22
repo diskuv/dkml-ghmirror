@@ -30,7 +30,7 @@ usage() {
     echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
     echo "    platform-opam-exec [-1] -s [--] install|clean|help|...                        Run the opam command" >&2
     echo "                                                                                  in the 'diskuv-system' local switch" >&2
-    echo "    platform-opam-exec [-1] -d STATEDIR [--] install|clean|help|...               Run the opam command" >&2
+    echo "    platform-opam-exec [-1] -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command" >&2
     echo "                                                                                  in the local switch prefix of STATEDIR/_opam" >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform or 'dev'" >&2
@@ -38,6 +38,8 @@ usage() {
     echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
     echo "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
     echo "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix" >&2
+    echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    echo "          Defaults to ON; ie. using Opam 2.2+ default root" >&2
     echo "Advanced Options:" >&2
     echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
@@ -70,14 +72,21 @@ fi
 #
 #   Any arguments that can go in 'opam --somearg somecommand' should be processed here
 #   and added to OPAM_OPTS. We'll parse 'somecommand ...' options in a second getopts loop.
-PLATFORM=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=
+fi
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
 STATEDIR=
 PREHOOK=
 TARGET_OPAMSWITCH=
 ADD_SWITCH_OPTS=OFF
-while getopts ":h1:b:sp:t:d:" opt; do
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
+while getopts ":h1:b:sp:t:d:u:" opt; do
     case ${opt} in
         h )
             usage
@@ -96,6 +105,10 @@ while getopts ":h1:b:sp:t:d:" opt; do
         ;;
         d )
             STATEDIR=$OPTARG
+        ;;
+        u )
+            # shellcheck disable=SC2034
+            USERMODE=$OPTARG
         ;;
         t )
             TARGET_OPAMSWITCH=$OPTARG
@@ -142,7 +155,7 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     fi
 fi
 
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -199,9 +212,9 @@ autodetect_dkmlvars || true
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
-elif [ -n "${BUILDDIR:-}" ]; then
-    # set --switch only if BUILDTYPE (translated into BUILDDIR) has been set
-    install -d "$BUILDDIR"
+elif [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+    # set --switch only if BUILDTYPE (translated into DKML_DUNE_BUILD_DIR) has been set
+    install -d "$DKML_DUNE_BUILD_DIR"
 
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     set_opamrootandswitchdir

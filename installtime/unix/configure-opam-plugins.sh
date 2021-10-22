@@ -132,7 +132,7 @@ fi
 # `VCPKG_TOOLCHAIN` is a public global variable so we can rely on it being there.
 
 INSTALL_VCPKG=OFF
-if [ "${DKSDK_VCPKG_TOOLCHAIN:-OFF}" = OFF ]; then
+if cmake_flag_off "${DKSDK_CMAKEVAL_VCPKG_TOOLCHAIN:-OFF}"; then
     # Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
     # We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
     # to x86-windows.

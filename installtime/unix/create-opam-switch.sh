@@ -63,24 +63,26 @@ usage() {
     echo "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
     echo "  Will set switch options pin package versions needed to compile on Windows." >&2
     echo "Usage:" >&2
-    echo "    create-opam-switch.sh -h                          Display this help message" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    Create the Opam switch" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -t OPAMSWITCH  Create the Opam switch in directory OPAMSWITCH/_opam" >&2
-    echo "    create-opam-switch.sh [-b BUILDTYPE] -s           Expert. Create the diskuv-system switch" >&2
+    echo "    create-opam-switch.sh -h                                   Display this help message" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM             (Deprecated) Create the Opam switch" >&2
+    echo "    create-opam-switch.sh [-u OFF] -b BUILDTYPE -d OPAMSWITCH  Create the Opam switch in directory OPAMSWITCH/_opam" >&2
+    echo "    create-opam-switch.sh [-b BUILDTYPE] -s                    Expert. Create the diskuv-system switch" >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -t OPAMSWITCH: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
+    echo "    -d OPAMSWITCH: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
     echo "    -s: Select the 'diskuv-system' switch" >&2
     echo "    -b BUILDTYPE: The build type which is one of:" >&2
     echo "        Debug" >&2
     echo "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
     echo "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
     echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
+    echo "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    echo "       Defaults to ON; ie. using Opam 2.2+ default root" >&2
     echo "    -y Say yes to all questions" >&2
     echo "Post Create Switch Hook:" >&2
-    echo "    If (-t OPAMSWITCH) is specified, and OPAMSWITCH/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
+    echo "    If (-d OPAMSWITCH) is specified, and OPAMSWITCH/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
     echo "    then the Opam commands in hook-switch-postcreate.txt will be executed." >&2
-    echo "    If (-t OPAMSWITCH) is not specified, and <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
+    echo "    If (-d OPAMSWITCH) is not specified, and <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
     echo "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.txt" >&2
     echo "    will be executed." >&2
     echo "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
@@ -88,12 +90,19 @@ usage() {
     echo "    Example: opam pin add --yes opam-lib https://github.com/ocaml/opam.git#1.2" >&2
 }
 
-PLATFORM=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=
+fi
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
-TARGET_OPAMSWITCH=
+STATEDIR=
 YES=OFF
-while getopts ":h:b:p:st:y" opt; do
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
+while getopts ":h:b:p:sd:uy" opt; do
     case ${opt} in
         h )
             usage
@@ -108,8 +117,12 @@ while getopts ":h:b:p:st:y" opt; do
         s )
             DISKUV_SYSTEM_SWITCH=ON
         ;;
-        t)
-            TARGET_OPAMSWITCH=$OPTARG
+        d)
+            STATEDIR=$OPTARG
+        ;;
+        u )
+            # shellcheck disable=SC2034
+            USERMODE=$OPTARG
         ;;
         y)
             YES=ON
@@ -123,15 +136,25 @@ while getopts ":h:b:p:st:y" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$TARGET_OPAMSWITCH" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
-    usage
-    exit 1
-elif [ -n "$TARGET_OPAMSWITCH" ] && [ -z "$BUILDTYPE" ]; then
-    usage
-    exit 1
-elif [ -n "$PLATFORM" ] && [ -z "$BUILDTYPE" ]; then
-    usage
-    exit 1
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+        usage
+        exit 1
+    elif [ -n "$STATEDIR" ] && [ -z "$BUILDTYPE" ]; then
+        usage
+        exit 1
+    elif [ -n "$PLATFORM" ] && [ -z "$BUILDTYPE" ]; then
+        usage
+        exit 1
+    fi
+else
+    if [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+        usage
+        exit 1
+    elif [ -n "$STATEDIR" ] && [ -z "$BUILDTYPE" ]; then
+        usage
+        exit 1
+    fi
 fi
 
 # END Command line processing
@@ -145,18 +168,22 @@ if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launc
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-    PLATFORM=dev
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        PLATFORM=dev
+    fi
 fi
-if [ -n "$TARGET_OPAMSWITCH" ]; then
-    PLATFORM=dev
+if [ -n "$STATEDIR" ]; then
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        PLATFORM=dev
+    fi
     # shellcheck disable=SC2034
-    BUILDDIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
+    DKML_DUNE_BUILD_DIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
     # shellcheck disable=SC2034
-    TOPDIR_CANDIDATE="$TARGET_OPAMSWITCH"
+    TOPDIR_CANDIDATE="$STATEDIR"
 fi
 
 # shellcheck disable=SC1091
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -179,17 +206,160 @@ cd "$TOPDIR"
 autodetect_cpus
 
 # Set BUILDHOST_ARCH
-build_machine_arch
-if [ $PLATFORM = dev ]; then
-    TARGET_ARCH=$BUILDHOST_ARCH
-else
-    TARGET_ARCH=$PLATFORM
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    build_machine_arch
+    if [ "$PLATFORM" = dev ]; then
+        TARGET_ARCH=$BUILDHOST_ARCH
+    else
+        TARGET_ARCH=$PLATFORM
+    fi
 fi
 
 # Set $DiskuvOCamlHome and other vars
 autodetect_dkmlvars || true
 
-printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
+# Frame pointers enabled
+# ----------------------
+# option-fp
+# * OCaml only supports 64-bit Linux thing with either the GCC or the clang compiler.
+# * In particular the Musl GCC compiler is not supported.
+# * On Linux we need it for `perf`.
+# Confer:
+#  https://github.com/ocaml/ocaml/blob/e93f6f8e5f5a98e7dced57a0c81535481297c413/configure#L17455-L17472
+#  https://github.com/ocaml/opam-repository/blob/ed5ed7529d1d3672ed4c0d2b09611a98ec87d690/packages/ocaml-option-fp/ocaml-option-fp.1/opam#L6
+OCAML_OPTIONS=
+OPAM_SWITCH_CFLAGS=
+OPAM_SWITCH_CC=
+OPAM_SWITCH_ASPP=
+OPAM_SWITCH_AS=
+case "$BUILDTYPE" in
+    Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
+    Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
+    *) BUILD_DEBUG=OFF; BUILD_RELEASE=OFF
+esac
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # We'll set compiler options to:
+    # * use static builds for Linux platforms running in a (musl-based Alpine) container
+    # * use flambda optimization if a `Release*` build type
+    #
+    # Setting compiler options via environment variables (like CC and LIBS) has been available since 4.8.0 (https://github.com/ocaml/ocaml/pull/1840)
+    # but still has problems even as of 4.10.0 (https://github.com/ocaml/ocaml/issues/8648).
+    #
+    # The following has some of the compiler options we might use for `macos`, `linux` and `windows`:
+    #   https://github.com/ocaml/opam-repository/blob/bfc07c20d6846fffa49c3c44735905af18969775/packages/ocaml-variants/ocaml-variants.4.12.0%2Boptions/opam#L17-L47
+    #
+    # The following is for `macos`, `android` and `ios`:
+    #   https://github.com/EduardoRFS/reason-mobile/tree/master/sysroot
+    #
+    # Notes:
+    # * `ocaml-option-musl` has a good defaults for embedded systems. But we don't want to optimize for size on a non-embedded system.
+    #   Since we have fine grained information about whether we are on a tiny system (ie. ARM 32-bit) we set the CFLAGS ourselves.
+    # * Advanced: You can use OCAMLPARAM through `opam config set ocamlparam` (https://github.com/ocaml/opam-repository/pull/16619) or
+    #   just set it in `within-dev` or `sandbox-entrypoint.sh`.
+    # `is_reproducible_platform && case "$PLATFORM" in linux*) ... ;;` then
+    #     # NOTE 2021/08/04: When this block is enabled we get the following error, which means the config is doing something that we don't know how to inspect ...
+    #
+    #     # === ERROR while compiling capnp.3.4.0 ========================================#
+    #     # context     2.0.8 | linux/x86_64 | ocaml-option-static.1 ocaml-variants.4.12.0+options | https://opam.ocaml.org#8b7c0fed
+    #     # path        /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/capnp.3.4.0
+    #     # command     /work/build/linux_x86_64/Debug/_opam/bin/dune build -p capnp -j 5
+    #     # exit-code   1
+    #     # env-file    /work/build/_tools/linux_x86_64/opam-root/log/capnp-1-ebe0e0.env
+    #     # output-file /work/build/_tools/linux_x86_64/opam-root/log/capnp-1-ebe0e0.out
+    #     # ## output ###
+    #     # [...]
+    #     # /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/stdint.0.7.0/_build/default/lib/uint56_conv.c:172: undefined reference to `get_uint128'
+    #     # /usr/lib/gcc/x86_64-alpine-linux-musl/10.3.1/../../../../x86_64-alpine-linux-musl/bin/ld: /work/build/linux_x86_64/Debug/_opam/lib/stdint/libstdint_stubs.a(uint64_conv.o): in function `uint64_of_int128':
+    #     # /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/stdint.0.7.0/_build/default/lib/uint64_conv.c:111: undefined reference to `get_int128'
+    #
+    #     # NOTE 2021/08/03: `ocaml-option-static` seems to do nothing. No difference when running `dune printenv --verbose`
+    #     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-static
+    # fi
+    case "$TARGET_ARCH" in
+        windows_*)    TARGET_LINUXARM32=OFF ;;
+        linux_arm32*) TARGET_LINUXARM32=ON ;;
+        *)            TARGET_LINUXARM32=OFF
+    esac
+    case "$TARGET_ARCH" in
+        *_x86 | linux_arm32*) TARGET_32BIT=ON ;;
+        *) TARGET_32BIT=OFF
+    esac
+    case "$TARGET_ARCH" in
+        linux_x86_64) TARGET_CANENABLEFRAMEPOINTER=ON ;;
+        *) TARGET_CANENABLEFRAMEPOINTER=OFF
+    esac
+
+    if [ $TARGET_LINUXARM32 = ON ]; then
+        # -Os optimizes for size. Useful for CPUs with small cache sizes. Confer https://wiki.gentoo.org/wiki/GCC_optimization
+        OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
+    fi
+else
+    if [ "$DKSDK_CMAKEVAL_CMAKE_SYSTEM_NAME" = Linux ] && [ "$DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P" = 8 ]; then
+        case "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" in
+            Clang | GNU) TARGET_CANENABLEFRAMEPOINTER=ON ;; # _not_ AppleClang
+            *) TARGET_CANENABLEFRAMEPOINTER=OFF ;;
+        esac
+    else
+        TARGET_CANENABLEFRAMEPOINTER=OFF
+    fi
+    if [ "$DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P" = 4 ]; then
+        TARGET_32BIT=ON
+    else
+        TARGET_32BIT=OFF
+    fi
+
+    # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKSDK_CMAKEVAL_CMAKE_C_FLAGS_DEBUG"
+    _DKSDK_CONFIG_UPPER=$(printf "%s" "$DKSDK_CONFIG" | tr '[:lower:]' '[:upper:]')
+    printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKSDK_CMAKEVAL_CMAKE_C_FLAGS_%s\"" "$_DKSDK_CONFIG_UPPER" > "$WORK"/cflags.source
+    # shellcheck disable=SC1091
+    . "$WORK"/cflags.source
+
+    OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
+    OPAM_SWITCH_CC="$DKSDK_CMAKEVAL_CMAKE_C_COMPILER"
+    OPAM_SWITCH_ASPP= # CMake does not give options to tell you how to generate preprocessor printout. OCaml ./configure should be able to figure it out
+    OPAM_SWITCH_AS=
+    if [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER" ]; then
+        OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER"
+    elif [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER" ]; then
+        OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER"
+    fi
+    if cmake_flag_on "$DKSDK_CMAKEVAL_MSVC"; then
+        # Never print Microsoft logo (unneeded; set by OCaml ./configure)
+        # [ -n "$OPAM_SWITCH_CC" ] && OPAM_SWITCH_CC="$OPAM_SWITCH_CC /nologo"
+        # [ -n "$OPAM_SWITCH_ASPP" ] && OPAM_SWITCH_ASPP="$OPAM_SWITCH_ASPP /nologo"
+        # [ -n "$OPAM_SWITCH_AS" ] && OPAM_SWITCH_AS="$OPAM_SWITCH_AS /nologo"
+        # Always use dash (-) form of options rather than slash (/) options. Makes MSYS2 not try
+        # to think the option is a filepath and try to translate it.
+        OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's# /# -#g')
+        OPAM_SWITCH_CC=$(printf "%s" "$OPAM_SWITCH_CC" | sed 's# /# -#g')
+        OPAM_SWITCH_ASPP=$(printf "%s" "$OPAM_SWITCH_ASPP" | sed 's# /# -#g')
+        OPAM_SWITCH_AS=$(printf "%s" "$OPAM_SWITCH_AS" | sed 's# /# -#g')
+    fi
+fi
+if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
+    # Frame pointer should be on in Debug mode.
+    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
+fi
+if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
+    # If we need Linux `perf` we need frame pointers enabled
+    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
+fi
+if [ $BUILD_RELEASE = ON ]; then
+    # All release builds should get flambda optimization
+    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
+fi
+if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
+    # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
+    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
+fi
+if [ $TARGET_32BIT = ON ]; then
+    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS"
+else
+    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS"
+fi
+
+# Make launchers for opam switch create <...> and for opam <...>
+OPAM_SWITCH_CREATE_PREHOOK=
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootdir
@@ -197,107 +367,25 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
 
-    printf "%s\n" "  -s \\" >> "$WORK"/nonswitchexec.sh
+    OPAM_EXEC_OPTS="-s"
 else
     if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootandswitchdir
 
-    printf "%s\n" "  -p $PLATFORM \\" >> "$WORK"/nonswitchexec.sh
-    if [ -n "$TARGET_OPAMSWITCH" ]; then
-        printf "%s\n" "  -t $TARGET_OPAMSWITCH \\" >> "$WORK"/nonswitchexec.sh
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        OPAM_EXEC_OPTS="-p $PLATFORM"
+        if [ -n "$STATEDIR" ]; then
+            OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -t $STATEDIR"
+        else
+            OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -b $BUILDTYPE"
+        fi
     else
-        printf "%s\n" "  -b $BUILDTYPE \\" >> "$WORK"/nonswitchexec.sh
+        OPAM_EXEC_OPTS="  -d '$STATEDIR' -u $USERMODE"
     fi
 fi
-
-# We'll set compiler options to:
-# * use static builds for Linux platforms running in a (musl-based Alpine) container
-# * use flambda optimization if a `Release*` build type
-#
-# Setting compiler options via environment variables (like CC and LIBS) has been available since 4.8.0 (https://github.com/ocaml/ocaml/pull/1840)
-# but still has problems even as of 4.10.0 (https://github.com/ocaml/ocaml/issues/8648).
-#
-# The following has some of the compiler options we might use for `macos`, `linux` and `windows`:
-#   https://github.com/ocaml/opam-repository/blob/bfc07c20d6846fffa49c3c44735905af18969775/packages/ocaml-variants/ocaml-variants.4.12.0%2Boptions/opam#L17-L47
-#
-# The following is for `macos`, `android` and `ios`:
-#   https://github.com/EduardoRFS/reason-mobile/tree/master/sysroot
-#
-# Notes:
-# * `ocaml-option-musl` has a good defaults for embedded systems. But we don't want to optimize for size on a non-embedded system.
-#   Since we have fine grained information about whether we are on a tiny system (ie. ARM 32-bit) we set the CFLAGS ourselves.
-# * Advanced: You can use OCAMLPARAM through `opam config set ocamlparam` (https://github.com/ocaml/opam-repository/pull/16619) or
-#   just set it in `within-dev` or `sandbox-entrypoint.sh`.
-OPAM_SWITCH_CREATE_PREHOOK=
-OCAML_OPTIONS=
-OPAM_SWITCH_CFLAGS=
-OPAM_SWITCH_CC=
-OPAM_SWITCH_ASPP=
-OPAM_SWITCH_AS=
-# `is_reproducible_platform && case "$PLATFORM" in linux*) ... ;;` then
-#     # NOTE 2021/08/04: When this block is enabled we get the following error, which means the config is doing something that we don't know how to inspect ...
-#
-#     # === ERROR while compiling capnp.3.4.0 ========================================#
-#     # context     2.0.8 | linux/x86_64 | ocaml-option-static.1 ocaml-variants.4.12.0+options | https://opam.ocaml.org#8b7c0fed
-#     # path        /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/capnp.3.4.0
-#     # command     /work/build/linux_x86_64/Debug/_opam/bin/dune build -p capnp -j 5
-#     # exit-code   1
-#     # env-file    /work/build/_tools/linux_x86_64/opam-root/log/capnp-1-ebe0e0.env
-#     # output-file /work/build/_tools/linux_x86_64/opam-root/log/capnp-1-ebe0e0.out
-#     # ## output ###
-#     # [...]
-#     # /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/stdint.0.7.0/_build/default/lib/uint56_conv.c:172: undefined reference to `get_uint128'
-#     # /usr/lib/gcc/x86_64-alpine-linux-musl/10.3.1/../../../../x86_64-alpine-linux-musl/bin/ld: /work/build/linux_x86_64/Debug/_opam/lib/stdint/libstdint_stubs.a(uint64_conv.o): in function `uint64_of_int128':
-#     # /work/build/linux_x86_64/Debug/_opam/.opam-switch/build/stdint.0.7.0/_build/default/lib/uint64_conv.c:111: undefined reference to `get_int128'
-#
-#     # NOTE 2021/08/03: `ocaml-option-static` seems to do nothing. No difference when running `dune printenv --verbose`
-#     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-static
-# fi
-case "$TARGET_ARCH" in
-    windows_*)    TARGET_LINUXARM32=OFF; TARGET_WINDOWS=ON ;;
-    linux_arm32*) TARGET_LINUXARM32=ON; TARGET_WINDOWS=OFF ;;
-    *)            TARGET_LINUXARM32=OFF; TARGET_WINDOWS=OFF
-esac
-case "$BUILDTYPE" in
-    Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
-    Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
-    *) BUILD_DEBUG=OFF; BUILD_RELEASE=OFF
-esac
-case "$TARGET_ARCH" in
-    *_x86 | linux_arm32*) TARGET_32BIT=ON ;;
-    *) TARGET_32BIT=OFF
-esac
-case "$TARGET_ARCH" in
-    linux_x86_64) TARGET_CANOMITFRAMEPOINTER=ON ;;
-    *) TARGET_CANOMITFRAMEPOINTER=OFF
-esac
-
-# Frame pointers is only a 64-bit Linux thing.
-# Confer: https://github.com/ocaml/ocaml/blob/e93f6f8e5f5a98e7dced57a0c81535481297c413/configure#L17455-L17472
-if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANOMITFRAMEPOINTER = ON ]; then
-    # Frame pointer is always on in Debug mode.
-    # Windows does not support frame pointers.
-    # On Linux we need it for `perf`.
-    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-fi
-if [ $BUILD_RELEASE = ON ]; then
-    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
-fi
-if [ $TARGET_LINUXARM32 = ON ]; then
-    # -Os optimizes for size. Useful for CPUs with small cache sizes. Confer https://wiki.gentoo.org/wiki/GCC_optimization
-    OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
-fi
-if [ $TARGET_32BIT = ON ]; then
-    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS"
-else
-    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS"
-fi
-if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_WINDOWS = OFF ]; then
-    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-elif [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
-    OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
-fi
+printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
+printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchexec.sh
 
 printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
 if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
@@ -329,13 +417,13 @@ if [ -n "${OPAM_SWITCH_AS:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWIT
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' switch remove \\" > "$WORK"/switchremoveargs.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS switch remove \\" > "$WORK"/switchremoveargs.sh
     if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
     log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
-    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -p '$PLATFORM' -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh
@@ -521,9 +609,9 @@ fi
 # --------------------------------
 # BEGIN opam post create hook
 
-if [ -n "$TARGET_OPAMSWITCH" ] && [ -e "$TARGET_OPAMSWITCH"/buildconfig/opam/hook-switch-postcreate.txt ]; then
-    HOOK_POSTCREATE="$TARGET_OPAMSWITCH"/buildconfig/opam/hook-switch-postcreate.txt
-elif [ -z "$TARGET_OPAMSWITCH" ] && [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
+if [ -n "$STATEDIR" ] && [ -e "$STATEDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
+    HOOK_POSTCREATE="$STATEDIR"/buildconfig/opam/hook-switch-postcreate.txt
+elif [ -z "$STATEDIR" ] && [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
     HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt
 else
     HOOK_POSTCREATE=

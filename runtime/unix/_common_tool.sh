@@ -92,6 +92,14 @@ else
     OS_DIR_SEP=/
 fi
 
+# Backwards compatible user mode
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    __USERMODE=OFF
+else
+    # shellcheck disable=SC2153
+    __USERMODE="$USERMODE" # fails if USERMODE not set
+fi
+
 # The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
 # directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.
 # For Windows you want to use it so that you do not run into 260 character absolute path limits!
@@ -99,23 +107,25 @@ fi
 #   $ (cd _build/default && D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\bin\ocamlc.opt.exe -w -40 -g -bin-annot -I expander/.ppx_sexp_conv_expander.objs/byte -I D:/a/diskuv-ocaml-starter-ghmirror/diskuv-ocaml-starter-ghmirror/build/windows_x86_64/Release/_opam/lib/ocaml\compiler-libs -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\base_internalhash_types -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\caml -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\shadow_stdlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\common -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\shadow -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-migrate-parsetree -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppx_derivers -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\ast -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\metaquot_lifters -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\print_diff -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\stdppx -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\traverse_builtins -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\sexplib0 -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\stdlib-shims -no-alias-deps -open Ppx_sexp_conv_expander__ -o expander/.ppx_sexp_conv_expander.objs/byte/ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi -c -intf expander/str_generate_sexp_grammar.pp.mli)
 #   File "expander/str_generate_sexp_grammar.mli", line 1:
 #   Error: I/O error: expander/.ppx_sexp_conv_expander.objs/byte\ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi9d73bb.tmp: No such file or directory
-BUILD_ROOT_UNIX="${DKML_BUILD_ROOT:-build}"
-if [ -x /usr/bin/cygpath ]; then
-    BUILD_ROOT_UNIX=$(/usr/bin/cygpath -u "$BUILD_ROOT_UNIX")
-fi
-case "$BUILD_ROOT_UNIX" in
-  /*)
-    BUILD_BASEPATH=
-    ;;
-  *)
-    # BUILD_BASEPATH will have a trailing slash
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    BUILD_ROOT_UNIX="${DKML_BUILD_ROOT:-build}"
     if [ -x /usr/bin/cygpath ]; then
-        BUILD_BASEPATH=$(/usr/bin/cygpath -u "$TOPDIR")/
-    else
-        BUILD_BASEPATH="$TOPDIR"/
+        BUILD_ROOT_UNIX=$(/usr/bin/cygpath -u "$BUILD_ROOT_UNIX")
     fi
-    ;;
-esac
+    case "$BUILD_ROOT_UNIX" in
+    /*)
+        BUILD_BASEPATH=
+        ;;
+    *)
+        # BUILD_BASEPATH will have a trailing slash
+        if [ -x /usr/bin/cygpath ]; then
+            BUILD_BASEPATH=$(/usr/bin/cygpath -u "$TOPDIR")/
+        else
+            BUILD_BASEPATH="$TOPDIR"/
+        fi
+        ;;
+    esac
+fi
 
 # Temporary directory that needs to be accessible inside and outside of containers so shell scripts
 # can be sent from the outside of a container into a container.
@@ -125,44 +135,34 @@ esac
 # Our use of mktemp needs to be portable; docs at:
 # * BSD: https://www.freebsd.org/cgi/man.cgi?query=mktemp&sektion=1
 # * GNU: https://www.gnu.org/software/autogen/mktemp.html
-# Use $WORK in all situations except:
-# * Use $WORK_EXPAND to communicate the location of a temporary shell script as an argument to `exec_in_platform`
-# * Use $WORK_EXPAND_UNIX to communicate the location of a temporary shell script as a UNIX-path argument to `exec_in_platform`
-if [ -z "$BUILD_BASEPATH" ]; then
-    # BUILD_ROOT_UNIX is absolute path
-    TMPPARENTDIR_ABS_OR_RELTOP="$BUILD_ROOT_UNIX/_tmp"
-    TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TMPPARENTDIR_ABS_OR_RELTOP}"
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "$BUILD_BASEPATH" ]; then
+        # BUILD_ROOT_UNIX is absolute path
+        TMPPARENTDIR_ABS_OR_RELTOP="$BUILD_ROOT_UNIX/_tmp"
+        TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TMPPARENTDIR_ABS_OR_RELTOP}"
+    else
+        TMPPARENTDIR_ABS_OR_RELTOP="build/_tmp"
+        TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$BUILD_BASEPATH$TMPPARENTDIR_ABS_OR_RELTOP}"
+    fi
 else
-    TMPPARENTDIR_ABS_OR_RELTOP="build/_tmp"
-    TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$BUILD_BASEPATH$TMPPARENTDIR_ABS_OR_RELTOP}"
+    if [ "$__USERMODE" = OFF ]; then
+        TMPPARENTDIR_ABS_OR_RELTOP="$STATEDIR/tmp"
+    else
+        TMPPARENTDIR_ABS_OR_RELTOP="/tmp"
+    fi
+    TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TMPPARENTDIR_ABS_OR_RELTOP}"
 fi
 install -d "$TMPPARENTDIR_BUILDHOST"
 WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
 trap 'rm -rf "$WORK"' EXIT
-WORK_BASENAME=$(basename "$WORK")
-if [ -z "$BUILD_BASEPATH" ]; then
-    # TMPPARENTDIR_ABS_OR_RELTOP is absolute path. Can't work in a container unless it is mounted
-    WORK_EXPAND="$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
-    WORK_EXPAND_UNIX="$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
-else
-    # shellcheck disable=SC2034
-    WORK_EXPAND="@@EXPAND_TOPDIR@@/$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
-    # shellcheck disable=SC2034
-    WORK_EXPAND_UNIX="@@EXPAND_TOPDIR_UNIX@@/$TMPPARENTDIR_ABS_OR_RELTOP/$WORK_BASENAME"
-fi
-unset WORK_BASENAME
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
 
-# shellcheck disable=SC2034
-TOOLSDIR="$BUILD_ROOT_UNIX/_tools/$PLATFORM"
-# shellcheck disable=SC2034
-TOOLSCOMMONDIR="$BUILD_ROOT_UNIX/_tools/common"
-# shellcheck disable=SC2034
-MULTIARCHTOOLSDIR="$BUILD_ROOT_UNIX/_tools/_multiarch"
-# shellcheck disable=SC2034
-OPAMROOT_IN_CONTAINER="$TOOLSDIR"/opam-root
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # shellcheck disable=SC2034
+    OPAMROOT_IN_CONTAINER="$BUILD_ROOT_UNIX/_tools/$PLATFORM"/opam-root
+fi
 
 #####
 # BEGIN Opam in Windows
@@ -305,7 +305,7 @@ _exec_dev_or_arch_helper() {
             _exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX="$DKMLDIR"
         fi
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
@@ -318,7 +318,7 @@ _exec_dev_or_arch_helper() {
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
+            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR_UNIX}")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR}")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_DKMLDIR_UNIX@@ "${_exec_dev_or_arch_helper_ACTUALDKMLDIR_UNIX}")
@@ -331,7 +331,7 @@ _exec_dev_or_arch_helper() {
         echo "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -1 '${ACTUAL_PRE_HOOK:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
-            _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
+            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR_UNIX@@ "/work")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
@@ -340,7 +340,7 @@ _exec_dev_or_arch_helper() {
         done
         if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then
             ACTUAL_PRE_HOOK="$PLATFORM_EXEC_PRE"
-            ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "/work")
+            [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR@@ "/work")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_TOPDIR_UNIX@@ "/work")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             ACTUAL_PRE_HOOK=$(replace_all "${ACTUAL_PRE_HOOK}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME_UNIX@@ "/opt/diskuv-ocaml")
@@ -404,7 +404,9 @@ autodetect_dkmlvars() {
 }
 
 # Inputs:
-# - env:PLATFORM
+# - env:USERMODE - If 'OFF' uses STATEDIR. Otherwise uses default Opam 2.2 root
+# - env:STATEDIR - If specified, uses <STATEDIR>/opam as the Opam root
+# - env:PLATFORM - Deprecated. Only checked if DKML_FEATUREFLAG_CMAKE_PLATFORM is OFF or not defined.
 # Outputs:
 # - env:OPAMROOTDIR_BUILDHOST - The path to the Opam root directory that is usable only on the
 #     build machine (not from within a container)
@@ -415,7 +417,7 @@ autodetect_dkmlvars() {
 # - env:WITHDKMLEXE_BUILDHOST - The plugin binary 'with-dkml.exe'
 # - env:WITHDKMLEXEDIIR_BUILDHOST - The directory containing the plugin binary 'with-dkml.exe'
 set_opamrootdir() {
-    if is_arg_linux_based_platform "$PLATFORM"; then
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_linux_based_platform "$PLATFORM"; then
         # In a reproducible container ...
         OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
         DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
@@ -423,7 +425,15 @@ set_opamrootdir() {
         WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
         WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
     else
-        if is_unixy_windows_build_machine; then
+        if [ "$__USERMODE" = OFF ] && [ -n "${STATEDIR:-}" ]; then
+            OPAMROOTDIR_BUILDHOST="$STATEDIR/opam"
+            if [ -x /usr/bin/cygpath ]; then OPAMROOTDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$OPAMROOTDIR_BUILDHOST"); fi
+            # shellcheck disable=SC2034
+            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}plugins${OS_DIR_SEP}diskuvocaml"
+            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST${OS_DIR_SEP}with-dkml${OS_DIR_SEP}$dkml_root_version"
+            # shellcheck disable=SC2034
+            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST${OS_DIR_SEP}with-dkml.exe"        
+        elif is_unixy_windows_build_machine; then
             if [ -n "${OPAMROOT:-}" ]; then
                 # If the developer sets OPAMROOT with an environment variable, then we will respect that
                 # just like `opam` would do.

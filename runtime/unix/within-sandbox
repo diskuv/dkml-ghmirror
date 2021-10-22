@@ -23,7 +23,7 @@ usage() {
     echo "    within-sandbox [-b] [-1] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform (not 'dev') used. DKML_TOOLS_DIR will be based on this" >&2
-    echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the Build Sandbox" >&2
+    echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the Build Sandbox" >&2
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
@@ -84,7 +84,7 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -92,8 +92,13 @@ else
     . "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 
-# Set DKML_VCPKG_HOST_TRIPLET
-platform_vcpkg_triplet
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # Set DKML_VCPKG_HOST_TRIPLET
+    platform_vcpkg_triplet
+else
+    # Set OPAMROOTDIR_BUILDHOST
+    set_opamrootdir
+fi
 
 # Set DKML_VCPKG_MANIFEST_DIR if necessary
 if [ -e "$TOPDIR/vcpkg.json" ]; then
@@ -114,14 +119,15 @@ USER_IDS=(-e BUILDER_UID="$BUILDER_UID" -e BUILDER_GID="$( id -g )" -e BUILDER_U
 DOCKER_ARGS=(
     # Mount TOPDIR as /work
     -v "$TOPDIR":/opt/diskuv-ocaml-build-chroot/work
-    # use DKML_xxx so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
-    --env DKML_ROOT_VERSION="$dkml_root_version"
-    --env DKML_VCPKG_TRIPLET="$DKML_VCPKG_HOST_TRIPLET"
-    --env DKML_TOOLS_DIR="/work/$TOOLSDIR"
-    --env DKML_TOOLSCOMMON_DIR="/work/$TOOLSCOMMONDIR"
+    # use DKML_xxx so no chance of conflict with any external programs. For example DKML_DUNE_BUILD_DIR is used within Esy.
+    --env DKML_ROOT_VERSION="$dkml_root_version"    
     # whether to get compilation tools into environment
     --env SANDBOX_COMPILATION="$COMPILATION"
 )
+
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    DOCKER_ARGS+=( --env DKML_VCPKG_TRIPLET="$DKML_VCPKG_HOST_TRIPLET" )
+fi
 
 # Save bash history if user is not root
 if [ "$BUILDER_UID" -ne 0 ]; then
@@ -133,16 +139,24 @@ if [ "$BUILDER_UID" -ne 0 ]; then
 fi
 
 # Autodetect OPAMROOT and mount it if present
-if [ -e "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER" ]; then
-    DOCKER_ARGS+=(
-        -v "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
-    )
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -e "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER" ]; then
+        DOCKER_ARGS+=(
+            -v "${BUILD_BASEPATH}$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
+        )
+    fi
+else
+    if [ -e "$OPAMROOTDIR_BUILDHOST" ]; then
+        DOCKER_ARGS+=(
+            -v "$OPAMROOTDIR_BUILDHOST":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
+        )
+    fi
 fi
 
-# If and only if [-b BUILDDIR] specified
+# If and only if [-b DKML_DUNE_BUILD_DIR] specified
 if [ -n "${BUILDTYPE:-}" ]; then
     DOCKER_ARGS+=(
-        --env DK_BUILD_DIR="/work/$BUILDDIR"
+        --env DKML_DUNE_BUILD_DIR="/work/$DKML_DUNE_BUILD_DIR"
     )
 fi
 

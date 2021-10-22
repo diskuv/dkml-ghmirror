@@ -45,7 +45,7 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-install -d "$BUILDDIR"
+install -d "$DKML_DUNE_BUILD_DIR"
 
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus

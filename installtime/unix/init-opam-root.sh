@@ -30,8 +30,15 @@ usage() {
     echo "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
 }
 
-PLATFORM=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=
+fi
 STATEDIR=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
 while getopts ":h:p:d:" opt; do
     case ${opt} in
         h )
@@ -43,6 +50,7 @@ while getopts ":h:p:d:" opt; do
         ;;
         d )
             STATEDIR=$OPTARG
+            USERMODE=OFF
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -76,7 +84,7 @@ cd "$TOPDIR"
 
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
-echo "TODO: REMOVE LOGGING" >&2; set -x
+# echo "TODO: REMOVE LOGGING A" >&2; set -x
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # BEGIN         ON-DEMAND VERSIONED GLOBAL INSTALLS
 #
@@ -185,12 +193,12 @@ if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
         # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository.
         # --bare: so we can configure its settings before adding the OCaml system compiler.
         # --disable-sandboxing: Sandboxing does not work on Windows
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
     elif is_reproducible_platform; then
         # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" init --yes --disable-sandboxing --no-setup
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" init --yes --disable-sandboxing --no-setup
     else
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" init --yes --no-setup
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" init --yes --no-setup
     fi
 fi
 
@@ -207,7 +215,7 @@ if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_
     # Goes away with wget!! With wget has no funny symbols ... it is like:
     #   C:\source\...\build\_tools\common\MSYS2\usr\bin\wget.exe --content-disposition -t 3 -O C:\Users\...\AppData\Local\Temp\opam-29232-cc6ec1\inline-flexdll.patch.part -U opam/2.1.0 -- https://gist.githubusercontent.com/fdopen/fdc645a61a208552ebac76a67eafd3ee/raw/9f521e91c8f0e9490652651ccdbfae88da701919/inline-flexdll.patch
     if ! grep -q '^download-command: wget' "$OPAMROOTDIR_BUILDHOST/config"; then
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
     fi
 fi
 
@@ -217,18 +225,22 @@ fi
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]; then
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
-    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
 if is_unixy_windows_build_machine && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]; then
     # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
     # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
     OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
-    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -p "$PLATFORM" repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.
 if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
-    DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" repository list --all > "$WORK"/list
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository list --all > "$WORK"/list
+    else
+        DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" repository list --all > "$WORK"/list
+    fi
     awk '$1=="default" {print $2}' "$WORK"/list > "$WORK"/default
     _NUMLINES=$(awk 'END{print NR}' "$WORK"/default)
     if [ "$_NUMLINES" -ne 1 ]; then
@@ -243,12 +255,20 @@ if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/
     fi
     if grep -q "/$REPONAME_PENDINGREMOVAL"$ "$WORK"/default; then
         # ok. is like file://C:/source/xxx/etc/opam-repositories/pendingremoval-opam-repo
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" repository remove default --yes --all --dont-select
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository remove default --yes --all --dont-select
+        else
+            log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" repository remove default --yes --all --dont-select
+        fi
     fi
 fi
 # add back the default we want if a default is not there
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
-    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -d "$STATEDIR" -p "$PLATFORM" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
+    else
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" repository add default https://opam.ocaml.org --yes --dont-select --rank=3
+    fi
 fi
 
 # END opam init

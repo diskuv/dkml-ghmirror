@@ -7,7 +7,7 @@
 #      the file '.dkmlroot'.
 #   TOPDIR: Optional. The project top directory containing 'dune-project'. If
 #     not specified it will be discovered from DKMLDIR.
-#   BUILDDIR: Optional. The directory that will have a _opam subdirectory containing
+#   DKML_DUNE_BUILD_DIR: Optional. The directory that will have a _opam subdirectory containing
 #     the Opam switch. If not specified will be crafted from BUILDTYPE.
 #   PLATFORM: One of the PLATFORMS defined in TOPDIR/Makefile
 #   BUILDTYPE: One of the BUILDTYPES defined in TOPDIR/Makefile
@@ -17,19 +17,27 @@
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
 
-if [ -z "${BUILDDIR:-}" ]; then
-    BUILDDIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "${DKML_DUNE_BUILD_DIR:-}" ]; then
+        DKML_DUNE_BUILD_DIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
+    fi
+else
+    if [ "$USERMODE" = OFF ]; then
+        DKML_DUNE_BUILD_DIR="$STATEDIR/_build"
+    else
+        DKML_DUNE_BUILD_DIR="$TOPDIR/_build"
+    fi
 fi
 if [ -x /usr/bin/cygpath ]; then
     # Trim any trailing slash because `cygpath -aw .` has trailing slash
-    BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$BUILDDIR" | sed 's#\\$##')
+    BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$DKML_DUNE_BUILD_DIR" | sed 's#\\$##')
 else
     # Make into absolute path if not already.
-    BUILDDIR_BUILDHOST="$BUILD_BASEPATH$BUILDDIR"
+    BUILDDIR_BUILDHOST="$BUILD_BASEPATH$DKML_DUNE_BUILD_DIR"
 fi
 
-# BUILDDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
-export BUILDDIR
+# DKML_DUNE_BUILD_DIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
+export DKML_DUNE_BUILD_DIR
 
 # Opam Windows has a weird bug where it rsyncs very very slowly all pinned directories (recursive
 # super slowness). There is a possibly related reference on https://github.com/ocaml/opam/wiki/2020-Developer-Meetings#opam-tools
@@ -42,7 +50,7 @@ USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS=OFF
 # Inputs:
 # - env:PLATFORM
 # - env:BUILDTYPE
-# - env:BUILDDIR. Automatically set by this script if not already set.
+# - env:DKML_DUNE_BUILD_DIR. Automatically set by this script if not already set.
 # Outputs:
 # - env:OPAMROOTDIR_BUILDHOST - [As per set_opamrootdir] The path to the Opam root directory that is usable only on the
 #     build machine (not from within a container)
@@ -73,14 +81,26 @@ set_opamrootandswitchdir() {
     else
         # shellcheck disable=SC2034
         OPAMSWITCHISGLOBAL=OFF
-        # shellcheck disable=SC2034
-        OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR_BUILDHOST${OS_DIR_SEP}_opam"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR_BUILDHOST${OS_DIR_SEP}_opam"
+        else
+            if [ "$USERMODE" = OFF ]; then
+                OPAMSWITCHFINALDIR_BUILDHOST="$STATEDIR${OS_DIR_SEP}_opam"
+            else
+                # shellcheck disable=SC2034
+                OPAMSWITCHFINALDIR_BUILDHOST="$TOPDIR${OS_DIR_SEP}_opam"
+            fi
+        fi
         OPAMSWITCHNAME_BUILDHOST="$BUILDDIR_BUILDHOST"
-        if [ -z "$BUILD_BASEPATH" ]; then
-            OPAMSWITCHDIR_EXPAND="$OPAMSWITCHNAME_BUILDHOST"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            if [ -z "$BUILD_BASEPATH" ]; then
+                OPAMSWITCHDIR_EXPAND="$OPAMSWITCHNAME_BUILDHOST"
+            else
+                OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
+            fi
         else
             # shellcheck disable=SC2034
-            OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$BUILDDIR"
+            OPAMSWITCHDIR_EXPAND="$OPAMSWITCHNAME_BUILDHOST"
         fi
     fi
 }

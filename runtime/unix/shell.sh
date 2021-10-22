@@ -30,8 +30,10 @@ trap 'rm -rf "$WORK"' EXIT
 # _common_tool.sh functions expect us to be in $TOPDIR. We'll change directories later.
 cd "$TOPDIR"
 
-# Set DKML_VCPKG_HOST_TRIPLET
-platform_vcpkg_triplet
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    # Set DKML_VCPKG_HOST_TRIPLET
+    platform_vcpkg_triplet
+fi
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
@@ -74,9 +76,6 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Read the remaining environment variables into this shell
     # shellcheck disable=SC1091
     . "$WORK/2.sh"
-else
-    # Add tools to the PATH
-    PATH="${BUILD_BASEPATH}$TOOLSDIR/local/bin:${BUILD_BASEPATH}$TOOLSCOMMONDIR/local/bin:$PATH"
 fi
 
 # On Windows ...

@@ -108,7 +108,7 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-install -d "$BUILDDIR"
+install -d "$DKML_DUNE_BUILD_DIR"
 
 # no subcommand should display help
 if [ $# -eq 0 ]; then
@@ -158,12 +158,16 @@ case "$subcommand" in
         exec_in_platform dune help "$@"
     ;;
     *)
-        if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
-            DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
-        elif [ -z "$BUILD_BASEPATH" ]; then
-            DUNE_OPTS+=(--build-dir "$BUILDDIR_BUILDHOST${OS_DIR_SEP}_dune") # BUILDDIR_BUILDHOST is absolute path
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
+                DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
+            elif [ -z "$BUILD_BASEPATH" ]; then
+                DUNE_OPTS+=(--build-dir "$BUILDDIR_BUILDHOST${OS_DIR_SEP}_dune") # BUILDDIR_BUILDHOST is absolute path
+            else
+                DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR/_dune")
+            fi
         else
-            DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$BUILDDIR/_dune")
+            DUNE_OPTS+=(--build-dir "$DKML_DUNE_BUILD_DIR")
         fi
         "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
     ;;

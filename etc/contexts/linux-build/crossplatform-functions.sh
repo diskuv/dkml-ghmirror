@@ -1101,6 +1101,11 @@ log_trace() {
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         printf "%s\n" "+ $*" >&2
         time "$@"
+        log_trace_ec="$?"
+        if [ "$log_trace_ec" -ne 0 ]; then
+            printf "FATAL: Command failed with exit code %s: %s\n" "$log_trace_ec" "$*"
+            exit "$log_trace_ec"
+        fi
     else
         "$@"
     fi
@@ -1155,4 +1160,18 @@ downloadfile() {
         exit 1
     fi
     mv "$downloadfile_FILE".tmp "$downloadfile_FILE"
+}
+
+cmake_flag_on() {
+    case "$1" in
+        ON | 1 | TRUE) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+cmake_flag_off() {
+    case "$1" in
+        ON | 1 | TRUE) return 1 ;;
+        *) return 0 ;;
+    esac
 }
