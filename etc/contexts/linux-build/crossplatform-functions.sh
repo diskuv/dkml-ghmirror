@@ -553,13 +553,14 @@ build_machine_arch() {
     esac
 }
 
-# Tries to find the VCPKG_TRIPLET (defined in TOPDIR/Makefile corresponding to the build machine)
+# (Deprecated) Tries to find the VCPKG_TRIPLET (defined in TOPDIR/Makefile corresponding to the build machine)
 # For now only tested in Linux/Windows x86/x86_64.
 # Inputs:
 # - env:PLATFORM
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 # - env:DKML_VCPKG_HOST_TRIPLET will contain the correct vcpkg triplet
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 platform_vcpkg_triplet() {
     build_machine_arch
     export DKML_VCPKG_HOST_TRIPLET
@@ -586,6 +587,7 @@ platform_vcpkg_triplet() {
             ;;
     esac
 }
+fi
 
 # Fix the MSYS2 ambiguity problem described at https://github.com/msys2/MSYS2-packages/issues/2316. Our error is running:
 #   cl -nologo -O2 -Gy- -MD -Feocamlrun.exe prims.obj libcamlrun.lib advapi32.lib ws2_32.lib version.lib /link /subsystem:console /ENTRY:wmainCRTStartup

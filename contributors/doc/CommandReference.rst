@@ -304,12 +304,9 @@ Usage
         # Help
         create-opam-switch.sh -h
 
-        # Create the Opam switch
-        create-opam-switch.sh [-y] -b BUILDTYPE -p PLATFORM
-
         # Create the Opam switch in target directory.
         # Opam packages will be placed in `OPAMSWITCH/_opam`
-        create-opam-switch.sh [-y] -b BUILDTYPE -t OPAMSWITCH
+        create-opam-switch.sh [-y] -b BUILDTYPE -d OPAMSWITCH
 
         # [Expert] Create the diskuv-system switch
         create-opam-switch.sh [-y] [-b BUILDTYPE] -s

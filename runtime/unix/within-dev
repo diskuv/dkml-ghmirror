@@ -179,15 +179,17 @@ fi
 
 # If macOS then make sure we are running the correct architecture.
 # Can really only switch if the launched command is a Universal binary.
-case "$PLATFORM" in
-    darwin_arm64)
-        # arm64 will be tried first, and then arm64e (Apple Silicon)
-        LAUNCHER_ARGS+=(/usr/bin/arch -arch arm64)
-    ;;
-    darwin_x86_64)
-        LAUNCHER_ARGS+=(/usr/bin/arch -arch x86_64)
-    ;;
-esac
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    case "$PLATFORM" in
+        darwin_arm64)
+            # arm64 will be tried first, and then arm64e (Apple Silicon)
+            LAUNCHER_ARGS+=(/usr/bin/arch -arch arm64)
+        ;;
+        darwin_x86_64)
+            LAUNCHER_ARGS+=(/usr/bin/arch -arch x86_64)
+        ;;
+    esac
+fi
 
 # print PATH for troubleshooting
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi

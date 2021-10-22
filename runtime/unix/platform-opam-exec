@@ -22,19 +22,22 @@ set -euf
 usage() {
     echo "Usage:" >&2
     echo "    platform-opam-exec -h                                                         Display this help message" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM [--] init|help|switch remove|...          Run the opam command" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
     echo "                                                                                  in the PLATFORM's active switch" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  Run the opam command" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
     echo "                                                                                  in the PLATFORM's BUILDTYPE switch" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM                                           Run the opam command" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM                                           (Deprecated) Run the opam command" >&2
     echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
     echo "    platform-opam-exec [-1] -s [--] install|clean|help|...                        Run the opam command" >&2
-    echo "                                                                                  in the 'diskuv-system' switch" >&2
+    echo "                                                                                  in the 'diskuv-system' local switch" >&2
+    echo "    platform-opam-exec [-1] -d STATEDIR [--] install|clean|help|...               Run the opam command" >&2
+    echo "                                                                                  in the local switch prefix of STATEDIR/_opam" >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform or 'dev'" >&2
     echo "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
     echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
     echo "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
+    echo "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix" >&2
     echo "Advanced Options:" >&2
     echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
@@ -70,10 +73,11 @@ fi
 PLATFORM=
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
+STATEDIR=
 PREHOOK=
 TARGET_OPAMSWITCH=
 ADD_SWITCH_OPTS=OFF
-while getopts ":h1:b:sp:t:" opt; do
+while getopts ":h1:b:sp:t:d:" opt; do
     case ${opt} in
         h )
             usage
@@ -89,6 +93,9 @@ while getopts ":h1:b:sp:t:" opt; do
         s )
             DISKUV_SYSTEM_SWITCH=ON
             ADD_SWITCH_OPTS=ON
+        ;;
+        d )
+            STATEDIR=$OPTARG
         ;;
         t )
             TARGET_OPAMSWITCH=$OPTARG
@@ -106,9 +113,16 @@ while getopts ":h1:b:sp:t:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
-    usage
-    exit 1
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+        usage
+        exit 1
+    fi
+else
+    if [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+        usage
+        exit 1
+    fi
 fi
 
 if [ "${1:-}" = "--" ]; then # supports `platform-opam-exec ... -- --version`
@@ -123,10 +137,12 @@ DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-    PLATFORM=dev
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        PLATFORM=dev
+    fi
 fi
 
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ]; then
+if [ -n "${BUILDTYPE:-}" ] || [ -n "${BUILDDIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -189,6 +205,9 @@ elif [ -n "${BUILDDIR:-}" ]; then
 
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     set_opamrootandswitchdir
+elif [ -n "${STATEDIR:-}" ]; then
+    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    set_opamrootandswitchdir
 elif [ -n "$TARGET_OPAMSWITCH" ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
     OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH/_opam"
@@ -206,8 +225,16 @@ fi
 
 # Use 3p_installed for with-dkml.exe
 WITHDKMLENV=(env)
-if [ -n "$PLATFORM" ] && [ -n "${BUILDTYPE:-}" ]; then
-    THREEP="$TOPDIR/3p_installed/default/$PLATFORM-$BUILDTYPE"
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "$PLATFORM" ] && [ -n "${BUILDTYPE:-}" ]; then
+        THREEP="$TOPDIR/3p_installed/default/$PLATFORM-$BUILDTYPE"
+        if [ -x /usr/bin/cygpath ]; then
+            THREEP=$(/usr/bin/cygpath -aw "$THREEP")
+        fi
+        WITHDKMLENV+=( DKML_3P_INSTALL="$THREEP" )
+    fi
+else
+    THREEP="$STATEDIR/3p_installed"
     if [ -x /usr/bin/cygpath ]; then
         THREEP=$(/usr/bin/cygpath -aw "$THREEP")
     fi

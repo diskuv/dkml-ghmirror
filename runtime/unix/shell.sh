@@ -3,8 +3,10 @@
 # when invoked from ./makeit shell or ./makeit shell-*.
 set -euf
 
-PLATFORM=$1
-shift
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=$1
+    shift
+fi
 BUILDTYPE=$1 # may be empty
 shift
 
@@ -44,14 +46,22 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
     # * the TOPDIR tools since platform-opam-exec -> within-dev
     if [ -x /usr/bin/cygpath ]; then
-        SHELL_WINDOWS=$(/usr/bin/cygpath -aw "$SHELL")
+        SHELL_BUILDHOST=$(/usr/bin/cygpath -aw "$SHELL")
     else
-        SHELL_WINDOWS="$SHELL"
+        SHELL_BUILDHOST="$SHELL"
     fi
-    if [ -n "${BUILDTYPE:-}" ]; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        if [ -n "${BUILDTYPE:-}" ]; then
+            "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+        else
+            "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+        fi
     else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
+        if [ -n "${BUILDTYPE:-}" ]; then
+            "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+        else
+            "$DKMLDIR"/runtime/unix/platform-opam-exec exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+        fi
     fi
 
     # Remove environment variables that are readonly (like UID) or simply should come from our
@@ -79,10 +89,18 @@ if [ -x /usr/bin/cygpath ] && [ -n "${LOCALAPPDATA:-}" ]; then
 fi
 
 # Basic command prompt
-if [ -n "${BUILDTYPE:-}" ]; then
-    LABEL="$PLATFORM-$BUILDTYPE"
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "${BUILDTYPE:-}" ]; then
+        LABEL="$PLATFORM-$BUILDTYPE"
+    else
+        LABEL="$PLATFORM"
+    fi
 else
-    LABEL="$PLATFORM"
+    if [ -n "${BUILDTYPE:-}" ]; then
+        LABEL="$BUILDTYPE"
+    else
+        LABEL=""
+    fi
 fi
 
 # Change directory to where we were invoked
