@@ -12,6 +12,7 @@ To setup on Windows:
 To test use x64-windows or arm64-osx for the DKML_VCPKG_HOST_TRIPLET (or leave that variable out):
     dune build --root installtime/msys2/apps/ with-dkml/with_dkml.exe
     DKML_VCPKG_HOST_TRIPLET=x64-windows DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
+    DKML_3P_PROGRAM_PATH='H:/build/windows_x86/vcpkg_installed/x86-windows/debug;H:/build/windows_x86/vcpkg_installed/x86-windows' DKML_3P_PREFIX_PATH='H:/build/windows_x86/vcpkg_installed/x86-windows/debug;H:/build/windows_x86/vcpkg_installed/x86-windows' DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
 *)
 open Bos
 open Rresult
@@ -307,34 +308,34 @@ let prune_entries f =
   prune_envvar ~f ~path_sep:os_path_sep "PKG_CONFIG_PATH" >>= fun () ->
   prune_envvar ~f ~path_sep:os_path_sep "PATH"
 
-let add_entries ~tools installed_dir =
-  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
-    let setenvvar ~path_sep varname dir = function
+let prepend_envvar ~path_sep varname dir = function
   | None -> OS.Env.set_var varname (Some dir)
   | Some v when "" = v -> OS.Env.set_var varname (Some dir)
   | Some v -> OS.Env.set_var varname (Some (dir ^ path_sep ^ v))
-  in
+
+let prepend_entries ~tools installed_dir =
+  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
   let include_dir =
     Fpath.(installed_dir / "include" |> to_string)
   in
   OS.Env.parse "INCLUDE" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:";" "INCLUDE" include_dir
+  >>= prepend_envvar ~path_sep:";" "INCLUDE" include_dir
   >>= fun () ->
   OS.Env.parse "CPATH" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:os_path_sep "CPATH" include_dir
+  >>= prepend_envvar ~path_sep:os_path_sep "CPATH" include_dir
   >>= fun () ->
   OS.Env.parse "COMPILER_PATH" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:":" "COMPILER_PATH" include_dir
+  >>= prepend_envvar ~path_sep:":" "COMPILER_PATH" include_dir
   >>= fun () ->
   let lib_dir = Fpath.(installed_dir / "lib" |> to_string) in
   OS.Env.parse "LIB" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:";" "LIB" lib_dir
+  >>= prepend_envvar ~path_sep:";" "LIB" lib_dir
   >>= fun () ->
   OS.Env.parse "LIBRARY_PATH" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:":" "LIBRARY_PATH" lib_dir
+  >>= prepend_envvar ~path_sep:":" "LIBRARY_PATH" lib_dir
   >>= fun () ->
   OS.Env.parse "PKG_CONFIG_PATH" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
+  >>= prepend_envvar ~path_sep:os_path_sep "PKG_CONFIG_PATH"
         Fpath.(installed_dir / "lib" / "pkgconfig" |> to_string)
   >>= fun () -> (
   if tools then (
@@ -354,38 +355,72 @@ let add_entries ~tools installed_dir =
     ^ List.fold_left (fun acc b -> acc ^ os_path_sep ^ Fpath.(installed_dir / "tools" / b |> to_string)) "" uniq_tools
   in
   OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
-  >>= setenvvar ~path_sep:os_path_sep "PATH" installed_path
+  >>= prepend_envvar ~path_sep:os_path_sep "PATH" installed_path
 
-(* [set_3p_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH if
-   environment variable DKML_3P_INSTALL exists.
+(* [set_3p_prefix_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH for
+   each directory in the semicolon-separated environment variable DKML_3P_PREFIX_PATH.
 
   The CPATH, COMPILER_PATH, INCLUDE, LIBRARY_PATH, and LIB variables are modified so that
-  if:
+  when:
 
-  - MSVC is used, INCLUDE and LIB are recognized
-  - GCC is used, COMPILER_PATH and LIBRARY_PATH are recognized
+  - MSVC is used INCLUDE and LIB are picked up
+    (https://docs.microsoft.com/en-us/cpp/build/reference/cl-environment-variables?view=msvc-160
+    and https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-160#link-environment-variables)
+  - GCC is used COMPILER_PATH and LIBRARY_PATH are picked up
     (https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables)
-  - clang is used, CPATH and LIBRARY_PATH are are recognized
+  - clang is used CPATH and LIBRARY_PATH are picked up
     ( https://clang.llvm.org/docs/CommandGuide/clang.html and https://reviews.llvm.org/D65880)
  *)
-let set_3p_entries cache_keys =
-  OS.Env.parse "DKML_3P_INSTALL" OS.Env.path ~absent:OS.File.null >>= fun threep ->
-  if (Fpath.compare OS.File.null threep = 0) then R.ok ("" :: cache_keys)
-  else
-    (* 1. Remove 3p entries, if any, from compiler variables and PKG_CONFIG_PATH.
-        The gcc compiler variables COMPILER_PATH and LIBRARY_PATH are always colon-separated
-        per https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables.
-        This _might_ conflict with clang if clang were run on Windows (very very unlikely)
-        because clang's CPATH is explicitly OS path separated; perhaps clang's LIBRARY_PATH is as
-        well.
-    *)
-    let f = (fun entry -> let fp = Fpath.of_string entry in if R.is_error fp then false else not Fpath.(is_prefix threep (R.get_ok fp))) in
-    prune_entries f >>= fun () ->
-    (* 2. Add DKML_3P_INSTALL directories to front of INCLUDE,LIB,...,PKG_CONFIG_PATH and PATH *)
-    let threep_installed = Fpath.to_string threep in
-    Logs.debug (fun m -> m "third-party installed directory = %s" threep_installed);
-    add_entries ~tools:false threep
-    >>| fun () -> threep_installed :: cache_keys
+let set_3p_prefix_entries cache_keys =
+  let rec helper = function
+  | [] -> R.ok ()
+  | dir :: rst ->
+    let null_possible_dir = R.ignore_error ~use:(fun _e -> OS.File.null) (Fpath.of_string dir) in
+    if (Fpath.compare OS.File.null null_possible_dir = 0) then
+      (* skip over user-submitted directory because it has some parse error *)
+      helper rst
+    else
+      let threep = null_possible_dir in
+      (* 1. Remove 3p entries, if any, from compiler variables and PKG_CONFIG_PATH.
+          The gcc compiler variables COMPILER_PATH and LIBRARY_PATH are always colon-separated
+          per https://gcc.gnu.org/onlinedocs/gcc/Environment-Variables.html#Environment-Variables.
+          This _might_ conflict with clang if clang were run on Windows (very very unlikely)
+          because clang's CPATH is explicitly OS path separated; perhaps clang's LIBRARY_PATH is as
+          well.
+      *)
+      let f = (fun entry -> let fp = Fpath.of_string entry in if R.is_error fp then false else not Fpath.(is_prefix threep (R.get_ok fp))) in
+      prune_entries f >>= fun () ->
+      (* 2. Add DKML_3P_PREFIX_PATH directories to front of INCLUDE,LIB,...,PKG_CONFIG_PATH and PATH *)
+      Logs.debug (fun m -> m "third-party prefix directory = %a" Fpath.pp threep);
+      prepend_entries ~tools:false threep
+      >>= fun () -> helper rst
+  in
+  let dirs = String.cuts ~empty:false ~sep:";" (OS.Env.opt_var ~absent:"" "DKML_3P_PREFIX_PATH") in
+  helper (List.rev dirs) >>| fun () ->
+  (String.concat ~sep:";" dirs) :: cache_keys
+
+(* [set_3p_program_entries cache_keys] will modify the PATH so that each directory in
+   the semicolon separated environment variable DKML_3P_PROGRAM_PATH is present the PATH.
+ *)
+let set_3p_program_entries cache_keys =
+  Lazy.force probe_os_path_sep >>= fun os_path_sep ->
+  let rec helper = function
+  | [] -> R.ok ()
+  | dir :: rst ->
+    let null_possible_dir = R.ignore_error ~use:(fun _e -> OS.File.null) (Fpath.of_string dir) in
+    if (Fpath.compare OS.File.null null_possible_dir = 0) then
+      (* skip over user-submitted directory because it has some parse error *)
+      helper rst
+    else
+      let threep = null_possible_dir in
+      let f = (fun entry -> let fp = Fpath.of_string entry in if R.is_error fp then false else not Fpath.(equal threep (R.get_ok fp))) in
+      prune_envvar ~f ~path_sep:os_path_sep "PATH" >>= fun () ->
+      OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
+      >>= prepend_envvar ~path_sep:os_path_sep "PATH" (Fpath.to_string threep)
+  in
+  let dirs = String.cuts ~empty:false ~sep:";" (OS.Env.opt_var ~absent:"" "DKML_3P_PROGRAM_PATH") in
+  helper (List.rev dirs) >>| fun () ->
+  (String.concat ~sep:";" dirs) :: cache_keys
 
 (* [set_vcpkg_entries cache_keys] will modify MSVC/GCC/clang variables and PKG_CONFIG_PATH and PATH if
    vcpkg can be detected through [get_vcpkg_installed_dir].
@@ -427,7 +462,7 @@ let set_vcpkg_entries cache_keys =
   | Some vcpkg_installed_dir ->
       let vcpkg_installed = Fpath.to_string vcpkg_installed_dir in
       Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
-      add_entries ~tools:true vcpkg_installed_dir
+      prepend_entries ~tools:true vcpkg_installed_dir
       >>| fun () -> vcpkg_installed :: cache_keys
 
 let int_parser = OS.Env.(parser "int" String.to_int)
@@ -483,8 +518,12 @@ let main_with_result () =
        _after_ MSVC.
   *)
   set_vcpkg_entries cache_keys >>= fun _cache_keys ->
-  (* FOURTH, set third-party (3p) entries. *)
-  set_3p_entries cache_keys >>= fun _cache_keys ->
+  (* FOURTH, set third-party (3p) prefix entries.
+     Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
+     _after_ MSVC. *)
+  set_3p_prefix_entries cache_keys >>= fun _cache_keys ->
+  (* FIFTH, set third-party (3p) program entries. *)
+  set_3p_program_entries cache_keys >>= fun _cache_keys ->
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->

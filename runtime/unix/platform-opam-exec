@@ -231,14 +231,14 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if [ -x /usr/bin/cygpath ]; then
             THREEP=$(/usr/bin/cygpath -aw "$THREEP")
         fi
-        WITHDKMLENV+=( DKML_3P_INSTALL="$THREEP" )
+        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
     fi
 else
     THREEP="$STATEDIR/3p_installed"
     if [ -x /usr/bin/cygpath ]; then
         THREEP=$(/usr/bin/cygpath -aw "$THREEP")
     fi
-    WITHDKMLENV+=( DKML_3P_INSTALL="$THREEP" )
+    WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
 fi
 
 # END --switch

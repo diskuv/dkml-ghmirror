@@ -413,9 +413,9 @@ define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
   build-$(1)-$(2): configure-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
@@ -425,11 +425,11 @@ define BUILD_platform_buildtype_template
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
 		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_INSTALL="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
 		fi; \
 	fi
 endef
