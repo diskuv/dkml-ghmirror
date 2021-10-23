@@ -30,10 +30,10 @@ let get_osinfo t =
     file
   in
   let os_define =
-    C_define.import t ~includes:[ header ] [ ("OS_NAME", String) ]
+    C_define.import t ~includes:[ header ] [ ("DKML_OS_NAME", String) ]
   in
   let platform_define =
-    C_define.import t ~includes:[ header ] [ ("PLATFORM_NAME", String) ]
+    C_define.import t ~includes:[ header ] [ ("DKML_PLATFORM_NAME", String) ]
   in
 
   let ostypename =
