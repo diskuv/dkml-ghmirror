@@ -539,6 +539,9 @@ let main_with_result () =
   set_3p_prefix_entries cache_keys >>= fun _cache_keys ->
   (* SIXTH, set third-party (3p) program entries. *)
   set_3p_program_entries cache_keys >>= fun _cache_keys ->
+  (* SEVENTH, stop special variables from propagating. *)
+  OS.Env.set_var "DKML_BUILD_TRACE" None >>= fun () ->
+  OS.Env.set_var "DKML_BUILD_TRACE_LEVEL" None >>= fun () ->
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->
