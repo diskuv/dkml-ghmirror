@@ -499,11 +499,13 @@ let main_with_result () =
   let cmd = Cmd.of_list ([ Fpath.to_string env_exe ] @ cmd_and_args) in
 
   Lazy.force get_dkmlversion >>= fun dkmlversion ->
-  Lazy.force Target_context.V1.get_platform_name >>= fun platform_name ->
-  let cache_keys = [ dkmlversion; platform_name ] in
-  (* ZEROTH, set DKML_TARGET_PLATFORM *)
-  OS.Env.set_var "DKML_TARGET_PLATFORM" (Some platform_name) >>= fun () ->
-  (* FIRST, set MSYS2 environment variables.
+  Lazy.force Target_context.V1.get_platform_name >>= fun target_platform_name ->
+  let cache_keys = [ dkmlversion ] in
+  (* FIRST, set DKML_TARGET_PLATFORM, which may be overridden by DKML_TARGET_PLATFORM_OVERRIDE *)
+  let target_platform_name = OS.Env.opt_var "DKML_TARGET_PLATFORM_OVERRIDE" ~absent:target_platform_name in
+  OS.Env.set_var "DKML_TARGET_PLATFORM" (Some target_platform_name) >>= fun () ->
+  let cache_keys = target_platform_name :: cache_keys in
+  (* SECOND, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh
        in add_microsoft_visual_studio_entries.
      - This also needs to happen before add_microsoft_visual_studio_entries so that MSVC `link.exe`
@@ -511,18 +513,18 @@ let main_with_result () =
        possible conflicts).
   *)
   set_msys2_entries () >>= fun () ->
-  (* SECOND, set MSVC entries *)
+  (* THIRD, set MSVC entries *)
   set_msvc_entries cache_keys >>= fun () ->
-  (* THIRD, set vcpkg entries.
+  (* FOURTH, set vcpkg entries.
      - Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
        _after_ MSVC.
   *)
   set_vcpkg_entries cache_keys >>= fun _cache_keys ->
-  (* FOURTH, set third-party (3p) prefix entries.
+  (* FIFTH, set third-party (3p) prefix entries.
      Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
      _after_ MSVC. *)
   set_3p_prefix_entries cache_keys >>= fun _cache_keys ->
-  (* FIFTH, set third-party (3p) program entries. *)
+  (* SIXTH, set third-party (3p) program entries. *)
   set_3p_program_entries cache_keys >>= fun _cache_keys ->
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
