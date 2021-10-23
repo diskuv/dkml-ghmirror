@@ -12,7 +12,7 @@ Import-Module Deployers # for Get-Sha256Hex16OfText
 # Magic constants that will identify new and existing deployments:
 # * Microsoft build numbers
 # * Semver numbers
-$Windows10SdkVer = "18362"        # KEEP IN SYNC with WindowsAdministrator.rst
+$Windows10SdkVer = "18362"        # KEEP IN SYNC with WindowsAdministrator.rst and DKSDK's cmake/toolchains/os_windows.cmake
 $Windows10SdkFullVer = "10.0.$Windows10SdkVer.0"
 
 # Visual Studio minimum version
