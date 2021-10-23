@@ -13,7 +13,7 @@
 #
 # Prerequisites:
 # - init-opam-root.sh
-# - a Diskuv System switch created by create-opam-switch.sh
+# - create-diskuv-system-switch.sh
 #
 # -------------------------------------------------------
 set -euf

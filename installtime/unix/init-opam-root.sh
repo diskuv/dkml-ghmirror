@@ -271,21 +271,3 @@ fi
 
 # END opam init
 # -----------------------
-
-# -----------------------
-# BEGIN create system switch
-#
-# Only CI Flavor packages need to be installed.
-
-# Just compiler
-log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -b Release
-
-# CI packages
-{
-    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s install -y"
-    awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
-} > "$WORK"/config-diskuv-system.sh
-log_shell "$WORK"/config-diskuv-system.sh
-
-# END create system switch
-# -----------------------

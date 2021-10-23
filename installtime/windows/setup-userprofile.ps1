@@ -385,7 +385,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 17
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -1152,8 +1152,6 @@ try {
 
     # ----------------------------------------------------------------
     # BEGIN opam init
-    #
-    # init-opam-root.sh will create the system switch automatically
 
     if ($StopBeforeInitOpam) {
         Write-Host "Stopping before being completed finished due to -StopBeforeInitOpam switch"
@@ -1175,6 +1173,21 @@ try {
     }
 
     # END opam init
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN opam switch create <system>
+
+    $global:ProgressActivity = "Create system Opam Switch"
+    Write-ProgressStep
+
+    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
+    if (!$global:SkipOpamSetup) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh'"
+        }
+
+    # END opam switch create <system>
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

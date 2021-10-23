@@ -46,6 +46,14 @@ log_trace "$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
 # -----------------------
 
 # -----------------------
+# BEGIN opam create system switch
+
+log_trace "$DKMLDIR"/installtime/unix/private/create-diskuv-system-switch.sh
+
+# END opam create system switch
+# -----------------------
+
+# -----------------------
 # BEGIN configure opam plugins
 
 log_trace "$DKMLDIR"/installtime/unix/configure-opam-plugins.sh -p "$PLATFORM"
