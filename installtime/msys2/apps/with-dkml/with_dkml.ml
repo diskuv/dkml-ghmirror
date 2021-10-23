@@ -268,15 +268,28 @@ let set_msvc_entries cache_keys =
 (** Set the MSYSTEM environment variable to MSYS and place MSYS2 binaries at the front of the PATH.
     Any existing MSYS2 binaries in the PATH will be removed.
   *)
-let set_msys2_entries () =
+let set_msys2_entries target_platform_name =
   Lazy.force get_msys2_dir_opt >>= function
   | None -> R.ok ()
   | Some msys2_dir ->
       (* 1. MSYSTEM = MSYS *)
       OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
-      (* 2. Remove MSYS2 entries, if any, from PATH *)
+      (* 2. MSYSTEM_CARCH, MSYSTEM_CHOST, MSYSTEM_PREFIX for 64-bit MSYS.
+         There is no 32-bit MSYS2 tooling (well, 32-bit was deprecated), but you don't need 32-bit
+         MSYS2 binaries; just a 32-bit (cross-)compiler.
+
+         See "MSYS" entry for https://www.msys2.org/docs/environments/ for the magic values.
+       *)
+      (match target_platform_name with
+      | "windows_x86" | "windows_x86_64" -> R.ok ("x86_64", "x86_64-pc-msys", "/usr")
+      | _ -> R.error_msg @@ "The target platform name '" ^ target_platform_name ^ "' is not a recognized Windows platform")
+      >>= fun (carch, chost, prefix) ->
+      OS.Env.set_var "MSYSTEM_CARCH" (Some carch) >>= fun () ->
+      OS.Env.set_var "MSYSTEM_CHOST" (Some chost) >>= fun () ->
+      OS.Env.set_var "MSYSTEM_PREFIX" (Some prefix) >>= fun () ->
+      (* 3. Remove MSYS2 entries, if any, from PATH *)
       prune_path_of_msys2 () >>= fun () ->
-      (* 3. Add MSYS2 back to front of PATH *)
+      (* 4. Add MSYS2 back to front of PATH *)
       OS.Env.req_var "PATH" >>= fun path ->
       OS.Env.set_var "PATH"
         (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
@@ -512,7 +525,7 @@ let main_with_result () =
        can be inserted by VsDevCmd.bat before any MSYS2 `link.exe`. (`link.exe` is one example of many
        possible conflicts).
   *)
-  set_msys2_entries () >>= fun () ->
+  set_msys2_entries target_platform_name >>= fun () ->
   (* THIRD, set MSVC entries *)
   set_msvc_entries cache_keys >>= fun () ->
   (* FOURTH, set vcpkg entries.
