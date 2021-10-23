@@ -75,6 +75,8 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 # - this Makefile's VCPKG_TRIPLET_<platform>
 # - runtime/unix/build-sandbox-configure.sh :: (BEGIN opam switch create ... END opam switch create)
 # - runtime/unix/_common_tool.sh :: build_machine_arch
+# - installtime/msys2/apps/with-dkml/config/dkml_compiler_probe.h
+# - DKSDK's cmake/DKMLConfigureFromCompiler.cmake
 #
 # Naming:
 #   DKML_PLATFORMS := KERNEL || '_' || ABI [ || '_' FRAMEWORK]

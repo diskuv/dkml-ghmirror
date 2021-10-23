@@ -245,8 +245,17 @@ exec_in_platform() {
 # @@EXPAND_TOPDIR@@: The top directory containing dune-project.
 #   When running in MSYS2 the directory will be Windows style (ex. C:\)
 exec_dev_or_multiarch() {
-    build_machine_arch
-    _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        build_machine_arch
+        _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
+    else
+        if [ -n "${DKML_TARGET_PLATFORM:-}" ]; then
+            _exec_dev_or_arch_helper "$DKML_TARGET_PLATFORM" "$@"
+        else
+            build_machine_arch
+            _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
+        fi
+    fi
 }
 
 _exec_dev_or_arch_helper() {

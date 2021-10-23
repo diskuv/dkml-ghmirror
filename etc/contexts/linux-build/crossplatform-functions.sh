@@ -491,19 +491,11 @@ install_reproducible_script_with_args() {
     "$DKMLSYS_CHMOD" 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
 }
 
-# DEPRECATED.
-#
 # Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine).
 # ARCH is also called the PLATFORM.
 # For now only tested in Linux/Windows x86/x86_64 and Apple x86_64/arm64.
 #
-# Why is this deprecated? You should be using with-dkml.exe instead which supports cross-compilation
-# if with-dkml has been compiled with your desired C compiler (this is done automatically in an SDK Project).
-# Use:
-#    with-dkml sh -c 'printf "%s" $DKML_TARGET_PLATFORM'
-# to find the platform you should be using.
-#
-# If you use this build_machine_arch() function instead, it uses `uname` probing which sometimes is inaccurate
+# This function uses `uname` probing which sometimes is often inaccurate
 # during cross-compilation.
 #
 # Outputs:
@@ -655,7 +647,8 @@ autodetect_cpus() {
     export NUMCPUS
 }
 
-# Set VSDEV_HOME_UNIX and VSDEV_HOME_BUILDHOST
+# Set VSDEV_HOME_UNIX and VSDEV_HOME_BUILDHOST, if Visual Studio was installed or detected during
+# Windows Diskuv OCaml installation.
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
@@ -739,7 +732,7 @@ autodetect_vsdev() {
 # Detects a compiler like Visual Studio and sets its variables.
 # autodetect_compiler [--sexp] OUTPUT_SCRIPT_OR_SEXP [EXTRA_PREFIX]
 #
-# Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
+# (Deprecated functionality) Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
 #
 # Example:
 #  autodetect_compiler /tmp/launcher.sh && /tmp/launcher.sh cl.exe /help
@@ -757,7 +750,9 @@ autodetect_vsdev() {
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
-# - env:PLATFORM - Optional; if missing treated as 'dev'. This variable will select the Visual Studio
+# - env:DKML_TARGET_PLATFORM - This variable will select the compiler options necessary to cross-compile (or native compile)
+#   to the target PLATFORM. 'dev' is not a target platform.
+# - env:PLATFORM - (Deprecated) Optional; if missing treated as 'dev'. This variable will select the Visual Studio
 #   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
 #   a native compilation.
 # - env:WORK - Optional. If provided will be used as temporary directory
@@ -788,10 +783,11 @@ autodetect_vsdev() {
 # - CMAKE_GENERATOR_INSTANCE_RECOMMENDED will be set for build scripts to use a sensible generator instance in
 #   `cmake -G ... -D CMAKE_GENERATOR_INSTANCE=<generator instance>`. Only set for Visual Studio where it is the absolute
 #   path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
-# Return Values:
-# - 0: Success
-# - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
 autodetect_compiler() {
+    # Set BUILDHOST_ARCH (needed before we process arguments)
+    build_machine_arch
+
+    # Process arguments
     autodetect_compiler_SEXP=OFF
     if [ "$1" = --sexp ]; then
         autodetect_compiler_SEXP=ON
@@ -800,7 +796,15 @@ autodetect_compiler() {
     autodetect_compiler_LAUNCHER="$1"
     shift
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
-    autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
+    else
+        if [ -n "${DKML_TARGET_PLATFORM:-}" ]; then
+            autodetect_compiler_PLATFORM_ARCH=$DKML_TARGET_PLATFORM
+        else
+            autodetect_compiler_PLATFORM_ARCH=$BUILDHOST_ARCH
+        fi
+    fi
 
     # Set DKML_POSIX_SHELL if not already set
     autodetect_posix_shell
@@ -825,31 +829,62 @@ autodetect_compiler() {
     #   https://gitlab.com/diskuv/diskuv-ocaml/-/blob/aabf3171af67a0a0ff4779c336867a7a43e3670f/etc/opam-repositories/diskuv-opam-repo/packages/ocaml-variants/ocaml-variants.4.12.0+options+dkml+msvc64/opam#L52-62
     export OCAML_HOST_TRIPLET=
 
-    # Get the extra prefix with backslashes escaped for Awk, if specified
-    if [ "$#" -ge 1 ]; then
-        autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
-        if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
-        autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | "$DKMLSYS_SED" 's#\\#\\\\#g')
-        shift
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        # Get the extra prefix with backslashes escaped for Awk, if specified
+        if [ "$#" -ge 1 ]; then
+            autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
+            if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
+            autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | "$DKMLSYS_SED" 's#\\#\\\\#g')
+            shift
+        else
+            autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
+        fi
     else
+        if [ "$#" -ge 1 ]; then
+            echo "FATAL: Excess arguments passed to autodetect_compiler()" >&2
+            exit 107
+        fi
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
     fi
 
-    # Autodetect BUILDHOST_ARCH
-    build_machine_arch
-    if [ "$BUILDHOST_ARCH" != windows_x86 ] && [ "$BUILDHOST_ARCH" != windows_x86_64 ]; then
-        return 0
+    if autodetect_vsdev; then
+        # DKMLPARENTHOME_BUILDHOST and VSDEV_* will have been set
+        autodetect_compiler_vsdev
+    else
+        autodetect_compiler_other
     fi
+}
 
-    # Set DKMLPARENTHOME_BUILDHOST and VSDEV_*
-    autodetect_vsdev
+autodetect_compiler_other() {
+    {
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf "(\n"
+        else
+            printf "%s\n" "#!$DKML_POSIX_SHELL"
+            printf "%s\n" "exec $DKMLSYS_ENV \\"
+        fi
 
-    # MSYS2 detection.
+        if [ "$autodetect_compiler_SEXP" = ON ]; then
+            printf ")"
+        else
+            # Add arguments
+            printf "%s\n" '  "$@"'
+        fi
+    } > "$autodetect_compiler_LAUNCHER".tmp
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+}
+
+autodetect_compiler_vsdev() {
+    # Implementation note: You can use `autodetect_compiler_` as the prefix for your variables,
+    # and read the variables created by `autodetect_compiler()`
+
     # The vsdevcmd.bat is at /c/DiskuvOCaml/BuildTools/Common7/Tools/VsDevCmd.bat.
     if [ -e "$VSDEV_HOME_UNIX"/Common7/Tools/VsDevCmd.bat ]; then
         autodetect_compiler_VSDEVCMD="$VSDEV_HOME_UNIX/Common7/Tools/VsDevCmd.bat"
     else
-        return 1
+        echo "FATAL: No Common7/Tools/VsDevCmd.bat was detected at $VSDEV_HOME_UNIX" >&2
+        exit 107
     fi
 
     # FIRST, create a file that calls vsdevcmd.bat and then adds a `set` dump.
@@ -905,7 +940,7 @@ autodetect_compiler() {
             OCAML_HOST_TRIPLET=x86_64-pc-windows
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
-            exit 1
+            exit 107
         fi
     elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
         # The build host machine is 64-bit ...
@@ -926,11 +961,11 @@ autodetect_compiler() {
             OCAML_HOST_TRIPLET=i686-pc-windows
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
-            exit 1
+            exit 107
         fi
     else
         printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
-        exit 1
+        exit 107
     fi
 
     # THIRD, we run the batch file
@@ -1093,8 +1128,6 @@ autodetect_compiler() {
     } > "$autodetect_compiler_LAUNCHER".tmp
     "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
     "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
-
-    return 0
 }
 
 log_trace() {
