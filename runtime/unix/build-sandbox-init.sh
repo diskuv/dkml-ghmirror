@@ -40,7 +40,7 @@ cd "$TOPDIR"
 # -----------------------
 # BEGIN opam init
 
-log_trace "$DKMLDIR"/installtime/unix/init-opam-root.sh -p "$PLATFORM"
+log_trace "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -p "$PLATFORM"
 
 # END opam init
 # -----------------------
@@ -56,7 +56,7 @@ log_trace "$DKMLDIR"/installtime/unix/private/create-diskuv-system-switch.sh
 # -----------------------
 # BEGIN configure opam plugins
 
-log_trace "$DKMLDIR"/installtime/unix/configure-opam-plugins.sh -p "$PLATFORM"
+log_trace "$DKMLDIR"/installtime/unix/private/configure-opam-plugins.sh -p "$PLATFORM"
 
 # END configure opam plugins
 # -----------------------

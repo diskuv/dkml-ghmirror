@@ -15,7 +15,7 @@ PLATFORM=$1
 shift
 
 DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
+DKMLDIR=$(cd "$DKMLDIR/../../.." && pwd)
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
