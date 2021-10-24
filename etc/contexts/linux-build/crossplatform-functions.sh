@@ -49,8 +49,12 @@ autodetect_posix_shell() {
     export DKML_HOST_POSIX_SHELL
     if [ -n "${DKML_POSIX_SHELL:-}" ] && [ -n "${DKML_HOST_POSIX_SHELL}" ]; then
         return
+    elif [ -e /bin/dash.exe ]; then
+        DKML_POSIX_SHELL=/bin/dash.exe
     elif [ -e /bin/dash ]; then
         DKML_POSIX_SHELL=/bin/dash
+    elif [ -e /bin/sh.exe ]; then
+        DKML_POSIX_SHELL=/bin/sh.exe
     else
         DKML_POSIX_SHELL=/bin/sh
     fi
