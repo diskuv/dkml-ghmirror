@@ -324,20 +324,40 @@ else
     # shellcheck disable=SC1091
     . "$WORK"/cflags.source
 
-    OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
-    OPAM_SWITCH_CC="$DKSDK_CMAKEVAL_CMAKE_C_COMPILER"
-    OPAM_SWITCH_ASPP= # CMake does not give options to tell you how to generate preprocessor printout. OCaml ./configure should be able to figure it out
-    OPAM_SWITCH_AS=
-    if [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER" ]; then
-        OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER"
-    elif [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER" ]; then
+    # Assembler details can be found at https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14563-L14595
+    # Pay attention to the order of precedence for the operating systems
+    if [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER" ]; then
         OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER"
+        OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
     fi
     if cmake_flag_on "$DKSDK_CMAKEVAL_MSVC"; then
-        # Never print Microsoft logo (unneeded; set by OCaml ./configure)
-        # [ -n "$OPAM_SWITCH_CC" ] && OPAM_SWITCH_CC="$OPAM_SWITCH_CC /nologo"
-        # [ -n "$OPAM_SWITCH_ASPP" ] && OPAM_SWITCH_ASPP="$OPAM_SWITCH_ASPP /nologo"
-        # [ -n "$OPAM_SWITCH_AS" ] && OPAM_SWITCH_AS="$OPAM_SWITCH_AS /nologo"
+        # Use the MASM compiler (ml/ml64) which is required for OCaml with MSVC.
+        # See https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14585-L14588 for options
+        if [ "$TARGET_32BIT" = ON ]; then
+            OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER -nologo -coff -Cp -c -Fo"
+        else
+            OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER -nologo -Cp -c -Fo"
+        fi
+        OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
+    elif [ "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" = "AppleClang" ] || [ "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" = "Clang" ]; then
+        [ -n "$OPAM_SWITCH_AS" ] && OPAM_SWITCH_AS="$OPAM_SWITCH_AS -Wno-trigraphs" && OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
+    fi
+
+    # C details
+    OPAM_SWITCH_CC="$DKSDK_CMAKEVAL_CMAKE_C_COMPILER"
+    OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
+
+    # Platform fixups which haven't been done yet
+    if cmake_flag_on "$DKSDK_CMAKEVAL_MSVC"; then
+        # To avoid the following when /Zi or /ZI is enabled:
+        #   2># major_gc.c : fatal error C1041: cannot open program database 'Z:\build\windows_x86\Debug\dksdk\system\_opam\.opam-switch\build\ocaml-variants.4.12.0+options+dkml+msvc32\runtime\vc140.pdb'; if multiple CL.EXE write to the same .PDB file, please use /FS
+        # we use /FS. This slows things down, so we should only do it
+        if printf "%s" "$OPAM_SWITCH_CFLAGS" | grep -q "[/-]Zi"; then
+            OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS /FS"
+        elif printf "%s" "$OPAM_SWITCH_CFLAGS" | grep -q "[/-]ZI"; then
+            OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS /FS"
+        fi
+
         # Always use dash (-) form of options rather than slash (/) options. Makes MSYS2 not try
         # to think the option is a filepath and try to translate it.
         OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's# /# -#g')
@@ -369,7 +389,6 @@ else
 fi
 
 # Make launchers for opam switch create <...> and for opam <...>
-OPAM_SWITCH_CREATE_PREHOOK=
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
@@ -419,16 +438,15 @@ else
 fi
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
-# We'll use the bash builtin `set` which quotes spaces correctly.
 {
-    # Ignore any switch the developer gave. We are creating our own.
     printf "%s\n" "#!$DKML_POSIX_SHELL"
+    # Ignore any switch the developer gave. We are creating our own.
     printf "%s\n" "export OPAMSWITCH="
     printf "%s\n" "export OPAM_SWITCH_PREFIX="
-    if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS='%s'\n" "$OPAM_SWITCH_CFLAGS"; fi
-    if [ -n "${OPAM_SWITCH_CC:-}" ]; then     printf "export CC='%s'\n" "$OPAM_SWITCH_CC"; fi
-    if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   printf "export ASPP='%s'\n" "$OPAM_SWITCH_ASPP"; fi
-    if [ -n "${OPAM_SWITCH_AS:-}" ]; then     printf "export AS='%s'\n" "$OPAM_SWITCH_AS"; fi
+    if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS="; escape_string_for_shell "$OPAM_SWITCH_CFLAGS"; fi
+    if [ -n "${OPAM_SWITCH_CC:-}" ]; then     printf "export CC="; escape_string_for_shell "$OPAM_SWITCH_CC"; fi
+    if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   printf "export ASPP="; escape_string_for_shell "$OPAM_SWITCH_ASPP"; fi
+    if [ -n "${OPAM_SWITCH_AS:-}" ]; then     printf "export AS="; escape_string_for_shell "$OPAM_SWITCH_AS"; fi
 } > "$WORK"/switch-create-prehook.sh
 chmod +x "$WORK"/switch-create-prehook.sh
 

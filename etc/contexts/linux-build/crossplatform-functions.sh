@@ -1208,3 +1208,15 @@ cmake_flag_off() {
         *) return 0 ;;
     esac
 }
+
+# [escape_string_for_shell STR] takes the string STR and escapes it for use in a shell.
+# For example,
+#  in Bash: STR="hello singlequote=' doublequote=\" world" --> 'hello singlequote='\'' doublequote=" world'
+#  in Dash: STR="hello singlequote=' doublequote=\" world" --> 'hello singlequote='"'"' doublequote=" world'
+escape_string_for_shell() {
+    # shellcheck disable=SC2034
+    escape_string_for_shell_STR="$1"
+    shift
+    # We'll use the bash or dash builtin `set` which escapes spaces and quotes correctly.
+    set | grep ^escape_string_for_shell_STR= | sed 's/[^=]*=//'
+}
