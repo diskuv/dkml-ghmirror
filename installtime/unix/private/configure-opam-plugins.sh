@@ -36,13 +36,24 @@ run_with_vcpkg_pkgs() {
 usage() {
     echo "Usage:" >&2
     echo "    configure-opam-plugins.sh -h                   Display this help message" >&2
-    echo "    configure-opam-plugins.sh -p PLATFORM          Initialize the Opam root" >&2
+    echo "    configure-opam-plugins.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
+    echo "    configure-opam-plugins.sh [-d STATEDIR]        Configure the Diskuv Opam plugins" >&2
+    echo "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
+    echo "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
 }
 
-PLATFORM=
-while getopts ":h:p:" opt; do
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=
+fi
+STATEDIR=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
+while getopts ":h:p:d:" opt; do
     case ${opt} in
         h )
             usage
@@ -50,6 +61,12 @@ while getopts ":h:p:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+        ;;
+        d )
+            # shellcheck disable=SC2034
+            STATEDIR=$OPTARG
+            # shellcheck disable=SC2034
+            USERMODE=OFF
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -60,9 +77,11 @@ while getopts ":h:p:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$PLATFORM" ]; then
-    usage
-    exit 1
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "$PLATFORM" ]; then
+        usage
+        exit 1
+    fi
 fi
 
 # END Command line processing
@@ -108,7 +127,11 @@ if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
         WITHDKML_TMP_WINDOWS="$WITHDKML_TMP_UNIX"
     fi
     install -d "$WITHDKML_TMP_UNIX"
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+    else
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -d "$STATEDIR" -u "$USERMODE" -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+    fi
 
     # Place in plugins
     install -d "$WITHDKMLEXEDIR_BUILDHOST"
@@ -163,12 +186,14 @@ if cmake_flag_off "${DKSDK_CMAKEVAL_VCPKG_TOOLCHAIN:-OFF}"; then
         fi
 
         if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
-            env >&2 # TODO REMOVE
             if is_unixy_windows_build_machine; then
                 # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
                 #             for command line arguments. Only -disableMetrics is recognized.
                 log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
-            elif is_arg_darwin_based_platform "$PLATFORM"; then
+            elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$PLATFORM"; then
+                # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
+                exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
+            elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$DKML_TARGET_PLATFORM"; then
                 # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
                 exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
             elif is_reproducible_platform; then

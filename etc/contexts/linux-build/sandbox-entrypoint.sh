@@ -16,7 +16,8 @@ export -n BUILDER_USER
 export -n chroot_dir
 
 # docker run --env (from `within-sandbox`)
-export -n SANDBOX_PRE_HOOK
+export -n SANDBOX_PRE_HOOK_SINGLE
+export -n SANDBOX_PRE_HOOK_DOUBLE
 
 # END stop exporting any non-public variables exported by Dockerfile and `docker run --env`
 # ------------
@@ -60,11 +61,19 @@ if [ "${SANDBOX_COMPILATION:-ON}" = ON ]; then
 fi
 
 # run any prehooks (the PATH has already been setup)
-if [ -n "$SANDBOX_PRE_HOOK" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $SANDBOX_PRE_HOOK" >&2; fi
+if [ -n "$SANDBOX_PRE_HOOK_SINGLE" ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -v -n20 "$SANDBOX_PRE_HOOK_SINGLE" >&2; fi
     tmpe="$(mktemp)"
     # the `awk ...` is dos2unix equivalent
-    eval "$SANDBOX_PRE_HOOK" | awk '{ sub(/\r$/,""); print }' > "$tmpe"
+    # shellcheck disable=SC1090
+    . "$SANDBOX_PRE_HOOK_SINGLE"
+    rm -f "$tmpe"
+fi
+if [ -n "$SANDBOX_PRE_HOOK_DOUBLE" ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] $SANDBOX_PRE_HOOK_DOUBLE" >&2; fi
+    tmpe="$(mktemp)"
+    # the `awk ...` is dos2unix equivalent
+    eval "$SANDBOX_PRE_HOOK_DOUBLE" | awk '{ sub(/\r$/,""); print }' > "$tmpe"
     # shellcheck disable=SC1090
     . "$tmpe"
     rm -f "$tmpe"

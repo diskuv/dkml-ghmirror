@@ -112,7 +112,8 @@ install -d "$DKML_DUNE_BUILD_DIR"
 
 # no subcommand should display help
 if [ $# -eq 0 ]; then
-    subcommand="help"
+    usage
+    exit 1
 else
     subcommand=$1; shift
 fi

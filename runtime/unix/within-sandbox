@@ -18,20 +18,22 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    within-sandbox -h                                 Display this help message." >&2
-    echo "    within-sandbox [-b] [-1] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
-    echo "    within-sandbox [-b] [-1] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
+    echo "    within-sandbox -h                            Display this help message." >&2
+    echo "    within-sandbox [-b] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
+    echo "    within-sandbox [-b] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform (not 'dev') used. DKML_TOOLS_DIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the Build Sandbox" >&2
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
-    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
+    echo "       -0 PREHOOK_DOUBLE: If specified, the script will be 'eval'-d upon" >&2
+    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    echo "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
     echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
     echo "             _after_ the PATH has been established." >&2
     echo "             It behaves similar to:" >&2
-    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    echo '               eval "the PREHOOK_DOUBLE you gave" > /tmp/eval.sh' >&2
     echo '               eval /tmp/eval.sh' >&2
     echo '             Useful for setting environment variables (possibly from a script).' >&2
 }
@@ -44,9 +46,10 @@ fi
 
 PLATFORM=
 BUILDTYPE=
-PREHOOK=
+PREHOOK_SINGLE=
+PREHOOK_DOUBLE=
 COMPILATION=ON
-while getopts ":hp:b:1:n" opt; do
+while getopts ":hp:b:0:1:n" opt; do
     case ${opt} in
         h )
             usage
@@ -58,8 +61,11 @@ while getopts ":hp:b:1:n" opt; do
         b )
             BUILDTYPE=$OPTARG
         ;;
+        0 )
+            PREHOOK_SINGLE=$OPTARG
+        ;;
         1 )
-            PREHOOK=$OPTARG
+            PREHOOK_DOUBLE=$OPTARG
         ;;
         n )
             COMPILATION=OFF
@@ -167,10 +173,11 @@ DOCKER_ARGS+=(
 )
 
 # Pass through any prehooks
-if [ -n "$PREHOOK" ]; then
-    # sandbox-entrypoint.sh will pick up the SANDBOX_PRE_HOOK and do `eval <(eval "$SANDBOX_PRE_HOOK")`.
+if [ -n "$PREHOOK_DOUBLE" ]; then
+    # sandbox-entrypoint.sh will pick up the SANDBOX_PRE_HOOK_DOUBLE and do `eval <(eval "$SANDBOX_PRE_HOOK_DOUBLE")`.
     DOCKER_ARGS+=(
-        --env SANDBOX_PRE_HOOK="$PREHOOK"
+        --env SANDBOX_PRE_HOOK_SINGLE="$PREHOOK_SINGLE"
+        --env SANDBOX_PRE_HOOK_DOUBLE="$PREHOOK_DOUBLE"
     )
 fi
 

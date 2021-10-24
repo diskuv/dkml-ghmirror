@@ -63,13 +63,13 @@ usage() {
     echo "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
     echo "  Will set switch options pin package versions needed to compile on Windows." >&2
     echo "Usage:" >&2
-    echo "    create-opam-switch.sh -h                                   Display this help message" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM             (Deprecated) Create the Opam switch" >&2
-    echo "    create-opam-switch.sh [-u OFF] -b BUILDTYPE -d OPAMSWITCH  Create the Opam switch in directory OPAMSWITCH/_opam" >&2
-    echo "    create-opam-switch.sh [-b BUILDTYPE] -s                    Expert. Create the diskuv-system switch" >&2
+    echo "    create-opam-switch.sh -h                                  Display this help message" >&2
+    echo "    create-opam-switch.sh -u OFF|ON -b BUILDTYPE -d STATEDIR  Create the Opam switch in directory STATEDIR/_opam" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM            (Deprecated) Create the Opam switch" >&2
+    echo "    create-opam-switch.sh [-b BUILDTYPE] -s                   (Deprecated) Expert. Create the diskuv-system switch" >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -d OPAMSWITCH: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
+    echo "    -d STATEDIR: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
     echo "    -s: Select the 'diskuv-system' switch" >&2
     echo "    -b BUILDTYPE: The build type which is one of:" >&2
     echo "        Debug" >&2
@@ -77,12 +77,12 @@ usage() {
     echo "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
     echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
     echo "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    echo "       Defaults to ON; ie. using Opam 2.2+ default root" >&2
+    echo "       If ON, uses Opam 2.2+ default root" >&2
     echo "    -y Say yes to all questions" >&2
     echo "Post Create Switch Hook:" >&2
-    echo "    If (-d OPAMSWITCH) is specified, and OPAMSWITCH/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
+    echo "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
     echo "    then the Opam commands in hook-switch-postcreate.txt will be executed." >&2
-    echo "    If (-d OPAMSWITCH) is not specified, and <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
+    echo "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
     echo "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.txt" >&2
     echo "    will be executed." >&2
     echo "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
@@ -102,7 +102,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:b:p:sd:uy" opt; do
+while getopts ":h:b:p:sd:u:y" opt; do
     case ${opt} in
         h )
             usage
@@ -121,7 +121,6 @@ while getopts ":h:b:p:sd:uy" opt; do
             STATEDIR=$OPTARG
         ;;
         u )
-            # shellcheck disable=SC2034
             USERMODE=$OPTARG
         ;;
         y)
@@ -148,6 +147,14 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         exit 1
     fi
 else
+    if [ -z "$USERMODE" ]; then
+        usage
+        exit 1
+    fi
+    if [ ! "$USERMODE" = ON ] && [ ! "$USERMODE" = OFF ]; then
+        usage
+        exit 1
+    fi
     if [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
         usage
         exit 1
@@ -201,6 +208,9 @@ cd "$TOPDIR"
 
 # --------------------------------
 # BEGIN opam switch create
+
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
 
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
@@ -362,12 +372,14 @@ fi
 OPAM_SWITCH_CREATE_PREHOOK=
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
-    set_opamrootdir
-
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
 
-    OPAM_EXEC_OPTS="-s"
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        OPAM_EXEC_OPTS="-s"
+    else
+        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -u $USERMODE"
+    fi
 else
     if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
@@ -408,11 +420,17 @@ fi
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
 # We'll use the bash builtin `set` which quotes spaces correctly.
-OPAM_SWITCH_CREATE_PREHOOK="echo OPAMSWITCH=; echo OPAM_SWITCH_PREFIX=" # Ignore any switch the developer gave. We are creating our own.
-if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';'; CFLAGS='$OPAM_SWITCH_CFLAGS'; set | grep ^CFLAGS="; fi
-if [ -n "${OPAM_SWITCH_CC:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     CC='$OPAM_SWITCH_CC'    ; set | grep ^CC="; fi
-if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
-if [ -n "${OPAM_SWITCH_AS:-}" ]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
+{
+    # Ignore any switch the developer gave. We are creating our own.
+    printf "%s\n" "#!$DKML_POSIX_SHELL"
+    printf "%s\n" "export OPAMSWITCH="
+    printf "%s\n" "export OPAM_SWITCH_PREFIX="
+    if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS='%s'\n" "$OPAM_SWITCH_CFLAGS"; fi
+    if [ -n "${OPAM_SWITCH_CC:-}" ]; then     printf "export CC='%s'\n" "$OPAM_SWITCH_CC"; fi
+    if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   printf "export ASPP='%s'\n" "$OPAM_SWITCH_ASPP"; fi
+    if [ -n "${OPAM_SWITCH_AS:-}" ]; then     printf "export AS='%s'\n" "$OPAM_SWITCH_AS"; fi
+} > "$WORK"/switch-create-prehook.sh
+chmod +x "$WORK"/switch-create-prehook.sh
 
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
@@ -423,7 +441,7 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
-    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS -1 '$OPAM_SWITCH_CREATE_PREHOOK' \\" > "$WORK"/switchcreateexec.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS -0 '$WORK/switch-create-prehook.sh' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh
@@ -611,7 +629,7 @@ fi
 
 if [ -n "$STATEDIR" ] && [ -e "$STATEDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
     HOOK_POSTCREATE="$STATEDIR"/buildconfig/opam/hook-switch-postcreate.txt
-elif [ -z "$STATEDIR" ] && [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
+elif [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt ]; then
     HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.txt
 else
     HOOK_POSTCREATE=

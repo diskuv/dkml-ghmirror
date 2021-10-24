@@ -24,11 +24,13 @@ usage() {
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
-    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
+    echo "       -0 PREHOOK_DOUBLE: If specified, the script will be 'eval'-d upon" >&2
+    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    echo "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
     echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
     echo "             _after_ the PATH has been established." >&2
     echo "             It behaves similar to:" >&2
-    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    echo '               eval "the PREHOOK_DOUBLE you gave" > /tmp/eval.sh' >&2
     echo '               eval /tmp/eval.sh' >&2
     echo '             Useful for setting environment variables (possibly from a script).' >&2
 }
@@ -44,7 +46,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     export PLATFORM=dev
 fi
 BUILDTYPE=
-PREHOOK=
+PREHOOK_SINGLE=
+PREHOOK_DOUBLE=
 COMPILATION=ON
 STATEDIR=
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -52,7 +55,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":hb:p:1:nu:d:" opt; do
+while getopts ":hb:p:0:1:nu:d:" opt; do
     case ${opt} in
         h )
             usage
@@ -65,8 +68,11 @@ while getopts ":hb:p:1:nu:d:" opt; do
             # shellcheck disable=SC2034
             BUILDTYPE=$OPTARG
         ;;
+        0 )
+            PREHOOK_SINGLE=$OPTARG
+        ;;
         1 )
-            PREHOOK=$OPTARG
+            PREHOOK_DOUBLE=$OPTARG
         ;;
         n )
             COMPILATION=OFF
@@ -164,14 +170,8 @@ if [ -n "$ENV_PATH_PREFIX" ]; then
     PATH="$ENV_PATH_PREFIX:$PATH"
 fi
 PATH=$(echo "$PATH" | PATH="/usr/bin:/bin:$PATH" sed 's#/:#:#g; s#/$##') # remove trailing slashes
-if [ -n "$PREHOOK" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [eval] $PREHOOK" >&2; fi
-    # the `awk ...` is dos2unix equivalent
-    eval "$PREHOOK" | awk '{ sub(/\r$/,""); print }' > "$WORK"/prehook.eval
-    # shellcheck disable=SC1091
-    . "$WORK"/prehook.eval
-    rm -f "$WORK"/prehook.eval
-    # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
+sanitize_path() {
+    # At this point the prehook may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
     if [ -x /usr/bin/cygpath ]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi
     # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
@@ -186,6 +186,22 @@ if [ -n "$PREHOOK" ]; then
         *)
             PATH=/usr/bin:/bin:"$PATH"
     esac
+}
+if [ -n "$PREHOOK_SINGLE" ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -v -n20 "$PREHOOK_SINGLE" >&2; fi
+    # shellcheck disable=SC1090
+    . "$PREHOOK_SINGLE"
+    sanitize_path
+    rm -f "$WORK"/prehook.eval
+fi
+if [ -n "$PREHOOK_DOUBLE" ]; then
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] $PREHOOK_DOUBLE" >&2; fi
+    # the `awk ...` is dos2unix equivalent
+    eval "$PREHOOK_DOUBLE" | awk '{ sub(/\r$/,""); print }' > "$WORK"/prehook.eval
+    # shellcheck disable=SC1091
+    . "$WORK"/prehook.eval
+    sanitize_path
+    rm -f "$WORK"/prehook.eval
 fi
 
 # Autodetect compiler like Visual Studio on Windows.

@@ -21,26 +21,36 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    platform-opam-exec -h                                                         Display this help message" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
-    echo "                                                                                  in the PLATFORM's active switch" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
-    echo "                                                                                  in the PLATFORM's BUILDTYPE switch" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM                                           (Deprecated) Run the opam command" >&2
+    echo "    platform-opam-exec -h                                                    Display this help message" >&2
+    echo "    platform-opam-exec -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
+    echo "                                                                             in the PLATFORM's active switch" >&2
+    echo "    platform-opam-exec -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
+    echo "                                                                             in the PLATFORM's BUILDTYPE switch" >&2
+    echo "    platform-opam-exec -p PLATFORM                                           (Deprecated) Run the opam command" >&2
     echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
-    echo "    platform-opam-exec [-1] -s [--] install|clean|help|...                        Run the opam command" >&2
-    echo "                                                                                  in the 'diskuv-system' local switch" >&2
-    echo "    platform-opam-exec [-1] -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command" >&2
-    echo "                                                                                  in the local switch prefix of STATEDIR/_opam" >&2
+    echo "    platform-opam-exec -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
+    echo "                                                                             in the 'diskuv-system' local switch" >&2
+    echo "    platform-opam-exec -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
+    echo "                                                                             switch prefix of STATEDIR/_opam" >&2
+    echo "    platform-opam-exec -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
+    echo "                                                                             switch prefix of STATEDIR/system-switch/_opam" >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform or 'dev'" >&2
     echo "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
     echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
     echo "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
-    echo "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix" >&2
+    echo "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
+    echo "          selected which uses <STATEDIR>/system/_opam, and unless [-s] [-u ON] is also" >&2
+    echo "          selected which uses <DiskuvOCamlHome>/system/_opam on Windows and" >&2
+    echo "          <OPAMROOT>/diskuv-system/_opam on non-Windows." >&2
+    echo "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
+    echo "          the non-system switch will be found if you are in <STATEDIR>" >&2
     echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    echo "          Defaults to ON; ie. using Opam 2.2+ default root" >&2
+    echo "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
+    echo "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
     echo "Advanced Options:" >&2
+    echo "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
+    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
     echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
     echo "             It behaves similar to:" >&2
@@ -78,7 +88,8 @@ fi
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
 STATEDIR=
-PREHOOK=
+PREHOOK_SINGLE_EVAL=
+PREHOOK_DOUBLE_EVAL=
 TARGET_OPAMSWITCH=
 ADD_SWITCH_OPTS=OFF
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -86,7 +97,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h1:b:sp:t:d:u:" opt; do
+while getopts ":h0:1:b:sp:t:d:u:" opt; do
     case ${opt} in
         h )
             usage
@@ -114,8 +125,11 @@ while getopts ":h1:b:sp:t:d:u:" opt; do
             TARGET_OPAMSWITCH=$OPTARG
             ADD_SWITCH_OPTS=ON
         ;;
+        0 )
+            PREHOOK_SINGLE_EVAL=$OPTARG
+        ;;
         1 )
-            PREHOOK=$OPTARG
+            PREHOOK_DOUBLE_EVAL=$OPTARG
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -132,7 +146,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         exit 1
     fi
 else
-    if [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+    if [ -z "$STATEDIR" ]; then
         usage
         exit 1
     fi
@@ -173,13 +187,16 @@ cd "$TOPDIR"
 
 # no subcommand should display help
 if [ $# -eq 0 ]; then
-    subcommand="help"
+    usage
+    exit 1
 else
     subcommand=$1; shift
 fi
 
 OPAM_OPTS=()
-PLATFORM_EXEC_PRE="$PREHOOK"
+# shellcheck disable=SC2034
+PLATFORM_EXEC_PRE_SINGLE="$PREHOOK_SINGLE_EVAL"
+PLATFORM_EXEC_PRE_DOUBLE="$PREHOOK_DOUBLE_EVAL"
 OPAM_ENV_STMT=
 
 # ------------
@@ -259,9 +276,9 @@ fi
 
 # We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
 # We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
-if [ -n "${PLATFORM_EXEC_PRE:-}" ]; then PLATFORM_EXEC_PRE="; $PLATFORM_EXEC_PRE"; fi
+if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then PLATFORM_EXEC_PRE_DOUBLE="; $PLATFORM_EXEC_PRE_DOUBLE"; fi
 # shellcheck disable=SC2034 disable=SC2016
-PLATFORM_EXEC_PRE="${OPAM_ENV_STMT:-} ${PLATFORM_EXEC_PRE:-}"
+PLATFORM_EXEC_PRE_DOUBLE="${OPAM_ENV_STMT:-} ${PLATFORM_EXEC_PRE_DOUBLE:-}"
 
 # -----------------------
 # Inject our options first, immediately after the subcommand

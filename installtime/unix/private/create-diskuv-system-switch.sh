@@ -18,15 +18,31 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    create-diskuv-system-switch.sh -h   Display this help message" >&2
-    echo "    create-diskuv-system-switch.sh      Create the Diskuv system switch" >&2
+    echo "    create-diskuv-system-switch.sh -h           Display this help message" >&2
+    echo "    create-diskuv-system-switch.sh              Create the Diskuv system switch" >&2
+    echo "                                                at <DiskuvOCamlHome>/system on Windows or" >&2
+    echo "                                                <OPAMROOT>/diskuv-system/_opam on non-Windows" >&2
+    echo "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
+    echo "                                                at <STATEDIR>/system" >&2
 }
 
-while getopts ":h:" opt; do
+STATEDIR=
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    USERMODE=OFF
+else
+    USERMODE=ON
+fi
+while getopts ":h:d:" opt; do
     case ${opt} in
         h )
             usage
             exit 0
+        ;;
+        d )
+            # shellcheck disable=SC2034
+            STATEDIR=$OPTARG
+            # shellcheck disable=SC2034
+            USERMODE=OFF
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -43,6 +59,9 @@ shift $((OPTIND -1))
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC2034
     PLATFORM=dev
+else
+    # shellcheck disable=SC2034
+    DISKUV_SYSTEM_SWITCH=ON
 fi
 
 DKMLDIR=$(dirname "$0")
@@ -65,14 +84,22 @@ cd "$TOPDIR"
 # Only CI Flavor packages need to be installed.
 
 # Just compiler
-log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -b Release
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -b Release
+else
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -d "$STATEDIR" -u "$USERMODE" -b Release
+fi
 
 # CI packages
 {
-    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s install -y"
+    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s \"\$@\" install -y"
     awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
 } > "$WORK"/config-diskuv-system.sh
-log_shell "$WORK"/config-diskuv-system.sh
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    log_shell "$WORK"/config-diskuv-system.sh
+else
+    log_shell "$WORK"/config-diskuv-system.sh -d "$STATEDIR" -u "$USERMODE"
+fi
 
 # END create system switch
 # -----------------------
