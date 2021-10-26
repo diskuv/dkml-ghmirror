@@ -477,6 +477,13 @@ function New-CleanDirectory {
     param( [Parameter(Mandatory = $true)] $Path )
 
     if (Test-Path -Path $Path) {
+        # On Windows 11 Build 22478.1012 with Powershell 5.1, even though `Remove-Item -Force`
+        # should delete ReadOnly files (which are typical for Opam installed executables), it
+        # fails with: "You do not have sufficient access rights to perform this operation".
+        # Instead we have to remove the ReadOnly attribute.
+        Get-ChildItem $Path -Recurse -Force | Where-Object { $_.Attributes -band [io.fileattributes]::ReadOnly } | ForEach-Object {
+            Set-ItemProperty -Path $_.FullName -Name Attributes -Value ($_.Attributes -band (-bnot [io.fileattributes]::ReadOnly))
+        }
         Remove-Item -Path $Path -Recurse -Force
     }
     New-Item -Path $Path -ItemType Directory | Out-Null
