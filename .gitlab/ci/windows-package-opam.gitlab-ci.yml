@@ -39,8 +39,8 @@ windows:build-opam:
       + " -t '" + "$DEPLOYDIR" + "'"
       + " -v " + $DV_AvailableOpamVersion
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\opam.exe")) { throw "Build failed" }
 
     # Create .tar.gz and .zip

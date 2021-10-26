@@ -161,8 +161,8 @@ wget https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip -O "$ZI
 unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
 install "$WORK"/msvs/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 
-# Copy self into share/dkml-bootstrap/100-compile-opam
-export BOOTSTRAPNAME=100-compile-opam
+# Copy self into share/dkml-bootstrap/110-compile-opam
+export BOOTSTRAPNAME=110-compile-opam
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common
