@@ -112,20 +112,24 @@ export PACKAGES_TO_REMOVE="
 usage() {
     echo "Usage:" >&2
     echo "    reproducible-fetch-ocaml-opam-repo-9-trim.sh" >&2
-    echo "        -h              Display this help message." >&2
-    echo "        -d DIR -t DIR   Remove unneded package version." >&2
+    echo "        -h                                      Display this help message." >&2
+    echo "        -d DIR -t DIR -a ARCH -b OCAMLVERSION   Create target repository without unneeded package versions." >&2
     echo "Options" >&2
     echo "   -d DIR:     DKML directory containing a .dkmlroot file" >&2
     echo "   -t DIR:     Target directory" >&2
     echo "   -n:         Dry run" >&2
     echo "   -p PACKAGE: Consider only the named package" >&2
+    echo "   -a ARCH: Docker architecture that was downloaded. Ex. amd64" >&2
+    echo "   -b OCAMLVERSION: OCaml language version. Ex. 4.12.1" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
+DOCKER_ARCH=
 SINGLEPACKAGE=
+OCAML_LANG_VERSION=
 export DRYRUN=OFF
-while getopts ":d:t:np:h" opt; do
+while getopts ":d:t:np:a:b:h" opt; do
     case ${opt} in
         h )
             usage
@@ -148,6 +152,12 @@ while getopts ":d:t:np:h" opt; do
         p )
             SINGLEPACKAGE="$OPTARG"
         ;;
+        a )
+            DOCKER_ARCH="$OPTARG"
+        ;;
+        b )
+            OCAML_LANG_VERSION="$OPTARG"
+        ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -157,7 +167,7 @@ while getopts ":d:t:np:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ] || [ -z "$OCAML_LANG_VERSION" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -177,16 +187,30 @@ disambiguate_filesystem_paths
 # Bootstrapping vars
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
 if [ -x /usr/bin/cygpath ]; then
-    OOREPO_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH")
+    OOREPO_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH/$OCAML_LANG_VERSION")
 else
-    OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"
+    OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH/$OCAML_LANG_VERSION"
 fi
 export OOREPO_UNIX
+REPODIR_UNIX=${TARGETDIR_UNIX}/full-opam-root
+BASEDIR_IN_FULL_OPAMROOT=${REPODIR_UNIX}/msvc-"$DOCKER_ARCH"
+
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the DKMLDIR (just like the container
 # sets the directory to be /work)
 cd "$DKMLDIR"
+
+# Install files and directories into $OOREPO_UNIX:
+# - /packages/
+if [[ "$DRYRUN" = OFF ]]; then
+    install -d "$OOREPO_UNIX"
+    log_trace spawn_rsync -a --delete --delete-excluded \
+        --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
+        "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages
+else
+    echo "Would have synchronized the '$BASEDIR_IN_FULL_OPAMROOT'/cygwin64/home/opam/opam-repository/packages/ directory with $OOREPO_UNIX/packages/"
+fi
 
 export PINFILE="$WORK"/pins
 true > "$WORK"/pins
@@ -197,7 +221,22 @@ install -d "$WORK"/pin-assembly
 assemble_prepins() {
     assemble_prepins_PREPINNED_PACKAGES=()
     assemble_prepins_PREPINNED_VERSIONS=()
-    for ppv in "${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_0_PACKAGE_VERSIONS[@]}" ; do
+    case "$OCAML_LANG_VERSION" in
+        4.12.0)
+            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_0_PACKAGE_VERSIONS[@]}")
+            ;;
+        4.12.1)
+            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_1_PACKAGE_VERSIONS[@]}")
+            ;;
+        4.13.1)
+            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_13_1_PACKAGE_VERSIONS[@]}")
+            ;;
+        *)
+            echo "FATAL: Unsupported OCaml version: $OCAML_LANG_VERSION" >&2
+            exit 2
+            ;;
+    esac
+    for ppv in "${assemble_prepins_PPVS[@]}"; do
         PPKG="${ppv%%:*}"
         PVER="${ppv##*:}"
         assemble_prepins_PREPINNED_PACKAGES+=("$PPKG")
@@ -350,7 +389,7 @@ trim_package() {
 test_semver
 
 # init
-assemble_prepins
+assemble_prepins "$OCAML_LANG_VERSION"
 find_packages
 
 # exports for `parallel`. note that Bash cannot export arrays
@@ -375,7 +414,13 @@ set +f
 cat "$WORK"/pin-assembly/* >> "$PINFILE"
 set -f
 
+# Install files and directories into $OOREPO_UNIX:
+# - /repo
+# - /version
+# - /pins.txt
 if [[ "$DRYRUN" = OFF ]]; then
+    install -d "$OOREPO_UNIX"
+    install -v "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/repo "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/version "$OOREPO_UNIX"
     install -v "$PINFILE" "$OOREPO_UNIX/pins.txt"
 else
     echo "Would have added the following pins at $OOREPO_UNIX/pins.txt :"

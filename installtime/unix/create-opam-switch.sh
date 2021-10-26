@@ -55,6 +55,8 @@ PINNED_PACKAGES_OPAM="
 
     "
 
+OCAML_DEFAULT_VERSION=4.12.1
+
 # ------------------
 # BEGIN Command line processing
 
@@ -78,6 +80,7 @@ usage() {
     echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
     echo "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
     echo "       If ON, uses Opam 2.2+ default root" >&2
+    echo "    -o OCAMLVERSION: Optional. The OCaml version to use. If empty or not specified uses ${OCAML_DEFAULT_VERSION}" >&2
     echo "    -y Say yes to all questions" >&2
     echo "Post Create Switch Hook:" >&2
     echo "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
@@ -102,7 +105,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:b:p:sd:u:y" opt; do
+OCAMLVERSION=${OCAML_DEFAULT_VERSION}
+while getopts ":h:b:p:sd:u:o:y" opt; do
     case ${opt} in
         h )
             usage
@@ -125,6 +129,9 @@ while getopts ":h:b:p:sd:u:y" opt; do
         ;;
         y)
             YES=ON
+        ;;
+        o )
+            OCAMLVERSION=$OPTARG
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -388,10 +395,13 @@ if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz 
     # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
 fi
-if [ $TARGET_32BIT = ON ]; then
-    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS"
-else
-    OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS"
+if is_unixy_windows_build_machine; then
+    set_ocaml_variant_for_windows_switches "$OCAMLVERSION"
+    if [ $TARGET_32BIT = ON ]; then
+        OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS"
+    else
+        OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS="$OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS"
+    fi
 fi
 
 # Make launchers for opam switch create <...> and for opam <...>
@@ -440,7 +450,7 @@ if is_unixy_windows_build_machine; then
 else
     printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "%s\n" "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    printf "%s\n" "  --packages='ocaml-variants.4.12.0+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  --packages='ocaml-variants.$OCAMLVERSION+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
 fi
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 

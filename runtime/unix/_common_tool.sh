@@ -165,7 +165,10 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 fi
 
 #####
-# BEGIN Opam in Windows
+# BEGIN Opam
+#
+# Windows
+# -------
 #
 # Terminology: "port" is msvc or mingw, and described in https://discuss.ocaml.org/t/ann-ocaml-opam-images-for-docker-for-windows/8179
 #
@@ -190,10 +193,14 @@ OPAM_PORT_FOR_SWITCHES_IN_WINDOWS=msvc
 # Which variant we will use for all the switches in Windows.
 # Pick from a msys2 variant in $DiskuvOCamlHome/etc/opam-repositories/diskuv-opam-repo
 # that aligns with the OPAM_PORT_FOR_SWITCHES_IN_WINDOWS.
-export OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS=4.12.0+options+dkml+msvc32
-export OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS=4.12.0+options+dkml+msvc64
+set_ocaml_variant_for_windows_switches() {
+    set_ocaml_variant_for_windows_switches_VERSION="$1"
+    shift
+    export OCAML_VARIANT_FOR_SWITCHES_IN_32BIT_WINDOWS=$set_ocaml_variant_for_windows_switches_VERSION+options+dkml+msvc32
+    export OCAML_VARIANT_FOR_SWITCHES_IN_64BIT_WINDOWS=$set_ocaml_variant_for_windows_switches_VERSION+options+dkml+msvc64
+}
 #
-# END Opam in Windows
+# END
 #####
 
 # Execute a command either for the dev environment or for the
@@ -421,7 +428,7 @@ set_opamrootdir() {
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}plugins${OS_DIR_SEP}diskuvocaml"
             WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST${OS_DIR_SEP}with-dkml${OS_DIR_SEP}$dkml_root_version"
             # shellcheck disable=SC2034
-            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST${OS_DIR_SEP}with-dkml.exe"        
+            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST${OS_DIR_SEP}with-dkml.exe"
         elif is_unixy_windows_build_machine; then
             if [ -n "${OPAMROOT:-}" ]; then
                 # If the developer sets OPAMROOT with an environment variable, then we will respect that

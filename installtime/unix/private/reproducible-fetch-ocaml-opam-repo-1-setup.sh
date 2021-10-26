@@ -37,20 +37,22 @@ TRIM_ARGS=()
 usage() {
     echo "Usage:" >&2
     echo "    reproducible-fetch-ocaml-opam-repo-1-setup.sh" >&2
-    echo "        -h                              Display this help message." >&2
-    echo "        -d DIR -t DIR -v IMAGE -a ARCH  Setup fetching of ocaml/opam repository." >&2
+    echo "        -h                                              Display this help message." >&2
+    echo "        -d DIR -t DIR -v IMAGE -a ARCH -b OCAMLVERSION  Setup fetching of ocaml/opam repository." >&2
     echo "Options" >&2
     echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
     echo "   -t DIR: Target directory" >&2
     echo "   -v IMAGE: Docker image" >&2
     echo "   -a ARCH: Docker architecture. Ex. amd64" >&2
+    echo "   -b OCAMLVERSION: OCaml language version. Ex. 4.12.1" >&2
 }
 
 DKMLDIR=
 DOCKER_IMAGE=
 DOCKER_ARCH=
 TARGETDIR=
-while getopts ":d:v:t:a:h" opt; do
+OCAML_LANG_VERSION=
+while getopts ":d:v:t:a:b:h" opt; do
     case ${opt} in
         h )
             usage
@@ -69,7 +71,7 @@ while getopts ":d:v:t:a:h" opt; do
             SETUP_ARGS+=( -v "$DOCKER_IMAGE" )
             BUILD_ARGS+=( -v "$DOCKER_IMAGE" )
         ;;
-        t ) 
+        t )
             TARGETDIR="$OPTARG"
             SETUP_ARGS+=( -t . )
             BUILD_ARGS+=( -t . )
@@ -79,6 +81,12 @@ while getopts ":d:v:t:a:h" opt; do
             DOCKER_ARCH="$OPTARG"
             SETUP_ARGS+=( -a "$DOCKER_ARCH" )
             BUILD_ARGS+=( -a "$DOCKER_ARCH" )
+            TRIM_ARGS+=( -a "$DOCKER_ARCH" )
+        ;;
+        b )
+            OCAML_LANG_VERSION="$OPTARG"
+            SETUP_ARGS+=( -b "$OCAML_LANG_VERSION" )
+            TRIM_ARGS+=( -b "$OCAML_LANG_VERSION" )
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -89,7 +97,7 @@ while getopts ":d:v:t:a:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$DOCKER_IMAGE" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$DOCKER_IMAGE" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ] || [ -z "$OCAML_LANG_VERSION" ]; then
     echo "Missing required options" >&2
     usage
     exit 1
@@ -116,8 +124,8 @@ cd "$DKMLDIR"
 
 installtime/unix/private/download-moby-downloader.sh "$WORK"
 
-# Copy self into share/dkml-bootstrap/200-fetch-oorepo
-export BOOTSTRAPNAME=200-fetch-oorepo
+# Copy self into share/dkml/repro/200-fetch-oorepo-4.12.1
+export BOOTSTRAPNAME=200-fetch-oorepo-$OCAML_LANG_VERSION
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common

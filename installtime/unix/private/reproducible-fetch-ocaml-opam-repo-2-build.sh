@@ -63,7 +63,7 @@ while getopts ":d:v:t:a:h" opt; do
         v )
             DOCKER_IMAGE="$OPTARG"
         ;;
-        t ) 
+        t )
             TARGETDIR="$OPTARG"
         ;;
         a )
@@ -97,11 +97,8 @@ disambiguate_filesystem_paths
 
 # Bootstrapping vars
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
-if [ -x /usr/bin/cygpath ]; then
-    OOREPO_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH")
-else
-    OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"
-fi
+REPODIR_UNIX=${TARGETDIR_UNIX}/full-opam-root
+BASEDIR_IN_FULL_OPAMROOT=${REPODIR_UNIX}/msvc-"$DOCKER_ARCH"
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the DKMLDIR (just like the container
@@ -113,28 +110,13 @@ if [ -x /usr/bin/cygpath ]; then
     MOBYDIR_UNIX=$(/usr/bin/cygpath -au "$MOBYDIR_UNIX")
 fi
 
-TMPOPAMROOT=$WORK/opamroot
-
 log_trace installtime/unix/private/moby-download-docker-image.sh "$MOBYDIR_UNIX" installtime/unix/private/download-frozen-image-v2.sh "$DOCKER_IMAGE" "$DOCKER_ARCH"
-log_trace installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR_UNIX" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$TMPOPAMROOT"
-
-DESIRED="$TMPOPAMROOT"/msvc-"$DOCKER_ARCH"
+log_trace installtime/unix/private/moby-extract-opam-root.sh "$MOBYDIR_UNIX" "$DOCKER_IMAGE" "$DOCKER_ARCH" msvc "$REPODIR_UNIX"
 
 if is_cygwin_build_machine; then
     echo Fixing symlinks ...
-    find "$DESIRED" -xtype l | while read -r linkpath
+    find "$BASEDIR_IN_FULL_OPAMROOT" -xtype l | while read -r linkpath
     do
-        installtime/cygwin/idempotent-fix-symlink.sh "$linkpath" "$TMPOPAMROOT" msvc-"$DOCKER_ARCH" /cygdrive/c/
+        installtime/cygwin/idempotent-fix-symlink.sh "$linkpath" "$REPODIR_UNIX" msvc-"$DOCKER_ARCH" /cygdrive/c/
     done
 fi
-
-# Install files and directories into $OOREPO_UNIX:
-# - /repo
-# - /version
-# - /packages/
-# The `/pins.txt` will come from reproducible-fetch-ocaml-opam-repo-9-trim.sh
-install -d "$OOREPO_UNIX"
-install "$DESIRED"/cygwin64/home/opam/opam-repository/repo "$DESIRED"/cygwin64/home/opam/opam-repository/version "$OOREPO_UNIX"
-log_trace spawn_rsync -a --delete --delete-excluded \
-    --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
-    "$DESIRED"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages

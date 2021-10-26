@@ -201,7 +201,8 @@ $OcamlNonDKMLEnvKeys | ForEach-Object {
 # Calculate deployment id, and exit if -OnlyOutputCacheKey switch
 
 # Magic constants that will identify new and existing deployments:
-# * Immutable git tags
+# * Immutable git
+$OCamlLangVersion = "4.12.1"
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
 $JqVersion = "1.6"
@@ -321,7 +322,7 @@ $MSYS2Hash = Get-Sha256Hex16OfText -Text ($DV_MSYS2PackagesArch -join ',')
 $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
 $BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
-$DeploymentId = "v-$dkml_root_version;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
+$DeploymentId = "v-$dkml_root_version;ocaml-$OCamlLangVersion;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
 
 if ($OnlyOutputCacheKey) {
     Write-Output $DeploymentId
@@ -782,8 +783,8 @@ try {
         if (!(Test-Path -Path $NinjaToolDir)) { New-Item -Path $NinjaToolDir -ItemType Directory | Out-Null }
         if (!(Test-Path -Path $NinjaCachePath)) { New-Item -Path $NinjaCachePath -ItemType Directory | Out-Null }
         Invoke-WebRequest -Uri "https://github.com/ninja-build/ninja/releases/download/v$NinjaVersion/ninja-win.zip" -OutFile "$NinjaZip"
-        Expand-Archive -Path $NinjaZip -DestinationPath $NinjaCachePath
-        Remove-Item -Path $NinjaZip
+        Expand-Archive -Path $NinjaZip -DestinationPath $NinjaCachePath -Force
+        Remove-Item -Path $NinjaZip -Force
         Copy-Item -Path "$NinjaCachePath\$NinjaExeBasename" -Destination "$NinjaExe"
     }
 
@@ -808,8 +809,8 @@ try {
             $CMakeDistType = "i386"
         }
         Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v$CMakeVersion/cmake-$CMakeVersion-windows-$CMakeDistType.zip" -OutFile "$CMakeZip"
-        Expand-Archive -Path $CMakeZip -DestinationPath $CMakeCachePath
-        Remove-Item -Path $CMakeZip
+        Expand-Archive -Path $CMakeZip -DestinationPath $CMakeCachePath -Force
+        Remove-Item -Path $CMakeZip -Force
         Copy-Item -Path "$CMakeCachePath\cmake-$CMakeVersion-windows-$CMakeDistType\*" `
             -Recurse `
             -Destination $CMakeToolDir
@@ -908,13 +909,13 @@ try {
     $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
     Write-ProgressStep
 
-    if ((Test-Path -Path "$ProgramPath\share\dkml\repro\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\pins.txt")) {
+    if ((Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\pins.txt")) {
         # Already installed
     } elseif (Import-DiskuvOCamlAsset `
             -PackageName "ocaml_opam_repo-reproducible" `
-            -ZipFile "ocaml-opam-repo.zip" `
+            -ZipFile "ocaml-opam-repo-$OCamlLangVersion.zip" `
             -TmpPath "$TempPath" `
-            -DestinationPath "$ProgramPath\share\dkml\repro") {
+            -DestinationPath "$ProgramPath\share\dkml\repro\$OCamlLangVersion") {
         # Successfully downloaded from asset
     } else {
         Install-Cygwin
@@ -952,7 +953,7 @@ try {
         #
         if (!$global:SkipMobyDownload) {
             Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath `
-                -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$ProgramCygwinAbsPath'"
+                -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$OCamlLangVersion' '$ProgramCygwinAbsPath'"
         }
 
         # END Fetch/install fdopen-based ocaml/opam repository
@@ -1184,7 +1185,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -o $OCamlLangVersion"
         }
 
     # END opam switch create <system>

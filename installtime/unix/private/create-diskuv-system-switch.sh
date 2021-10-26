@@ -24,6 +24,8 @@ usage() {
     echo "                                                <OPAMROOT>/diskuv-system/_opam on non-Windows" >&2
     echo "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
     echo "                                                at <STATEDIR>/system" >&2
+    echo "Options:" >&2
+    echo "    -o OCAMLVERSION: Optional. The OCaml version to use. Ex. 4.13.1" >&2
 }
 
 STATEDIR=
@@ -32,7 +34,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:d:" opt; do
+OCAMLVERSION=
+while getopts ":h:d:o:" opt; do
     case ${opt} in
         h )
             usage
@@ -43,6 +46,9 @@ while getopts ":h:d:" opt; do
             STATEDIR=$OPTARG
             # shellcheck disable=SC2034
             USERMODE=OFF
+        ;;
+        o )
+            OCAMLVERSION=$OPTARG
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -85,9 +91,9 @@ cd "$TOPDIR"
 
 # Just compiler
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -b Release
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -o "$OCAMLVERSION" -b Release
 else
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -d "$STATEDIR" -u "$USERMODE" -b Release
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -o "$OCAMLVERSION" -d "$STATEDIR" -u "$USERMODE" -b Release
 fi
 
 # CI packages

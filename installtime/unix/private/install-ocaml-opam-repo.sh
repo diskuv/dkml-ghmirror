@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------
-# install-ocaml-opam-repo.sh DKMLDIR DOCKER_IMAGE INSTALLDIR
+# install-ocaml-opam-repo.sh DKMLDIR DOCKER_IMAGE OCAML_VERSION INSTALLDIR
 
 set -euf
 
@@ -9,6 +9,9 @@ shift
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
 
 DOCKER_IMAGE=$1
+shift
+
+OCAML_VERSION=$1
 shift
 
 INSTALLDIR=$1
@@ -49,12 +52,13 @@ log_trace "$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$DOCKER_IMAGE" \
-    -a "amd64"
+    -a "amd64" \
+    -b "$OCAML_VERSION"
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"
 
 # Fetch and install
-log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo-"$OCAML_VERSION"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh
 # Trim
-log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/200-fetch-oorepo-"$OCAML_VERSION"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh
