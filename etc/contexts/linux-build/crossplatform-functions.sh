@@ -87,6 +87,7 @@ autodetect_posix_shell() {
 # - env:DKMLSYS_RM - Location of `rm`
 # - env:DKMLSYS_SORT - Location of `sort`
 # - env:DKMLSYS_CAT - Location of `cat`
+# - env:DKMLSYS_STAT - Location of `stat`
 autodetect_system_binaries() {
     if [ -z "${DKMLSYS_MV:-}" ]; then
         if [ -x /usr/bin/mv ]; then
@@ -165,7 +166,14 @@ autodetect_system_binaries() {
             DKMLSYS_CAT=/bin/cat
         fi
     fi
-    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT
+    if [ -z "${DKMLSYS_STAT:-}" ]; then
+        if [ -x /usr/bin/stat ]; then
+            DKMLSYS_STAT=/usr/bin/stat
+        else
+            DKMLSYS_STAT=/bin/stat
+        fi
+    fi
+    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT
 }
 
 # A function that will execute the shell command with error detection enabled and trace
@@ -290,6 +298,7 @@ install_reproducible_common() {
 }
 
 # Install any non-common files that go into your reproducible build.
+# All installed files will have the executable bit set.
 #
 # Inputs:
 #  env:DEPLOYDIR_UNIX - The deployment directory
@@ -307,7 +316,18 @@ install_reproducible_file() {
     _install_reproducible_file_RELDIR=$(dirname "$_install_reproducible_file_RELFILE")
     _install_reproducible_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
     "$DKMLSYS_INSTALL" -d "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
-    "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+    # Sigh; portable scripts do not have a [ f1 -ef f2 ] operator. When we rerun a setup script from within
+    # the reproducible target directory we may be installing on top of ourselves; that is, installing with
+    # the source and destination files being the same file. So we compare inodes
+    install_reproducible_file_STAT1=$("$DKMLSYS_STAT" -c '%i' "$DKMLDIR"/"$_install_reproducible_file_RELFILE")
+    if [ -e "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE" ]; then
+        install_reproducible_file_STAT2=$("$DKMLSYS_STAT" -c '%i' "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE")
+    else
+        install_reproducible_file_STAT2=
+    fi
+    if [ ! "$install_reproducible_file_STAT1" = "$install_reproducible_file_STAT2" ]; then
+        "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+    fi
 }
 
 # Install any deterministically generated files that go into your
@@ -752,6 +772,9 @@ autodetect_vsdev() {
 # file. It contains an association list of the environment variables; that is, a list of pairs where each pair is a 2-element
 # list (KEY VALUE). The s-exp output will always use the full Windows PATH.
 #
+# If `--msvs` was used, then the output file is compatible
+# with the shell output of https://github.com/metastack/msvs-tools#msvs-detect
+#
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
 # - env:DKML_TARGET_PLATFORM - This variable will select the compiler options necessary to cross-compile (or native compile)
@@ -792,12 +815,15 @@ autodetect_compiler() {
     build_machine_arch
 
     # Process arguments
-    autodetect_compiler_SEXP=OFF
+    autodetect_compiler_OUTPUTMODE=LAUNCHER
     if [ "$1" = --sexp ]; then
-        autodetect_compiler_SEXP=ON
+        autodetect_compiler_OUTPUTMODE=SEXP
+        shift
+    elif [ "$1" = --msvs ]; then
+        autodetect_compiler_OUTPUTMODE=MSVS
         shift
     fi
-    autodetect_compiler_LAUNCHER="$1"
+    autodetect_compiler_OUTPUTFILE="$1"
     shift
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -817,13 +843,15 @@ autodetect_compiler() {
     autodetect_system_binaries
 
     # Initialize output script and variables in case of failure
-    if [ "$autodetect_compiler_SEXP" = ON ]; then
-        printf '()' > "$autodetect_compiler_LAUNCHER".tmp
-        "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
-    else
-        printf '#!%s\nexec %s "$@"\n' "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" > "$autodetect_compiler_LAUNCHER".tmp
-        "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
-        "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+        printf '()' > "$autodetect_compiler_OUTPUTFILE".tmp
+        "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
+    elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
+        true > "$autodetect_compiler_OUTPUTFILE"
+    elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+        printf '#!%s\nexec %s "$@"\n' "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" > "$autodetect_compiler_OUTPUTFILE".tmp
+        "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
+        "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
     fi
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_BUILDHOST=
@@ -861,22 +889,22 @@ autodetect_compiler() {
 
 autodetect_compiler_other() {
     {
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf "(\n"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "#!$DKML_POSIX_SHELL"
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf ")"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             # Add arguments
             printf "%s\n" '  "$@"'
         fi
-    } > "$autodetect_compiler_LAUNCHER".tmp
-    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
-    "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    } > "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
 }
 
 autodetect_compiler_vsdev() {
@@ -910,11 +938,11 @@ autodetect_compiler_vsdev() {
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
-    if   [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 4 ]; then
+    if   [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 4 ]; then
         autodetect_compiler_VSCMD_DEBUG=3
-    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 3 ]; then
+    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 3 ]; then
         autodetect_compiler_VSCMD_DEBUG=2
-    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" = 2 ]; then
+    elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ]; then
         autodetect_compiler_VSCMD_DEBUG=1
     else
         autodetect_compiler_VSCMD_DEBUG=
@@ -925,6 +953,7 @@ autodetect_compiler_vsdev() {
         PATH_UNIX="$PATH"
     fi
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
+    # TODO: Combinations including ARM64 (windows_arm64)
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
@@ -1065,13 +1094,13 @@ autodetect_compiler_vsdev() {
     done < "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
 
     # SEVENTH, make the launcher script or s-exp
-    if [ "$autodetect_compiler_SEXP" = ON ]; then
+    if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
         autodetect_compiler_escape() {
             # Each s-exp string must follow OCaml syntax (escape double-quotes and backslashes)
             # Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`
             "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
         }
-    else
+    elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ] || [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
         autodetect_compiler_escape() {
             # Since we will embed each name/value pair in single quotes
             # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
@@ -1081,57 +1110,127 @@ autodetect_compiler_vsdev() {
         }
     fi
     {
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf "(\n"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "#!$DKML_POSIX_SHELL"
+            if [ "${DKML_BUILD_TRACE:-}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ]; then
+                printf "%s\n" "set -x"
+            fi
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
         # Add all but PATH and MSVS_PREFERENCE, CMAKE_GENERATOR_RECOMMENDED and CMAKE_GENERATOR_INSTANCE_RECOMMENDED to launcher environment
         autodetect_compiler_escape "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh | while IFS='' read -r autodetect_compiler_line; do
-            if [ "$autodetect_compiler_SEXP" = ON ]; then
+            if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
                 printf "%s\n" "  (\"$autodetect_compiler_line\")";
-            else
+            elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
                 printf "%s\n" "  '$autodetect_compiler_line' \\";
             fi
         done
 
         # Add MSVS_PREFERENCE
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf "%s\n" "  (\"MSVS_PREFERENCE\" \"$VSDEV_MSVSPREFERENCE\")"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "  MSVS_PREFERENCE='$VSDEV_MSVSPREFERENCE' \\"
         fi
 
         # Add CMAKE_GENERATOR_RECOMMENDED and CMAKE_GENERATOR_INSTANCE_RECOMMENDED
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED=$(printf "%s" "$VSDEV_HOME_BUILDHOST" | autodetect_compiler_escape)
             printf "%s\n" "  (\"CMAKE_GENERATOR_RECOMMENDED\" \"$VSDEV_CMAKEGENERATOR\")"
             printf "%s\n" "  (\"CMAKE_GENERATOR_INSTANCE_RECOMMENDED\" \"$autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED\")"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "  CMAKE_GENERATOR_RECOMMENDED='$VSDEV_CMAKEGENERATOR' \\"
             printf "%s\n" "  CMAKE_GENERATOR_INSTANCE_RECOMMENDED='$VSDEV_HOME_BUILDHOST' \\"
         fi
 
         # Add PATH
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             autodetect_compiler_COMPILER_PATH_WIN_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_PATH_WIN" | autodetect_compiler_escape)
             printf "%s\n" "  (\"PATH\" \"$autodetect_compiler_COMPILER_PATH_WIN_QUOTED\")"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape)
             printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
         fi
 
-        if [ "$autodetect_compiler_SEXP" = ON ]; then
+        # For MSVS-only
+        if [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
+            # MSVS_NAME
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="} $1 == "VSCMD_VER" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                print "Visual Studio " value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/msvs1.txt
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="}
+            $1 == "VCToolsVersion" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                         print "VC Tools " value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/msvs2.txt
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="}
+            $1 == "WindowsSDKVersion" {name=$1; value=$0; sub(/^[^=]*=/,"",value); sub(/\\$/,"",value); print "Windows SDK " value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/msvs3.txt
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="} $1 == "VSCMD_ARG_HOST_ARCH" {name=$1; value=$0; sub(/^[^=]*=/,"",value);      print "Host " value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/msvs4.txt
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="} $1 == "VSCMD_ARG_TGT_ARCH" {name=$1; value=$0; sub(/^[^=]*=/,"",value);       print "Target " value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/msvs5.txt
+            autodetect_compiler_MSVS1=$(cat "$autodetect_compiler_TEMPDIR"/msvs1.txt)
+            autodetect_compiler_MSVS2=$(cat "$autodetect_compiler_TEMPDIR"/msvs2.txt)
+            autodetect_compiler_MSVS3=$(cat "$autodetect_compiler_TEMPDIR"/msvs3.txt)
+            autodetect_compiler_MSVS4=$(cat "$autodetect_compiler_TEMPDIR"/msvs4.txt)
+            autodetect_compiler_MSVS5=$(cat "$autodetect_compiler_TEMPDIR"/msvs5.txt)
+            printf "MSVS_NAME='%s %s %s %s %s at %s'\n" "$autodetect_compiler_MSVS1" \
+                "$autodetect_compiler_MSVS4" "$autodetect_compiler_MSVS5" \
+                "$autodetect_compiler_MSVS2" "$autodetect_compiler_MSVS3" "$VSDEV_HOME_BUILDHOST"
+
+            # MSVS_PATH which must be in Unix PATH format with a trailing colon
+            if [ ! -x /usr/bin/cygpath ]; then
+                echo "FATAL: No /usr/bin/cygpath which is needed for MSVS_PATH variable" >&2
+                exit 107
+            fi
+            autodetect_compiler_COMPILER_UNIX_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | /usr/bin/cygpath --path -f -)
+            printf "MSVS_PATH='%s:'\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH"
+
+            # MSVS_INC which must have a trailing semicolon
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" -v singlequote="'" '
+            BEGIN{FS="="} $1 == "INCLUDE" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print "MSVS_INC=" singlequote value ";" singlequote}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt
+
+            # MSVS_LIB which must have a trailing semicolon
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" -v singlequote="'" '
+            BEGIN{FS="="} $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value);     print "MSVS_LIB=" singlequote value ";" singlequote}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt
+
+            # MSVS_ML
+            # shellcheck disable=SC2016
+            "$DKMLSYS_AWK" '
+            BEGIN{FS="="} $1 == "Platform" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                print value}
+            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/platform.txt
+            case $(cat "$autodetect_compiler_TEMPDIR"/platform.txt) in
+                x64)   printf "MSVS_ML=ml64\n" ;;
+                arm)   printf "MSVS_ML=armasm\n" ;;
+                arm64) printf "MSVS_ML=armasm64\n" ;;
+                x86)   printf "MSVS_ML=ml\n" ;;
+            esac
+        fi
+
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf ")"
-        else
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             # Add arguments
             printf "%s\n" '  "$@"'
         fi
-    } > "$autodetect_compiler_LAUNCHER".tmp
-    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_LAUNCHER".tmp
-    "$DKMLSYS_MV" "$autodetect_compiler_LAUNCHER".tmp "$autodetect_compiler_LAUNCHER"
+    } > "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
 }
 
 log_trace() {

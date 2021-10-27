@@ -152,10 +152,10 @@ fi
 install -d "$WORK"/msvs
 MSVS_MIXED="$WORK"/msvs
 ZIP_MIXED="$WORK"/msvs-tools.zip
-if is_unixy_windows_build_machine; then
-    # unzip and wget may be native Windows
-    ZIP_MIXED=$(cygpath -am "$ZIP_MIXED")
-    MSVS_MIXED=$(cygpath -am "$MSVS_MIXED")
+if [ -x /usr/bin/cygpath ]; then
+    # unzip and wget may be native Windows so use mixed Unix/Windows path convention
+    ZIP_MIXED=$(/usr/bin/cygpath -am "$ZIP_MIXED")
+    MSVS_MIXED=$(/usr/bin/cygpath -am "$MSVS_MIXED")
 fi
 wget https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip -O "$ZIP_MIXED"
 unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
@@ -164,7 +164,8 @@ install "$WORK"/msvs/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 # Copy self into share/dkml-bootstrap/110-compile-opam
 export BOOTSTRAPNAME=110-compile-opam
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
-COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
+# shellcheck disable=SC2016
+COMMON_ARGS=(-d '"$PWD/'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-opam-README.md
 install_reproducible_system_packages  installtime/unix/private/reproducible-compile-opam-0-system.sh
