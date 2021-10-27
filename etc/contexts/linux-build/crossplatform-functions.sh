@@ -234,6 +234,8 @@ is_arg_windows_platform() {
     case "$1" in
         windows_x86)    return 0;;
         windows_x86_64) return 0;;
+        windows_arm32)  return 0;;
+        windows_arm64)  return 0;;
         dev)            if is_unixy_windows_build_machine; then return 0; else return 1; fi ;;
         *)              return 1;;
     esac
@@ -563,6 +565,10 @@ build_machine_arch() {
             fi
             ;;
         *)
+            # Since:
+            # 1) MSYS2 does not run on ARM/ARM64 (https://www.msys2.org/docs/environments/)
+            # 2) MSVC does not use ARM/ARM64 as host machine (https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160)
+            # we do not support Windows ARM/ARM64 as a build machine
             printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
             exit 1
             ;;
@@ -586,6 +592,8 @@ platform_vcpkg_triplet() {
     case "$PLATFORM-$BUILDHOST_ARCH" in
         dev-windows_x86)      DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
         dev-windows_x86_64)   DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
+        dev-windows_arm32)    DKML_VCPKG_HOST_TRIPLET=arm-windows ;;
+        dev-windows_arm64)    DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
         dev-linux_x86)        DKML_VCPKG_HOST_TRIPLET=x86-linux ;;
         dev-linux_x86_64)     DKML_VCPKG_HOST_TRIPLET=x64-linux ;;
         # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
@@ -595,6 +603,8 @@ platform_vcpkg_triplet() {
         dev-darwin_x86_64)    DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
         windows_x86-*)        DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
         windows_x86_64-*)     DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
+        windows_arm-*)        DKML_VCPKG_HOST_TRIPLET=arm-windows ;;
+        windows_arm64-*)      DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
         darwin_arm64-*)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
         darwin_x86_64-*)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
         *)
@@ -934,6 +944,12 @@ autodetect_compiler_vsdev() {
     fi
     {
         printf "@call %s%s%s %s\n" '"' "$autodetect_compiler_VSDEVCMDFILE_WIN" '"' '%*'
+        printf "%s\n" 'if %ERRORLEVEL% neq 0 ('
+        printf "%s\n" 'echo.'
+        printf "%s\n" 'echo.FATAL: VsDevCmd.bat failed to find a Visual Studio compiler.'
+        printf "%s\n" 'echo.'
+        printf "%s\n" 'exit /b %ERRORLEVEL%'
+        printf "%s\n" ')'
         printf "set > %s%s%s%s\n" '"' "$autodetect_compiler_TEMPDIR_WIN" '\vcvars.txt' '"'
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
@@ -953,7 +969,8 @@ autodetect_compiler_vsdev() {
         PATH_UNIX="$PATH"
     fi
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
-    # TODO: Combinations including ARM64 (windows_arm64)
+    # Notice that for MSVC the build machine is always x86 or x86_64, never ARM or ARM64.
+    # And we follow Rust naming of aarch64-pc-windows-msvc for the OCAML_HOST_TRIPLET on ARM64.
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
@@ -971,6 +988,22 @@ autodetect_compiler_vsdev() {
                     -host_arch=x86 -arch=x64 >&2
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
+            # The target machine is 32-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
+                    -host_arch=x86 -arch=arm >&2
+            }
+            OCAML_HOST_TRIPLET=aarch64-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
+            # The target machine is 64-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
+                    -host_arch=x86 -arch=arm64 >&2
+            }
+            OCAML_HOST_TRIPLET=arm-pc-windows
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107
@@ -992,6 +1025,22 @@ autodetect_compiler_vsdev() {
                     -host_arch=x64 -arch=x86 >&2
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
+            # The target machine is 64-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
+                    -host_arch=x64 -arch=arm64 >&2
+            }
+            OCAML_HOST_TRIPLET=aarch64-pc-windows
+        elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
+            # The target machine is 32-bit
+            autodetect_compiler_vsdev_dump_vars() {
+                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
+                    -host_arch=x64 -arch=arm >&2
+            }
+            OCAML_HOST_TRIPLET=arm-pc-windows
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107

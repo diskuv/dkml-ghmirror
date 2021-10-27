@@ -109,7 +109,8 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 # 	linux_x86_64 \
 # 	windows_x86_64 \
 # 	windows_x86 \
-# 	windows_arm64
+# 	windows_arm64 \
+# 	windows_arm32
 DKML_PLATFORMS ?=
 
 NOTAPPLICABLE = notapplicable
@@ -124,6 +125,8 @@ KERNEL_linux_arm32v6    = linux
 KERNEL_linux_arm32v7    = linux
 KERNEL_linux_arm64      = linux
 KERNEL_linux_x86_64     = linux
+KERNEL_windows_arm32    = windows
+KERNEL_windows_arm64    = windows
 KERNEL_windows_x86      = windows
 KERNEL_windows_x86_64   = windows
 # ANDROID_ABI_xxPLATFORMxx_ := See https://developer.android.com/ndk/guides/abis#sa
@@ -137,6 +140,8 @@ ANDROID_ABI_linux_arm32v6    = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_arm32v7    = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_arm64      = $(NOTAPPLICABLE)
 ANDROID_ABI_linux_x86_64     = $(NOTAPPLICABLE)
+ANDROID_ABI_windows_arm32    = $(NOTAPPLICABLE)
+ANDROID_ABI_windows_arm64    = $(NOTAPPLICABLE)
 ANDROID_ABI_windows_x86      = $(NOTAPPLICABLE)
 ANDROID_ABI_windows_x86_64   = $(NOTAPPLICABLE)
 # ALPINE_ARCH_xxPLATFORMxx := See http://mirror.csclub.uwaterloo.ca/alpine/latest-stable/releases/ .
@@ -152,6 +157,8 @@ ALPINE_ARCH_linux_arm32v6    = armhf
 ALPINE_ARCH_linux_arm32v7    = armv7
 ALPINE_ARCH_linux_arm64      = aarch64
 ALPINE_ARCH_linux_x86_64     = x86_64
+ALPINE_ARCH_windows_arm32    = armv7 # Surface RT (ARMv7 Nvidia Tegra 3)
+ALPINE_ARCH_windows_arm64    = aarch64
 ALPINE_ARCH_windows_x86      = x86
 ALPINE_ARCH_windows_x86_64   = x86_64
 # VCPKG_TRIPLET_xxPLATFORMxx  := See https://github.com/microsoft/vcpkg/tree/master/triplets and etc/vcpkg/triplets/
@@ -168,6 +175,8 @@ VCPKG_TRIPLET_linux_arm32v6    = arm-linux-static
 VCPKG_TRIPLET_linux_arm32v7    = arm-linux-static
 VCPKG_TRIPLET_linux_arm64      = arm64-linux-static
 VCPKG_TRIPLET_linux_x86_64     = x64-linux-static
+VCPKG_TRIPLET_windows_arm32    = arm-windows
+VCPKG_TRIPLET_windows_arm64    = arm64-windows
 VCPKG_TRIPLET_windows_x86      = x86-windows
 VCPKG_TRIPLET_windows_x86_64   = x64-windows
 # cmake -A <platform-name>

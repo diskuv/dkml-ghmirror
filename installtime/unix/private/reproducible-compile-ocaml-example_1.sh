@@ -9,7 +9,7 @@
 # Detect the compiler; set BUILDHOST_ARCH
 tmpl="$(mktemp)"
 trap 'rm -f "$tmpl"' EXIT
-autodetect_compiler "$tmpl"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON autodetect_compiler "$tmpl"
 
 # Output:
 #   DKML_TARGET_ABI=
