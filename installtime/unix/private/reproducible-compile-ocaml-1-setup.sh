@@ -89,7 +89,7 @@ usage() {
         printf "%s\n" "        LIBRARY_PATH - For the GNU compiler (GCC) and CLang compiler (including Apple CLang), the"
         printf "%s\n" "          colon-separated list of system library directory that should be based on the target ABI sysroot"
         printf "%s\n" "   -b PREF: Required and used only for the MSVC compiler. This is the msvs-tools MSVS_PREFERENCE setting"
-        printf "%s\n" "      needed to detect the Windows compiler for the host ABI."
+        printf "%s\n" "      needed to detect the Windows compiler for the host ABI. Not used when '-e DKMLHOSTABI' is specified."
         printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@',"
         printf "%s\n" "      will not choose a compiler based on environment variables that would disrupt reproducibility."
         printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect"
@@ -97,7 +97,8 @@ usage() {
         printf "%s\n" "   -e DKMLHOSTABI: Optional. Use the Diskuv OCaml compiler detector find a compiler matching the ABI."
         printf "%s\n" "      Especially useful to find a 32-bit Windows host compiler that can use 64-bits of memory for the compiler."
         printf "%s\n" "      Values include: windows_x86, windows_x86_64; others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
-        printf "%s\n" "   -f CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
+        printf "%s\n" "   -f CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll and --host will have already"
+        printf "%s\n" "      been set appropriately, but you can override the --host heuristic by adding it to -f CONFIGUREARGS"
     } >&2
 }
 

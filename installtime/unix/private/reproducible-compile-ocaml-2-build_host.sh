@@ -203,7 +203,7 @@ fi
 # ------------------
 # BEGIN Host ABI OCaml
 #
-# Most of this section comes from
+# Most of this section was adapted from
 # https://github.com/ocaml/opam/blob/012103bc52bfd4543f3d6f59edde91ac70acebc8/shell/bootstrap-ocaml.sh
 # with portable shell linting (shellcheck) fixes applied.
 
@@ -230,6 +230,18 @@ windows_host_configure_and_make() {
     ;;
   esac
 
+  # 4.13+ have --with-flexdll ./configure option. Autoselect it.
+  windows_host_configure_and_make_OCAMLVER=$(awk 'NR==1{print}' VERSION)
+  windows_host_configure_and_make_MAKEFLEXDLL=OFF
+  case "$windows_host_configure_and_make_OCAMLVER" in
+    4.00.*|4.01.*|4.02.*|4.03.*|4.04.*|4.05.*|4.06.*|4.07.*|4.08.*|4.09.*|4.10.*|4.11.*|4.12.*)
+      windows_host_configure_and_make_MAKEFLEXDLL=ON
+      ;;
+    *)
+      BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS --with-flexdll"
+      ;;
+  esac
+
   WINPREFIX=$(printf "%s\n" "${PREFIX}" | cygpath -f - -m)
   with_environment_for_ocaml_configure PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" \
   Lib="${LIB_PREPEND}${Lib:-}" \
@@ -243,7 +255,9 @@ windows_host_configure_and_make() {
     rm -rf flexdll
     mv flexdll-* flexdll
   fi
-  PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" Lib="${LIB_PREPEND}${Lib:-}" Include="${INC_PREPEND}${Include:-}" make -j flexdll
+  if [ "$windows_host_configure_and_make_MAKEFLEXDLL" = ON ]; then
+    PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" Lib="${LIB_PREPEND}${Lib:-}" Include="${INC_PREPEND}${Include:-}" make -j flexdll
+  fi
   PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" Lib="${LIB_PREPEND}${Lib:-}" Include="${INC_PREPEND}${Include:-}" make -j world
   PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" Lib="${LIB_PREPEND}${Lib:-}" Include="${INC_PREPEND}${Include:-}" make -j "$BOOTSTRAP_OPT_TARGET"
   PATH="${PATH_PREPEND}${PREFIX}/bin:${PATH}" Lib="${LIB_PREPEND}${Lib:-}" Include="${INC_PREPEND}${Include:-}" make install

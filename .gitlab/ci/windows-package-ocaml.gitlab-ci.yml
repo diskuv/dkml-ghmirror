@@ -6,8 +6,10 @@ windows:build-opam:
     matrix:
       - BITS: 32
         PLATFORM: windows_x86
+        OCAMLVER: ["4.13.1", "4.12.1"]
       - BITS: 64
         PLATFORM: windows_x86_64
+        OCAMLVER: ["4.13.1", "4.12.1"]
   needs: []
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -30,31 +32,30 @@ windows:build-opam:
     - where.exe git.exe
 
     # ================ Build ================
-
+    - if ($env:OCAMLVER -eq "4.12.1") { $COMMITID = "46c947827ec2f6d6da7fe5e195ae5dda1d2ad0c5" }
+    - if ($env:OCAMLVER -eq "4.13.1") { $COMMITID = "ab626576eee205615a9d7c5a66c2cb2478f1169c" }
     - msys (
       'env'
       + ' TOPDIR=$PWD/installtime/none/emptytop'
-      + ' installtime/unix/private/reproducible-compile-opam-1-setup.sh'
+      + ' installtime/unix/private/reproducible-compile-ocaml-1-setup.sh'
       + " -d '" + "$PWD" + "'"
-      + " -a " + "$env:PLATFORM"
-      + " -b " + "$($VisualStudioProps.MsvsPreference)"
       + " -t '" + "$DEPLOYDIR" + "'"
-      + " -v " + $DV_AvailableOpamVersion
+      + " -v '$COMMITID'"
+      + " -e " + "$env:PLATFORM"
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh')
-    - if (!(Test-Path -Path "$DEPLOYDIR\bin\opam.exe")) { throw "Build failed" }
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh')
+    - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
 
     # Clean up excess files
-    - git -C "$DEPLOYDIR\src\opam" clean -d -f -x
+    - git -C "$DEPLOYDIR\src\ocaml" clean -d -f -x
 
     # Create .tar.gz and .zip
-    - New-Item -Path "$EXTRASRC\opamdist" -ItemType Directory
-    - msys ('/usr/bin/tar cvCfz ''' + "$DEPLOYDIR" + ''' _ci/opamdist/dist.tar.gz .')
-    - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\opamdist\dist.zip"
+    - New-Item -Path "$EXTRASRC\ocamldist" -ItemType Directory
+    - msys ('/usr/bin/tar cvCfz ''' + "$DEPLOYDIR" + ''' _ci/ocamldist/dist.tar.gz .')
+    - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\ocamldist\dist.zip"
 
     # Create public packages
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/opam-reproducible/${env:CI_COMMIT_TAG}"; }
+    - if ("${env:CI_COMMIT_TAG}" -ne "") { $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/${env:CI_COMMIT_TAG}"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.tar.gz"; }
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/opamdist/dist.zip    '$PACKAGE_REGISTRY_URL'/opam-win${env:BITS}.zip"; }
+    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-win${env:BITS}.tar.gz"; }
+    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-win${env:BITS}.zip"; }
