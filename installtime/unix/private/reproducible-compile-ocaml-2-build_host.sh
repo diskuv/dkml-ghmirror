@@ -143,7 +143,7 @@ fi
 cd "$OCAMLSRC_UNIX"
 
 # ./configure
-ocaml_configure "$TARGETDIR_UNIX" "$OPT_WIN32_ARCH" "${DKMLHOSTABI:-}" "$CONFIGUREARGS"
+ocaml_configure "$TARGETDIR_UNIX" "$OPT_WIN32_ARCH" "${DKMLHOSTABI:-}" "" "$CONFIGUREARGS"
 
 # make
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then

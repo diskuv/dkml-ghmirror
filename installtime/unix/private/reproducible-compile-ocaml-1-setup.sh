@@ -68,13 +68,16 @@ usage() {
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -v COMMIT: Git commit or tag for https://github.com/ocaml/ocaml. Strongly prefer a commit id for much stronger"
         printf "%s\n" "      reproducibility guarantees"
-        printf "%s\n" "   -a TARGETABICOMPILER: Optional. A self-contained Posix shell script that can be sourced to set the"
+        printf "%s\n" "   -a TARGETABICOMPILER: Optional. A named list of self-contained Posix shell script that can be sourced to set the"
         printf "%s\n" "      compiler environment variables for the target ABI. If not specified then the OCaml environment"
         printf "%s\n" "      will be purely for the host ABI. All path should use the native host platform's path"
-        printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows. The compiler environment variables include:"
+        printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows."
+        printf "%s\n" "      The format of TARGETABICOMPILER is: <DKML_TARGET_ABI1>=/path/to/script1;<DKML_TARGET_ABI2>=/path/to/script2;..."
+        printf "%s\n" "      where:"
         printf "%s\n" "        DKML_TARGET_ABI - The target ABI"
         printf "%s\n" "          Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
         printf "%s\n" "          Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
+        printf "%s\n" "      The Posix shell script should set some or all of the following compiler environment variables:"
         printf "%s\n" "        PATH - The PATH environment variable. You can use \$PATH to add to the existing PATH. On Windows"
         printf "%s\n" "          which uses MSYS2, the PATH should be colon separated with each PATH entry a UNIX path like /usr/a.out"
         printf "%s\n" "        ASM - The assembly language compiler that targets machine code for the target ABI. On Windows this"
@@ -253,18 +256,20 @@ get_ocaml_source() {
 }
 
 # Since it is hard to reason about mutated source directories with different-platform object files, use a pristine source dir
-# for the host and other pristine source dirs for each target ABI
+# for the host and other pristine source dirs for each target
 get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
 if [ -n "$TARGETABICOMPILER" ]; then
     # Loop over each target abi script file; each file separated by semicolons
-    sed 's/;/\n/g' "$TARGETABICOMPILER" | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    printf "%s\n" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    tail -v -n1000 "$WORK"/tabi
     while IFS= read -r _abifile
     do
         # shellcheck disable=SC1090
-        TARGET_ABI=$(. "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
+        TARGET_ABI=$(set -x ; . "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
         get_ocaml_source "$OCAMLSRC_UNIX/opt/cross/$TARGET_ABI" "$OCAMLSRC_MIXED/opt/cross/$TARGET_ABI"
-    done
+    done < "$WORK"/tabi
 fi
+exit 107
 
 # ---------------------------
 
@@ -277,10 +282,11 @@ install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-ocaml-README.md
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-functions.sh
+install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-example_1.sh
 if [ -n "$TARGETABICOMPILER" ]; then
     _reproscripts=
     # Loop over each target abi script file; each file separated by semicolons
-    sed 's/;/\n/g' "$TARGETABICOMPILER" | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    printf "%s" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
     while IFS= read -r _abifile
     do
         # shellcheck disable=SC1090

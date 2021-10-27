@@ -240,6 +240,8 @@ build_world() {
   shift
   build_world_TARGET_ABI=$1
   shift
+  build_world_PRECONFIGURE=$1
+  shift
 
   # wrappers
   genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
@@ -249,7 +251,7 @@ build_world() {
   genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib ";
 
   # ./configure
-  ocaml_configure "$build_world_BUILD_ROOT" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$CONFIGUREARGS"
+  ocaml_configure "$build_world_BUILD_ROOT" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS"
 
   # Build
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
@@ -284,7 +286,7 @@ build_world() {
 
 
 # Loop over each target abi script file; each file separated by semicolons
-sed 's/;/\n/g' "$TARGETABICOMPILER" | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+printf "%s" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
 while IFS= read -r _abifile
 do
     # shellcheck disable=SC1090
@@ -292,5 +294,5 @@ do
 
     _BUILD_ROOT=$OCAMLSRC_UNIX/opt/cross/$_TARGET_ABI
     cd "$_BUILD_ROOT"
-    build_world "$_BUILD_ROOT" "$_TARGET_ABI"
-done
+    build_world "$_BUILD_ROOT" "$_TARGET_ABI" "$_abifile"
+done < "$WORK"/tabi
