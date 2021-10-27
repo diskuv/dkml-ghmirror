@@ -22,7 +22,7 @@
 #
 ######################################
 # reproducible-compile-ocaml-1-setup.sh -d DKMLDIR -t TARGETDIR \
-#      -v COMMIT [-a TARGETABICOMPILER] [-c HOSTCOMPILERARCH]
+#      -v COMMIT [-a TARGETABICOMPILER] [-c OPT_WIN32_ARCH]
 #
 # Sets up the source code for a reproducible compilation of OCaml
 
@@ -30,9 +30,6 @@ set -euf
 
 # ------------------
 # BEGIN Command line processing
-
-SETUP_ARGS=()
-BUILD_ARGS=()
 
 # Since installtime/windows/Machine/Machine.psm1 has minimum VS14 we only select that version
 # or greater. We'll ignore '10.0' (Windows SDK 10) which may bundle Visual Studio 2015, 2017 or 2019.
@@ -75,6 +72,11 @@ usage() {
         printf "%s\n" "      compiler environment variables for the target ABI. If not specified then the OCaml environment"
         printf "%s\n" "      will be purely for the host ABI. All path should use the native host platform's path"
         printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows. The compiler environment variables include:"
+        printf "%s\n" "        DKML_TARGET_ABI - The target ABI"
+        printf "%s\n" "          Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
+        printf "%s\n" "          Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
+        printf "%s\n" "        PATH - The PATH environment variable. You can use \$PATH to add to the existing PATH. On Windows"
+        printf "%s\n" "          which uses MSYS2, the PATH should be colon separated with each PATH entry a UNIX path like /usr/a.out"
         printf "%s\n" "        ASM - The assembly language compiler that targets machine code for the target ABI. On Windows this"
         printf "%s\n" "          must be a MASM compiler like ml/ml64.exe"
         printf "%s\n" "        CC - The C cross compiler that targets machine code for the target ABI"
@@ -93,21 +95,27 @@ usage() {
         printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@',"
         printf "%s\n" "      will not choose a compiler based on environment variables that would disrupt reproducibility."
         printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect"
-        printf "%s\n" "   -c HOSTCOMPILERARCH: Useful only for the MSVC compiler. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
-        printf "%s\n" "   -e DKMLHOSTABI: Optional. Use the Diskuv OCaml compiler detector find a compiler matching the ABI."
+        printf "%s\n" "   -c ARCH: Useful only for Windows. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
+        printf "%s\n" "   -e DKMLHOSTABI: Optional. Use the Diskuv OCaml compiler detector find a host ABI compiler."
         printf "%s\n" "      Especially useful to find a 32-bit Windows host compiler that can use 64-bits of memory for the compiler."
-        printf "%s\n" "      Values include: windows_x86, windows_x86_64; others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
-        printf "%s\n" "   -f CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll and --host will have already"
+        printf "%s\n" "      Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
+        printf "%s\n" "      Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
+        printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll and --host will have already"
         printf "%s\n" "      been set appropriately, but you can override the --host heuristic by adding it to -f CONFIGUREARGS"
     } >&2
 }
 
+SETUP_ARGS=()
+BUILD_HOST_ARGS=()
+BUILD_CROSS_ARGS=()
+
 DKMLDIR=
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
-HOSTCOMPILERARCH=auto
+OPT_WIN32_ARCH=auto
+TARGETABICOMPILER=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:c:e:f:h" opt; do
+while getopts ":d:v:t:a:b:c:e:g:h" opt; do
     case ${opt} in
         h )
             usage
@@ -127,27 +135,28 @@ while getopts ":d:v:t:a:b:c:e:f:h" opt; do
         ;;
         t )
             TARGETDIR="$OPTARG"
-            BUILD_ARGS+=( -t . )
+            BUILD_HOST_ARGS+=( -t . )
             SETUP_ARGS+=( -t . )
         ;;
         a )
-            BUILD_ARGS+=( -a "$OPTARG" )
-            SETUP_ARGS+=( -a "$OPTARG" )
+            TARGETABICOMPILER="$OPTARG"
         ;;
         b )
             MSVS_PREFERENCE="$OPTARG"
+            SETUP_ARGS+=( -b "$OPTARG" )
         ;;
         c )
-            HOSTCOMPILERARCH="$OPTARG"
+            OPT_WIN32_ARCH="$OPTARG"
             SETUP_ARGS+=( -c "$OPTARG" )
         ;;
         e )
             SETUP_ARGS+=( -e "$OPTARG" )
-            BUILD_ARGS+=( -e "$OPTARG" )
+            BUILD_HOST_ARGS+=( -e "$OPTARG" )
         ;;
-        f )
-            SETUP_ARGS+=( -f "$OPTARG" )
-            BUILD_ARGS+=( -f "$OPTARG" )
+        g )
+            SETUP_ARGS+=( -g "$OPTARG" )
+            BUILD_HOST_ARGS+=( -g "$OPTARG" )
+            BUILD_CROSS_ARGS+=( -g "$OPTARG" )
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -166,7 +175,8 @@ fi
 
 # Add options that have defaults
 SETUP_ARGS+=( -b "'$MSVS_PREFERENCE'" )
-BUILD_ARGS+=( -b "'$MSVS_PREFERENCE'" -c "$HOSTCOMPILERARCH" )
+BUILD_HOST_ARGS+=( -b "'$MSVS_PREFERENCE'" -c "$OPT_WIN32_ARCH" )
+BUILD_CROSS_ARGS+=( -c "$OPT_WIN32_ARCH" )
 
 # END Command line processing
 # ------------------
@@ -199,21 +209,10 @@ fi
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-# Get OCaml if not present already
-if [ ! -e "$OCAMLSRC_UNIX/Makefile" ] || [ ! -e "$OCAMLSRC_UNIX/.git" ]; then
-    install -d "$OCAMLSRC_UNIX"
-    rm -rf "$OCAMLSRC_UNIX" # clean any partial downloads
-    git clone --recurse-submodules https://github.com/ocaml/ocaml "$OCAMLSRC_MIXED"
-    git -C "$OCAMLSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-else
-    # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
-    if git -C "$OCAMLSRC_MIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OCAMLSRC_MIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
-    git -C "$OCAMLSRC_MIXED" fetch --tags
-    git -C "$OCAMLSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-    git -C "$OCAMLSRC_MIXED" submodule update --init --recursive
-fi
+# Get OCaml source code
+# ---------------------
 
-# Ensure we have a recent (0.5.0+) version of msvs.
+# Ensure the source code can have a recent (0.5.0+) version of msvs.
 # 0.5.0+ will detect Diskuv OCaml installations (and others) that use Visual Studio Build Tools.
 install -d "$WORK"/msvs
 MSVS_MIXED="$WORK"/msvs
@@ -225,12 +224,49 @@ if [ -x /usr/bin/cygpath ]; then
 fi
 downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
 unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
-install "$WORK"/msvs/msvs-detect "$OCAMLSRC_UNIX"/msvs-detect
 
-# Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
-if [ ! -e "$OCAMLSRC_UNIX"/flexdll ]; then
-    downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$OCAMLSRC_UNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
+get_ocaml_source() {
+    get_ocaml_source_SRCUNIX="$1"
+    shift
+    get_ocaml_source_SRCMIXED="$1"
+    shift
+    if [ ! -e "$get_ocaml_source_SRCUNIX/Makefile" ] || [ ! -e "$get_ocaml_source_SRCUNIX/.git" ]; then
+        install -d "$get_ocaml_source_SRCUNIX"
+        rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
+        git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
+        git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+    else
+        # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
+        if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
+        git -C "$get_ocaml_source_SRCMIXED" fetch --tags
+        git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
+    fi
+
+    # Install msvs-detect
+    install "$WORK"/msvs/msvs-detect "$OCAMLSRC_UNIX"/msvs-detect
+
+    # Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
+    if [ ! -e "$OCAMLSRC_UNIX"/flexdll ]; then
+        downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$OCAMLSRC_UNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
+    fi
+}
+
+# Since it is hard to reason about mutated source directories with different-platform object files, use a pristine source dir
+# for the host and other pristine source dirs for each target ABI
+get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
+if [ -n "$TARGETABICOMPILER" ]; then
+    # Loop over each target abi script file; each file separated by semicolons
+    sed 's/;/\n/g' "$TARGETABICOMPILER" | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    while IFS= read -r _abifile
+    do
+        # shellcheck disable=SC1090
+        TARGET_ABI=$(. "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
+        get_ocaml_source "$OCAMLSRC_UNIX/opt/cross/$TARGET_ABI" "$OCAMLSRC_MIXED/opt/cross/$TARGET_ABI"
+    done
 fi
+
+# ---------------------------
 
 # Copy self into share/dkml-bootstrap/100-compile-ocaml
 export BOOTSTRAPNAME=100-compile-ocaml
@@ -240,7 +276,28 @@ COMMON_ARGS=(-d '"$PWD/'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-ocaml-README.md
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
+install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-functions.sh
+if [ -n "$TARGETABICOMPILER" ]; then
+    _reproscripts=
+    # Loop over each target abi script file; each file separated by semicolons
+    sed 's/;/\n/g' "$TARGETABICOMPILER" | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    while IFS= read -r _abifile
+    do
+        # shellcheck disable=SC1090
+        TARGET_ABI=$(. "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
+
+        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$TARGET_ABI.sh"
+        if [ -n "$_reproscripts" ]; then
+            _reproscripts="$_reproscripts;$_script"
+        else
+            _reproscripts="$_script"
+        fi
+        install_reproducible_generated_file "$TARGETABICOMPILER" installtime/unix/private/reproducible-compile-ocaml-targetabi-"$TARGET_ABI".sh
+    done < "$WORK"/tabi
+    SETUP_ARGS+=( -a "$_reproscripts" )
+    BUILD_CROSS_ARGS+=( -a "$_reproscripts" )
+fi
 install_reproducible_system_packages  installtime/unix/private/reproducible-compile-ocaml-0-system.sh
 install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-1-setup.sh "${COMMON_ARGS[@]}" "${SETUP_ARGS[@]}"
-install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-2-build_host.sh "${COMMON_ARGS[@]}" "${BUILD_ARGS[@]}"
-# install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-2-build_target.sh "${COMMON_ARGS[@]}" "${BUILD_ARGS[@]}"
+install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-2-build_host.sh "${COMMON_ARGS[@]}" "${BUILD_HOST_ARGS[@]}"
+install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-3-build_cross.sh "${COMMON_ARGS[@]}" "${BUILD_CROSS_ARGS[@]}"
