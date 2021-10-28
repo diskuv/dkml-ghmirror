@@ -303,5 +303,7 @@ ocaml_configure() {
     ocaml_make() {
       log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"
     }
+    # shellcheck disable=SC2034
+    OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=OFF
   fi
 }
