@@ -202,22 +202,6 @@ autodetect_system_binaries() {
     export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT
 }
 
-# A function that will execute the shell command with error detection enabled and trace
-# it on standard error if DKML_BUILD_TRACE=ON (which is default)
-#
-# Output:
-#   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
-#     set.
-log_shell() {
-    autodetect_posix_shell
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
-        printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
-        "$DKML_POSIX_SHELL" -eufx "$@"
-    else
-        "$DKML_POSIX_SHELL" -euf "$@"
-    fi
-}
-
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
 #
 # Better alternatives
@@ -863,6 +847,11 @@ autodetect_compiler() {
     autodetect_compiler_OUTPUTFILE="$1"
     shift
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
+    if [ -n "${WORK:-}" ]; then
+        autodetect_compiler_TEMPDIR=$WORK
+    else
+        autodetect_compiler_TEMPDIR=$(mktemp -d "$TMP"/dkmlc.XXXXX)
+    fi
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
     else
@@ -923,6 +912,11 @@ autodetect_compiler() {
         autodetect_compiler_vsdev
     else
         autodetect_compiler_other
+    fi
+
+    # When $WORK is not defined, we have a unique directory that needs cleaning
+    if [ -z "${WORK:-}" ]; then
+        rm -rf "$autodetect_compiler_TEMPDIR"
     fi
 }
 
@@ -1004,12 +998,14 @@ autodetect_compiler_vsdev() {
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
+            # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
                 "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x86 >&2
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1018,6 +1014,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x86 -arch=x64 >&2
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1026,6 +1023,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x86 -arch=arm >&2
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1034,6 +1032,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x86 -arch=arm64 >&2
             }
             OCAML_HOST_TRIPLET=arm-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107
@@ -1041,12 +1040,14 @@ autodetect_compiler_vsdev() {
     elif [ "$BUILDHOST_ARCH" = windows_x86_64 ]; then
         # The build host machine is 64-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
+            # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
                 "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x64 >&2
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1055,6 +1056,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x64 -arch=x86 >&2
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1063,6 +1065,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x64 -arch=arm64 >&2
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1071,6 +1074,7 @@ autodetect_compiler_vsdev() {
                     -host_arch=x64 -arch=arm >&2
             }
             OCAML_HOST_TRIPLET=arm-pc-windows
+            autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107
@@ -1148,6 +1152,20 @@ autodetect_compiler_vsdev() {
     # shellcheck disable=SC2034
     autodetect_compiler_COMPILER_PATH_UNIX=$("$DKMLSYS_CAT" "$autodetect_compiler_TEMPDIR"/unixpath.txt)
     autodetect_compiler_COMPILER_PATH_WIN=$("$DKMLSYS_CAT" "$autodetect_compiler_TEMPDIR"/winpath.txt)
+
+    # VERIFY: make sure VsDevCmd.bat gave us the correct target assembler (which have unique names per target architecture)
+    # shellcheck disable=SC2016
+    autodetect_compiler_TGTARCH=$("$DKMLSYS_AWK" '
+        BEGIN{FS="="} $1 == "VSCMD_ARG_TGT_ARCH" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                print value}
+        ' "$autodetect_compiler_TEMPDIR"/vcvars.txt)
+    if ! PATH="$autodetect_compiler_COMPILER_PATH_UNIX" "$autodetect_compiler_vsdev_VALIDATECMD" /help >/dev/null; then
+        echo "FAIL: The Visual Studio installation $VSDEV_HOME_BUILDHOST did not answer when asked for '$autodetect_compiler_vsdev_VALIDATECMD'." >&2
+        echo "      It should be present for the target ABI $autodetect_compiler_PLATFORM_ARCH ($autodetect_compiler_TGTARCH) on a build host $BUILDHOST_ARCH." >&2
+        echo " Fix? Run the Visual Studio Installer and then:" >&2
+        echo "      1. Make sure you have the MSVC v$VSDEV_VCVARSVER $autodetect_compiler_TGTARCH Build Tools component." >&2
+        echo "      2. Also make sure you have the Windows SDK $VSDEV_WINSDKVER component." >&2
+        exit 107
+    fi
 
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {DKML_SYSTEM_PATH}) are used. But maintain the order
@@ -1312,10 +1330,32 @@ autodetect_compiler_vsdev() {
     "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
 }
 
+# A function that will execute the shell command with error detection enabled and trace
+# it on standard error if DKML_BUILD_TRACE=ON (which is default)
+#
+# Output:
+#   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
+#     set.
+log_shell() {
+    autodetect_posix_shell
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+        printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
+        "$DKML_POSIX_SHELL" -eufx "$@"
+    else
+        "$DKML_POSIX_SHELL" -euf "$@"
+    fi
+}
+
+# A function that will print the command and possibly time it (if and only if it uses a full path to
+# an executable, so that 'time' does not fail on internal shell functions).
 log_trace() {
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         printf "%s\n" "+ $*" >&2
-        time "$@"
+        if [ -x "$1" ]; then
+            time "$@"
+        else
+            "$@"
+        fi
         log_trace_ec="$?"
         if [ "$log_trace_ec" -ne 0 ]; then
             printf "FATAL: Command failed with exit code %s: %s\n" "$log_trace_ec" "$*"
