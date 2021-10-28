@@ -467,6 +467,8 @@ replace_all() {
 install_reproducible_system_packages() {
     # Set DKMLSYS_*
     autodetect_system_binaries
+    # Set BUILDHOST_ARCH
+    build_machine_arch
 
     install_reproducible_system_packages_SCRIPTFILE="$1"
     shift
@@ -493,6 +495,20 @@ install_reproducible_system_packages() {
             printf "readarray -t pkgs < <(awk 'display==1{print \$1} \$1==\"Package\"{display=1}' '%s')\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
             # shellcheck disable=SC2016
             printf "%s\n" 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
+        } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+    elif is_arg_darwin_based_platform "$BUILDHOST_ARCH"; then
+        # use a Brewfile.lock.json as the package manifest
+        install_reproducible_system_packages_OLDDIR=$PWD
+        if ! cd "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"; then echo "FATAL: Could not cd to script directory" >&2; exit 107; fi
+        brew bundle dump --force # creates a Brewfile in current directory
+        if ! cd "$install_reproducible_system_packages_OLDDIR"; then echo "FATAL: Could not cd to old directory" >&2; exit 107; fi
+        $DKMLSYS_MV \
+            "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/Brewfile \
+            "$install_reproducible_system_packages_BOOTSTRAPDIR/$install_reproducible_system_packages_PACKAGEFILE"
+
+        {
+            printf "%s\n" "#!/bin/sh"
+            printf "set -x ; brew bundle install --file '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
         } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     else
         printf "%s\n" "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
