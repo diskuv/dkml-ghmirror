@@ -994,7 +994,11 @@ autodetect_compiler_vsdev() {
     fi
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
     # Notice that for MSVC the build machine is always x86 or x86_64, never ARM or ARM64.
-    # And we follow Rust naming of aarch64-pc-windows-msvc for the OCAML_HOST_TRIPLET on ARM64.
+    # And:
+    #  * we follow the first triple of Rust naming of aarch64-pc-windows-msvc for the OCAML_HOST_TRIPLET on ARM64
+    #  * we use armv7-pc-windows on ARM32 because OCaml's ./configure needs the ARM model (v6, v7, etc.).
+    #    WinCE 7.0 and 8.0 support ARMv7, but don't mandate it; WinCE 8.0 extended support from MS is in
+    #    2023 so ARMv7 should be fine.
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
@@ -1031,7 +1035,7 @@ autodetect_compiler_vsdev() {
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=arm64 >&2
             }
-            OCAML_HOST_TRIPLET=arm-pc-windows
+            OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
@@ -1073,7 +1077,7 @@ autodetect_compiler_vsdev() {
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=arm >&2
             }
-            OCAML_HOST_TRIPLET=arm-pc-windows
+            OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
