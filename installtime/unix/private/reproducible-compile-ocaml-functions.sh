@@ -293,12 +293,14 @@ ocaml_configure() {
       "$ocaml_configure_PATH_PREPEND" "$ocaml_configure_LIB_PREPEND" "$ocaml_configure_INC_PREPEND" \
       "$ocaml_configure_EXTRA_OPTS"
   else
+    DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/with-compiler.sh
+
     # do ./configure
     # shellcheck disable=SC2086
     with_environment_for_ocaml_configure \
       PATH="$DKML_SYSTEM_PATH" \
       $ocaml_configure_no_ocaml_leak_environment \
-      ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
+      "$WORK"/with-compiler.sh ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
     # define make function
     ocaml_make() {
       log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"

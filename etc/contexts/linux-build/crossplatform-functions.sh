@@ -977,10 +977,10 @@ autodetect_compiler_darwin() {
 
         if [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             if [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] ; then
-                printf "%s\n" "exec arch --arch x86_64 $DKMLSYS_ENV CC='arch --arch x86_64 clang' \\"
+                printf "%s\n" "exec arch --arch x86_64 $DKMLSYS_ENV CC='clang -arch x86_64' \\"
             elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
                 if [ "$BUILDHOST_ARCH" = "darwin_arm64" ]; then
-                    printf "%s\n" "exec arch --arch arm64 $DKMLSYS_ENV CC='arch --arch arm64 clang' \\"
+                    printf "%s\n" "exec arch --arch arm64 $DKMLSYS_ENV CC='clang -arch arm64' \\"
                 else
                     printf "%s\n" "FATAL: Only Apple Silicon (darwin_arm64) build machines can target Apple Silicon binaries." >&2
                     printf "%s\n" "       Apple does not provide Rosetta emulation on Intel macOS machines." >&2
