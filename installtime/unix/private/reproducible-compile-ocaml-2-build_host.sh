@@ -137,6 +137,10 @@ fi
 
 # ------------------
 
+# Prereqs for reproducible-compile-ocaml-functions.sh
+autodetect_system_binaries
+autodetect_system_path
+
 # shellcheck disable=SC1091
 . "$DKMLDIR/installtime/unix/private/reproducible-compile-ocaml-functions.sh"
 
@@ -147,8 +151,11 @@ ocaml_configure "$TARGETDIR_UNIX" "$OPT_WIN32_ARCH" "${DKMLHOSTABI:-}" "" "$CONF
 
 # make
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-  ocaml_make j flexdll
+  ocaml_make flexdll
 fi
 ocaml_make -j world
 ocaml_make -j "${BOOTSTRAP_OPT_TARGET:-opt.opt}"
+if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
+  ocaml_make flexlink.opt
+fi
 ocaml_make install

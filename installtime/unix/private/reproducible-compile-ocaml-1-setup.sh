@@ -22,7 +22,7 @@
 #
 ######################################
 # reproducible-compile-ocaml-1-setup.sh -d DKMLDIR -t TARGETDIR \
-#      -v COMMIT [-a TARGETABICOMPILER] [-c OPT_WIN32_ARCH]
+#      -v COMMIT [-a TARGETABIS] [-c OPT_WIN32_ARCH]
 #
 # Sets up the source code for a reproducible compilation of OCaml
 
@@ -51,7 +51,7 @@ usage() {
         printf "\n"
         printf "%s\n" "The expectation we place on any user of this script who wants to cross-compile is that they understand what an ABI is,"
         printf "%s\n" "and how to obtain a SYSROOT for their target ABI. If you want an OCaml cross-compiler, you will need to use"
-        printf "%s\n" "the '-a TARGETABICOMPILER' option."
+        printf "%s\n" "the '-a TARGETABIS' option."
         printf "\n"
         printf "%s\n" "To generate 32-bit machine code from OCaml, the host ABI for the OCaml native compiler must be 32-bit. And to generate"
         printf "%s\n" "64-bit machine code from OCaml, the host ABI for the OCaml native compiler must be 64-bit. In practice this means you"
@@ -68,15 +68,17 @@ usage() {
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -v COMMIT: Git commit or tag for https://github.com/ocaml/ocaml. Strongly prefer a commit id for much stronger"
         printf "%s\n" "      reproducibility guarantees"
-        printf "%s\n" "   -a TARGETABICOMPILER: Optional. A named list of self-contained Posix shell script that can be sourced to set the"
+        printf "%s\n" "   -a TARGETABIS: Optional. A named list of self-contained Posix shell script that can be sourced to set the"
         printf "%s\n" "      compiler environment variables for the target ABI. If not specified then the OCaml environment"
         printf "%s\n" "      will be purely for the host ABI. All path should use the native host platform's path"
         printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows."
-        printf "%s\n" "      The format of TARGETABICOMPILER is: <DKML_TARGET_ABI1>=/path/to/script1;<DKML_TARGET_ABI2>=/path/to/script2;..."
+        printf "%s\n" "      The format of TARGETABIS is: <DKML_TARGET_ABI1>=/path/to/script1;<DKML_TARGET_ABI2>=/path/to/script2;..."
         printf "%s\n" "      where:"
         printf "%s\n" "        DKML_TARGET_ABI - The target ABI"
         printf "%s\n" "          Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
         printf "%s\n" "          Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
+        printf "%s\n" "      The Posix shell script will have the \$DKMLDIR environment variable containing the directory of .dkmlroot, and"
+        printf "%s\n" "        \$DKML_TARGET_ABI containing the name specified in the TARGETABIS option"
         printf "%s\n" "      The Posix shell script should set some or all of the following compiler environment variables:"
         printf "%s\n" "        PATH - The PATH environment variable. You can use \$PATH to add to the existing PATH. On Windows"
         printf "%s\n" "          which uses MSYS2, the PATH should be colon separated with each PATH entry a UNIX path like /usr/a.out"
@@ -116,7 +118,7 @@ DKMLDIR=
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 OPT_WIN32_ARCH=auto
-TARGETABICOMPILER=
+TARGETABIS=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
 while getopts ":d:v:t:a:b:c:e:g:h" opt; do
     case ${opt} in
@@ -142,7 +144,7 @@ while getopts ":d:v:t:a:b:c:e:g:h" opt; do
             SETUP_ARGS+=( -t . )
         ;;
         a )
-            TARGETABICOMPILER="$OPTARG"
+            TARGETABIS="$OPTARG"
         ;;
         b )
             MSVS_PREFERENCE="$OPTARG"
@@ -225,7 +227,7 @@ if [ -x /usr/bin/cygpath ]; then
     ZIP_MIXED=$(/usr/bin/cygpath -am "$ZIP_MIXED")
     MSVS_MIXED=$(/usr/bin/cygpath -am "$MSVS_MIXED")
 fi
-downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
+log_trace downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
 unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
 
 get_ocaml_source() {
@@ -235,15 +237,15 @@ get_ocaml_source() {
     shift
     if [ ! -e "$get_ocaml_source_SRCUNIX/Makefile" ] || [ ! -e "$get_ocaml_source_SRCUNIX/.git" ]; then
         install -d "$get_ocaml_source_SRCUNIX"
-        rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
-        git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
-        git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
+        log_trace git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
+        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
     else
         # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
         if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
-        git -C "$get_ocaml_source_SRCMIXED" fetch --tags
-        git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-        git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
+        log_trace git -C "$get_ocaml_source_SRCMIXED" fetch --tags
+        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
     fi
 
     # Install msvs-detect
@@ -251,25 +253,22 @@ get_ocaml_source() {
 
     # Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
     if [ ! -e "$OCAMLSRC_UNIX"/flexdll ]; then
-        downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$OCAMLSRC_UNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
+        log_trace downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$OCAMLSRC_UNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
     fi
 }
 
 # Since it is hard to reason about mutated source directories with different-platform object files, use a pristine source dir
 # for the host and other pristine source dirs for each target
 get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
-if [ -n "$TARGETABICOMPILER" ]; then
-    # Loop over each target abi script file; each file separated by semicolons
-    printf "%s\n" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
-    tail -v -n1000 "$WORK"/tabi
-    while IFS= read -r _abifile
+if [ -n "$TARGETABIS" ]; then
+    # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
+    printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    while IFS= read -r _abientry
     do
-        # shellcheck disable=SC1090
-        TARGET_ABI=$(set -x ; . "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
-        get_ocaml_source "$OCAMLSRC_UNIX/opt/cross/$TARGET_ABI" "$OCAMLSRC_MIXED/opt/cross/$TARGET_ABI"
+        _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+        get_ocaml_source "$OCAMLSRC_UNIX/opt/cross/$_targetabi" "$OCAMLSRC_MIXED/opt/cross/$_targetabi"
     done < "$WORK"/tabi
 fi
-exit 107
 
 # ---------------------------
 
@@ -283,25 +282,27 @@ install_reproducible_readme           installtime/unix/private/reproducible-comp
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-functions.sh
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-example_1.sh
-if [ -n "$TARGETABICOMPILER" ]; then
-    _reproscripts=
-    # Loop over each target abi script file; each file separated by semicolons
-    printf "%s" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
-    while IFS= read -r _abifile
+if [ -n "$TARGETABIS" ]; then
+    _accumulator=
+    # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
+    printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+    while IFS= read -r _abientry
     do
-        # shellcheck disable=SC1090
-        TARGET_ABI=$(. "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
+        _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+        _abiscript=$(printf "%s" "$_abientry" | sed 's/^[^=]*=//')
 
-        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$TARGET_ABI.sh"
-        if [ -n "$_reproscripts" ]; then
-            _reproscripts="$_reproscripts;$_script"
+        # Since we want the ABI scripts to be reproducible, we install them in a reproducible place and set
+        # the reproducible arguments (-a) to point to that reproducible place
+        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
+        if [ -n "$_accumulator" ]; then
+            _accumulator="$_accumulator;$_targetabi=$_script"
         else
-            _reproscripts="$_script"
+            _accumulator="$_targetabi=$_script"
         fi
-        install_reproducible_generated_file "$TARGETABICOMPILER" installtime/unix/private/reproducible-compile-ocaml-targetabi-"$TARGET_ABI".sh
+        install_reproducible_generated_file "$_abiscript" installtime/unix/private/reproducible-compile-ocaml-targetabi-"$_targetabi".sh
     done < "$WORK"/tabi
-    SETUP_ARGS+=( -a "$_reproscripts" )
-    BUILD_CROSS_ARGS+=( -a "$_reproscripts" )
+    SETUP_ARGS+=( -a "$_accumulator" )
+    BUILD_CROSS_ARGS+=( -a "$_accumulator" )
 fi
 install_reproducible_system_packages  installtime/unix/private/reproducible-compile-ocaml-0-system.sh
 install_reproducible_script_with_args installtime/unix/private/reproducible-compile-ocaml-1-setup.sh "${COMMON_ARGS[@]}" "${SETUP_ARGS[@]}"

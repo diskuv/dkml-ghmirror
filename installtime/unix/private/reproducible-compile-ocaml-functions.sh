@@ -26,11 +26,19 @@
 # Purpose:
 # 1. Provide common functions to be sourced in the reproducible step scripts.
 #
+# Prereqs:
+# * autodetect_system_binaries() of crossplatform-functions.sh has already been invoked
+# * autodetect_system_path()  of crossplatform-functions.sh has already been invoked
 # -------------------------------------------------------
 
 # Most of this section was adapted from
 # https://github.com/ocaml/opam/blob/012103bc52bfd4543f3d6f59edde91ac70acebc8/shell/bootstrap-ocaml.sh
 # with portable shell linting (shellcheck) fixes applied.
+
+# We do not want any system OCaml to leak into the configuration of the new OCaml we are compiling.
+# All OCaml influencing variables should be nullified here except PATH where we will use
+# autodetect_system_path() of crossplatform-functions.sh.
+ocaml_configure_no_ocaml_leak_environment="OCAML_TOPLEVEL_PATH= OCAMLLIB="
 
 windows_configure_and_define_make() {
   windows_configure_and_define_make_HOST="$1"
@@ -70,9 +78,10 @@ windows_configure_and_define_make() {
   windows_configure_and_define_make_WINPREFIX=$(printf "%s\n" "${windows_configure_and_define_make_PREFIX}" | cygpath -f - -m)
   # shellcheck disable=SC2086
   with_environment_for_ocaml_configure \
-    PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:${PATH}" \
+    PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:$DKML_SYSTEM_PATH" \
     Lib="${windows_configure_and_define_make_LIB_PREPEND}${Lib:-}" \
     Include="${windows_configure_and_define_make_INC_PREPEND}${Include:-}" \
+    $ocaml_configure_no_ocaml_leak_environment \
     ./configure --prefix "$windows_configure_and_define_make_WINPREFIX" \
                 --build=$windows_configure_and_define_make_BUILD --host="$windows_configure_and_define_make_HOST" \
                 --disable-stdlib-manpages \
@@ -117,7 +126,7 @@ ocaml_configure() {
     shift
     {
       if [ -n "$ocaml_configure_PRECONFIGURE" ]; then
-        printf "set -x ; . '%s' ; set +x\n" "$ocaml_configure_PRECONFIGURE"
+        printf "set -x ; . '%s' ; DKML_TARGET_ABI='%s'; set +x\n" "$ocaml_configure_ABI" "$ocaml_configure_PRECONFIGURE"
       fi
       $DKMLSYS_CAT "$make_preconfigured_env_script_SRC"
     } > "$make_preconfigured_env_script_DEST"
@@ -183,8 +192,10 @@ ocaml_configure() {
       exit 1
     fi
 
-    # do ./configure and make using host triplet assigned in Select Host Compiler step
-    windows_configure_and_define_make "$OCAML_HOST_TRIPLET" "$PREFIX" "${MSVS_PATH}" "${MSVS_LIB};" "${MSVS_INC};"
+    # do ./configure and define make using host triplet defined in compiler autodetection
+    windows_configure_and_define_make "$OCAML_HOST_TRIPLET" "$ocaml_configure_PREFIX" \
+      "$MSVS_PATH" "$MSVS_LIB;" "$MSVS_INC;" \
+      "$ocaml_configure_EXTRA_OPTS"
   elif [ -n "$ocaml_configure_ARCH" ] && [ -n "${COMSPEC}" ] && [ -x "${COMSPEC}" ] ; then
     ocaml_configure_PATH_PREPEND=
     ocaml_configure_LIB_PREPEND=
@@ -269,11 +280,16 @@ ocaml_configure() {
       ocaml_configure_PATH_PREPEND="${ocaml_configure_PATH_PREPEND}:"
     fi
     # do ./configure; define make function
-    windows_configure_and_define_make $ocaml_configure_HOST "$ocaml_configure_PREFIX" "$ocaml_configure_PATH_PREPEND" "$ocaml_configure_LIB_PREPEND" "$ocaml_configure_INC_PREPEND" "$ocaml_configure_EXTRA_OPTS"
+    windows_configure_and_define_make $ocaml_configure_HOST "$ocaml_configure_PREFIX" \
+      "$ocaml_configure_PATH_PREPEND" "$ocaml_configure_LIB_PREPEND" "$ocaml_configure_INC_PREPEND" \
+      "$ocaml_configure_EXTRA_OPTS"
   else
     # do ./configure
     # shellcheck disable=SC2086
-    with_environment_for_ocaml_configure ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
+    with_environment_for_ocaml_configure \
+      PATH="$DKML_SYSTEM_PATH" \
+      $ocaml_configure_no_ocaml_leak_environment \
+      ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
     # define make function
     ocaml_make() {
       ${MAKE:-make} "$@"

@@ -65,6 +65,32 @@ autodetect_posix_shell() {
     fi
 }
 
+# Get a path that has system binaries, and nothing else.
+#
+# Purpose: Use whenever you have something meant to be reproducible.
+#
+# On Windows this includes the Cygwin/MSYS2 paths but also Windows directories
+# like C:\Windows\System32 and C:\Windows\System32\OpenSSH.
+#
+# Output:
+#   env:DKML_SYSTEM_PATH - A PATH containing only system directories like /usr/bin.
+#      The path will be in Unix format (so a path on Windows MSYS2 could be /c/Windows/System32)
+autodetect_system_path() {
+    export DKML_SYSTEM_PATH
+    if [ -x /usr/bin/cygpath ]; then
+        autodetect_system_path_SYSDIR=$(/usr/bin/cygpath --sysdir)
+        autodetect_system_path_WINDIR=$(/usr/bin/cygpath --windir)
+    fi
+    if is_cygwin_build_machine; then
+        DKML_SYSTEM_PATH=/usr/bin:/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
+    elif is_msys2_msys_build_machine; then
+        # /bin is a mount (essentially a symlink) to /usr/bin on MSYS2
+        DKML_SYSTEM_PATH=/usr/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
+    else
+        DKML_SYSTEM_PATH=/usr/bin:/bin
+    fi
+}
+
 # Get standard locations of Unix system binaries like `/usr/bin/mv` (or `/bin/mv`).
 #
 # Will not return anything in `/usr/local/bin` or `/usr/sbin`. Use when you do not
@@ -806,6 +832,7 @@ autodetect_vsdev() {
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:BUILDHOST_ARCH will contain the correct ARCH
+# - env:DKML_SYSTEM_PATH
 # - env:OCAML_HOST_TRIPLET is non-empty if `--host OCAML_HOST_TRIPLET` should be passed to OCaml's ./configure script when
 #   compiling OCaml. Aligns with the PLATFORM variable that was specified, especially for cross-compilation.
 # - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
@@ -848,6 +875,8 @@ autodetect_compiler() {
 
     # Set DKML_POSIX_SHELL if not already set
     autodetect_posix_shell
+    # Set DKML_SYSTEM_PATH
+    autodetect_system_path
 
     # Set DKMLSYS_*
     autodetect_system_binaries
@@ -954,6 +983,7 @@ autodetect_compiler_vsdev() {
     } > "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat
 
     # SECOND, construct a function that will call Microsoft's vsdevcmd.bat script.
+    # We will use DKML_SYSTEM_PATH for reproducibility.
     if   [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 4 ]; then
         autodetect_compiler_VSCMD_DEBUG=3
     elif [ "${DKML_BUILD_TRACE:-ON}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 3 ]; then
@@ -964,9 +994,9 @@ autodetect_compiler_vsdev() {
         autodetect_compiler_VSCMD_DEBUG=
     fi
     if [ -x /usr/bin/cygpath ]; then
-        PATH_UNIX=$(/usr/bin/cygpath --path "$PATH")
+        autodetect_compiler_vsdev_SYSTEMPATHUNIX=$(/usr/bin/cygpath --path "$DKML_SYSTEM_PATH")
     else
-        PATH_UNIX="$PATH"
+        autodetect_compiler_vsdev_SYSTEMPATHUNIX="$DKML_SYSTEM_PATH"
     fi
     # https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#vcvarsall-syntax
     # Notice that for MSVC the build machine is always x86 or x86_64, never ARM or ARM64.
@@ -975,7 +1005,7 @@ autodetect_compiler_vsdev() {
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x86 >&2
             }
@@ -983,7 +1013,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=x64 >&2
             }
@@ -991,7 +1021,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=arm >&2
             }
@@ -999,7 +1029,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x86 -arch=arm64 >&2
             }
@@ -1012,7 +1042,7 @@ autodetect_compiler_vsdev() {
         # The build host machine is 64-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -arch=x64 >&2
             }
@@ -1020,7 +1050,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=x86 >&2
             }
@@ -1028,7 +1058,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=arm64 >&2
             }
@@ -1036,7 +1066,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$PATH_UNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
                     "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
                     -host_arch=x64 -arch=arm >&2
             }
@@ -1120,11 +1150,11 @@ autodetect_compiler_vsdev() {
     autodetect_compiler_COMPILER_PATH_WIN=$("$DKMLSYS_CAT" "$autodetect_compiler_TEMPDIR"/winpath.txt)
 
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
-    # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {PATH}) are used. But maintain the order
+    # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {DKML_SYSTEM_PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
     printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
     "$DKMLSYS_SORT" -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
-    printf "%s\n" "$PATH" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' | "$DKMLSYS_SORT" -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
+    printf "%s\n" "$DKML_SYSTEM_PATH" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' | "$DKMLSYS_SORT" -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
     "$DKMLSYS_COMM" \
         -23 \
         "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt \

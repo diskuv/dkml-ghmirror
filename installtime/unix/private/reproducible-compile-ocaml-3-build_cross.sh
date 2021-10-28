@@ -55,12 +55,12 @@ usage() {
         printf "\n"
         printf "%s\n" "See 'reproducible-compile-ocaml-1-setup.sh -h' for more comprehensive docs."
         printf "\n"
-        printf "%s\n" "If not '-a TARGETABICOMPILER' is specified, this script does nothing"
+        printf "%s\n" "If not '-a TARGETABIS' is specified, this script does nothing"
         printf "\n"
         printf "%s\n" "Options"
         printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file"
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
-        printf "%s\n" "   -a TARGETABICOMPILER: Optional. See reproducible-compile-ocaml-1-setup.sh"
+        printf "%s\n" "   -a TARGETABIS: Optional. See reproducible-compile-ocaml-1-setup.sh"
         printf "%s\n" "   -c ARCH: Useful only for Windows. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
     } >&2
@@ -68,7 +68,7 @@ usage() {
 
 DKMLDIR=
 TARGETDIR=
-TARGETABICOMPILER=
+TARGETABIS=
 OPT_WIN32_ARCH=auto
 CONFIGUREARGS=
 while getopts ":d:t:a:c:g:h" opt; do
@@ -89,7 +89,7 @@ while getopts ":d:t:a:c:g:h" opt; do
             TARGETDIR="$OPTARG"
         ;;
         a )
-            TARGETABICOMPILER="$OPTARG"
+            TARGETABIS="$OPTARG"
         ;;
         c )
             OPT_WIN32_ARCH="$OPTARG"
@@ -137,7 +137,7 @@ else
 fi
 
 # Quick exit
-if [ -z "$TARGETABICOMPILER" ]; then
+if [ -z "$TARGETABIS" ]; then
   exit 0
 fi
 
@@ -149,6 +149,10 @@ fi
 # and https://github.com/anmonteiro/nix-overlays/blob/79d36ea351edbaf6ee146d9bf46b09ee24ed6ece/cross/ocaml.nix
 # after discussion from authors at https://discuss.ocaml.org/t/cross-compiling-implementations-how-they-work/8686 .
 # Portable shell linting (shellcheck) fixes applied.
+
+# Prereqs for reproducible-compile-ocaml-functions.sh
+autodetect_system_binaries
+autodetect_system_path
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/installtime/unix/private/reproducible-compile-ocaml-functions.sh"
@@ -277,6 +281,9 @@ build_world() {
               compilerlibs/ocamlcommon.cmxa \
               compilerlibs/ocamlbytecomp.cmxa \
               compilerlibs/ocamloptcomp.cmxa
+  if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
+    make_target "$build_world_BUILD_ROOT" flexlink.opt
+  fi
 
   ## Install
   cp "$OCAMLRUN" runtime/ocamlrun
@@ -285,14 +292,14 @@ build_world() {
 }
 
 
-# Loop over each target abi script file; each file separated by semicolons
-printf "%s" "$TARGETABICOMPILER" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
-while IFS= read -r _abifile
+# Loop over each target abi script file; each file separated by semicolons, and each term with an equals
+printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
+while IFS= read -r _abientry
 do
-    # shellcheck disable=SC1090
-    _TARGET_ABI=$(. "$_abifile" && printf "%s" "$DKML_TARGET_ABI")
+  _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+  _abiscript=$(printf "%s" "$_abientry" | sed 's/^[^=]*=//')
 
-    _BUILD_ROOT=$OCAMLSRC_UNIX/opt/cross/$_TARGET_ABI
-    cd "$_BUILD_ROOT"
-    build_world "$_BUILD_ROOT" "$_TARGET_ABI" "$_abifile"
+  _BUILD_ROOT=$OCAMLSRC_UNIX/opt/cross/$_targetabi
+  cd "$_BUILD_ROOT"
+  build_world "$_BUILD_ROOT" "$_targetabi" "$_abiscript"
 done < "$WORK"/tabi
