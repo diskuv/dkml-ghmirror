@@ -932,9 +932,11 @@ autodetect_compiler() {
         autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
     fi
 
-    if autodetect_vsdev; then
+    if autodetect_vsdev && [ -n "$VSDEV_HOME_UNIX" ]; then
         # DKMLPARENTHOME_BUILDHOST and VSDEV_* will have been set
         autodetect_compiler_vsdev
+    elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] || [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
+        autodetect_compiler_darwin
     else
         autodetect_compiler_other
     fi
@@ -952,6 +954,42 @@ autodetect_compiler_other() {
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "#!$DKML_POSIX_SHELL"
             printf "%s\n" "exec $DKMLSYS_ENV \\"
+        fi
+
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+            printf ")"
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+            # Add arguments
+            printf "%s\n" '  "$@"'
+        fi
+    } > "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
+}
+
+autodetect_compiler_darwin() {
+    {
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+            printf "(\n"
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+            printf "%s\n" "#!$DKML_POSIX_SHELL"
+        fi
+
+        if [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+            if [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] ; then
+                printf "%s\n" "exec arch --arch x86_64 $DKMLSYS_ENV CC='arch --arch x86_64 clang' \\"
+            elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
+                if [ "$BUILDHOST_ARCH" = "darwin_arm64" ]; then
+                    printf "%s\n" "exec arch --arch arm64 $DKMLSYS_ENV CC='arch --arch arm64 clang' \\"
+                else
+                    printf "%s\n" "FATAL: Only Apple Silicon (darwin_arm64) build machines can target Apple Silicon binaries." >&2
+                    printf "%s\n" "       Apple does not provide Rosetta emulation on Intel macOS machines." >&2
+                    exit 107
+                fi
+            else
+                printf "%s\n" "FATAL: check_state autodetect_compiler_darwin + unsupported arch=$autodetect_compiler_PLATFORM_ARCH" >&2
+                exit 107
+            fi
         fi
 
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
