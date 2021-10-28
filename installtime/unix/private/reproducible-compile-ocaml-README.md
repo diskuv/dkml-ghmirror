@@ -1,9 +1,8 @@
 # Reproducible: Compile Opam
 
-Caution:
-* The MSVC compiler search performed by https://github.com/metastack/msvs-tools/blob/master/msvs-detect is not yet fully reproducible since it
-  down not allow pinning the MSVC compiler minor version (ex. 14.26 vs 14.29 can cause a compilation failure) and the Windows SDK toolkit (ex. 10.0.18362.0
-  is only SDK known to work).
+Cautions:
+* Windows 10 ARM (64-bit Snapdragon) does not work as a cross-compiling target. Most of the patches are done for it except `flexdll` has not yet been patched
+  to handle more than `x64` or `x86`, or accept more parameters than `-x64`.
 
 Prerequisites:
 * On Windows you will need:

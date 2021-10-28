@@ -46,8 +46,11 @@ windows:build-opam:
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
 
-    # Clean up excess files
+    # Clean up excess files, including git submodules and cross-compiled targets
     - git -C "$DEPLOYDIR\src\ocaml" clean -d -f -x
+    - git -C "$DEPLOYDIR\src\ocaml" submodule foreach --recursive clean -d -f -
+    - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" clean -d -f -x } }
+    - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" submodule foreach --recursive clean -d -f - } }
 
     # Create .tar.gz and .zip
     - New-Item -Path "$EXTRASRC\ocamldist" -ItemType Directory

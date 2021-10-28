@@ -75,12 +75,14 @@ windows_configure_and_define_make() {
       ;;
   esac
 
-  windows_configure_and_define_make_WINPREFIX=$(printf "%s\n" "${windows_configure_and_define_make_PREFIX}" | cygpath -f - -m)
+  windows_configure_and_define_make_WINPREFIX=$(printf "%s\n" "${windows_configure_and_define_make_PREFIX}" | /usr/bin/cygpath -f - -m)
+  # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
+  # is probably fine in Cygwin.
   # shellcheck disable=SC2086
-  with_environment_for_ocaml_configure \
+  with_environment_for_ocaml_configure --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
     PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:$DKML_SYSTEM_PATH" \
-    Lib="${windows_configure_and_define_make_LIB_PREPEND}${Lib:-}" \
-    Include="${windows_configure_and_define_make_INC_PREPEND}${Include:-}" \
+    LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
+    INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
     $ocaml_configure_no_ocaml_leak_environment \
     ./configure --prefix "$windows_configure_and_define_make_WINPREFIX" \
                 --build=$windows_configure_and_define_make_BUILD --host="$windows_configure_and_define_make_HOST" \
@@ -100,10 +102,12 @@ windows_configure_and_define_make() {
     OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=OFF
   fi
   ocaml_make() {
-    log_trace env \
-      PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:${PATH}" \
-      Lib="${windows_configure_and_define_make_LIB_PREPEND}${Lib:-}" \
-      Include="${windows_configure_and_define_make_INC_PREPEND}${Include:-}" \
+    # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
+    # is probably fine in Cygwin.
+    log_trace env --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
+      PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:$DKML_SYSTEM_PATH" \
+      LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
+      INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
       "${MAKE:-make}" "$@"
   }
 }
@@ -295,7 +299,7 @@ ocaml_configure() {
       ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
     # define make function
     ocaml_make() {
-      log_trace "${MAKE:-make}" "$@"
+      log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"
     }
   fi
 }

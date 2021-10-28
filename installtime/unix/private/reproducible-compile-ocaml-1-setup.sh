@@ -222,54 +222,60 @@ autodetect_system_binaries
 
 # Find OCaml patch
 # Source: https://github.com/EduardoRFS/reason-mobile/tree/master/patches/ocaml/files or https://github.com/anmonteiro/nix-overlays/tree/master/cross
-find_ocaml_patch() {
-    find_ocaml_patch_VER=$1
+find_ocaml_crosscompile_patch() {
+    find_ocaml_crosscompile_patch_VER=$1
     shift
-    case "$find_ocaml_patch_VER" in
+    case "$find_ocaml_crosscompile_patch_VER" in
     4.11.*)
         OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_11.patch
+        OCAMLPATCHEXTRA= # TODO
         ;;
     4.12.*)
         OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_12.patch
+        OCAMLPATCHEXTRA=reproducible-compile-ocaml-cross_4_12_extra.patch
         ;;
     4.13.*)
         # shellcheck disable=SC2034
         OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_13.patch
+        # shellcheck disable=SC2034
+        OCAMLPATCHEXTRA= # TODO
         ;;
     *)
-        echo "FATAL: There is no cross-compiling patch file yet for OCaml $find_ocaml_patch_VER" >&2
+        echo "FATAL: There is no cross-compiling patch file yet for OCaml $find_ocaml_crosscompile_patch_VER" >&2
         exit 107
         ;;
     esac
 }
 
-apply_ocaml_patch() {
-    apply_ocaml_patch_SRCDIR=$1
+apply_ocaml_crosscompile_patch() {
+    apply_ocaml_crosscompile_patch_PATCHFILE=$1
+    shift
+    apply_ocaml_crosscompile_patch_SRCDIR=$1
     shift
 
-    apply_ocaml_patch_SRCDIR_MIXED="$apply_ocaml_patch_SRCDIR"
-    apply_ocaml_patch_PATCH_MIXED="$PWD"/installtime/unix/private/$OCAMLPATCHFILE
+    apply_ocaml_crosscompile_patch_SRCDIR_MIXED="$apply_ocaml_crosscompile_patch_SRCDIR"
+    apply_ocaml_crosscompile_patch_PATCH_MIXED="$PWD"/installtime/unix/private/$apply_ocaml_crosscompile_patch_PATCHFILE
     if [ -x /usr/bin/cygpath ]; then
-        apply_ocaml_patch_SRCDIR_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_patch_SRCDIR_MIXED")
-        apply_ocaml_patch_PATCH_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_patch_PATCH_MIXED")
+        apply_ocaml_crosscompile_patch_SRCDIR_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED")
+        apply_ocaml_crosscompile_patch_PATCH_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_crosscompile_patch_PATCH_MIXED")
     fi
     # Before packaging any of these artifacts the CI will likely do a `git clean -d -f -x` to reduce the
     # size and increase the safety of the artifacts. So we do a `git commit` after we have patched so
     # the reproducible source code has the patches applied, even after the `git clean`.
-    # log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" apply --verbose "$apply_ocaml_patch_PATCH_MIXED"
-    log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" config user.email "nobody+autopatcher@diskuv.ocaml.org"
-    log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" config user.name  "Auto Patcher"
-    git -C "$apply_ocaml_patch_SRCDIR_MIXED" am --abort 2>/dev/null || true # clean any previous interrupted mail patch
+    # log_trace git -C "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED" apply --verbose "$apply_ocaml_crosscompile_patch_PATCH_MIXED"
+    log_trace git -C "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED" config user.email "nobody+autopatcher@diskuv.ocaml.org"
+    log_trace git -C "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED" config user.name  "Auto Patcher"
+    git -C "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED" am --abort 2>/dev/null || true # clean any previous interrupted mail patch
     {
         printf "From: nobody+autopatcher@diskuv.ocaml.org\n"
-        printf "Subject: OCaml cross-compiling patch\n"
+        printf "Subject: OCaml cross-compiling patch %s\n" "$apply_ocaml_crosscompile_patch_PATCHFILE"
         printf "Date: 1 Jan 2000 00:00:00 +0000\n"
         printf "\n"
-        printf "Reproducible patch %s\n" "$OCAMLPATCHFILE"
+        printf "Reproducible patch\n"
         printf "\n"
         printf "%s\n" "---"
-        $DKMLSYS_CAT "$apply_ocaml_patch_PATCH_MIXED"
-    } | log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" am --ignore-date --committer-date-is-author-date
+        $DKMLSYS_CAT "$apply_ocaml_crosscompile_patch_PATCH_MIXED"
+    } | log_trace git -C "$apply_ocaml_crosscompile_patch_SRCDIR_MIXED" am --ignore-date --committer-date-is-author-date
 }
 
 # ---------------------
@@ -322,18 +328,28 @@ get_ocaml_source() {
 
 get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
 
+# Find but do not apply the cross-compiling patches to the host ABI
 _OCAMLVER=$(awk 'NR==1{print}' "$OCAMLSRC_UNIX"/VERSION)
-find_ocaml_patch "$_OCAMLVER"
-apply_ocaml_patch "$OCAMLSRC_UNIX"
+find_ocaml_crosscompile_patch "$_OCAMLVER"
 
 if [ -n "$TARGETABIS" ]; then
+    if [ -z "$OCAMLPATCHEXTRA" ]; then
+        printf "FATAL: OCaml version %s does not yet have patches for cross-compiling\n" "$_OCAMLVER" >&2
+        exit 107
+    fi
+
     # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
     printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
     while IFS= read -r _abientry
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+        # git clone
         get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml"
-        apply_ocaml_patch "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
+        # git patch src/ocaml
+        apply_ocaml_crosscompile_patch "$OCAMLPATCHFILE"  "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
+        apply_ocaml_crosscompile_patch "$OCAMLPATCHEXTRA" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
+        # git patch src/ocaml/flexdll
+        apply_ocaml_crosscompile_patch "reproducible-compile-ocaml-cross_flexdll_0_39.patch" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml/flexdll"
     done < "$WORK"/tabi
 fi
 

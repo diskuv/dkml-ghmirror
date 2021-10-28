@@ -1,0 +1,62 @@
+diff --git a/configure b/configure
+index 81a77e3b68..9e85f95432 100755
+--- a/configure
++++ b/configure
+@@ -12450,6 +12450,10 @@ case $host in #(
+       AR=""; RANLIB=echo; RANLIBCMD=""
+       if test "$host_cpu" = "x86_64" ; then :
+   machine="-machine:AMD64 "
++      elif test "$host_cpu" = "aarch64" ; then
++  machine="-machine:ARM64 "
++      elif test "$host_cpu" = "armv7" ; then
++  machine="-machine:ARM "
+ else
+   machine=""
+ fi
+@@ -12836,9 +12840,9 @@ fi
+     mkexe='$(FLEXLINK) -exe $(if $(OC_LDFLAGS),-link "$(OC_LDFLAGS)")'
+     oc_ldflags='/ENTRY:wmainCRTStartup'
+     case $host in #(
+-  i686-pc-windows) :
++  i686-pc-windows|armv7-pc-windows) :
+     flexdll_chain=msvc ;; #(
+-  x86_64-pc-windows) :
++  x86_64-pc-windows|aarch64-pc-windows) :
+     flexdll_chain=msvc64 ;; #(
+   *) :
+      ;;
+@@ -13875,6 +13879,10 @@ case $host in #(
+     arch=i386; system=win32 ;; #(
+   x86_64-pc-windows) :
+     arch=amd64; system=win64 ;; #(
++  armv7-pc-windows) :
++    arch=arm; model=armv7; system=win32 ;; #(
++  aarch64-pc-windows) :
++    arch=arm64; system=win64 ;; #(
+   powerpc64le*-*-linux*) :
+     arch=power; model=ppc64le; system=elf ;; #(
+   powerpc*-*-linux*) :
+@@ -14232,6 +14240,10 @@ case "$arch,$system" in #(
+     default_as="ml -nologo -coff -Cp -c -Fo" ;; #(
+   amd64,win64) :
+     default_as="ml64 -nologo -Cp -c -Fo" ;; #(
++  arm,win32) :
++    default_as="armasm -o" ;; #(
++  arm64,win64) :
++    default_as="armasm64 -o" ;; #(
+   amd64,macosx) :
+     case $ocaml_cv_cc_vendor in #(
+   clang-*) :
+@@ -17079,10 +17091,10 @@ case $host in #(
+   x86_64-w64-mingw32) :
+     flexdll_chain='mingw64'
+     flexlink_flags="-chain $flexdll_chain -stack 33554432" ;; #(
+-  i686-pc-windows) :
++  i686-pc-windows|armv7-pc-windows) :
+     flexdll_chain='msvc'
+     flexlink_flags="-merge-manifest -stack 16777216" ;; #(
+-  x86_64-pc-windows) :
++  x86_64-pc-windows|aarch64-pc-windows) :
+     flexdll_chain='msvc64'
+     flexlink_flags="-x64 -merge-manifest -stack 33554432" ;; #(
+   *) :
