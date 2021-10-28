@@ -328,17 +328,26 @@ install_reproducible_file() {
     _install_reproducible_file_RELDIR=$(dirname "$_install_reproducible_file_RELFILE")
     _install_reproducible_file_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
     "$DKMLSYS_INSTALL" -d "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
-    # Sigh; portable scripts do not have a [ f1 -ef f2 ] operator. When we rerun a setup script from within
+    # When we rerun a setup script from within
     # the reproducible target directory we may be installing on top of ourselves; that is, installing with
-    # the source and destination files being the same file. So we compare inodes
-    install_reproducible_file_STAT1=$("$DKMLSYS_STAT" -c '%i' "$DKMLDIR"/"$_install_reproducible_file_RELFILE")
-    if [ -e "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE" ]; then
-        install_reproducible_file_STAT2=$("$DKMLSYS_STAT" -c '%i' "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE")
+    # the source and destination files being the same file.
+    # shellcheck disable=SC3013
+    if [ /dev/null -ef /dev/null ] 2>/dev/null; then
+        # This script accepts the -ef operator
+        if [ ! "$DKMLDIR"/"$_install_reproducible_file_RELFILE" -ef "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE" ]; then
+            "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+        fi
     else
-        install_reproducible_file_STAT2=
-    fi
-    if [ ! "$install_reproducible_file_STAT1" = "$install_reproducible_file_STAT2" ]; then
-        "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+        # Sigh; portable scripts are not required to have a [ f1 -ef f2 ] operator. So we compare inodes (assuming `stat` supports `-c`)
+        install_reproducible_file_STAT1=$("$DKMLSYS_STAT" -c '%i' "$DKMLDIR"/"$_install_reproducible_file_RELFILE")
+        if [ -e "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE" ]; then
+            install_reproducible_file_STAT2=$("$DKMLSYS_STAT" -c '%i' "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELFILE")
+        else
+            install_reproducible_file_STAT2=
+        fi
+        if [ ! "$install_reproducible_file_STAT1" = "$install_reproducible_file_STAT2" ]; then
+            "$DKMLSYS_INSTALL" "$DKMLDIR"/"$_install_reproducible_file_RELFILE" "$_install_reproducible_file_BOOTSTRAPDIR"/"$_install_reproducible_file_RELDIR"/
+        fi
     fi
 }
 
