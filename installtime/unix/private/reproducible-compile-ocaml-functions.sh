@@ -100,10 +100,11 @@ windows_configure_and_define_make() {
     OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=OFF
   fi
   ocaml_make() {
-    PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:${PATH}" \
-    Lib="${windows_configure_and_define_make_LIB_PREPEND}${Lib:-}" \
-    Include="${windows_configure_and_define_make_INC_PREPEND}${Include:-}" \
-    ${MAKE:-make} "$@"
+    log_trace env \
+      PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:${PATH}" \
+      Lib="${windows_configure_and_define_make_LIB_PREPEND}${Lib:-}" \
+      Include="${windows_configure_and_define_make_INC_PREPEND}${Include:-}" \
+      "${MAKE:-make}" "$@"
   }
 }
 
@@ -126,7 +127,9 @@ ocaml_configure() {
     shift
     {
       if [ -n "$ocaml_configure_PRECONFIGURE" ]; then
-        printf "set -x ; . '%s' ; DKML_TARGET_ABI='%s'; set +x\n" "$ocaml_configure_ABI" "$ocaml_configure_PRECONFIGURE"
+        printf "DKMLDIR='%s'\n" "$DKMLDIR"
+        printf "DKML_TARGET_ABI='%s'\n" "$ocaml_configure_ABI"
+        printf ". '%s'\n" "$ocaml_configure_PRECONFIGURE"
       fi
       $DKMLSYS_CAT "$make_preconfigured_env_script_SRC"
     } > "$make_preconfigured_env_script_DEST"
@@ -141,7 +144,7 @@ ocaml_configure() {
   if [ -x /usr/bin/cygpath ]; then
     # We will use MSVS to detect Visual Studio
     with_environment_for_ocaml_configure() {
-      "$WORK"/preconfigured-env.sh "$@"
+      log_trace "$WORK"/preconfigured-env.sh "$@"
     }
     # There is a nasty bug (?) with MSYS2's dash.exe (probably _all_ dash) which will not accept the 'ProgramFiles(x86)' environment,
     # presumably because of the parentheses in it may or may not violate the POSIX standard. Typically that means that dash cannot
@@ -150,18 +153,18 @@ ocaml_configure() {
     msvs_detect() {
       msvs_detect_PF86=$(/usr/bin/cygpath -w --folder 42)
       if [ -n "${msvs_detect_PF86}" ]; then
-        env 'ProgramFiles(x86)'="$msvs_detect_PF86" ./msvs-detect "$@"
+        log_trace env 'ProgramFiles(x86)'="$msvs_detect_PF86" ./msvs-detect "$@"
       else
-        ./msvs-detect "$@"
+        log_trace ./msvs-detect "$@"
       fi
     }
   else
     # We will be using the operating system C compiler
     with_environment_for_ocaml_configure() {
-      "$WORK"/preconfigured-env.sh "$@"
+      log_trace "$WORK"/preconfigured-env.sh "$@"
     }
     msvs_detect() {
-      ./msvs-detect "$@"
+      log_trace ./msvs-detect "$@"
     }
   fi
 
@@ -181,7 +184,7 @@ ocaml_configure() {
     # When we run OCaml's ./configure, the DKML compiler must be available
     make_preconfigured_env_script "$WORK"/env-with-compiler.sh "$WORK"/preconfigured-env-with-compiler.sh
     with_environment_for_ocaml_configure() {
-      "$WORK"/preconfigured-env-with-compiler.sh "$@"
+      log_trace "$WORK"/preconfigured-env-with-compiler.sh "$@"
     }
 
     # Get MSVS_* aligned to the DKML compiler
@@ -292,7 +295,7 @@ ocaml_configure() {
       ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
     # define make function
     ocaml_make() {
-      ${MAKE:-make} "$@"
+      log_trace "${MAKE:-make}" "$@"
     }
   fi
 }

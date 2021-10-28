@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# On entry the following environment variables will be available:
-# * DKML_TARGET_PLATFORM
+# On entry the following non-exported environment variables will be available:
+# * DKML_TARGET_ABI
 # * DKMLDIR
 #
 # This example uses DKML's autodetect_compiler function() to:
@@ -11,10 +11,10 @@
 # shellcheck disable=SC1091
 . "$DKMLDIR"/etc/contexts/linux-build/crossplatform-functions.sh
 
-# Detect the compiler based on DKML_TARGET_PLATFORM environment value (or guess if not set); set BUILDHOST_ARCH
+# Detect the compiler based on DKML_TARGET_ABI environment value (or guess if not set); set BUILDHOST_ARCH
 tmpl="$(mktemp)"
 trap 'rm -f "$tmpl"' EXIT
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON autodetect_compiler "$tmpl"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKML_TARGET_ABI" autodetect_compiler "$tmpl"
 
 # Output:
 #   PATH=

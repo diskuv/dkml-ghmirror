@@ -77,8 +77,8 @@ usage() {
         printf "%s\n" "        DKML_TARGET_ABI - The target ABI"
         printf "%s\n" "          Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
         printf "%s\n" "          Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
-        printf "%s\n" "      The Posix shell script will have the \$DKMLDIR environment variable containing the directory of .dkmlroot, and"
-        printf "%s\n" "        \$DKML_TARGET_ABI containing the name specified in the TARGETABIS option"
+        printf "%s\n" "      The Posix shell script will have an unexported \$DKMLDIR environment variable containing the directory"
+        printf "%s\n" "        of .dkmlroot, and an unexported \$DKML_TARGET_ABI containing the name specified in the TARGETABIS option"
         printf "%s\n" "      The Posix shell script should set some or all of the following compiler environment variables:"
         printf "%s\n" "        PATH - The PATH environment variable. You can use \$PATH to add to the existing PATH. On Windows"
         printf "%s\n" "          which uses MSYS2, the PATH should be colon separated with each PATH entry a UNIX path like /usr/a.out"
@@ -140,8 +140,9 @@ while getopts ":d:v:t:a:b:c:e:g:h" opt; do
         ;;
         t )
             TARGETDIR="$OPTARG"
-            BUILD_HOST_ARGS+=( -t . )
             SETUP_ARGS+=( -t . )
+            BUILD_HOST_ARGS+=( -t . )
+            BUILD_CROSS_ARGS+=( -t . )
         ;;
         a )
             TARGETABIS="$OPTARG"
@@ -204,9 +205,11 @@ TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better tha
 if [ -x /usr/bin/cygpath ]; then
     OCAMLSRC_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/src/ocaml")
     OCAMLSRC_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX/src/ocaml")
+    TARGETDIR_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX")
 else
     OCAMLSRC_UNIX="$TARGETDIR_UNIX/src/ocaml"
     OCAMLSRC_MIXED="$OCAMLSRC_UNIX"
+    TARGETDIR_MIXED="$TARGETDIR_UNIX"
 fi
 
 # To be portable whether we build scripts in a container or not, we
@@ -240,6 +243,7 @@ get_ocaml_source() {
         log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
         log_trace git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        set +x
     else
         # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
         if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
@@ -249,11 +253,11 @@ get_ocaml_source() {
     fi
 
     # Install msvs-detect
-    install "$WORK"/msvs/msvs-detect "$OCAMLSRC_UNIX"/msvs-detect
+    install "$WORK"/msvs/msvs-detect "$get_ocaml_source_SRCUNIX"/msvs-detect
 
     # Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
-    if [ ! -e "$OCAMLSRC_UNIX"/flexdll ]; then
-        log_trace downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$OCAMLSRC_UNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
+    if [ ! -e "$get_ocaml_source_SRCUNIX"/flexdll ]; then
+        log_trace downloadfile https://github.com/alainfrisch/flexdll/archive/0.39.tar.gz "$get_ocaml_source_SRCUNIX/flexdll.tar.gz" 51a6ef2e67ff475c33a76b3dc86401a0f286c9a3339ee8145053ea02d2fb5974
     fi
 }
 
@@ -266,7 +270,7 @@ if [ -n "$TARGETABIS" ]; then
     while IFS= read -r _abientry
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
-        get_ocaml_source "$OCAMLSRC_UNIX/opt/cross/$_targetabi" "$OCAMLSRC_MIXED/opt/cross/$_targetabi"
+        get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml"
     done < "$WORK"/tabi
 fi
 
@@ -292,8 +296,8 @@ if [ -n "$TARGETABIS" ]; then
         _abiscript=$(printf "%s" "$_abientry" | sed 's/^[^=]*=//')
 
         # Since we want the ABI scripts to be reproducible, we install them in a reproducible place and set
-        # the reproducible arguments (-a) to point to that reproducible place
-        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
+        # the reproducible arguments (-a) to point to that reproducible place.
+        _script="\"\$PWD\"/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
         if [ -n "$_accumulator" ]; then
             _accumulator="$_accumulator;$_targetabi=$_script"
         else

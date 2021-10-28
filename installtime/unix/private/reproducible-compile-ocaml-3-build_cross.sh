@@ -160,6 +160,9 @@ autodetect_system_path
 # Set NUMCPUS
 autodetect_cpus
 
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
 ## Parameters
 OCAML_HOST=$TARGETDIR_UNIX
 
@@ -242,53 +245,55 @@ make_target () {
 build_world() {
   build_world_BUILD_ROOT=$1
   shift
+  build_world_PREFIX=$1
+  shift
   build_world_TARGET_ABI=$1
   shift
   build_world_PRECONFIGURE=$1
   shift
 
   # wrappers
-  genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
-  genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib ";
 
-  genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT/ocamlc.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
-  genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT/ocamlc.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib ";
 
   # ./configure
-  ocaml_configure "$build_world_BUILD_ROOT" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS"
+  ocaml_configure "$build_world_PREFIX" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS --disable-ocamldoc"
 
   # Build
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    make_host "$build_world_BUILD_ROOT" flexdll
+    log_trace make_host "$build_world_BUILD_ROOT" flexdll
   fi
-  make_host "$build_world_BUILD_ROOT" runtime coreall
-  make_host "$build_world_BUILD_ROOT" opt-core
-  make_host "$build_world_BUILD_ROOT" ocamlc.opt
-  make_host "$build_world_BUILD_ROOT" ocamlopt.opt
-  make_host "$build_world_BUILD_ROOT" compilerlibs/ocamltoplevel.cma otherlibraries \
+  log_trace make_host "$build_world_BUILD_ROOT" runtime coreall
+  log_trace make_host "$build_world_BUILD_ROOT" opt-core
+  log_trace make_host "$build_world_BUILD_ROOT" ocamlc.opt
+  log_trace make_host "$build_world_BUILD_ROOT" ocamlopt.opt
+  log_trace make_host "$build_world_BUILD_ROOT" compilerlibs/ocamltoplevel.cma otherlibraries \
             ocamldebugger
-  make_host "$build_world_BUILD_ROOT" ocamllex.opt ocamltoolsopt \
+  log_trace make_host "$build_world_BUILD_ROOT" ocamllex.opt ocamltoolsopt \
             ocamltoolsopt.opt
-  find . -name '*.cm?' -exec rm {} +
+  log_trace find . -name '*.cm?' -exec rm {} +
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    make_target "$build_world_BUILD_ROOT" flexdll
+    log_trace make_target "$build_world_BUILD_ROOT" flexdll
   fi
-  make_target "$build_world_BUILD_ROOT" -C stdlib all allopt
-  make_target "$build_world_BUILD_ROOT" ocaml ocamlc
-  make_target "$build_world_BUILD_ROOT" ocamlopt otherlibraries \
+  log_trace make_target "$build_world_BUILD_ROOT" -C stdlib all allopt
+  log_trace make_target "$build_world_BUILD_ROOT" ocaml ocamlc
+  log_trace make_target "$build_world_BUILD_ROOT" ocamlopt otherlibraries \
               otherlibrariesopt ocamltoolsopt \
               driver/main.cmx driver/optmain.cmx \
               compilerlibs/ocamlcommon.cmxa \
               compilerlibs/ocamlbytecomp.cmxa \
               compilerlibs/ocamloptcomp.cmxa
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    make_target "$build_world_BUILD_ROOT" flexlink.opt
+    log_trace make_target "$build_world_BUILD_ROOT" flexlink.opt
   fi
 
   ## Install
-  cp "$OCAMLRUN" runtime/ocamlrun
-  make_host "$build_world_BUILD_ROOT" install
-  make_host "$build_world_BUILD_ROOT" -C debugger install
+  log_trace cp "$OCAMLRUN" runtime/ocamlrun
+  log_trace make_host "$build_world_BUILD_ROOT" install
+  log_trace make_host "$build_world_BUILD_ROOT" -C debugger install
 }
 
 
@@ -299,7 +304,8 @@ do
   _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
   _abiscript=$(printf "%s" "$_abientry" | sed 's/^[^=]*=//')
 
-  _BUILD_ROOT=$OCAMLSRC_UNIX/opt/cross/$_targetabi
-  cd "$_BUILD_ROOT"
-  build_world "$_BUILD_ROOT" "$_targetabi" "$_abiscript"
+  _CROSS_TARGETDIR=$TARGETDIR_UNIX/opt/mlcross/$_targetabi
+  _CROSS_SRCDIR=$_CROSS_TARGETDIR/src/ocaml
+  cd "$_CROSS_SRCDIR"
+  build_world "$_CROSS_SRCDIR" "$_CROSS_TARGETDIR" "$_targetabi" "$_abiscript"
 done < "$WORK"/tabi
