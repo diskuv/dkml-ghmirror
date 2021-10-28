@@ -136,7 +136,9 @@ ocaml_configure() {
         printf ". '%s'\n" "$ocaml_configure_PRECONFIGURE"
       fi
       $DKMLSYS_CAT "$make_preconfigured_env_script_SRC"
-    } > "$make_preconfigured_env_script_DEST"
+    } > "$make_preconfigured_env_script_DEST".tmp
+    $DKMLSYS_CHMOD +x "$make_preconfigured_env_script_DEST".tmp
+    $DKMLSYS_MV "$make_preconfigured_env_script_DEST".tmp "$make_preconfigured_env_script_DEST"
   }
 
   # Compiler
@@ -175,7 +177,7 @@ ocaml_configure() {
   # ./configure and define make functions
   # -------------------------------------
 
-  if [ -n "$ocaml_configure_ABI" ] && [ -n "${COMSPEC}" ] && [ -x "${COMSPEC}" ] ; then
+  if [ -n "$ocaml_configure_ABI" ] && [ -n "${COMSPEC:-}" ] && [ -x "${COMSPEC:-}" ] ; then
     # Detect the compiler matching the host ABI
     ocaml_configure_SAVE_DTP="${DKML_TARGET_PLATFORM:-}"
     DKML_TARGET_PLATFORM="$ocaml_configure_ABI"
@@ -203,7 +205,7 @@ ocaml_configure() {
     windows_configure_and_define_make "$OCAML_HOST_TRIPLET" "$ocaml_configure_PREFIX" \
       "$MSVS_PATH" "$MSVS_LIB;" "$MSVS_INC;" \
       "$ocaml_configure_EXTRA_OPTS"
-  elif [ -n "$ocaml_configure_ARCH" ] && [ -n "${COMSPEC}" ] && [ -x "${COMSPEC}" ] ; then
+  elif [ -n "$ocaml_configure_ARCH" ] && [ -n "${COMSPEC:-}" ] && [ -x "${COMSPEC:-}" ] ; then
     ocaml_configure_PATH_PREPEND=
     ocaml_configure_LIB_PREPEND=
     ocaml_configure_INC_PREPEND=
