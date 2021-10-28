@@ -874,8 +874,14 @@ autodetect_compiler() {
     autodetect_compiler_TEMPDIR=${WORK:-$TMP}
     if [ -n "${WORK:-}" ]; then
         autodetect_compiler_TEMPDIR=$WORK
-    else
+    elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
+        autodetect_compiler_TEMPDIR=$(mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlc.XXXXX)
+    elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
+        autodetect_compiler_TEMPDIR=$(mktemp -d "$TMPDIR"/dkmlc.XXXXX)
+    elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
         autodetect_compiler_TEMPDIR=$(mktemp -d "$TMP"/dkmlc.XXXXX)
+    else
+        autodetect_compiler_TEMPDIR=$(mktemp -d /tmp/dkmlc.XXXXX)
     fi
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}

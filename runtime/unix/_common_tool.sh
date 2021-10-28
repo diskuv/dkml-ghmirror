@@ -147,6 +147,12 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     if [ "$__USERMODE" = OFF ]; then
         TMPPARENTDIR_ABS_OR_RELTOP="$STATEDIR/tmp"
+    elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
+        TMPPARENTDIR_ABS_OR_RELTOP="$_CS_DARWIN_USER_TEMP_DIR"
+    elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
+        TMPPARENTDIR_ABS_OR_RELTOP="$TMPDIR"
+    elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
+        TMPPARENTDIR_ABS_OR_RELTOP="$TMP"
     else
         TMPPARENTDIR_ABS_OR_RELTOP="/tmp"
     fi
