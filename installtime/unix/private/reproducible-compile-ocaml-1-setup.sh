@@ -217,8 +217,63 @@ fi
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-# Get OCaml source code
+# Set DKMLSYS_CAT and other things
+autodetect_system_binaries
+
+# Find OCaml patch
+# Source: https://github.com/EduardoRFS/reason-mobile/tree/master/patches/ocaml/files or https://github.com/anmonteiro/nix-overlays/tree/master/cross
+find_ocaml_patch() {
+    find_ocaml_patch_VER=$1
+    shift
+    case "$find_ocaml_patch_VER" in
+    4.11.*)
+        OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_11.patch
+        ;;
+    4.12.*)
+        OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_12.patch
+        ;;
+    4.13.*)
+        # shellcheck disable=SC2034
+        OCAMLPATCHFILE=reproducible-compile-ocaml-cross_4_13.patch
+        ;;
+    *)
+        echo "FATAL: There is no cross-compiling patch file yet for OCaml $find_ocaml_patch_VER" >&2
+        exit 107
+        ;;
+    esac
+}
+
+apply_ocaml_patch() {
+    apply_ocaml_patch_SRCDIR=$1
+    shift
+
+    apply_ocaml_patch_SRCDIR_MIXED="$apply_ocaml_patch_SRCDIR"
+    apply_ocaml_patch_PATCH_MIXED="$PWD"/installtime/unix/private/$OCAMLPATCHFILE
+    if [ -x /usr/bin/cygpath ]; then
+        apply_ocaml_patch_SRCDIR_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_patch_SRCDIR_MIXED")
+        apply_ocaml_patch_PATCH_MIXED=$(/usr/bin/cygpath -aw "$apply_ocaml_patch_PATCH_MIXED")
+    fi
+    # Before packaging any of these artifacts the CI will likely do a `git clean -d -f -x` to reduce the
+    # size and increase the safety of the artifacts. So we do a `git commit` after we have patched so
+    # the reproducible source code has the patches applied, even after the `git clean`.
+    # log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" apply --verbose "$apply_ocaml_patch_PATCH_MIXED"
+    log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" config user.email "nobody+autopatcher@diskuv.ocaml.org"
+    log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" config user.name  "Auto Patcher"
+    git -C "$apply_ocaml_patch_SRCDIR_MIXED" am --abort 2>/dev/null || true # clean any previous interrupted mail patch
+    {
+        printf "From: nobody+autopatcher@diskuv.ocaml.org\n"
+        printf "Subject: OCaml cross-compiling patch\n"
+        printf "Date: 1 Jan 2000 00:00:00 +0000\n"
+        printf "\n"
+        printf "Reproducible patch %s\n" "$OCAMLPATCHFILE"
+        printf "\n"
+        printf "%s\n" "---"
+        $DKMLSYS_CAT "$apply_ocaml_patch_PATCH_MIXED"
+    } | log_trace git -C "$apply_ocaml_patch_SRCDIR_MIXED" am --ignore-date --committer-date-is-author-date
+}
+
 # ---------------------
+# Get OCaml source code
 
 # Ensure the source code can have a recent (0.5.0+) version of msvs.
 # 0.5.0+ will detect Diskuv OCaml installations (and others) that use Visual Studio Build Tools.
@@ -243,12 +298,12 @@ get_ocaml_source() {
         log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
         log_trace git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-        set +x
     else
         # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
         if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
         log_trace git -C "$get_ocaml_source_SRCMIXED" fetch --tags
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        log_trace git -C "$get_ocaml_source_SRCMIXED" reset --hard "$GIT_COMMITID_OR_TAG" # need patches to apply cleanly, so blow away any modified files tracked by Git
         log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
     fi
 
@@ -261,9 +316,16 @@ get_ocaml_source() {
     fi
 }
 
-# Since it is hard to reason about mutated source directories with different-platform object files, use a pristine source dir
-# for the host and other pristine source dirs for each target
+# Why multiple source directories?
+# It is hard to reason about mutated source directories with different-platform object files, so we use a pristine source dir
+# for the host and other pristine source dirs for each target.
+
 get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
+
+_OCAMLVER=$(awk 'NR==1{print}' "$OCAMLSRC_UNIX"/VERSION)
+find_ocaml_patch "$_OCAMLVER"
+apply_ocaml_patch "$OCAMLSRC_UNIX"
+
 if [ -n "$TARGETABIS" ]; then
     # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
     printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > "$WORK"/tabi
@@ -271,10 +333,16 @@ if [ -n "$TARGETABIS" ]; then
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
         get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml"
+        apply_ocaml_patch "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
     done < "$WORK"/tabi
 fi
 
 # ---------------------------
+# Patch the sources
+
+
+# ---------------------------
+# Finish
 
 # Copy self into share/dkml-bootstrap/100-compile-ocaml
 export BOOTSTRAPNAME=100-compile-ocaml
