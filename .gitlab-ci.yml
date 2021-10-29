@@ -9,7 +9,6 @@ default:
     - pip install -U sphinx sphinx_rtd_theme
 
 stages:
-  - prepare
   - build
   - test
   - deploy

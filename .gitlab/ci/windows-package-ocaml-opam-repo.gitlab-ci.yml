@@ -4,7 +4,7 @@ variables:
 windows:oorepo-fetch-1:
   extends:
     - .windows:before-script-shared-cygwin
-  stage: prepare
+  stage: build
   needs: []
   variables:
     # We have to specify an arbitrary but real OCAMLVERSION in this step because the reproducible setup scripts require it
@@ -62,7 +62,7 @@ windows:oorepo-fetch-1:
 windows:oorepo-matrix-2:
   extends:
     - .windows:before-script-diskuv-cygwin
-  stage: prepare
+  stage: build
   needs: ["windows:oorepo-fetch-1"]
   dependencies:
     # We do not want to update the Moby cache because we do a destructive trimming operation in this step, but we do want the
