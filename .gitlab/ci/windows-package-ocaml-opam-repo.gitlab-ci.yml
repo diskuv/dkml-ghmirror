@@ -60,7 +60,8 @@ win32:oorepo-fetch-1:
 
 win32:oorepo-matrix-2:
   extends:
-    - .windows:before-script-shared-cygwin
+    # TODO: This takes over 1 hour so can't be done on shared servers ... or we could rewrite the code to be faster (hint: not shell script).
+    - .windows:before-script-diskuv-cygwin
   stage: build
   needs: ["win32:oorepo-fetch-1"]
   dependencies:
