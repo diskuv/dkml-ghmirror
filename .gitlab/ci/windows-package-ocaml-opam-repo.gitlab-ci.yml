@@ -26,9 +26,10 @@ windows:oorepo-fetch-1:
   artifacts:
     name: "ocaml-opam-repo-full"
     paths:
-      - '$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS\full-opam-root'
+      - '$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS\full-opam-root.7z'
 
   script:
+    - 7za
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
@@ -48,6 +49,11 @@ windows:oorepo-fetch-1:
         + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh"
         + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
+
+    # Package artifacts
+    - |
+      cd $DEPLOYDIR
+      7za a -t7z full-opam-root.7z full-opam-root\ -r -y
 
   after_script:
     # Don't waste space and time caching MOBY/tmp folder created by moby-extract-opam-root.sh
@@ -79,6 +85,11 @@ windows:oorepo-matrix-2:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
     - $REPODIR = "$DEPLOYDIR\share\dkml\repro\${env:OCAMLVERSION}"
+
+    # Unpackage artifacts
+    - |
+      cd $DEPLOYDIR
+      7za x full-opam-root.7z -y
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
