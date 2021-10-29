@@ -669,7 +669,7 @@ else
     HOOK_POSTCREATE=
 fi
 if [ -n "$HOOK_POSTCREATE" ]; then
-    HOOK_KEY_POSTCREATE=$(md5sum "$HOOK_POSTCREATE" | awk '{print $1}')
+    HOOK_KEY_POSTCREATE=$(sha256compute "$HOOK_POSTCREATE")
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
         {
             cat "$WORK"/nonswitchexec.sh

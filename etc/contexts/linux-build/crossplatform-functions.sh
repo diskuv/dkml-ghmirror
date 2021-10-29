@@ -1448,6 +1448,20 @@ log_trace() {
     fi
 }
 
+# [sha256compute FILE] writes the SHA256 checksum (hex encoded) of file FILE to the standard output.
+sha256compute() {
+    sha256compute_FILE="$1"
+    shift
+    if [ -x /usr/bin/shasum ]; then
+        /usr/bin/shasum -a 256 "$sha256compute_FILE" | awk '{print $1}'
+    elif [ -x /usr/bin/sha256sum ]; then
+        /usr/bin/sha256sum "$sha256compute_FILE" | awk '{print $1}'
+    else
+        printf "FATAL: %s\n" "No sha256 checksum utility found" >&2
+        exit 107
+    fi
+}
+
 # [sha256check FILE SUM] checks that the file FILE has a SHA256 checksum (hex encoded) of SUM.
 # The function will return nonzero (and exit with failure if `set -e` is enabled) if the checksum does not match.
 sha256check() {
