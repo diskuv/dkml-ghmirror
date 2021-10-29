@@ -22,7 +22,9 @@ workflow:
 include:
   - local: .gitlab/ci/pages.gitlab-ci.yml
   - local: .gitlab/ci/test.gitlab-ci.yml
+  - local: .gitlab/ci/unix-package-ocaml.gitlab-ci.yml
   - local: .gitlab/ci/windows.gitlab-ci.yml
+  - local: .gitlab/ci/windows-package-ocaml.gitlab-ci.yml
   - local: .gitlab/ci/windows-package-opam.gitlab-ci.yml
   - local: .gitlab/ci/windows-package-ocaml-opam-repo.gitlab-ci.yml
   - local: .gitlab/ci/windows-test-setupuserprofile.gitlab-ci.yml
