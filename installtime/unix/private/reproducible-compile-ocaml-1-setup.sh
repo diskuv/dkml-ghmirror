@@ -339,8 +339,7 @@ find_ocaml_crosscompile_patch "$_OCAMLVER"
 
 if [ -n "$TARGETABIS" ]; then
     if [ -z "$OCAMLPATCHEXTRA" ]; then
-        printf "FATAL: OCaml version %s does not yet have patches for cross-compiling\n" "$_OCAMLVER" >&2
-        exit 107
+        printf "WARNING: OCaml version %s does not yet have patches for cross-compiling\n" "$_OCAMLVER" >&2
     fi
 
     # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
@@ -352,7 +351,9 @@ if [ -n "$TARGETABIS" ]; then
         get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml"
         # git patch src/ocaml
         apply_ocaml_crosscompile_patch "$OCAMLPATCHFILE"  "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
-        apply_ocaml_crosscompile_patch "$OCAMLPATCHEXTRA" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
+        if [ -n "$OCAMLPATCHEXTRA" ]; then
+            apply_ocaml_crosscompile_patch "$OCAMLPATCHEXTRA" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
+        fi
         # git patch src/ocaml/flexdll
         apply_ocaml_crosscompile_patch "reproducible-compile-ocaml-cross_flexdll_0_39.patch" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml/flexdll"
     done < "$WORK"/tabi

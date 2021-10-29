@@ -1,19 +1,23 @@
-windows:build-opam:
+windows:build-ocaml:
   extends:
     - .windows:before-script-shared-msys2-setupmachine
   stage: build
   parallel:
     matrix:
-      - BITS: 32
-        PLATFORM: windows_x86
+      - HOSTABI: windows_x86
+        BITS: 32
+        NAMESUFFIX:
+        TARGETABIS: # haven't done a patch yet for flexdll to support ARM32 (Windows CE); other patches done
         OCAMLVER: ["4.13.1", "4.12.1"]
-      - BITS: 64
-        PLATFORM: windows_x86_64
+      - HOSTABI: windows_x86_64
+        BITS: 64
+        NAMESUFFIX:
+        TARGETABIS: # haven't done a patch yet for flexdll to support ARM64 (Windows 10 ARM on Snapdragon); other patches done
         OCAMLVER: ["4.13.1", "4.12.1"]
   needs: []
   rules:
-    - if: '$CI_COMMIT_TAG'
-    # - if: '$CI_COMMIT_BRANCH == "next"'
+    # - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "next"'
   script:
     - $env:MSYSTEM = 'MSYS2' # Start MSYS2 (not MinGW 32 or 64 bit) environments
     - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
@@ -41,7 +45,7 @@ windows:build-opam:
       + " -d '" + "$PWD" + "'"
       + " -t '" + "$DEPLOYDIR" + "'"
       + " -v '$COMMITID'"
-      + " -e " + "$env:PLATFORM"
+      + " -e " + "$env:HOSTABI"
       )
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
@@ -60,5 +64,5 @@ windows:build-opam:
     # Create public packages
     - if ("${env:CI_COMMIT_TAG}" -ne "") { $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/${env:CI_COMMIT_TAG}"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-win${env:BITS}.tar.gz"; }
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-win${env:BITS}.zip"; }
+    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-${env:HOSTABI}${env:NAMESUFFIX}.tar.gz"; }
+    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-${env:HOSTABI}${env:NAMESUFFIX}.zip"; }

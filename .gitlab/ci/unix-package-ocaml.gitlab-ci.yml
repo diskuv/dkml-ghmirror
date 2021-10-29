@@ -1,0 +1,111 @@
+.macos_cicloud_runners:
+  tags:
+    - shared-macos-amd64
+  image: macos-11-xcode-12
+
+macos:build-ocaml:
+  extends:
+    - .macos_cicloud_runners
+  stage: build
+  parallel:
+    matrix:
+      - HOSTABI: darwin_x86_64
+        NAMESUFFIX: -cross-arm64
+        TARGETABIS: darwin_arm64=installtime/unix/private/reproducible-compile-ocaml-example_1.sh
+        OCAMLVER: ["4.13.1", "4.12.1"]
+  needs: []
+  rules:
+    # - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "next"'
+  script:
+    - 'GLAB_CURL_HEADER="JOB-TOKEN: $CI_JOB_TOKEN"'
+    # Resist the urge to set COMMITID to a Git tag; commit ids are far far more secure.
+    - |
+      case "$OCAMLVER" in
+        4.12.1) COMMITID="46c947827ec2f6d6da7fe5e195ae5dda1d2ad0c5" ;;
+        4.13.1) COMMITID="ab626576eee205615a9d7c5a66c2cb2478f1169c" ;;
+        *) echo "The commit id has not been set in CI for $OCAMLVER" >&2; exit 107 ;;
+      esac
+
+    # ================ Build ================
+    - |
+      set -eux ; TOPDIR=installtime/none/emptytop installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
+        -d . -t _ci/tree -v "$COMMITID" \
+        -a "$TARGETABIS" \
+        -e "$HOSTABI"
+    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
+    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
+
+    # ================ Test ================
+
+    # From https://ocaml.org/manual/coreexamples.html#s:standalone-programs
+    - |
+      cat > gcd.ml <<EOF
+        (* File gcd.ml *)
+        let rec gcd a b =
+          if b = 0 then a
+          else gcd b (a mod b);;
+
+        let main () =
+          let a = int_of_string Sys.argv.(1) in
+          let b = int_of_string Sys.argv.(2) in
+          Printf.printf "%d\n" (gcd a b);
+          exit 0;;
+        main ();;
+      EOF
+
+    # Compile, run and verify on host ABI, for both bytecode and native code
+    - _ci/tree/bin/ocamlc.opt   -verbose -o gcd.host.byte.exe gcd.ml
+    - _ci/tree/bin/ocamlopt.opt -verbose -o gcd.host.exe      gcd.ml
+    - file gcd.host.byte.exe
+    - file gcd.host.exe      ; otool -h -f -v -L gcd.host.exe
+    - ./gcd.host.byte.exe 6 9
+    - ./gcd.host.exe      6 9
+    - res=$(./gcd.host.byte.exe 6 9) ; [ "$res" -eq 3 ] || exit 107
+    - res=$(./gcd.host.exe      6 9) ; [ "$res" -eq 3 ] || exit 107
+
+    # Compile, run and verify on the target ABI, except don't run or test the native code
+    - |
+      printf "%s\n" "$TARGETABIS" | sed 's/;/\n/g' | sed 's/^\s*//; s/\s*$//' > _ci/tabi
+      while IFS= read -r _abientry
+      do
+        _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+
+        echo "----------------------"
+        echo "Compiling, running and verifying the target ABI $_targetabi"
+        echo
+
+        echo "ocamlc.opt ..."
+        _ci/tree/opt/mlcross/$_targetabi/bin/ocamlc.opt   -verbose -o gcd.$_targetabi.byte.exe gcd.ml
+        echo "ocamlopt.opt ..."
+        _ci/tree/opt/mlcross/$_targetabi/bin/ocamlopt.opt -verbose -o gcd.$_targetabi.exe      gcd.ml
+
+        echo
+        echo "summary ..."
+        file gcd.$_targetabi.byte.exe
+        file gcd.$_targetabi.exe      ; otool -h -f -v -L gcd.$_targetabi.exe
+
+        echo
+        echo "bytecode testing ..."
+        ./gcd.$_targetabi.byte.exe 6 9
+        res=$(./gcd.$_targetabi.byte.exe 6 9) ; [ "$res" -eq 3 ] || exit 107
+
+        echo
+        echo "----------------------"
+      done < _ci/tabi
+
+    # ================ Package ================
+
+    # Clean up excess files, including git submodules and cross-compiled targets
+    - git -C "_ci/tree/src/ocaml" clean -d -f -x
+    - git -C "_ci/tree/src/ocaml" submodule foreach --recursive clean -d -f -
+    - find _ci/tree/opt/mlcross -mindepth 1 -maxdepth 1 -type d | xargs -n1 -I{} git -C {} clean -d -f -x
+    - find _ci/tree/opt/mlcross -mindepth 1 -maxdepth 1 -type d | xargs -n1 -I{} git -C {} submodule foreach --recursive clean -d -f -
+
+    # Create .tar.gz
+    - tar cvCfz _ci/tree _ci/dist.tar.gz .
+
+    # Create public packages
+    - if [ -n "$CI_COMMIT_TAG" ]; then PACKAGE_REGISTRY_URL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/$CI_COMMIT_TAG"; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then echo PACKAGE_REGISTRY_URL; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then curl --fail --header "$GLAB_CURL_HEADER" --upload-file _ci/dist.tar.gz "$PACKAGE_REGISTRY_URL"/ocaml-$OCAMLVER-$HOSTABI$NAMESUFFIX.tar.gz"; fi
