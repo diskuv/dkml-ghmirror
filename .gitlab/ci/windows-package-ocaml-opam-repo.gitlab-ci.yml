@@ -87,8 +87,12 @@ win32:oorepo-matrix-2:
 
     # Unpackage artifacts
     - |
-      cd $DEPLOYDIR
+      cd "$DEPLOYDIR"
       7z x full-opam-root.7z -y
+      cd "$env:CI_PROJECT_DIR"
+      dir _ci
+      dir _ci\OOR
+      dir "$DEPLOYDIR"
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
