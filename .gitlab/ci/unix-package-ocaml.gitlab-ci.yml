@@ -98,9 +98,9 @@ macos:build-ocaml:
 
     # Clean up excess files, including git submodules and cross-compiled targets
     - git -C "_ci/tree/src/ocaml" clean -d -f -x
-    - git -C "_ci/tree/src/ocaml" submodule foreach --recursive clean -d -f -
+    - git -C "_ci/tree/src/ocaml" submodule foreach --recursive "git clean -d -f -"
     - find _ci/tree/opt/mlcross -mindepth 1 -maxdepth 1 -type d | xargs -n1 -I{} git -C {} clean -d -f -x
-    - find _ci/tree/opt/mlcross -mindepth 1 -maxdepth 1 -type d | xargs -n1 -I{} git -C {} submodule foreach --recursive clean -d -f -
+    - find _ci/tree/opt/mlcross -mindepth 1 -maxdepth 1 -type d | xargs -n1 -I{} git -C {} submodule foreach --recursive "git clean -d -f -"
 
     # Create .tar.gz
     - tar cvCfz _ci/tree _ci/dist.tar.gz .
