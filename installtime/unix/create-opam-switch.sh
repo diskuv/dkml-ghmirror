@@ -131,7 +131,7 @@ while getopts ":h:b:p:sd:u:o:y" opt; do
             YES=ON
         ;;
         o )
-            OCAMLVERSION=$OPTARG
+            if [ -n "$OPTARG" ]; then OCAMLVERSION=$OPTARG; fi
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -249,6 +249,8 @@ OPAM_SWITCH_CFLAGS=
 OPAM_SWITCH_CC=
 OPAM_SWITCH_ASPP=
 OPAM_SWITCH_AS=
+true > "$WORK"/invariant.formula.tail.txt
+true > "$WORK"/invariant.formula.tail.txt
 case "$BUILDTYPE" in
     Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
     Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
@@ -382,18 +384,22 @@ fi
 if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
     # Frame pointer should be on in Debug mode.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
+    printf " %s " ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
 fi
 if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
     # If we need Linux `perf` we need frame pointers enabled
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
+    printf " %s " ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
 fi
 if [ $BUILD_RELEASE = ON ]; then
     # All release builds should get flambda optimization
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
+    printf " %s " ocaml-option-flambda >> "$WORK"/invariant.formula.tail.txt
 fi
 if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
     # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
+    printf " %s " ocaml-option-afl >> "$WORK"/invariant.formula.tail.txt
 fi
 if is_unixy_windows_build_machine; then
     set_ocaml_variant_for_windows_switches "$OCAMLVERSION"
@@ -446,12 +452,17 @@ if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
     printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    printf "%s\n" "  --packages='ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+    OCAMLVARIANT="$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"
 else
     printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "%s\n" "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    printf "%s\n" "  --packages='ocaml-variants.$OCAMLVERSION+options$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+    OCAMLVARIANT="$OCAMLVERSION+options"
 fi
+
+printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+# ex. '"ocaml-variants" {= "4.12.0+options"}'
+printf ' %socaml-variants.%s%s ' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
+
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
 {
@@ -479,6 +490,9 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh
+
+    # the switch create already set the invariant
+    NEEDS_INVARIANT=OFF
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
     # has an upgrade. If we don't the PINNED_PACKAGES_* may fail.
@@ -507,6 +521,11 @@ else
         } > "$WORK"/update.sh
         log_shell "$WORK"/update.sh
     fi
+
+    # a DKML upgrade could have changed the invariant; we do not change it here; instead we wait until after
+    # the pins and options (especially the wrappers) have changed because changing the invariant can recompile
+    # _all_ packages (many of them need wrappers, and many of them need a pin upgrade to support a new OCaml version)
+    NEEDS_INVARIANT=ON
 fi
 
 # END opam switch create
@@ -683,4 +702,32 @@ if [ -n "$HOOK_POSTCREATE" ]; then
 fi
 
 # END opam post create hook
+# --------------------------------
+
+# --------------------------------
+# BEGIN opam switch set-invariant
+
+if [ "$NEEDS_INVARIANT" = ON ]; then
+    # We also should change the switch invariant if an upgrade occurred. The best way to detect
+    # that we need to upgrade after the switch invariant change is to see if the switch-config changed
+    OLD_HASH=$(sha256compute "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/switch-config")
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  switch set-invariant "
+        cat "$WORK"/invariant.formula.head.txt
+        cat "$WORK"/invariant.formula.tail.txt
+    } > "$WORK"/set-invariant.sh
+    log_shell "$WORK"/set-invariant.sh
+
+    NEW_HASH=$(sha256compute "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/switch-config")
+    if [ ! "$OLD_HASH" = "$NEW_HASH" ]; then
+        {
+            cat "$WORK"/nonswitchexec.sh
+            printf "  upgrade"
+        } > "$WORK"/upgrade.sh
+        log_shell "$WORK"/upgrade.sh
+    fi
+fi
+
+# END opam switch set-invariant
 # --------------------------------
