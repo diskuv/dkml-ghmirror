@@ -84,7 +84,7 @@ cd "$TOPDIR"
 
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
-# echo "TODO: REMOVE LOGGING A" >&2; set -x
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # BEGIN         ON-DEMAND VERSIONED GLOBAL INSTALLS
 #

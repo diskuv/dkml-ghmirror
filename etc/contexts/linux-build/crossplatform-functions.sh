@@ -877,7 +877,8 @@ autodetect_compiler() {
     elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
         autodetect_compiler_TEMPDIR=$(mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlc.XXXXX)
     elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
-        autodetect_compiler_TEMPDIR=$(mktemp -d "$TMPDIR"/dkmlc.XXXXX)
+        autodetect_compiler_TEMPDIR=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
+        autodetect_compiler_TEMPDIR=$(mktemp -d "$autodetect_compiler_TEMPDIR"/dkmlc.XXXXX)
     elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
         autodetect_compiler_TEMPDIR=$(mktemp -d "$TMP"/dkmlc.XXXXX)
     else
@@ -983,10 +984,18 @@ autodetect_compiler_darwin() {
 
         if [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             if [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] ; then
-                printf "%s\n" "exec arch --arch x86_64 $DKMLSYS_ENV CC='clang -arch x86_64' \\"
+                printf "exec %s AS='%s' ASPP='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
+                        "clang -arch x86_64 -Wno-trigraphs -c" \
+                        "clang -arch x86_64 -Wno-trigraphs -c" \
+                        "clang -arch x86_64" \
+                        "ld -r -arch x86_64"
             elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
                 if [ "$BUILDHOST_ARCH" = "darwin_arm64" ]; then
-                    printf "%s\n" "exec arch --arch arm64 $DKMLSYS_ENV CC='clang -arch arm64' \\"
+                    printf "exec %s AS='%s' ASPP='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
+                        "clang -arch arm64 -Wno-trigraphs -c" \
+                        "clang -arch arm64 -Wno-trigraphs -c" \
+                        "clang -arch arm64" \
+                        "ld -r -arch arm64"
                 else
                     printf "%s\n" "FATAL: Only Apple Silicon (darwin_arm64) build machines can target Apple Silicon binaries." >&2
                     printf "%s\n" "       Apple does not provide Rosetta emulation on Intel macOS machines." >&2

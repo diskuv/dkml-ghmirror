@@ -150,7 +150,7 @@ else
     elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
         TMPPARENTDIR_ABS_OR_RELTOP="$_CS_DARWIN_USER_TEMP_DIR"
     elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
-        TMPPARENTDIR_ABS_OR_RELTOP="$TMPDIR"
+        TMPPARENTDIR_ABS_OR_RELTOP=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
     elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
         TMPPARENTDIR_ABS_OR_RELTOP="$TMP"
     else

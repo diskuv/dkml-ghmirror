@@ -103,8 +103,6 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-# echo "TODO: REMOVE LOGGING B" >&2; set -x
-
 if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC1091
     . "$DKMLDIR"/runtime/unix/_common_build.sh

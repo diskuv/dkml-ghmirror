@@ -13,11 +13,11 @@
 
 # Detect the compiler based on DKML_TARGET_ABI environment value (or guess if not set); set BUILDHOST_ARCH
 tmpl="$(mktemp)"
-trap 'rm -f "$tmpl"' EXIT
 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKML_TARGET_ABI" autodetect_compiler "$tmpl"
 
 # Output:
 #   PATH=
-#   ASM=
+#   AS=
 #   ...
-$tmpl sh -c set | grep -E "^(PATH|ASM|CC|INCLUDE|LIB|COMPILER_PATH|CPATH|LIBRARY_PATH)="
+$tmpl sh -c set | grep -E "^(PATH|AS|ASPP|CC|PARTIALLD|INCLUDE|LIB|COMPILER_PATH|CPATH|LIBRARY_PATH)="
+rm -f "$tmpl"
