@@ -1207,7 +1207,7 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN plugin configure
+    # BEGIN opam plugin configure
     #
     # The system switch will have already been created earlier by "opam init" section. Just with
     # the CI flavor packages which is all that is necessary to compile the plugins.
@@ -1221,7 +1221,7 @@ try {
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\configure-opam-plugins.sh' -p dev"
     }
 
-    # END plugin configure
+    # END opam plugin configure
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

@@ -49,8 +49,8 @@ endif
 
 # Utility macros
 
-nullstring :=
-space := $(nullstring) # end of the line
+empty :=
+space := $(empty) $(empty)
 comma := ,
 
 # ----------
@@ -291,7 +291,7 @@ $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call CONFIGURE_buildtype_templat
 define CONFIGURE_platform_template
   .PHONY: init-$(1)
   init-$(1):
-	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
 	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
@@ -303,7 +303,7 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call CONFIGURE_platform_template,$
 define CONFIGURE_platform_buildtype_template
   .PHONY: configure-$(1)-$(2)
   configure-$(1)-$(2): init-$(1)
-	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(OPAMS_CSV_LINUX); \
