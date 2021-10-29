@@ -3,7 +3,7 @@ variables:
 
 windows:oorepo-fetch-1:
   extends:
-    - .windows:before-script-diskuv-cygwin
+    - .windows:before-script-shared-cygwin
   stage: prepare
   needs: []
   variables:
@@ -47,8 +47,6 @@ windows:oorepo-fetch-1:
         + " ; export DKML_MOBYDIR='$env:CI_PROJECT_DIR/_ci/moby'"
         + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh"
         + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
-    - Get-ChildItem "$DEPLOYDIR"
-    - Get-ChildItem "$DEPLOYDIR\full-opam-root"
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
   after_script:
