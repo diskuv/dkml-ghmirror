@@ -29,7 +29,6 @@ windows:oorepo-fetch-1:
       - '$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS\full-opam-root.7z'
 
   script:
-    - 7za
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
@@ -53,7 +52,7 @@ windows:oorepo-fetch-1:
     # Package artifacts
     - |
       cd $DEPLOYDIR
-      7za a -t7z full-opam-root.7z full-opam-root\ -r -y
+      7z a -t7z full-opam-root.7z full-opam-root\ -r -y
 
   after_script:
     # Don't waste space and time caching MOBY/tmp folder created by moby-extract-opam-root.sh
@@ -89,7 +88,7 @@ windows:oorepo-matrix-2:
     # Unpackage artifacts
     - |
       cd $DEPLOYDIR
-      7za x full-opam-root.7z -y
+      7z x full-opam-root.7z -y
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
