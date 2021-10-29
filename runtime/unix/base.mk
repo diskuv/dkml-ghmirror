@@ -267,13 +267,6 @@ OPAMS_CSV_WINDOWS ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_WI
 .PHONY: buildconfig/dune
 buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.env.executable
 
-.PHONY: init-dev
-init-dev:
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
-
-.PHONY: configure-dev
-configure-dev: configure-dev-$(BUILDTYPE_DEFAULT)
-
 define CONFIGURE_buildtype_template
   .PHONY: configure-dev-$(1)
   configure-dev-$(1): init-dev
@@ -289,16 +282,29 @@ endef
 $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call CONFIGURE_buildtype_template,$(buildtype))))
 
 define CONFIGURE_platform_template
-  .PHONY: init-$(1)
-  init-$(1):
+  .PHONY: initdocker-$(1)
+  initdocker-$(1):
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
+	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi
+
+  .PHONY: initcommon-$(1)
+  initcommon-$(1): initdocker-$(1)
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
 	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
-	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init-common.sh' $(1)
+
+  .PHONY: initvcpkg-$(1)
+  initvcpkg-$(1):
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-init-vcpkg.sh' $(1)
+
+  .PHONY: init-$(1)
+  init-$(1): initcommon-$(1) initvcpkg-$(1)
 
   .PHONY: configure-$(1)
   configure-$(1): configure-$(1)-$(BUILDTYPE_DEFAULT)
 endef
-$(foreach platform,$(DKML_PLATFORMS),$(eval $(call CONFIGURE_platform_template,$(platform))))
+$(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call CONFIGURE_platform_template,$(platform))))
 
 define CONFIGURE_platform_buildtype_template
   .PHONY: configure-$(1)-$(2)

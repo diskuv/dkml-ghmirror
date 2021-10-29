@@ -1,8 +1,8 @@
 #!/bin/sh
 # -------------------------------------------------------
-# build-sandbox-init.sh PLATFORM
+# build-sandbox-init-common.sh PLATFORM
 #
-# Purpose: Install tools in _tools which are needed for builds but do NOT depend on the source code.
+# Purpose: Install common tools like Opam which are needed for builds but do NOT depend on the source code.
 #
 # When Used:
 #  - Install Time
@@ -13,8 +13,6 @@
 #   The PLATFORM can be `dev` which means the dev platform using the native CPU architecture
 #   and system binaries for Opam from your development machine.
 #   Otherwise it is one of the "PLATFORMS" canonically defined in TOPDIR/Makefile.
-#
-# The tool packages are placed in build/_tools/$PLATFORM/$PKGNAME.
 #
 # -------------------------------------------------------
 set -euf
@@ -54,9 +52,9 @@ log_trace "$DKMLDIR"/installtime/unix/private/create-diskuv-system-switch.sh
 # -----------------------
 
 # -----------------------
-# BEGIN configure opam plugins
+# BEGIN install dkml plugins
 
-log_trace "$DKMLDIR"/installtime/unix/private/configure-opam-plugins.sh -p "$PLATFORM"
+log_trace "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -p "$PLATFORM"
 
-# END configure opam plugins
+# END install dkml plugins
 # -----------------------

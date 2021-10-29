@@ -386,7 +386,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 19
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -1207,21 +1207,39 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN opam plugin configure
+    # BEGIN install with-dkml
     #
     # The system switch will have already been created earlier by "opam init" section. Just with
     # the CI flavor packages which is all that is necessary to compile the plugins.
 
-    $global:ProgressActivity = "Configure Opam Plugins"
+    $global:ProgressActivity = "Install DKML plugin with-dkml"
     Write-ProgressStep
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\configure-opam-plugins.sh' -p dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\install-dkmlplugin-withdkml.sh' -p dev"
     }
 
-    # END opam plugin configure
+    # END install with-dkml
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN install vcpkg
+    #
+    # The system switch will have already been created earlier by "opam init" section. Just with
+    # the CI flavor packages which is all that is necessary to compile the plugins.
+
+    $global:ProgressActivity = "Install DKML plugin vcpkg"
+    Write-ProgressStep
+
+    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
+    if (!$global:SkipOpamSetup) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\install-dkmlplugin-vcpkg.sh' -p dev"
+    }
+
+    # END install vcpkg
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

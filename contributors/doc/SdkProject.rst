@@ -1083,7 +1083,7 @@ Build Execution Flow
    here.
 
 2. Build tools executed in the reproducible target architecture is done
-   at ``scripts/unix/build-sandbox-init.sh``.
+   at ``scripts/unix/build-sandbox-init-common.sh`` and ``scripts/unix/build-sandbox-init-vcpkg.sh``.
 
 3. The source code build process is done at
    ``scripts/unix/build-in-sandbox.sh``.

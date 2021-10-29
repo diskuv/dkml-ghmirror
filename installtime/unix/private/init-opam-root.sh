@@ -9,7 +9,7 @@
 # When invoked?
 # On Windows as part of `setup-userprofile.ps1`
 # which is itself invoked by `install-world.ps1`. On both
-# Windows and Unix it is also invoked as part of `build-sandbox-init.sh`.
+# Windows and Unix it is also invoked as part of `build-sandbox-init-common.sh`.
 #
 # Prerequisites: A working build/_tools/common/ directory.
 #
@@ -250,7 +250,7 @@ if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/
     awk '$1=="default" {print $2}' "$WORK"/list > "$WORK"/default
     _NUMLINES=$(awk 'END{print NR}' "$WORK"/default)
     if [ "$_NUMLINES" -ne 1 ]; then
-        echo "FATAL: build-sandbox-init.sh does not understand the Opam repo format used at $OPAMROOTDIR_BUILDHOST/repo/default" >&2
+        echo "FATAL: init-opam-root.sh does not understand the Opam repo format used at $OPAMROOTDIR_BUILDHOST/repo/default" >&2
         echo "FATAL: Details A:" >&2
         ls "$OPAMROOTDIR_BUILDHOST"/repo >&2
         echo "FATAL: Details B:" >&2

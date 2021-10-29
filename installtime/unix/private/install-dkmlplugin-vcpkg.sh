@@ -1,15 +1,14 @@
 #!/bin/sh
 # -------------------------------------------------------
-# configure-opam-plugins.sh PLATFORM
+# install-dkmlplugin-vcpkg.sh PLATFORM
 #
 # Purpose:
-# 1. Compile OCaml apps into the plugins/ of the OPAMROOT.
-# 2. Install critical 3rd party apps like vcpkg into the plugins/ of the OPAMROOT.
+# 1. Install vcpkg into the plugins/diskuvocaml/ of the OPAMROOT.
 #
 # When invoked?
 # On Windows as part of `setup-userprofile.ps1`
 # which is itself invoked by `install-world.ps1`. On both
-# Windows and Unix it is also invoked as part of `build-sandbox-init.sh`.
+# Windows and Unix it is also invoked as part of `build-sandbox-init-vcpkg.sh`.
 #
 # Prerequisites:
 # - init-opam-root.sh
@@ -35,9 +34,9 @@ run_with_vcpkg_pkgs() {
 
 usage() {
     echo "Usage:" >&2
-    echo "    configure-opam-plugins.sh -h                   Display this help message" >&2
-    echo "    configure-opam-plugins.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
-    echo "    configure-opam-plugins.sh [-d STATEDIR]        Configure the Diskuv Opam plugins" >&2
+    echo "    install-dkmlplugin-vcpkg.sh -h                   Display this help message" >&2
+    echo "    install-dkmlplugin-vcpkg.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
+    echo "    install-dkmlplugin-vcpkg.sh [-d STATEDIR]        Configure the Diskuv Opam plugins" >&2
     echo "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
@@ -114,34 +113,6 @@ cd "$TOPDIR"
 set_opamrootdir
 
 # -----------------------
-# BEGIN install with-dkml (with-dkml)
-
-if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
-    # Compile with Dune into temp build directory
-    WITHDKML_TMP_UNIX="$WORK"/with-dkml
-    APPS_WINDOWS="$DKMLDIR"/installtime/msys2/apps
-    if [ -x /usr/bin/cygpath ]; then
-        WITHDKML_TMP_WINDOWS=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
-        APPS_WINDOWS=$(/usr/bin/cygpath -aw "$APPS_WINDOWS")
-    else
-        WITHDKML_TMP_WINDOWS="$WITHDKML_TMP_UNIX"
-    fi
-    install -d "$WITHDKML_TMP_UNIX"
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
-    else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -d "$STATEDIR" -u "$USERMODE" -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
-    fi
-
-    # Place in plugins
-    install -d "$WITHDKMLEXEDIR_BUILDHOST"
-    install "$WORK/with-dkml/default/with-dkml/with_dkml.exe" "$WITHDKMLEXE_BUILDHOST"
-fi
-
-# END install with-dkml (with-dkml)
-# -----------------------
-
-# -----------------------
 # BEGIN install vcpkg
 
 # Q: Why is vcpkg here rather than in DiskuvOCamlHome?
@@ -155,56 +126,55 @@ fi
 # `VCPKG_TOOLCHAIN` is a public global variable so we can rely on it being there.
 
 INSTALL_VCPKG=OFF
-if cmake_flag_off "${DKSDK_CMAKEVAL_VCPKG_TOOLCHAIN:-OFF}"; then
-    # Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
-    # We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
-    # to x86-windows.
-    platform_vcpkg_triplet
 
-    # Locate vcpkg and the vcpkg package installation directory
-    # shellcheck disable=SC2154
-    VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
-    if [ -x /usr/bin/cygpath ]; then VCPKG_UNIX=$(/usr/bin/cygpath -au "$VCPKG_UNIX"); fi
-    if [ -x /usr/bin/cygpath ]; then VCPKG_BUILDHOST=$(/usr/bin/cygpath -aw "$VCPKG_UNIX"); fi
-    if [ -e vcpkg.json ]; then
-        # Manifest projects use the local vcpkg_installed/ directory
-        VCPKG_INSTALLED_UNIX=vcpkg_installed
-    else
-        VCPKG_INSTALLED_UNIX="$VCPKG_UNIX"/installed
+# Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
+# We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
+# to x86-windows.
+platform_vcpkg_triplet
+
+# Locate vcpkg and the vcpkg package installation directory
+# shellcheck disable=SC2154
+VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
+if [ -x /usr/bin/cygpath ]; then VCPKG_UNIX=$(/usr/bin/cygpath -au "$VCPKG_UNIX"); fi
+if [ -x /usr/bin/cygpath ]; then VCPKG_BUILDHOST=$(/usr/bin/cygpath -aw "$VCPKG_UNIX"); fi
+if [ -e vcpkg.json ]; then
+    # Manifest projects use the local vcpkg_installed/ directory
+    VCPKG_INSTALLED_UNIX=vcpkg_installed
+else
+    VCPKG_INSTALLED_UNIX="$VCPKG_UNIX"/installed
+fi
+
+install -d "$VCPKG_UNIX"
+
+if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
+    if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
+        # Download vcpkg
+        downloadfile "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" "$VCPKG_UNIX"/src.tar.gz "$VCPKG_CHECKSUM"
+
+        # Expand archive
+        log_trace tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
+        rm -f "$VCPKG_UNIX"/src.tar.gz
     fi
 
-    install -d "$VCPKG_UNIX"
-
-    if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
-        if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
-            # Download vcpkg
-            downloadfile "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" "$VCPKG_UNIX"/src.tar.gz "$VCPKG_CHECKSUM"
-
-            # Expand archive
-            log_trace tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
-            rm -f "$VCPKG_UNIX"/src.tar.gz
+    if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
+        if is_unixy_windows_build_machine; then
+            # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
+            #             for command line arguments. Only -disableMetrics is recognized.
+            log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
+        elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$PLATFORM"; then
+            # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
+        elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$DKML_TARGET_PLATFORM"; then
+            # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
+        elif is_reproducible_platform; then
+            # Use cmake and ninja from the system if we are in a reproducible Linux container.
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
+        else
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi
-
-        if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
-            if is_unixy_windows_build_machine; then
-                # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
-                #             for command line arguments. Only -disableMetrics is recognized.
-                log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
-            elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$PLATFORM"; then
-                # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
-                exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
-            elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$DKML_TARGET_PLATFORM"; then
-                # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
-                exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
-            elif is_reproducible_platform; then
-                # Use cmake and ninja from the system if we are in a reproducible Linux container.
-                exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
-            else
-                exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
-            fi
-        fi
-        INSTALL_VCPKG=ON
     fi
+    INSTALL_VCPKG=ON
 fi
 
 # END install vcpkg
