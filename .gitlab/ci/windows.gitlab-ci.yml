@@ -124,6 +124,7 @@
 
   # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
   - choco upgrade cyg-get -y --no-progress --version="'1.2.1'"
+  - choco upgrade 7zip -y --no-progress --version="'19.0'"
   - refreshenv
   - cyg-get -help
   - cyg-get -debug `
