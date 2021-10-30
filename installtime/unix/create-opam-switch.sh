@@ -196,13 +196,22 @@ if [ -n "$STATEDIR" ]; then
     TOPDIR_CANDIDATE="$STATEDIR"
 fi
 
-# shellcheck disable=SC1091
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_build.sh
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 else
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    if [ -n "${STATEDIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 fi
 
 # To be portable whether we build scripts in the container or not, we

@@ -325,7 +325,11 @@ _exec_dev_or_arch_helper() {
                 fi
             fi
         fi
-        echo "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        else
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        fi
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -348,7 +352,11 @@ _exec_dev_or_arch_helper() {
                 ACTUAL_PRE_HOOK_DOUBLE=$(replace_all "${ACTUAL_PRE_HOOK_DOUBLE}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             fi
         fi
-        echo "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        else
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+        fi
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
 
@@ -502,7 +510,7 @@ set_opamswitchdir_of_system() {
             OPAMSWITCHDIR_EXPAND="diskuv-host-abi-tools"
         fi
     else
-        if [ "$USERMODE" = OFF ]; then
+        if cmake_flag_off "$USERMODE"; then
             OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}target-abi-tools"
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
         else

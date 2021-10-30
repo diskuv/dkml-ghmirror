@@ -103,15 +103,22 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_build.sh
-elif [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_build.sh
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 else
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    if [ -n "${STATEDIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 fi
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -145,9 +152,11 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         )
     fi
 else
-    LAUNCHER_ARGS+=(
-        DKML_DUNE_BUILD_DIR="$DKML_DUNE_BUILD_DIR"
-    )
+    if [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+        LAUNCHER_ARGS+=(
+            DKML_DUNE_BUILD_DIR="$DKML_DUNE_BUILD_DIR"
+        )
+    fi
 fi
 
 # Autodetect DKMLVARS and add to PATH

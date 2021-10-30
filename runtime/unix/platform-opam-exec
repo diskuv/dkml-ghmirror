@@ -16,6 +16,12 @@
 # -------------------------------------------------------
 set -euf
 
+DKMLDIR=$(dirname "$0")
+DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
+
+# shellcheck disable=SC1091
+. "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
+
 # ------------------
 # BEGIN Command line processing
 
@@ -29,11 +35,15 @@ usage() {
     echo "    platform-opam-exec -p PLATFORM                                           (Deprecated) Run the opam command" >&2
     echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
     echo "    platform-opam-exec -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
-    echo "                                                                             in the 'diskuv-system' local switch" >&2
+    echo "                                                                             in the 'diskuv-host-abi-tools' local switch" >&2
+    echo "    platform-opam-exec -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
+    echo "                                                                             globally active switch" >&2
+    echo "    platform-opam-exec -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
+    echo "                                                                             'diskuv-host-abi-tools' switch" >&2
     echo "    platform-opam-exec -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
     echo "                                                                             switch prefix of STATEDIR/_opam" >&2
     echo "    platform-opam-exec -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
-    echo "                                                                             switch prefix of STATEDIR/system-switch/_opam" >&2
+    echo "                                                                             switch prefix of STATEDIR/target-abi-tools/_opam" >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform or 'dev'" >&2
     echo "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
@@ -146,7 +156,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         exit 1
     fi
 else
-    if [ -z "$STATEDIR" ]; then
+    if [ -z "$STATEDIR" ] && cmake_flag_off "$USERMODE"; then
         usage
         exit 1
     fi
@@ -159,9 +169,6 @@ fi
 # END Command line processing
 # ------------------
 
-DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
-
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -169,12 +176,22 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     fi
 fi
 
-if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ] || [ -n "${STATEDIR:-}" ]; then
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_build.sh
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 else
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    if [ -n "${STATEDIR:-}" ]; then
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_build.sh
+    else
+        # shellcheck disable=SC1091
+        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    fi
 fi
 
 # To be portable whether we build scripts in the container or not, we
@@ -229,7 +246,7 @@ autodetect_dkmlvars || true
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
-elif [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     # set --switch only if BUILDTYPE (translated into DKML_DUNE_BUILD_DIR) has been set
     install -d "$DKML_DUNE_BUILD_DIR"
 

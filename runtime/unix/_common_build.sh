@@ -22,7 +22,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         DKML_DUNE_BUILD_DIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
     fi
 else
-    if [ "$USERMODE" = OFF ]; then
+    if cmake_flag_off "$USERMODE"; then
         DKML_DUNE_BUILD_DIR="$STATEDIR/_build"
     else
         DKML_DUNE_BUILD_DIR="$TOPDIR/_build"
@@ -89,7 +89,7 @@ set_opamrootandswitchdir() {
                 OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
             fi
         else
-            if [ "$USERMODE" = OFF ]; then
+            if cmake_flag_off "$USERMODE"; then
                 set_opamrootandswitchdir_EXPAND="$STATEDIR"
             else
                 set_opamrootandswitchdir_EXPAND="$TOPDIR"
