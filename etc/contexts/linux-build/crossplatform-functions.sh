@@ -1514,15 +1514,17 @@ downloadfile() {
 }
 
 cmake_flag_on() {
+    # Definition at https://cmake.org/cmake/help/latest/command/if.html#basic-expressions
     case "$1" in
-        ON | 1 | TRUE) return 0 ;;
+        1|ON|On|on|YES|Yes|yes|TRUE|True|true|Y|y|1*|2*|3*|4*|5*|6*|7*|8*|9*) return 0 ;;
         *) return 1 ;;
     esac
 }
 
 cmake_flag_off() {
+    # Definition at https://cmake.org/cmake/help/latest/command/if.html#basic-expressions
     case "$1" in
-        ON | 1 | TRUE) return 1 ;;
+        1|ON|On|on|YES|Yes|yes|TRUE|True|true|Y|y|1*|2*|3*|4*|5*|6*|7*|8*|9*) return 1 ;;
         *) return 0 ;;
     esac
 }
