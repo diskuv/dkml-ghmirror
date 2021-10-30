@@ -165,7 +165,7 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
         done
         # dump the config.log and display it with a ==> marker
         echo >&2
-        find bootstrap -maxdepth 2 -name config.log -exec tail -v -n+0 {} \; >&2
+        find bootstrap -maxdepth 2 -name config.log -exec tail -n+0 {} \; >&2
         # tell how to get real error
         echo "FATAL: Failed ./shell/bootstrap-ocaml.sh. Original error should be above the numbered script that starts with: $marker"
         exit 1

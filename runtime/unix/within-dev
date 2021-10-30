@@ -186,7 +186,7 @@ sanitize_path() {
     esac
 }
 if [ -n "$PREHOOK_SINGLE" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -v -n20 "$PREHOOK_SINGLE" >&2; fi
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -n20 "$PREHOOK_SINGLE" >&2; fi
     # shellcheck disable=SC1090
     . "$PREHOOK_SINGLE"
     sanitize_path

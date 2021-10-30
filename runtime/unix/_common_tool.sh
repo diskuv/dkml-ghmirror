@@ -495,32 +495,24 @@ set_opamswitchdir_of_system() {
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if [ -n "${DiskuvOCamlHome:-}" ]; then
-            OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/system/_opam"
-            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-                OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/system"
-            else
-                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome/system"
-            fi
+            OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/host-abi-tools/_opam"
+            OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/host-abi-tools"
         else
-            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-system"
-            OPAMSWITCHDIR_EXPAND="diskuv-system"
+            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-host-abi-tools"
+            OPAMSWITCHDIR_EXPAND="diskuv-host-abi-tools"
         fi
     else
         if [ "$USERMODE" = OFF ]; then
-            if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
-                OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}system"
-            else
-                OPAMSWITCHDIR_EXPAND="$STATEDIR"
-            fi
+            OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}target-abi-tools"
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
         else
             if [ -n "${DiskuvOCamlHome:-}" ]; then
-                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome${OS_DIR_SEP}system"
+                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome${OS_DIR_SEP}host-abi-tools"
                 OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
             else
-                OPAMSWITCHDIR_EXPAND="diskuv-system"
+                OPAMSWITCHDIR_EXPAND="diskuv-host-abi-tools"
                 # shellcheck disable=SC2034
-                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-system"
+                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-host-abi-tools"
             fi
         fi
     fi
