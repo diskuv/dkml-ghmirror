@@ -246,20 +246,11 @@ $CiFlavorPackages = Get-Content -Path $DkmlPath\installtime\none\ci-flavor-packa
 $CiFlavorBinaries = @(
     "dune.exe"
 )
-$FullFlavorPackages = $CiFlavorPackages + @(
-    # For dkml_templatizer; may be used for creating local projects as well.
-    "jingoo.1.4.3",
-
-    "lsp.1.8.2",
-    "ocaml-lsp-server.1.8.2",
-    "ocamlfind.1.9.1",
-    # Needs to be 0.18.0 because of https://github.com/ocaml/ocaml-lsp/blob/d140d3477972d0dd922019fd863ae943796c192e/ocaml-lsp-server.opam#L31
-    "ocamlformat.0.18.0",
-    "ocamlformat-rpc.0.18.0",
-    "ocamlformat-rpc-lib.0.18.0",
-    "ocp-indent.1.8.2-windowssupport",
-    "utop.2.8.0"
-)
+$FullFlavorPackagesExtra = Get-Content -Path $DkmlPath\installtime\none\full-flavor-minus-ci-flavor-packages.txt | Where-Object {
+    # Remove blank lines and comments
+    "" -ne $_.Trim() -and -not $_.StartsWith("#")
+} | ForEach-Object { $_.Trim() }
+$FullFlavorPackages = $CiFlavorPackages + $FullFlavorPackagesExtra
 $FullFlavorBinaries = $CiFlavorBinaries + @(
     "flexlink.exe",
     "ocaml.exe",
@@ -386,7 +377,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 19
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -1179,13 +1170,18 @@ try {
     # ----------------------------------------------------------------
     # BEGIN opam switch create <system>
 
+    if ($StopBeforeInstallSystemSwitch) {
+        Write-Host "Stopping before being completed finished due to -StopBeforeInstallSystemSwitch switch"
+        exit 0
+    }
+
     $global:ProgressActivity = "Create system Opam Switch"
     Write-ProgressStep
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -o $OCamlLangVersion"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -o '$OCamlLangVersion' -f '$Flavor'"
         }
 
     # END opam switch create <system>
@@ -1240,34 +1236,6 @@ try {
     }
 
     # END install vcpkg
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN opam install required `diskuv-system` packages
-    #
-    # The system switch will have already been created earlier by "opam init" section, but it would
-    # only have the CI flavor packages.
-
-    if ($StopBeforeInstallSystemSwitch) {
-        Write-Host "Stopping before being completed finished due to -StopBeforeInstallSystemSwitch switch"
-        exit 0
-    }
-
-    $global:ProgressActivity = "Install packages in diskuv-system local Opam Switch"
-    Write-ProgressStep
-
-    # Note: flexlink.exe is already installed because it is part of the OCaml system compiler (ocaml-variants).
-
-    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
-    if (!$global:SkipOpamSetup) {
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command (
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
-            "$($FlavorPackages -join ' ')"
-        )
-    }
-
-    # END opam install required `diskuv-system` packages
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

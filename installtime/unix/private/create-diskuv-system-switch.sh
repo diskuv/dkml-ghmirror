@@ -26,6 +26,8 @@ usage() {
     echo "                                                at <STATEDIR>/system" >&2
     echo "Options:" >&2
     echo "    -o OCAMLVERSION: Optional. The OCaml version to use. Ex. 4.13.1" >&2
+    echo "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
+    echo "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
 }
 
 STATEDIR=
@@ -35,7 +37,8 @@ else
     USERMODE=ON
 fi
 OCAMLVERSION=
-while getopts ":h:d:o:" opt; do
+FLAVOR=CI
+while getopts ":h:d:o:f:" opt; do
     case ${opt} in
         h )
             usage
@@ -49,6 +52,16 @@ while getopts ":h:d:o:" opt; do
         ;;
         o )
             OCAMLVERSION=$OPTARG
+        ;;
+        f )
+            case "$OPTARG" in
+                Ci|CI|ci)       FLAVOR=CI ;;
+                Full|FULL|full) FLAVOR=Full ;;
+                *)
+                    echo "FLAVOR must be CI or Full"
+                    usage
+                    exit 1
+            esac
         ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
@@ -99,7 +112,16 @@ fi
 # CI packages
 {
     printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s \"\$@\" install -y"
-    awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
+    case "$FLAVOR" in
+        CI)
+            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
+            ;;
+        Full)
+            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
+            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/full-flavor-minus-ci-flavor-packages.txt
+            ;;
+        *) echo "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
+    esac
 } > "$WORK"/config-diskuv-system.sh
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     log_shell "$WORK"/config-diskuv-system.sh
