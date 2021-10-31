@@ -497,19 +497,31 @@ install_reproducible_system_packages() {
             printf "%s\n" 'set -x ; /usr/local/bin/cyg-get install ${pkgs[@]}'
         } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     elif is_arg_darwin_based_platform "$BUILDHOST_ARCH"; then
-        # use a Brewfile.lock.json as the package manifest
-        install_reproducible_system_packages_OLDDIR=$PWD
-        if ! cd "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"; then echo "FATAL: Could not cd to script directory" >&2; exit 107; fi
-        brew bundle dump --force # creates a Brewfile in current directory
-        if ! cd "$install_reproducible_system_packages_OLDDIR"; then echo "FATAL: Could not cd to old directory" >&2; exit 107; fi
-        $DKMLSYS_MV \
-            "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/Brewfile \
-            "$install_reproducible_system_packages_BOOTSTRAPDIR/$install_reproducible_system_packages_PACKAGEFILE"
+        # Use a Brewfile.lock.json as the package manifest.
+        # However, when `brew` is not available (ex. Xcode runs CMake with a PATH that excludes homebrew) it is likely
+        # that no brew installed packages are available either. So if CMake succeeds then no brew commands were needed!
+        if command -v brew >/dev/null; then
+            # Brew exists and its installed packages can be used in the rest of the reproducible scripts.
+            install_reproducible_system_packages_OLDDIR=$PWD
+            if ! cd "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"; then echo "FATAL: Could not cd to script directory" >&2; exit 107; fi
+            brew bundle dump --force # creates a Brewfile in current directory
+            if ! cd "$install_reproducible_system_packages_OLDDIR"; then echo "FATAL: Could not cd to old directory" >&2; exit 107; fi
+            $DKMLSYS_MV \
+                "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTDIR"/Brewfile \
+                "$install_reproducible_system_packages_BOOTSTRAPDIR/$install_reproducible_system_packages_PACKAGEFILE"
 
-        {
-            printf "%s\n" "#!/bin/sh"
-            printf "set -x ; brew bundle install --file '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
-        } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+            {
+                printf "%s\n" "#!/bin/sh"
+                printf "set -x ; brew bundle install --file '%s'\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
+            } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+        else
+            # Brew and its installed packages are not available in the rest of the reproducible scripts.
+            {
+                printf "%s\n" "#!/bin/sh"
+                printf "# Brew was not used so nothing to install\n"
+                printf "true\n"
+            } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+        fi
     else
         printf "%s\n" "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
         exit 1
