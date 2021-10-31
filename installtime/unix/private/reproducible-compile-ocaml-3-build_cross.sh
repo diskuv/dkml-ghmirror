@@ -42,6 +42,11 @@
 # -------------------------------------------------------
 set -euf
 
+# Location of this script
+SCRIPTDIR=$(dirname "$0")
+SCRIPTDIR=$(cd "$SCRIPTDIR" && pwd)
+SCRIPTFILE="$SCRIPTDIR"/$(basename "$0")
+
 # ------------------
 # BEGIN Command line processing
 
@@ -237,22 +242,52 @@ make_target () {
   make_caml BUILD_ROOT="$make_target_BUILD_ROOT" "$@"
 }
 
+checksum_crosscompile_inputs() {
+  checksum_host_OUT="$1"
+  shift
+  {
+    # this script
+    sha256compute "$SCRIPTFILE"
+
+    # only do bytecode since native code is indeterministic (randomization during optimization;
+    # address space layout randomization; etc.)
+    find "$OCAML_HOST"/bin -name 'ocaml*.byte'"$EXE_EXT" | while IFS= read -r checksum_host_LINE; do
+      sha256compute "$checksum_host_LINE"
+    done | LC_ALL=C sort # we sort since bin/ocaml* may come in any order
+  } > "$checksum_host_OUT"
+}
+
 build_world() {
   build_world_BUILD_ROOT=$1
   shift
   build_world_PREFIX=$1
+  shift
+  build_world_CHKSUM=$1
   shift
   build_world_TARGET_ABI=$1
   shift
   build_world_PRECONFIGURE=$1
   shift
 
-  # wrappers
+  # Idempotent shortcut: If a checksum of the inputs for cross-compiling (host binaries, this script) have
+  # not changed, then no need to do a full clean + build
+  if [ -e "$build_world_CHKSUM" ]; then
+    checksum_crosscompile_inputs "$WORK/build_world.chksum.txt"
+    if cmp -s "$build_world_CHKSUM" "$WORK/build_world.chksum.txt"; then
+      echo "INFO: No changes detected in the host binaries and the cross-compiling scripts, so not recompiling. Force a recompile by erasing $build_world_CHKSUM"
+      return
+    fi
+  fi
+
+  # Wrappers
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib ";
 
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT/ocamlc.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib ";
+
+  # clean (otherwise you will 'make inconsistent assumptions' errors with a mix of host + target binaries)
+  make clean
 
   # ./configure
   ocaml_configure "$build_world_PREFIX" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS --disable-ocamldoc"
@@ -289,6 +324,9 @@ build_world() {
   log_trace cp "$OCAMLRUN" runtime/ocamlrun
   log_trace make_host "$build_world_BUILD_ROOT" install
   log_trace make_host "$build_world_BUILD_ROOT" -C debugger install
+
+  # Produce checksum
+  checksum_crosscompile_inputs "$build_world_CHKSUM"
 }
 
 
@@ -301,6 +339,7 @@ do
 
   _CROSS_TARGETDIR=$TARGETDIR_UNIX/opt/mlcross/$_targetabi
   _CROSS_SRCDIR=$_CROSS_TARGETDIR/src/ocaml
+  _CROSS_CHKSUM=$TARGETDIR_UNIX/opt/mlcross/$_targetabi.chksum.txt
   cd "$_CROSS_SRCDIR"
-  build_world "$_CROSS_SRCDIR" "$_CROSS_TARGETDIR" "$_targetabi" "$_abiscript"
+  build_world "$_CROSS_SRCDIR" "$_CROSS_TARGETDIR" "$_CROSS_CHKSUM" "$_targetabi" "$_abiscript"
 done < "$WORK"/tabi

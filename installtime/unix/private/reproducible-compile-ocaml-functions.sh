@@ -119,14 +119,16 @@ ocaml_configure_options_for_abi() {
   # This is a guess that OCaml uses; it is useful when you can construct the desired ABI from the host ABI.
   ocaml_configure_options_for_abi_GUESS=$(build-aux/config.guess)
   
-  # The ./configure script on Windows does a good job of figuring out the target based on the compiler.
-  # Others, especially multi-target compilers like `clang -arch XXXX`, need to be explicitly told the target.
-  # It doesn't look like OCaml uses the target, but let's be consistent.
+  # Cautionary notes
+  # ----------------
   #
-  # All ABIs
-  # --------
-  # Because native code compiler is based on the detected _host_, we likely have to change the host flag.
-  # https://github.com/ocaml/ocaml/blob/7997b65fdc87909e83f497da866763174699936e/configure#L14273-L14279
+  # 1. Because native code compiler is based on the _host_ rather than the _target_, we likely have to change the host flag.
+  #    https://github.com/ocaml/ocaml/blob/7997b65fdc87909e83f497da866763174699936e/configure#L14273-L14279
+  #    This is a bug! The native code compiler should run on `--host` but should produce code for `--target`.
+  #    Reference: https://gcc.gnu.org/onlinedocs/gccint/Configure-Terms.html ; just replace "GCC" with "OCaml Native Compiler".
+  # 2. The ./configure script on Windows does a good job of figuring out the target based on the compiler.
+  #    Others, especially multi-target compilers like `clang -arch XXXX`, need to be explicitly told the target.
+  #    It doesn't look like OCaml uses `--target` consistently (ex. see #1), but let's be consistent ourselves.
   case "$ocaml_configure_options_for_abi_ABI" in
     darwin_x86_64)
       case "$ocaml_configure_options_for_abi_GUESS" in
