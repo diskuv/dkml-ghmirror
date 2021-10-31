@@ -60,13 +60,15 @@ usage() {
     printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
     printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
     printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
+    printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
 }
 
 DKMLDIR=
 GIT_URL=https://github.com/ocaml/opam
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
-while getopts ":d:u:v:t:a:b:c:h" opt; do
+PRESERVEGIT=OFF
+while getopts ":d:u:v:t:a:b:c:e:h" opt; do
     case ${opt} in
         h )
             usage
@@ -106,6 +108,10 @@ while getopts ":d:u:v:t:a:b:c:h" opt; do
             BUILD_ARGS+=( -c "$OPTARG" )
             SETUP_ARGS+=( -c "$OPTARG" )
         ;;
+        e )
+            PRESERVEGIT="$OPTARG"
+            SETUP_ARGS+=( -e "$PRESERVEGIT" )
+        ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -120,6 +126,9 @@ if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; th
     usage
     exit 1
 fi
+
+BUILD_ARGS+=( -e "$PRESERVEGIT" )
+TRIM_ARGS+=( -e "$PRESERVEGIT" )
 
 # END Command line processing
 # ------------------
@@ -147,7 +156,7 @@ fi
 # sets the directory to be /work)
 cd "$DKMLDIR"
 
-# Get Diskuv's Opam if not present already
+# Get Opam if not present already
 if [ ! -e "$OPAMSRC_UNIX/Makefile" ] || [ ! -e "$OPAMSRC_UNIX/.git" ]; then
     install -d "$OPAMSRC_UNIX"
     log_trace rm -rf "$OPAMSRC_UNIX" # clean any partial downloads
@@ -157,7 +166,6 @@ else
     if git -C "$OPAMSRC_MIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OPAMSRC_MIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi # allow tag to move (for development and for emergency fixes)
     log_trace git -C "$OPAMSRC_MIXED" fetch --tags
     log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-    log_trace git -C "$OPAMSRC_MIXED" reset --hard "$GIT_COMMITID_OR_TAG" # need patches to apply cleanly, so blow away any modified files tracked by Git
 fi
 
 # PATCH - msvs-detect

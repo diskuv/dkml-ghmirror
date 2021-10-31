@@ -31,18 +31,20 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    reproducible-compile-opam-9-trim.sh" >&2
-    echo "        -h                     Display this help message." >&2
-    echo "        -d DIR -t DIR          Do trimming of Opam install." >&2
-    echo "Options" >&2
-    echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
-    echo "   -t DIR: Target directory" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    reproducible-compile-opam-9-trim.sh" >&2
+    printf "%s\n" "        -h                     Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR          Do trimming of Opam install." >&2
+    printf "%s\n" "Options" >&2
+    printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
+    printf "%s\n" "   -t DIR: Target directory" >&2
+    printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
-while getopts ":d:t:h" opt; do
+PRESERVEGIT=OFF
+while getopts ":d:t:e:h" opt; do
     case ${opt} in
         h )
             usage
@@ -51,23 +53,24 @@ while getopts ":d:t:h" opt; do
         d )
             DKMLDIR="$OPTARG"
             if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
-                echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
+                printf "%s\n" "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
             fi
         ;;
         t ) TARGETDIR="$OPTARG";;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
+        e ) PRESERVEGIT="$OPTARG";;
     esac
 done
 shift $((OPTIND -1))
 
 if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
-    echo "Missing required options" >&2
+    printf "%s\n" "Missing required options" >&2
     usage
     exit 1
 fi
@@ -98,6 +101,6 @@ if [ -e "$OPAMSRC/Makefile" ]; then
 fi
 
 # Also get rid of Git files
-if [ -e "$OPAMSRC/.git" ]; then
+if cmake_flag_off "$PRESERVEGIT" && [ -e "$OPAMSRC/.git" ]; then
     rm -rf "$OPAMSRC/.git"
 fi

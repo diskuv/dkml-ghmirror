@@ -49,14 +49,16 @@ usage() {
     printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
     printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
     printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
+    printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
 OCAMLHOME=
 NUMCPUS=
+PRESERVEGIT=OFF
 export PLATFORM=dev
-while getopts ":d:t:n:a:b:c:h" opt; do
+while getopts ":d:t:n:a:b:c:e:h" opt; do
     case ${opt} in
         h )
             usage
@@ -75,6 +77,7 @@ while getopts ":d:t:n:a:b:c:h" opt; do
         a ) PLATFORM="$OPTARG";;
         b ) OPT_MSVS_PREFERENCE="$OPTARG";;
         c ) OCAMLHOME="$OPTARG";;
+        e ) PRESERVEGIT="$OPTARG";;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -152,7 +155,7 @@ fi
 # we have successfully completed a single run all the way to `configure`.
 if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # Clear out all intermediate build files
-    log_trace installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX"
+    log_trace installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX" -e "$PRESERVEGIT"
 
     # If no OCaml home, let Opam create its own Ocaml compiler which Opam will use to compile
     # all of its required Ocaml dependencies
