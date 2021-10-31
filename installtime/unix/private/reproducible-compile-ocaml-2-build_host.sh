@@ -38,6 +38,11 @@
 # -------------------------------------------------------
 set -euf
 
+# Location of this script
+SCRIPTDIR=$(dirname "$0")
+SCRIPTDIR=$(cd "$SCRIPTDIR" && pwd)
+SCRIPTFILE="$SCRIPTDIR"/$(basename "$0")
+
 # ------------------
 # BEGIN Command line processing
 
@@ -134,6 +139,7 @@ if [ -x /usr/bin/cygpath ]; then
 else
     OCAMLSRC_UNIX="$TARGETDIR_UNIX/src/ocaml"
 fi
+CHKSUM="$TARGETDIR_UNIX/src/ocaml.chksum.txt"
 
 # ------------------
 
@@ -145,6 +151,28 @@ autodetect_system_path
 . "$DKMLDIR/installtime/unix/private/reproducible-compile-ocaml-functions.sh"
 
 cd "$OCAMLSRC_UNIX"
+
+# Idempotent shortcut: If a checksum of the inputs (source code, this script) have
+# not changed, then no need to do a full clean + build
+checksum_hostcompile_inputs() {
+    checksum_hostcompile_inputs_OUT="$1"
+    shift
+    {
+        # this script
+        sha256compute "$SCRIPTFILE"
+
+        # source code
+        git rev-parse HEAD > "$WORK/head.rev.txt"
+        sha256compute "$WORK/head.rev.txt"
+    } > "$checksum_hostcompile_inputs_OUT"
+}
+if [ -e "$CHKSUM" ]; then
+    checksum_hostcompile_inputs "$WORK/ocaml.chksum.txt"
+    if cmp -s "$CHKSUM" "$WORK/ocaml.chksum.txt"; then
+        echo "INFO: No changes detected in the source code and the compiling script, so not recompiling. Force a recompile by erasing $CHKSUM"
+        exit 0
+    fi
+fi
 
 # ./configure
 ocaml_configure "$TARGETDIR_UNIX" "$OPT_WIN32_ARCH" "${DKMLHOSTABI:-}" "" "$CONFIGUREARGS"
@@ -159,3 +187,6 @@ if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
   ocaml_make flexlink.opt
 fi
 ocaml_make install
+
+# Produce checksum
+checksum_hostcompile_inputs "$CHKSUM"
