@@ -33,27 +33,30 @@ set -euf
 OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 1-setup.sh
 
 usage() {
-    echo "Usage:" >&2
-    echo "    reproducible-compile-opam-2-build.sh" >&2
-    echo "        -h                       Display this help message." >&2
-    echo "        -d DIR -t DIR [-n NUM]   Do compilation of Opam." >&2
-    echo "Options" >&2
-    echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
-    echo "   -t DIR: Target directory" >&2
-    echo "   -n NUM: Number of CPUs. Autodetected with max of 8." >&2
-    echo "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
-    echo "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
-    echo "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
-    echo "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
-    echo "      will not choose a compiler based on environment variables." >&2
-    echo "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    reproducible-compile-opam-2-build.sh" >&2
+    printf "%s\n" "        -h                       Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR [-n NUM]   Do compilation of Opam." >&2
+    printf "%s\n" "Options" >&2
+    printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
+    printf "%s\n" "   -t DIR: Target directory" >&2
+    printf "%s\n" "   -n NUM: Number of CPUs. Autodetected with max of 8." >&2
+    printf "%s\n" "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
+    printf "%s\n" "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    printf "%s\n" "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
+    printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
+    printf "%s\n" "      will not choose a compiler based on environment variables." >&2
+    printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
+    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
+    printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
 }
 
 DKMLDIR=
 TARGETDIR=
+OCAMLHOME=
 NUMCPUS=
 export PLATFORM=dev
-while getopts ":d:t:n:a:b:h" opt; do
+while getopts ":d:t:n:a:b:c:h" opt; do
     case ${opt} in
         h )
             usage
@@ -62,7 +65,7 @@ while getopts ":d:t:n:a:b:h" opt; do
         d )
             DKMLDIR="$OPTARG"
             if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
-                echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
+                printf "%s\n" "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
             fi
@@ -71,8 +74,9 @@ while getopts ":d:t:n:a:b:h" opt; do
         n ) NUMCPUS="$OPTARG";;
         a ) PLATFORM="$OPTARG";;
         b ) OPT_MSVS_PREFERENCE="$OPTARG";;
+        c ) OCAMLHOME="$OPTARG";;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -81,7 +85,7 @@ done
 shift $((OPTIND -1))
 
 if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
-    echo "Missing required options" >&2
+    printf "%s\n" "Missing required options" >&2
     usage
     exit 1
 fi
@@ -118,7 +122,11 @@ if [ -x /usr/bin/cygpath ]; then
 else
     PATH=/usr/bin:/bin
 fi
-POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
+if [ -n "$OCAMLHOME" ]; then
+    POST_BOOTSTRAP_PATH="$OCAMLHOME"/bin:"$PATH"
+else
+    POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
+fi
 
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
@@ -134,8 +142,8 @@ fi
 if is_unixy_windows_build_machine; then
     printf "%s" "cl.exe, if detected: "
     "$WORK"/launch-compiler.sh which cl.exe
-    "$WORK"/launch-compiler.sh echo "INCLUDE: ${INCLUDE:-}"
-    "$WORK"/launch-compiler.sh echo "LIBS: ${LIBS:-}"
+    "$WORK"/launch-compiler.sh printf "%s\n" "INCLUDE: ${INCLUDE:-}"
+    "$WORK"/launch-compiler.sh printf "%s\n" "LIBS: ${LIBS:-}"
 fi
 
 # Running through the `make compiler`, `make lib-pkg` + `configure` process should be done
@@ -146,41 +154,51 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # Clear out all intermediate build files
     log_trace installtime/unix/private/reproducible-compile-opam-9-trim.sh -d . -t "$TARGETDIR_UNIX"
 
-    # Make sure at least flexdll is available for the upcoming 'make compiler'
-    log_trace make -C "$OPAMSRC_UNIX"/src_ext cache-archives
-
-    # Let Opam create its own Ocaml compiler which Opam will use to compile
+    # If no OCaml home, let Opam create its own Ocaml compiler which Opam will use to compile
     # all of its required Ocaml dependencies
-    # We do what the following does (with customization): `make -C "$OPAMSRC_UNIX" compiler -j "$NUMCPUS"`
-    pushd "$OPAMSRC_UNIX"
-    if ! log_trace "$WORK"/launch-compiler.sh \
-        BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS" BOOTSTRAP_OPT_TARGET=opt.opt BOOTSTRAP_ROOT=.. BOOTSTRAP_DIR=bootstrap \
-        ./shell/bootstrap-ocaml.sh auto;
-    then
-        # dump the `configure` script and display it with a ==> marker and line numbers (config.log reports the offending line numbers)
-        marker="=-=-=-=-=-=-=-= configure script that errored =-=-=-=-=-=-=-="
-        find bootstrap -maxdepth 2 -name configure | while read -r b; do
-            echo "$marker" >&2
-            awk '{print NR,$0}' "$b" >&2
-        done
-        # dump the config.log and display it with a ==> marker
-        echo >&2
-        find bootstrap -maxdepth 2 -name config.log -exec tail -n+0 {} \; >&2
-        # tell how to get real error
-        echo "FATAL: Failed ./shell/bootstrap-ocaml.sh. Original error should be above the numbered script that starts with: $marker"
-        exit 1
-    fi
-    popd
+    if [ -z "$OCAMLHOME" ]; then
+        # No OCaml home. Do Opam bootstrap
+        # --------------------------------
 
-    # Install Opam's dependencies as findlib packages to the bootstrap compiler
-    # Note: We could add `OPAM_0INSTALL_SOLVER_ENABLED=true` but unclear if that is a good idea.
-    log_trace "$WORK"/launch-compiler.sh make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
+        # Make sure at least flexdll is available for the upcoming 'make compiler'
+        log_trace make -C "$OPAMSRC_UNIX"/src_ext cache-archives
+
+        # We do what the following does (with customization): `make -C "$OPAMSRC_UNIX" compiler -j "$NUMCPUS"`
+        pushd "$OPAMSRC_UNIX"
+        if ! log_trace "$WORK"/launch-compiler.sh \
+            BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS" BOOTSTRAP_OPT_TARGET=opt.opt BOOTSTRAP_ROOT=.. BOOTSTRAP_DIR=bootstrap \
+            ./shell/bootstrap-ocaml.sh auto;
+        then
+            # dump the `configure` script and display it with a ==> marker and line numbers (config.log reports the offending line numbers)
+            marker="=-=-=-=-=-=-=-= configure script that errored =-=-=-=-=-=-=-="
+            find bootstrap -maxdepth 2 -name configure | while read -r b; do
+                printf "%s\n" "$marker" >&2
+                awk '{print NR,$0}' "$b" >&2
+            done
+            # dump the config.log and display it with a ==> marker
+            printf "\n" >&2
+            find bootstrap -maxdepth 2 -name config.log -exec tail -n+0 {} \; >&2
+            # tell how to get real error
+            printf "%s\n" "FATAL: Failed ./shell/bootstrap-ocaml.sh. Original error should be above the numbered script that starts with: $marker"
+            exit 1
+        fi
+        popd
+
+        # Install Opam's dependencies as findlib packages to the bootstrap compiler
+        # Note: We could add `OPAM_0INSTALL_SOLVER_ENABLED=true` but unclear if that is a good idea.
+        log_trace "$WORK"/launch-compiler.sh make -C "$OPAMSRC_UNIX" lib-pkg -j "$NUMCPUS"
+    fi
 
     # Standard autotools ./configure
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.
     pushd "$OPAMSRC_UNIX"
     log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" ./configure --prefix="$TARGETDIR_MIXED"
     popd
+fi
+
+if [ -n "$OCAMLHOME" ]; then
+    # OCaml home. Install Opam dependencies needed to create `opam.exe`
+    log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" lib-ext # OCAML="$OCAMLHOME/bin/ocaml"
 fi
 
 # At this point we have compiled _all_ of Opam dependencies ...

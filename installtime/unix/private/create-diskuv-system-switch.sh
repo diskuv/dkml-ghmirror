@@ -20,10 +20,10 @@ usage() {
     echo "Usage:" >&2
     echo "    create-diskuv-system-switch.sh -h           Display this help message" >&2
     echo "    create-diskuv-system-switch.sh              Create the Diskuv system switch" >&2
-    echo "                                                at <DiskuvOCamlHome>/system on Windows or" >&2
-    echo "                                                <OPAMROOT>/diskuv-system/_opam on non-Windows" >&2
+    echo "                                                at <DiskuvOCamlHome>/host-abi-tools on Windows or" >&2
+    echo "                                                <OPAMROOT>/host-abi-tools/_opam on non-Windows" >&2
     echo "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
-    echo "                                                at <STATEDIR>/system" >&2
+    echo "                                                at <STATEDIR>/target-abi-tools" >&2
     echo "Options:" >&2
     echo "    -o OCAMLVERSION: Optional. The OCaml version to use. Ex. 4.13.1" >&2
     echo "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2

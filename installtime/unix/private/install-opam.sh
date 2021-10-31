@@ -40,6 +40,7 @@ fi
 log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
+    -u https://github.com/diskuv/opam \
     -v "$GIT_TAG"
 
 # Use reproducible directory created by setup

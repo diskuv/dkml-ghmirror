@@ -21,9 +21,9 @@
 #   build files.
 #
 ######################################
-# reproducible-compile-opam-1-setup.sh -d DKMLDIR -t TARGETDIR -g GIT_TAG [-a PLATFORM]
+# reproducible-compile-opam-1-setup.sh -d DKMLDIR -t TARGETDIR -g GIT_COMMITID_OR_TAG [-a PLATFORM]
 #
-# Sets up the source code for a reproducible build
+# Sets up the source code for a reproducible build of Opam
 
 set -euf
 
@@ -42,26 +42,31 @@ TRIM_ARGS=()
 OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 2-build.sh
 
 usage() {
-    echo "Usage:" >&2
-    echo "    reproducible-compile-opam-1-setup.sh" >&2
-    echo "        -h                     Display this help message." >&2
-    echo "        -d DIR -t DIR -v TAG   Setup compilation of Opam." >&2
-    echo "Options" >&2
-    echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
-    echo "   -t DIR: Target directory" >&2
-    echo "   -v TAG: Git tag" >&2
-    echo "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
-    echo "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
-    echo "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
-    echo "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
-    echo "      will not choose a compiler based on environment variables." >&2
-    echo "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    reproducible-compile-opam-1-setup.sh" >&2
+    printf "%s\n" "        -h                       Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR -v COMMIT  Setup compilation of Opam." >&2
+    printf "%s\n" "Options" >&2
+    printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
+    printf "%s\n" "   -t DIR: Target directory" >&2
+    printf "%s\n" "   -u URL: Git repository url. Defaults to https://github.com/ocaml/opam" >&2
+    printf "%s\n" "   -v COMMIT: Git commit or tag for the git repository. Strongly prefer a commit id for much stronger" >&2
+    printf "%s\n" "      reproducibility guarantees" >&2
+    printf "%s\n" "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
+    printf "%s\n" "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    printf "%s\n" "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
+    printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
+    printf "%s\n" "      will not choose a compiler based on environment variables." >&2
+    printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
+    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
+    printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
 }
 
 DKMLDIR=
-GIT_TAG=
+GIT_URL=https://github.com/ocaml/opam
+GIT_COMMITID_OR_TAG=
 TARGETDIR=
-while getopts ":d:v:t:a:b:h" opt; do
+while getopts ":d:u:v:t:a:b:c:h" opt; do
     case ${opt} in
         h )
             usage
@@ -70,14 +75,18 @@ while getopts ":d:v:t:a:b:h" opt; do
         d )
             DKMLDIR="$OPTARG"
             if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
-                echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
+                printf "%s\n" "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
             fi
         ;;
+        u )
+            GIT_URL="$OPTARG"
+            SETUP_ARGS+=( -u "$GIT_URL" )
+        ;;
         v )
-            GIT_TAG="$OPTARG"
-            SETUP_ARGS+=( -v "$GIT_TAG" )
+            GIT_COMMITID_OR_TAG="$OPTARG"
+            SETUP_ARGS+=( -v "$GIT_COMMITID_OR_TAG" )
         ;;
         t )
             TARGETDIR="$OPTARG"
@@ -93,8 +102,12 @@ while getopts ":d:v:t:a:b:h" opt; do
             BUILD_ARGS+=( -b "$OPTARG" )
             SETUP_ARGS+=( -b "$OPTARG" )
         ;;
+        c )
+            BUILD_ARGS+=( -c "$OPTARG" )
+            SETUP_ARGS+=( -c "$OPTARG" )
+        ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -102,8 +115,8 @@ while getopts ":d:v:t:a:b:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$GIT_TAG" ] || [ -z "$TARGETDIR" ]; then
-    echo "Missing required options" >&2
+if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; then
+    printf "%s\n" "Missing required options" >&2
     usage
     exit 1
 fi
@@ -137,12 +150,14 @@ cd "$DKMLDIR"
 # Get Diskuv's Opam if not present already
 if [ ! -e "$OPAMSRC_UNIX/Makefile" ] || [ ! -e "$OPAMSRC_UNIX/.git" ]; then
     install -d "$OPAMSRC_UNIX"
-    rm -rf "$OPAMSRC_UNIX" # clean any partial downloads
-    git clone -b "$GIT_TAG" https://github.com/diskuv/opam "$OPAMSRC_MIXED"
+    log_trace rm -rf "$OPAMSRC_UNIX" # clean any partial downloads
+    log_trace git clone "$GIT_URL" "$OPAMSRC_MIXED"
+    log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
 else
-    if git -C "$OPAMSRC_MIXED" tag -l "$GIT_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OPAMSRC_MIXED" tag -d "$GIT_TAG"; fi # allow tag to move (for development and for emergency fixes)
-    git -C "$OPAMSRC_MIXED" fetch --tags
-    git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_TAG"
+    if git -C "$OPAMSRC_MIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OPAMSRC_MIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi # allow tag to move (for development and for emergency fixes)
+    log_trace git -C "$OPAMSRC_MIXED" fetch --tags
+    log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+    log_trace git -C "$OPAMSRC_MIXED" reset --hard "$GIT_COMMITID_OR_TAG" # need patches to apply cleanly, so blow away any modified files tracked by Git
 fi
 
 # PATCH - msvs-detect
@@ -157,7 +172,7 @@ if [ -x /usr/bin/cygpath ]; then
     ZIP_MIXED=$(/usr/bin/cygpath -am "$ZIP_MIXED")
     MSVS_MIXED=$(/usr/bin/cygpath -am "$MSVS_MIXED")
 fi
-wget https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip -O "$ZIP_MIXED"
+log_trace downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
 unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
 install "$WORK"/msvs/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 

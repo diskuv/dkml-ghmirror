@@ -39,6 +39,7 @@ windows:build-opam:
       + " -a " + "$env:PLATFORM"
       + " -b " + "$($VisualStudioProps.MsvsPreference)"
       + " -t '" + "$DEPLOYDIR" + "'"
+      + " -u https://github.com/diskuv/opam"
       + " -v " + $DV_AvailableOpamVersion
       )
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
