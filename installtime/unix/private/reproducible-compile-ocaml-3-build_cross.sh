@@ -130,11 +130,6 @@ disambiguate_filesystem_paths
 
 # Bootstrapping vars
 TARGETDIR_UNIX=$(cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
-if [ -x /usr/bin/cygpath ]; then
-    OCAMLSRC_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/src/ocaml")
-else
-    OCAMLSRC_UNIX="$TARGETDIR_UNIX/src/ocaml"
-fi
 
 # Quick exit
 if [ -z "$TARGETABIS" ]; then
@@ -172,7 +167,7 @@ if [ -e "$OCAML_HOST/bin/ocamlc.exe" ]; then
   EXE_EXT=$("$OCAML_HOST"/bin/ocamlc.exe -config | $DKMLSYS_AWK '$1=="ext_exe:"{print $2}')
 else
   # shellcheck disable=SC2016
-  EXE_EXT=$("$OCAML_HOST"/bin/ocamlc.exe -config | $DKMLSYS_AWK '$1=="ext_exe:"{print $2}')
+  EXE_EXT=$("$OCAML_HOST"/bin/ocamlc -config | $DKMLSYS_AWK '$1=="ext_exe:"{print $2}')
 fi
 
 OCAMLRUN="$OCAML_HOST/bin/ocamlrun$EXE_EXT"
