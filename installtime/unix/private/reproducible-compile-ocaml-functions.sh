@@ -112,6 +112,44 @@ windows_configure_and_define_make() {
   }
 }
 
+ocaml_configure_options_for_abi() {
+  ocaml_configure_options_for_abi_ABI="$1"
+  shift
+
+  # This is a guess that OCaml uses; it is useful when you can construct the desired ABI from the host ABI.
+  ocaml_configure_options_for_abi_GUESS=$(build-aux/config.guess)
+  
+  # The ./configure script on Windows does a good job of figuring out the target based on the compiler.
+  # Others, especially multi-target compilers like `clang -arch XXXX`, need to be explicitly told the target.
+  # It doesn't look like OCaml uses the target, but let's be consistent.
+  #
+  # All ABIs
+  # --------
+  # Because native code compiler is based on the detected _host_, we likely have to change the host flag.
+  # https://github.com/ocaml/ocaml/blob/7997b65fdc87909e83f497da866763174699936e/configure#L14273-L14279
+  case "$ocaml_configure_options_for_abi_ABI" in
+    darwin_x86_64)
+      case "$ocaml_configure_options_for_abi_GUESS" in
+        *-apple-*) # example: aarch64-apple-darwin21.1.0 -> x86_64-apple-darwin21.1.0
+          printf "%s=%s %s=%s" "--host" "$ocaml_configure_options_for_abi_GUESS" "--target" "$ocaml_configure_options_for_abi_GUESS" | sed 's/=[A-Za-z0-9_]*-/=x86_64-/g'
+          ;;
+        *)
+          printf "%s" "--target=x86_64-apple-darwin";;
+      esac
+      ;;
+    darwin_arm64)
+      case "$ocaml_configure_options_for_abi_GUESS" in
+        *-apple-*) # example: x86_64-apple-darwin21.1.0 -> aarch64-apple-darwin21.1.0
+          printf "%s=%s %s=%s" "--host" "$ocaml_configure_options_for_abi_GUESS" "--target" "$ocaml_configure_options_for_abi_GUESS" | sed 's/=[A-Za-z0-9_]*-/=aarch64-/g'
+          ;;
+        *)
+          printf "%s" "--target=aarch64-apple-darwin"
+          ;;
+      esac
+      ;;
+  esac
+}
+
 ocaml_configure() {
   ocaml_configure_PREFIX="$1"
   shift
@@ -140,6 +178,13 @@ ocaml_configure() {
     $DKMLSYS_CHMOD +x "$make_preconfigured_env_script_DEST".tmp
     $DKMLSYS_MV "$make_preconfigured_env_script_DEST".tmp "$make_preconfigured_env_script_DEST"
   }
+
+  # Configure options
+  # -----------------
+
+  # Add more, if any, options based on the ABI
+  ocaml_configure_EXTRA_ABI_OPTS=$(ocaml_configure_options_for_abi "$ocaml_configure_ABI")
+  ocaml_configure_EXTRA_OPTS=$(printf "%s %s" "$ocaml_configure_EXTRA_OPTS" "$ocaml_configure_EXTRA_ABI_OPTS")
 
   # Compiler
   # --------
