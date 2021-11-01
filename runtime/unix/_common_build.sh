@@ -32,8 +32,10 @@ if [ -x /usr/bin/cygpath ]; then
     # Trim any trailing slash because `cygpath -aw .` has trailing slash
     BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$DKML_DUNE_BUILD_DIR" | sed 's#\\$##')
 else
-    # Make into absolute path if not already.
-    BUILDDIR_BUILDHOST="$BUILD_BASEPATH$DKML_DUNE_BUILD_DIR"
+    # Make into absolute path if not already
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        BUILDDIR_BUILDHOST="$BUILD_BASEPATH$DKML_DUNE_BUILD_DIR"
+    fi
 fi
 
 # DKML_DUNE_BUILD_DIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
@@ -88,6 +90,7 @@ set_opamrootandswitchdir() {
             else
                 OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
             fi
+            OPAMSWITCHNAME_BUILDHOST="$BUILDDIR_BUILDHOST"
         else
             if cmake_flag_off "$USERMODE"; then
                 set_opamrootandswitchdir_EXPAND="$STATEDIR"
@@ -98,7 +101,7 @@ set_opamrootandswitchdir() {
             OPAMSWITCHFINALDIR_BUILDHOST="$set_opamrootandswitchdir_EXPAND${OS_DIR_SEP}_opam"
             # shellcheck disable=SC2034
             OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_EXPAND"
+            OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_EXPAND"
         fi
-        OPAMSWITCHNAME_BUILDHOST="$BUILDDIR_BUILDHOST"
     fi
 }

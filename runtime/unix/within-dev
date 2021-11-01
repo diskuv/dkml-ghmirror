@@ -24,7 +24,7 @@ usage() {
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
     echo "             This can be a multi-second speedup on Windows." >&2
-    echo "       -0 PREHOOK_DOUBLE: If specified, the script will be 'eval'-d upon" >&2
+    echo "       -0 PREHOOK_SINGLE: If specified, the script will be 'eval'-d upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
     echo "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
     echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2

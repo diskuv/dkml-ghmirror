@@ -20,14 +20,15 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    init-opam-root.sh -h                   Display this help message" >&2
-    echo "    init-opam-root.sh -p PLATFORM          (Deprecated) Initialize the Opam root" >&2
-    echo "    init-opam-root.sh [-d STATEDIR]        Initialize the Opam root" >&2
-    echo "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
-    echo "Options:" >&2
-    echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    init-opam-root.sh -h                   Display this help message" >&2
+    printf "%s\n" "    init-opam-root.sh -p PLATFORM          (Deprecated) Initialize the Opam root" >&2
+    printf "%s\n" "    init-opam-root.sh [-d STATEDIR]        Initialize the Opam root" >&2
+    printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
 }
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -39,7 +40,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:p:d:" opt; do
+OPAMHOME=
+while getopts ":h:p:d:o:" opt; do
     case ${opt} in
         h )
             usage
@@ -52,8 +54,9 @@ while getopts ":h:p:d:" opt; do
             STATEDIR=$OPTARG
             USERMODE=OFF
         ;;
+        o ) OPAMHOME=$OPTARG ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -189,7 +192,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     }
 else
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
     }
 fi
 
@@ -204,7 +207,7 @@ if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
         # --bare: so we can configure its settings before adding the OCaml system compiler.
         # --disable-sandboxing: Sandboxing does not work on Windows
         run_opam init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
-    elif is_reproducible_platform; then
+    elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_reproducible_platform; then
         # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
         run_opam init --yes --disable-sandboxing --no-setup
     else
@@ -250,12 +253,12 @@ if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/
     awk '$1=="default" {print $2}' "$WORK"/list > "$WORK"/default
     _NUMLINES=$(awk 'END{print NR}' "$WORK"/default)
     if [ "$_NUMLINES" -ne 1 ]; then
-        echo "FATAL: init-opam-root.sh does not understand the Opam repo format used at $OPAMROOTDIR_BUILDHOST/repo/default" >&2
-        echo "FATAL: Details A:" >&2
+        printf "%s\n" "FATAL: init-opam-root.sh does not understand the Opam repo format used at $OPAMROOTDIR_BUILDHOST/repo/default" >&2
+        printf "%s\n" "FATAL: Details A:" >&2
         ls "$OPAMROOTDIR_BUILDHOST"/repo >&2
-        echo "FATAL: Details B:" >&2
+        printf "%s\n" "FATAL: Details B:" >&2
         cat "$WORK"/default
-        echo "FATAL: Details C:" >&2
+        printf "%s\n" "FATAL: Details C:" >&2
         cat "$WORK"/list
         exit 1
     fi

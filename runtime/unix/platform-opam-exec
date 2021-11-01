@@ -58,6 +58,7 @@ usage() {
     echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
     echo "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
     echo "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
+    echo "       -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     echo "Advanced Options:" >&2
     echo "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
@@ -107,7 +108,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h0:1:b:sp:t:d:u:" opt; do
+OPAMHOME=
+while getopts ":h0:1:b:sp:t:d:u:o:" opt; do
     case ${opt} in
         h )
             usage
@@ -135,6 +137,7 @@ while getopts ":h0:1:b:sp:t:d:u:" opt; do
             TARGET_OPAMSWITCH=$OPTARG
             ADD_SWITCH_OPTS=ON
         ;;
+        o ) OPAMHOME=$OPTARG ;;
         0 )
             PREHOOK_SINGLE_EVAL=$OPTARG
         ;;
@@ -296,6 +299,19 @@ fi
 if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then PLATFORM_EXEC_PRE_DOUBLE="; $PLATFORM_EXEC_PRE_DOUBLE"; fi
 # shellcheck disable=SC2034 disable=SC2016
 PLATFORM_EXEC_PRE_DOUBLE="${OPAM_ENV_STMT:-} ${PLATFORM_EXEC_PRE_DOUBLE:-}"
+
+# We make another prehook so that `PATH=<OPAMHOME>/bin:"$PATH"` at the beginning of all the hooks.
+# That way `opam` will work including from any child processes that opam spawns.
+if [ -n "$OPAMHOME" ]; then
+    {
+        printf "PATH='%s'/bin:\"\$PATH\"\n" "$OPAMHOME"
+        if [ -n "$PLATFORM_EXEC_PRE_SINGLE" ]; then
+            printf ". '%s'\n" "$PLATFORM_EXEC_PRE_SINGLE"
+        fi
+    } > "$WORK"/platform-opam-exec.prehook.source.sh
+    # shellcheck disable=SC2034
+    PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.prehook.source.sh
+fi
 
 # -----------------------
 # Inject our options first, immediately after the subcommand
