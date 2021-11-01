@@ -710,13 +710,33 @@ autodetect_cpus() {
     # type cast to a number (in case user gave a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
     if [ "${NUMCPUS}" -eq 0 ]; then
+        # need temp directory
+        if [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
+            autodetect_cpus_TEMPDIR=$(mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlcpu.XXXXX)
+        elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
+            autodetect_cpus_TEMPDIR=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
+            autodetect_cpus_TEMPDIR=$(mktemp -d "$autodetect_cpus_TEMPDIR"/dkmlcpu.XXXXX)
+        elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
+            autodetect_cpus_TEMPDIR=$(mktemp -d "$TMP"/dkmlcpu.XXXXX)
+        else
+            autodetect_cpus_TEMPDIR=$(mktemp -d /tmp/dkmlcpu.XXXXX)
+        fi
+
+        # do calculations
         NUMCPUS=1
         if [ -n "${NUMBER_OF_PROCESSORS:-}" ]; then
             # Windows usually has NUMBER_OF_PROCESSORS
             NUMCPUS="$NUMBER_OF_PROCESSORS"
-        elif /usr/bin/nproc --all > "$WORK"/numcpus 2>/dev/null && [ -s "$WORK"/numcpus ]; then
-            NUMCPUS=$("$DKMLSYS_CAT" "$WORK"/numcpus)
+        elif [ -x /usr/bin/getconf ] && /usr/bin/getconf _NPROCESSORS_ONLN > "$autodetect_cpus_TEMPDIR"/numcpus 2>/dev/null && [ -s "$autodetect_cpus_TEMPDIR"/numcpus ]; then
+            # getconf is POSIX standard; works on macOS; https://pubs.opengroup.org/onlinepubs/009604499/utilities/getconf.html
+            NUMCPUS=$("$DKMLSYS_CAT" "$autodetect_cpus_TEMPDIR"/numcpus)
+        elif [ -x /usr/bin/nproc ] && /usr/bin/nproc --all > "$autodetect_cpus_TEMPDIR"/numcpus 2>/dev/null && [ -s "$autodetect_cpus_TEMPDIR"/numcpus ]; then
+            # nproc is usually available on Linux
+            NUMCPUS=$("$DKMLSYS_CAT" "$autodetect_cpus_TEMPDIR"/numcpus)
         fi
+
+        # clean temp directory
+        rm -rf "$autodetect_cpus_TEMPDIR"
     fi
     # type cast again to a number (in case autodetection produced a string)
     NUMCPUS=$(( NUMCPUS + 0 ))
