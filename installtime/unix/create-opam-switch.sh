@@ -387,7 +387,7 @@ else
         fi
 
         # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
-        #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/system/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
+        #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/host-tools/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
         #   cl : Command line error D8016 : '/RTC1' and '/O2' command-line options are incompatible
         # we remove any /RTC1 from the flags
         OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's#\B/RTC1\b##g')
@@ -403,22 +403,22 @@ fi
 if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
     # Frame pointer should be on in Debug mode.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-    printf " %s " ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
+    printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
 fi
 if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
     # If we need Linux `perf` we need frame pointers enabled
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-    printf " %s " ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
+    printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
 fi
 if [ $BUILD_RELEASE = ON ]; then
     # All release builds should get flambda optimization
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
-    printf " %s " ocaml-option-flambda >> "$WORK"/invariant.formula.tail.txt
+    printf ",'%s'" ocaml-option-flambda >> "$WORK"/invariant.formula.tail.txt
 fi
 if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
     # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
-    printf " %s " ocaml-option-afl >> "$WORK"/invariant.formula.tail.txt
+    printf ",'%s'" ocaml-option-afl >> "$WORK"/invariant.formula.tail.txt
 fi
 if is_unixy_windows_build_machine; then
     set_ocaml_variant_for_windows_switches "$OCAMLVERSION"
@@ -488,12 +488,12 @@ case "$OCAMLVERSION_OR_HOME" in
     /*)
         # ex. '"ocaml-system" {= "4.12.1"}'
         printf "%s\n" "  --packages='ocaml-system.$OCAMLVERSION' \\" >> "$WORK"/switchcreateargs.sh
-        printf ' %socaml-system.%s%s ' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant.formula.head.txt
+        printf '%socaml-system.%s%s' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant.formula.head.txt
         ;;
     *)
         # ex. '"ocaml-variants" {= "4.12.0+options"}'
         printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
-        printf ' %socaml-variants.%s%s ' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
+        printf '%socaml-variants.%s%s' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
         ;;
 esac
 
@@ -747,7 +747,7 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
     OLD_HASH=$(sha256compute "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/switch-config")
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  switch set-invariant "
+        printf "  switch set-invariant --packages="
         cat "$WORK"/invariant.formula.head.txt
         cat "$WORK"/invariant.formula.tail.txt
     } > "$WORK"/set-invariant.sh
