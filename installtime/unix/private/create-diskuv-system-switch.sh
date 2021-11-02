@@ -17,17 +17,19 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    create-diskuv-system-switch.sh -h           Display this help message" >&2
-    echo "    create-diskuv-system-switch.sh              Create the Diskuv system switch" >&2
-    echo "                                                at <DiskuvOCamlHome>/host-abi-tools on Windows or" >&2
-    echo "                                                <OPAMROOT>/host-abi-tools/_opam on non-Windows" >&2
-    echo "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
-    echo "                                                at <STATEDIR>/target-abi-tools" >&2
-    echo "Options:" >&2
-    echo "    -o OCAMLVERSION: Optional. The OCaml version to use. Ex. 4.13.1" >&2
-    echo "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
-    echo "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    create-diskuv-system-switch.sh -h           Display this help message" >&2
+    printf "%s\n" "    create-diskuv-system-switch.sh              Create the Diskuv system switch" >&2
+    printf "%s\n" "                                                at <DiskuvOCamlHome>/host-tools on Windows or" >&2
+    printf "%s\n" "                                                <OPAMROOT>/host-tools/_opam on non-Windows" >&2
+    printf "%s\n" "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
+    printf "%s\n" "                                                at <STATEDIR>/host-tools" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
+    printf "%s\n" "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use" >&2
+    printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
 }
 
 STATEDIR=
@@ -36,9 +38,10 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-OCAMLVERSION=
+OCAMLVERSION_OR_HOME=
+OPAMHOME=
 FLAVOR=CI
-while getopts ":h:d:o:f:" opt; do
+while getopts ":h:d:o:v:f:" opt; do
     case ${opt} in
         h )
             usage
@@ -50,21 +53,22 @@ while getopts ":h:d:o:f:" opt; do
             # shellcheck disable=SC2034
             USERMODE=OFF
         ;;
-        o )
-            OCAMLVERSION=$OPTARG
+        v )
+            OCAMLVERSION_OR_HOME=$OPTARG
         ;;
+        o ) OPAMHOME=$OPTARG ;;
         f )
             case "$OPTARG" in
                 Ci|CI|ci)       FLAVOR=CI ;;
                 Full|FULL|full) FLAVOR=Full ;;
                 *)
-                    echo "FLAVOR must be CI or Full"
+                    printf "%s\n" "FLAVOR must be CI or Full"
                     usage
                     exit 1
             esac
         ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -99,19 +103,21 @@ cd "$TOPDIR"
 
 # -----------------------
 # BEGIN create system switch
-#
-# Only CI Flavor packages need to be installed.
+
+# Set NUMCPUS if unset from autodetection of CPUs
+autodetect_cpus
 
 # Just compiler
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -o "$OCAMLVERSION" -b Release
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release
 else
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -o "$OCAMLVERSION" -d "$STATEDIR" -u "$USERMODE" -b Release
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -d "$STATEDIR" -u "$USERMODE" -b Release
 fi
 
-# CI packages
+# Flavor packages
 {
-    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s \"\$@\" install -y"
+    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s -v '$OCAMLVERSION_OR_HOME' -o '$OPAMHOME' \"\$@\" install -y"
+    printf " %s" "--jobs=$NUMCPUS"
     case "$FLAVOR" in
         CI)
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
@@ -120,7 +126,7 @@ fi
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/full-flavor-minus-ci-flavor-packages.txt
             ;;
-        *) echo "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
+        *) printf "%s\n" "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
     esac
 } > "$WORK"/config-diskuv-system.sh
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then

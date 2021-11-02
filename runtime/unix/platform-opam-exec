@@ -26,48 +26,52 @@ DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    platform-opam-exec -h                                                    Display this help message" >&2
-    echo "    platform-opam-exec -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
-    echo "                                                                             in the PLATFORM's active switch" >&2
-    echo "    platform-opam-exec -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
-    echo "                                                                             in the PLATFORM's BUILDTYPE switch" >&2
-    echo "    platform-opam-exec -p PLATFORM                                           (Deprecated) Run the opam command" >&2
-    echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
-    echo "    platform-opam-exec -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
-    echo "                                                                             in the 'diskuv-host-abi-tools' local switch" >&2
-    echo "    platform-opam-exec -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
-    echo "                                                                             globally active switch" >&2
-    echo "    platform-opam-exec -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
-    echo "                                                                             'diskuv-host-abi-tools' switch" >&2
-    echo "    platform-opam-exec -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
-    echo "                                                                             switch prefix of STATEDIR/_opam" >&2
-    echo "    platform-opam-exec -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
-    echo "                                                                             switch prefix of STATEDIR/target-abi-tools/_opam" >&2
-    echo "Options:" >&2
-    echo "       -p PLATFORM: The target platform or 'dev'" >&2
-    echo "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
-    echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
-    echo "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
-    echo "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
-    echo "          selected which uses <STATEDIR>/system/_opam, and unless [-s] [-u ON] is also" >&2
-    echo "          selected which uses <DiskuvOCamlHome>/system/_opam on Windows and" >&2
-    echo "          <OPAMROOT>/diskuv-system/_opam on non-Windows." >&2
-    echo "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
-    echo "          the non-system switch will be found if you are in <STATEDIR>" >&2
-    echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    echo "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
-    echo "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
-    echo "       -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
-    echo "Advanced Options:" >&2
-    echo "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
-    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
-    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
-    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
-    echo "             It behaves similar to:" >&2
-    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
-    echo '               eval /tmp/eval.sh' >&2
-    echo '             Useful for setting environment variables (possibly from a script).' >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    platform-opam-exec -h                                                    Display this help message" >&2
+    printf "%s\n" "    platform-opam-exec -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
+    printf "%s\n" "                                                                             in the PLATFORM's active switch" >&2
+    printf "%s\n" "    platform-opam-exec -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
+    printf "%s\n" "                                                                             in the PLATFORM's BUILDTYPE switch" >&2
+    printf "%s\n" "    platform-opam-exec -p PLATFORM                                           (Deprecated) Run the opam command" >&2
+    printf "%s\n" "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
+    printf "%s\n" "    platform-opam-exec -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
+    printf "%s\n" "                                                                             in the 'diskuv-host-tools' local switch" >&2
+    printf "%s\n" "    platform-opam-exec -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
+    printf "%s\n" "                                                                             globally active switch" >&2
+    printf "%s\n" "    platform-opam-exec -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
+    printf "%s\n" "                                                                             'diskuv-host-tools' switch" >&2
+    printf "%s\n" "    platform-opam-exec -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
+    printf "%s\n" "                                                                             switch prefix of STATEDIR/_opam" >&2
+    printf "%s\n" "    platform-opam-exec -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
+    printf "%s\n" "                                                                             switch prefix of STATEDIR/host-tools/_opam" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "       -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
+    printf "%s\n" "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
+    printf "%s\n" "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
+    printf "%s\n" "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
+    printf "%s\n" "          selected which uses <STATEDIR>/system/_opam, and unless [-s] [-u ON] is also" >&2
+    printf "%s\n" "          selected which uses <DiskuvOCamlHome>/system/_opam on Windows and" >&2
+    printf "%s\n" "          <OPAMROOT>/diskuv-system/_opam on non-Windows." >&2
+    printf "%s\n" "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
+    printf "%s\n" "          the non-system switch will be found if you are in <STATEDIR>" >&2
+    printf "%s\n" "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
+    printf "%s\n" "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
+    printf "%s\n" "       -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
+    printf "%s\n" "          The bin/ subdir of the Opam home is added to the PATH" >&2
+    printf "%s\n" "       -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
+    printf "%s\n" "          Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "          The bin/ subdir of the OCaml home is added to the PATH; currently passing an OCaml version does nothing" >&2
+    printf "%s\n" "Advanced Options:" >&2
+    printf "%s\n" "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
+    printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    printf "%s\n" "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
+    printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    printf "%s\n" "             It behaves similar to:" >&2
+    printf "%s\n" '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    printf "%s\n" '               eval /tmp/eval.sh' >&2
+    printf "%s\n" '             Useful for setting environment variables (possibly from a script).' >&2
 }
 
 # no arguments should display usage
@@ -109,7 +113,8 @@ else
     USERMODE=ON
 fi
 OPAMHOME=
-while getopts ":h0:1:b:sp:t:d:u:o:" opt; do
+OCAMLVERSION_OR_HOME=
+while getopts ":h0:1:b:sp:t:d:u:o:v:" opt; do
     case ${opt} in
         h )
             usage
@@ -138,6 +143,7 @@ while getopts ":h0:1:b:sp:t:d:u:o:" opt; do
             ADD_SWITCH_OPTS=ON
         ;;
         o ) OPAMHOME=$OPTARG ;;
+        v ) OCAMLVERSION_OR_HOME=$OPTARG ;;
         0 )
             PREHOOK_SINGLE_EVAL=$OPTARG
         ;;
@@ -145,7 +151,7 @@ while getopts ":h0:1:b:sp:t:d:u:o:" opt; do
             PREHOOK_DOUBLE_EVAL=$OPTARG
         ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -266,12 +272,23 @@ fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:
 #   [ERROR] The selected switch C:/source/xxx/build/dev/Debug is not installed.
-if [ "$ADD_SWITCH_OPTS" = ON ] &&
-   [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
-   is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
-    OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ "$ADD_SWITCH_OPTS" = ON ] &&
+    [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
+    is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
+        OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
+        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+    fi
+else
+    if [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
+    is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
+        OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
+        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+    fi
 fi
+
+# END --switch
+# ------------
 
 # Use 3p_installed for with-dkml.exe
 WITHDKMLENV=(env)
@@ -291,9 +308,6 @@ else
     WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
 fi
 
-# END --switch
-# ------------
-
 # We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
 # We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
 if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then PLATFORM_EXEC_PRE_DOUBLE="; $PLATFORM_EXEC_PRE_DOUBLE"; fi
@@ -306,11 +320,30 @@ if [ -n "$OPAMHOME" ]; then
     {
         printf "PATH='%s'/bin:\"\$PATH\"\n" "$OPAMHOME"
         if [ -n "$PLATFORM_EXEC_PRE_SINGLE" ]; then
-            printf ". '%s'\n" "$PLATFORM_EXEC_PRE_SINGLE"
+            printf "\n"
+            cat "$PLATFORM_EXEC_PRE_SINGLE"
+            printf "\n"
         fi
-    } > "$WORK"/platform-opam-exec.prehook.source.sh
+    } > "$WORK"/platform-opam-exec.opamhome.prehook.source.sh
     # shellcheck disable=SC2034
-    PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.prehook.source.sh
+    PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.opamhome.prehook.source.sh
+fi
+# Ditto for `ocaml`
+if [ -n "$OCAMLVERSION_OR_HOME" ]; then
+    case "$OCAMLVERSION_OR_HOME" in
+        /*)
+            {
+                printf "PATH='%s'/bin:\"\$PATH\"\n" "$OCAMLVERSION_OR_HOME"
+                if [ -n "$PLATFORM_EXEC_PRE_SINGLE" ]; then
+                    printf "\n"
+                    cat "$PLATFORM_EXEC_PRE_SINGLE"
+                    printf "\n"
+                fi
+            } > "$WORK"/platform-opam-exec.ocamlhome.prehook.source.sh
+            # shellcheck disable=SC2034
+            PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.ocamlhome.prehook.source.sh
+        ;;
+    esac
 fi
 
 # -----------------------
@@ -325,7 +358,7 @@ case "$subcommand" in
         exec_in_platform opam init --root "$OPAMROOTDIR_EXPAND" "${OPAM_OPTS[@]}" "$@"
     ;;
     list | option | repository | env)
-        COMPILATION=OFF exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
     exec)
         # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`

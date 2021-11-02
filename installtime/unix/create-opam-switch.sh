@@ -61,36 +61,38 @@ OCAML_DEFAULT_VERSION=4.12.1
 # BEGIN Command line processing
 
 usage() {
-    echo "Creates a local Opam switch with a working compiler.">&2
-    echo "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
-    echo "  Will set switch options pin package versions needed to compile on Windows." >&2
-    echo "Usage:" >&2
-    echo "    create-opam-switch.sh -h                                  Display this help message" >&2
-    echo "    create-opam-switch.sh -u OFF|ON -b BUILDTYPE -d STATEDIR  Create the Opam switch in directory STATEDIR/_opam" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM            (Deprecated) Create the Opam switch" >&2
-    echo "    create-opam-switch.sh [-b BUILDTYPE] -s                   (Deprecated) Expert. Create the diskuv-system switch" >&2
-    echo "Options:" >&2
-    echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -d STATEDIR: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
-    echo "    -s: Select the 'diskuv-system' switch" >&2
-    echo "    -b BUILDTYPE: The build type which is one of:" >&2
-    echo "        Debug" >&2
-    echo "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
-    echo "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
-    echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
-    echo "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    echo "       If ON, uses Opam 2.2+ default root" >&2
-    echo "    -o OCAMLVERSION: Optional. The OCaml version to use. If empty or not specified uses ${OCAML_DEFAULT_VERSION}" >&2
-    echo "    -y Say yes to all questions" >&2
-    echo "Post Create Switch Hook:" >&2
-    echo "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
-    echo "    then the Opam commands in hook-switch-postcreate.txt will be executed." >&2
-    echo "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
-    echo "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.txt" >&2
-    echo "    will be executed." >&2
-    echo "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
-    echo "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
-    echo "    Example: opam pin add --yes opam-lib https://github.com/ocaml/opam.git#1.2" >&2
+    printf "%s\n" "Creates a local Opam switch with a working compiler.">&2
+    printf "%s\n" "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
+    printf "%s\n" "  Will set switch options pin package versions needed to compile on Windows." >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    create-opam-switch.sh -h                                  Display this help message" >&2
+    printf "%s\n" "    create-opam-switch.sh -u OFF|ON -b BUILDTYPE -d STATEDIR  Create the Opam switch in directory STATEDIR/_opam" >&2
+    printf "%s\n" "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM            (Deprecated) Create the Opam switch" >&2
+    printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s                   (Deprecated) Expert. Create the diskuv-system switch" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -d STATEDIR: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
+    printf "%s\n" "    -s: Select the 'diskuv-system' switch" >&2
+    printf "%s\n" "    -b BUILDTYPE: The build type which is one of:" >&2
+    printf "%s\n" "        Debug" >&2
+    printf "%s\n" "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
+    printf "%s\n" "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
+    printf "%s\n" "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
+    printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "       If ON, uses Opam 2.2+ default root" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use" >&2
+    printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
+    printf "%s\n" "    -y Say yes to all questions" >&2
+    printf "%s\n" "Post Create Switch Hook:" >&2
+    printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.txt exists," >&2
+    printf "%s\n" "    then the Opam commands in hook-switch-postcreate.txt will be executed." >&2
+    printf "%s\n" "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.txt exists where," >&2
+    printf "%s\n" "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.txt" >&2
+    printf "%s\n" "    will be executed." >&2
+    printf "%s\n" "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
+    printf "%s\n" "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
+    printf "%s\n" "    Example: opam pin add --yes opam-lib https://github.com/ocaml/opam.git#1.2" >&2
 }
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -105,8 +107,9 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-OCAMLVERSION=${OCAML_DEFAULT_VERSION}
-while getopts ":h:b:p:sd:u:o:y" opt; do
+OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
+OPAMHOME=
+while getopts ":h:b:p:sd:u:o:v:y" opt; do
     case ${opt} in
         h )
             usage
@@ -130,11 +133,12 @@ while getopts ":h:b:p:sd:u:o:y" opt; do
         y)
             YES=ON
         ;;
-        o )
-            if [ -n "$OPTARG" ]; then OCAMLVERSION=$OPTARG; fi
+        v )
+            if [ -n "$OPTARG" ]; then OCAMLVERSION_OR_HOME=$OPTARG; fi
         ;;
+        o ) OPAMHOME=$OPTARG ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -178,7 +182,7 @@ if [ -z "${DKMLDIR:-}" ]; then
     DKMLDIR=$(dirname "$0")
     DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 fi
-if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
+if [ ! -e "$DKMLDIR/.dkmlroot" ]; then printf "%s\n" "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
@@ -244,6 +248,12 @@ fi
 # Set $DiskuvOCamlHome and other vars
 autodetect_dkmlvars || true
 
+# Get the OCaml version
+case "$OCAMLVERSION_OR_HOME" in
+    /*) OCAMLVERSION=$("$OCAMLVERSION_OR_HOME"/bin/ocamlc -version) ;;
+    *)  OCAMLVERSION="$OCAMLVERSION_OR_HOME" ;;
+esac
+
 # Frame pointers enabled
 # ----------------------
 # option-fp
@@ -258,7 +268,7 @@ OPAM_SWITCH_CFLAGS=
 OPAM_SWITCH_CC=
 OPAM_SWITCH_ASPP=
 OPAM_SWITCH_AS=
-true > "$WORK"/invariant.formula.tail.txt
+true > "$WORK"/invariant.formula.head.txt
 true > "$WORK"/invariant.formula.tail.txt
 case "$BUILDTYPE" in
     Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
@@ -428,10 +438,10 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         OPAM_EXEC_OPTS="-s"
     else
-        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -u $USERMODE"
+        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 else
-    if [ -z "${BUILDTYPE:-}" ]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
+    if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootandswitchdir
 
@@ -443,7 +453,7 @@ else
             OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -b $BUILDTYPE"
         fi
     else
-        OPAM_EXEC_OPTS="  -d '$STATEDIR' -u $USERMODE"
+        OPAM_EXEC_OPTS=" -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 fi
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
@@ -461,16 +471,31 @@ if is_unixy_windows_build_machine; then
     # shellcheck disable=SC2154
     printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    OCAMLVARIANT="$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"
+    case "$OCAMLVERSION_OR_HOME" in
+        /*) OCAMLVARIANT="ocaml-system.$OCAMLVERSION" ;;             # use Opam system compiler, which use ocaml from PATH
+        *)  OCAMLVARIANT="$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS" ;; # use Opam base compiler, which compiles ocaml from scratch
+    esac
 else
     printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "%s\n" "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
-    OCAMLVARIANT="$OCAMLVERSION+options"
+    case "$OCAMLVERSION_OR_HOME" in
+        /*) OCAMLVARIANT="ocaml-system.$OCAMLVERSION" ;;   # use Opam system compiler, which use ocaml from PATH
+        *)  OCAMLVARIANT="$OCAMLVERSION+options" ;;        # use Opam base compiler, which compiles ocaml from scratch
+    esac
 fi
 
-printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
-# ex. '"ocaml-variants" {= "4.12.0+options"}'
-printf ' %socaml-variants.%s%s ' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
+case "$OCAMLVERSION_OR_HOME" in
+    /*)
+        # ex. '"ocaml-system" {= "4.12.1"}'
+        printf "%s\n" "  --packages='ocaml-system.$OCAMLVERSION' \\" >> "$WORK"/switchcreateargs.sh
+        printf ' %socaml-system.%s%s ' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant.formula.head.txt
+        ;;
+    *)
+        # ex. '"ocaml-variants" {= "4.12.0+options"}'
+        printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
+        printf ' %socaml-variants.%s%s ' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
+        ;;
+esac
 
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 

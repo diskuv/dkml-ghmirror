@@ -284,8 +284,8 @@ _exec_dev_or_arch_helper() {
     if [ -n "${BUILDTYPE:-}" ]; then
         printf "  -b %s" "$BUILDTYPE" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
-    if [ "${COMPILATION:-}" = OFF ]; then
-        printf "  -n" >> "$_exec_dev_or_arch_helper_CMDARGS"
+    if [ "${COMPILATION:-}" = ON ]; then
+        printf "  -c" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
         if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
@@ -503,24 +503,24 @@ set_opamswitchdir_of_system() {
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if [ -n "${DiskuvOCamlHome:-}" ]; then
-            OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/host-abi-tools/_opam"
-            OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/host-abi-tools"
+            OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/host-tools/_opam"
+            OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/host-tools"
         else
-            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-host-abi-tools"
-            OPAMSWITCHDIR_EXPAND="diskuv-host-abi-tools"
+            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-host-tools"
+            OPAMSWITCHDIR_EXPAND="diskuv-host-tools"
         fi
     else
         if cmake_flag_off "$USERMODE"; then
-            OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}target-abi-tools"
+            OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}host-tools"
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
         else
             if [ -n "${DiskuvOCamlHome:-}" ]; then
-                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome${OS_DIR_SEP}host-abi-tools"
+                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome${OS_DIR_SEP}host-tools"
                 OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
             else
-                OPAMSWITCHDIR_EXPAND="diskuv-host-abi-tools"
+                OPAMSWITCHDIR_EXPAND="diskuv-host-tools"
                 # shellcheck disable=SC2034
-                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-host-abi-tools"
+                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-host-tools"
             fi
         fi
     fi
@@ -551,12 +551,18 @@ is_empty_opam_switch_present() {
 #    switch. Otherwise the switch is a global switch and must be the subfolder of
 #    the Opam root directory (ex. ~/.opam) that has the same name as the global switch.
 #
-# Returns: True (0) if and only if the switch exists and has at least an OCaml system compiler.
+# Returns: True (0) if and only if the switch exists and has either an OCaml base compiler
+#          or evidence of an OCaml system compiler.
 #          False (1) otherwise.
 is_minimal_opam_switch_present() {
     is_minimal_opam_switch_present_switchdir_buildhost=$1
     shift
-    if [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc" ] || [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc.exe" ]
+    if
+    # gen_ocaml_config.ml is evidence that a system compiler was configured;
+    # see https://github.com/ocaml/opam-repository/blob/master/packages/ocaml-system/ocaml-system.4.12.1/files/gen_ocaml_config.ml.in
+    [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/share/ocaml-config/gen_ocaml_config.ml" ] ||
+    [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc" ] ||
+    [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/bin/ocamlc.exe" ]
     then
         return 0
     else

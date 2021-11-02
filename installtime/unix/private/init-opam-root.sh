@@ -200,18 +200,18 @@ fi
 #
 # --no-setup: Don't modify user shell configuration (ex. ~/.profile). For containers,
 #             the home directory inside the Docker container is not persistent anyways.
+# --bare: so we can configure its settings before adding the OCaml system compiler.
 REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
 if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     if is_unixy_windows_build_machine; then
         # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository.
-        # --bare: so we can configure its settings before adding the OCaml system compiler.
         # --disable-sandboxing: Sandboxing does not work on Windows
         run_opam init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
     elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_reproducible_platform; then
         # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
-        run_opam init --yes --disable-sandboxing --no-setup
+        run_opam init --yes --disable-sandboxing --no-setup --bare
     else
-        run_opam init --yes --no-setup
+        run_opam init --yes --no-setup --bare
     fi
 fi
 

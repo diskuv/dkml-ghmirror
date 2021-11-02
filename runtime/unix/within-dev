@@ -22,8 +22,8 @@ usage() {
     echo "       -d STATEDIR: DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be subdirectories." >&2
     echo "          If -u is ON (default) then DKML_DUNE_BUILD_DIR will be _build/ dir of the project" >&2
     echo "Advanced Options:" >&2
-    echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
-    echo "             This can be a multi-second speedup on Windows." >&2
+    echo "       -c: If specified, compilation flags like CC are added to the environment." >&2
+    echo "             This can take several seconds on Windows since vcdevcmd.bat needs to run" >&2
     echo "       -0 PREHOOK_SINGLE: If specified, the script will be 'eval'-d upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
     echo "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
@@ -48,14 +48,14 @@ fi
 BUILDTYPE=
 PREHOOK_SINGLE=
 PREHOOK_DOUBLE=
-COMPILATION=ON
+COMPILATION=OFF
 STATEDIR=
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     USERMODE=OFF
 else
     USERMODE=ON
 fi
-while getopts ":hb:p:0:1:nu:d:" opt; do
+while getopts ":hb:p:0:1:cu:d:" opt; do
     case ${opt} in
         h )
             usage
@@ -74,13 +74,14 @@ while getopts ":hb:p:0:1:nu:d:" opt; do
         1 )
             PREHOOK_DOUBLE=$OPTARG
         ;;
-        n )
-            COMPILATION=OFF
+        c )
+            COMPILATION=ON
         ;;
         d )
             STATEDIR=$OPTARG
         ;;
         u )
+            # shellcheck disable=SC2034
             USERMODE=$OPTARG
         ;;
         \? )

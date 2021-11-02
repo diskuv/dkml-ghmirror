@@ -1181,7 +1181,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -o '$OCamlLangVersion' -f '$Flavor'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -v '$OCamlLangVersion' -f '$Flavor'"
         }
 
     # END opam switch create <system>

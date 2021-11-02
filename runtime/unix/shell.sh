@@ -1,5 +1,8 @@
 #!/bin/sh
-# Even though this is /bin/sh, Bash or Zsh or another shell will execute this script
+# 1. TODO: This needs to use with-dkml.exe! That way compiler tools are added, and we don't
+# have basically redundant pieces of code for launching shells.
+#
+# 2. Even though this is /bin/sh, Bash or Zsh or another shell will execute this script
 # when invoked from ./makeit shell or ./makeit shell-*.
 set -euf
 
@@ -45,7 +48,7 @@ autodetect_dkmlvars || true
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Dump all the environment variables that Opam tells us.
     # This will also transitively include:
-    # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
+    # * (no longer true) the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
     # * the TOPDIR tools since platform-opam-exec -> within-dev
     if [ -x /usr/bin/cygpath ]; then
         SHELL_BUILDHOST=$(/usr/bin/cygpath -aw "$SHELL")
