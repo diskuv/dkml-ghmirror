@@ -663,7 +663,7 @@ if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/o
         if is_unixy_windows_build_machine; then
             # Input: opam pin add --yes --no-action -k version 0install 2.17
             # Output:   "0install.2.17"
-            awk -v dquot='"' 'NF>=2 { l2=NF-1; l1=NF; print "  " dquot $l2 "." $l1 dquot}' "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"/fdopen-mingw/pins.txt
+            awk -v dquot='"' 'NF>=2 { l2=NF-1; l1=NF; print "  " dquot $l2 "." $l1 dquot}' "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/$OCAMLVERSION/pins.txt"
         fi
     } | sort > "$WORK"/new-pinned
 
@@ -674,7 +674,7 @@ if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/o
         diff "$WORK"/new-pinned "$WORK"/new-pinned.uniq >&2 || true
         printf "%s\n" "(Debugging) PINNED_PACKAGES_DKML_PATCHES=$PINNED_PACKAGES_DKML_PATCHES" >&2
         printf "%s\n" "(Debugging) PINNED_PACKAGES_OPAM=$PINNED_PACKAGES_OPAM" >&2
-        printf "%s\n" "(Debugging) Pins at '$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/pins.txt'" >&2
+        printf "%s\n" "(Debugging) Pins at '$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/$OCAMLVERSION/pins.txt'" >&2
         exit 1
     fi
 
