@@ -1272,12 +1272,12 @@ autodetect_compiler_vsdev() {
     autodetect_compiler_TGTARCH=$("$DKMLSYS_AWK" '
         BEGIN{FS="="} $1 == "VSCMD_ARG_TGT_ARCH" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                print value}
         ' "$autodetect_compiler_TEMPDIR"/vcvars.txt)
-    if ! PATH="$autodetect_compiler_COMPILER_PATH_UNIX" "$autodetect_compiler_vsdev_VALIDATECMD" /help >/dev/null; then
-        echo "FAIL: The Visual Studio installation $VSDEV_HOME_BUILDHOST did not answer when asked for '$autodetect_compiler_vsdev_VALIDATECMD'." >&2
-        echo "      It should be present for the target ABI $autodetect_compiler_PLATFORM_ARCH ($autodetect_compiler_TGTARCH) on a build host $BUILDHOST_ARCH." >&2
-        echo " Fix? Run the Visual Studio Installer and then:" >&2
-        echo "      1. Make sure you have the MSVC v$VSDEV_VCVARSVER $autodetect_compiler_TGTARCH Build Tools component." >&2
-        echo "      2. Also make sure you have the Windows SDK $VSDEV_WINSDKVER component." >&2
+    if ! PATH="$autodetect_compiler_COMPILER_PATH_UNIX" "$autodetect_compiler_vsdev_VALIDATECMD" -help >/dev/null; then
+        echo "FATAL: The Visual Studio installation \"$VSDEV_HOME_BUILDHOST\" did not place '$autodetect_compiler_vsdev_VALIDATECMD' in its PATH." >&2
+        echo "       It should be present for the target ABI $autodetect_compiler_PLATFORM_ARCH ($autodetect_compiler_TGTARCH) on a build host $BUILDHOST_ARCH." >&2
+        echo "  Fix? Run the Visual Studio Installer and then:" >&2
+        echo "       1. Make sure you have the MSVC v$VSDEV_VCVARSVER $autodetect_compiler_TGTARCH Build Tools component." >&2
+        echo "       2. Also make sure you have the Windows SDK $VSDEV_WINSDKVER component." >&2
         exit 107
     fi
 
