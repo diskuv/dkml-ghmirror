@@ -101,7 +101,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     PLATFORM=
 fi
 BUILDTYPE=
-DISKUV_SYSTEM_SWITCH=OFF
+DISKUV_HOST_TOOLS=OFF
 STATEDIR=
 PREHOOK_SINGLE_EVAL=
 PREHOOK_DOUBLE_EVAL=
@@ -128,7 +128,7 @@ while getopts ":h0:1:b:sp:t:d:u:o:v:" opt; do
             ADD_SWITCH_OPTS=ON
         ;;
         s )
-            DISKUV_SYSTEM_SWITCH=ON
+            DISKUV_HOST_TOOLS=ON
             ADD_SWITCH_OPTS=ON
         ;;
         d )
@@ -160,7 +160,7 @@ done
 shift $((OPTIND -1))
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+    if [ -z "$PLATFORM" ] && [ "$DISKUV_HOST_TOOLS" = OFF ]; then
         usage
         exit 1
     fi
@@ -179,7 +179,7 @@ fi
 # ------------------
 
 # `diskuv-host-tools` is the host architecture, so use `dev` as its platform
-if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
+if [ "$DISKUV_HOST_TOOLS" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         PLATFORM=dev
     fi
@@ -252,7 +252,7 @@ autodetect_dkmlvars || true
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
 
 # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
-if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
+if [ "$DISKUV_HOST_TOOLS" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
     set_opamswitchdir_of_system
 elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
@@ -365,6 +365,17 @@ case "$subcommand" in
             # When a switch is created we need a commpiler
             exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         else
+            exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        fi
+    ;;
+    install)
+        if [ "$DISKUV_HOST_TOOLS" = ON ]; then
+            # When we are installing the host tools, we must have a compiler so we can compile
+            # with-dkml.exe
+            exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        else
+            # When we are installing any other switch, we will have a with-dkml.exe wrapper to
+            # provide the compiler
             exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
