@@ -217,12 +217,14 @@ set_ocaml_variant_for_windows_switches() {
 # corresponding environment variables (`DK_BUILD_TYPE`) will
 # be available in the platform.
 #
+# Options:
+#   -c                    - Optional. If enabled then compilation environment variables
+#                           like CC will be added to the environment. This may be
+#                           time-consuming, especially on Windows which needs to call
+#                           VsDevCmd.bat
 # Inputs:
 #   env:PLATFORM          - required. which platform to run in
 #   env:BUILDTYPE         - optional
-#   env:COMPILATION       - optional. if set to OFF then no compilation tools
-#                           like vcvars64.bat will be added to the environment
-#                           which can be time consuming if not needed
 #   env:PLATFORM_EXEC_PRE_SINGLE - optional. acts as hook.
 #                           the specified bash statements, if any, are 'eval'-d _before_ the
 #                           command line arguments are executed.
@@ -245,46 +247,22 @@ set_ocaml_variant_for_windows_switches() {
 #   @@EXPAND_TOPDIR@@: The top project directory containing `dune-project`.
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
 exec_in_platform() {
-    _exec_dev_or_arch_helper "$PLATFORM" "$@"
-}
-
-# Execute a command either for the dev environment or for the
-# reproducible sandbox corresponding to the build machine's architecture.
-#
-# When the optional `$BUILDTYPE` is non-empty the build type and
-# corresponding environment variables (`DK_BUILD_TYPE`) will
-# be available in the platform.
-#
-# Can do macro replacement of the arguments:
-# @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing bin/ocaml.
-#   Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#   When running in MSYS2 the directory will be Windows style (ex. C:\)
-# @@EXPAND_TOPDIR@@: The top directory containing dune-project.
-#   When running in MSYS2 the directory will be Windows style (ex. C:\)
-exec_dev_or_multiarch() {
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        build_machine_arch
-        _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
+    # option parsing
+    if [ "$1" = "-c" ]; then
+        _exec_dev_or_arch_helper_COMPILATION=ON
+        shift
     else
-        if [ -n "${DKML_TARGET_PLATFORM:-}" ]; then
-            _exec_dev_or_arch_helper "$DKML_TARGET_PLATFORM" "$@"
-        else
-            build_machine_arch
-            _exec_dev_or_arch_helper "$BUILDHOST_ARCH" "$@"
-        fi
+        _exec_dev_or_arch_helper_COMPILATION=OFF
     fi
-}
+    _exec_dev_or_arch_helper_PLATFORM=${PLATFORM:-}
 
-_exec_dev_or_arch_helper() {
-    _exec_dev_or_arch_helper_PLATFORM=$1
-    shift
     _exec_dev_or_arch_helper_CMDFILE="$WORK"/_exec_dev_or_arch_helper-cmdfile.sh
     _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
     true > "$_exec_dev_or_arch_helper_CMDARGS"
     if [ -n "${BUILDTYPE:-}" ]; then
         printf "  -b %s" "$BUILDTYPE" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
-    if [ "${COMPILATION:-}" = ON ]; then
+    if [ "${_exec_dev_or_arch_helper_COMPILATION:-}" = ON ]; then
         printf "  -c" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
