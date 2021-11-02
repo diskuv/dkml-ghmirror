@@ -27,7 +27,7 @@ let fpath_notnull f = Fpath.compare OS.File.null f <> 0
   )
 
 (** [get_opam_switch_prefix] is a lazy function that gets the OPAM_SWITCH_PREFIX environment variable.
-    If OPAM_SWITCH_PREFIX is not found, then the Opam switch <dkmlhome_dir>/system (defined on Windows DKML)
+    If OPAM_SWITCH_PREFIX is not found, then the Opam switch <dkmlhome_dir>/host-tools (defined on Windows DKML)
     with a fallback to <OPAMROOT>/default is used instead. *)
 let get_opam_switch_prefix =
   lazy

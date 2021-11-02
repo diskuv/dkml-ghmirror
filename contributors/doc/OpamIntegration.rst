@@ -61,7 +61,7 @@ This switch is reserved for future use so do not delete it.
     known as 'local') Opam switches because ``opam var root`` failed.
     With a global switch that problem goes away.
 
-``diskuv-system`` Local Switch
+``diskuv-host-tools`` Local Switch
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OCaml package directories, C header "include" directories and other
@@ -70,7 +70,7 @@ critical locations are hardcoded into essential OCaml executables like
 move the Opam switch that contains ``ocamlc`` many of your OCaml builds
 will break.
 
-``diskuv-system`` is the Opam switch for ``ocamlc`` and other essentials
+``diskuv-host-tools`` is the Opam switch for ``ocamlc`` and other essentials
 that is built in its final resting place during installation and never
 moved after. If and when we need to deploy new versions of the
 essentials we use a new directory and rebuild all of the OCaml packages
@@ -164,8 +164,8 @@ This comes from ``ocamlc -config`` (yours will vary slightly):
 .. code-block:: c-objdump
 
     version: 4.12.0
-    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/system/_opam/lib/ocaml
-    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/system/_opam/lib/ocaml
+    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
+    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
     ccomp_type: msvc
     c_compiler: cl
     ocamlc_cflags: -nologo -O2 -Gy- -MD

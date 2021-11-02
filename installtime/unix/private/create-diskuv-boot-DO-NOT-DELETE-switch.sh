@@ -7,7 +7,7 @@
 # 1. Allows IDEs like VS Code to run `opam var root` which needs
 #    at least one global switch present.
 # 2. In the future may compile OCaml code that will upgrade the
-#    `diskuv-system` switches (instead of the hard-to-maintain /
+#    `diskuv-host-tools` switches (instead of the hard-to-maintain /
 #    hard-to-test Bash scripts in use today, and instead of
 #    relying on the user to have up-to-date Bash scripts).
 #

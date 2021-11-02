@@ -23,7 +23,7 @@
     new systems can take hours to build this is an important benefit.
 
     One last complication. Opam global switches are subdirectories of the Opam root; we cannot change their location
-    use the swapping Blue Green deployment technique. So we _do not_ use an Opam global switch for `diskuv-system`.
+    use the swapping Blue Green deployment technique. So we _do not_ use an Opam global switch for `diskuv-host-tools`.
     We use external (aka local) Opam switches instead.
 
     MSYS2
@@ -1181,7 +1181,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-system-switch.sh' -v '$OCamlLangVersion' -f '$Flavor'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-host-tools-switch.sh' -v '$OCamlLangVersion' -f '$Flavor'"
         }
 
     # END opam switch create <system>
@@ -1278,9 +1278,9 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN install `diskuv-system` and `with-dkml` to Programs
+    # BEGIN install `diskuv-host-tools` and `with-dkml` to Programs
 
-    $global:ProgressActivity = "Install diskuv-system binaries"
+    $global:ProgressActivity = "Install diskuv-host-tools binaries"
     Write-ProgressStep
 
     $ProgramRelBinDir = "bin"
@@ -1305,7 +1305,7 @@ try {
             "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with-dkml.exe`" '$ProgramBinDir\with-dkml.exe'")
 
 
-    # END opam install `diskuv-system` to Programs
+    # END opam install `diskuv-host-tools` to Programs
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

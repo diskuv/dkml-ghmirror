@@ -475,11 +475,11 @@ set_opamrootdir() {
     DKMLPLUGIN_EXPAND="$OPAMROOTDIR_EXPAND/plugins/diskuvocaml"
 }
 
-# Select the 'diskuv-system' switch.
+# Select the 'diskuv-host-tools' switch.
 #
 # On Windows (anything with a DiskuvOCamlHome environment variable) the system will be a local
-# Opam switch inside DiskuvOCamlHome/system. Otherwise the system will be the global Opam switch
-# `diskuv-system`.
+# Opam switch inside DiskuvOCamlHome/host-tools. Otherwise the system will be the global Opam switch
+# `diskuv-host-tools`.
 #
 # Inputs:
 # - env:DiskuvOCamlHome - Typically you get this from `autodetect_dkmlvars || true`. It will not set

@@ -1,6 +1,6 @@
 #!/bin/sh
 # -------------------------------------------------------
-# create-diskuv-system-switch.sh
+# create-diskuv-host-tools-switch.sh
 #
 # Purpose:
 # 1. Make or upgrade an Opam switch tied to the current installation of Diskuv OCaml
@@ -18,11 +18,11 @@ set -euf
 
 usage() {
     printf "%s\n" "Usage:" >&2
-    printf "%s\n" "    create-diskuv-system-switch.sh -h           Display this help message" >&2
-    printf "%s\n" "    create-diskuv-system-switch.sh              Create the Diskuv system switch" >&2
+    printf "%s\n" "    create-diskuv-host-tools-switch.sh -h           Display this help message" >&2
+    printf "%s\n" "    create-diskuv-host-tools-switch.sh              Create the Diskuv system switch" >&2
     printf "%s\n" "                                                at <DiskuvOCamlHome>/host-tools on Windows or" >&2
     printf "%s\n" "                                                <OPAMROOT>/host-tools/_opam on non-Windows" >&2
-    printf "%s\n" "    create-diskuv-system-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
+    printf "%s\n" "    create-diskuv-host-tools-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
     printf "%s\n" "                                                at <STATEDIR>/host-tools" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
@@ -128,11 +128,11 @@ fi
             ;;
         *) printf "%s\n" "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
     esac
-} > "$WORK"/config-diskuv-system.sh
+} > "$WORK"/config-diskuv-host-tools.sh
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    log_shell "$WORK"/config-diskuv-system.sh
+    log_shell "$WORK"/config-diskuv-host-tools.sh
 else
-    log_shell "$WORK"/config-diskuv-system.sh -d "$STATEDIR" -u "$USERMODE"
+    log_shell "$WORK"/config-diskuv-host-tools.sh -d "$STATEDIR" -u "$USERMODE"
 fi
 
 # END create system switch

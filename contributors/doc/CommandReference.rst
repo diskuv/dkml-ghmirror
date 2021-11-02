@@ -300,7 +300,7 @@ Usage
         # Opam packages will be placed in `OPAMSWITCH/_opam`
         create-opam-switch.sh [-y] -b BUILDTYPE -d OPAMSWITCH
 
-        # [Expert] Create the diskuv-system switch
+        # [Expert] Create the diskuv-host-tools switch
         create-opam-switch.sh [-y] [-b BUILDTYPE] -s
 
 Option -y

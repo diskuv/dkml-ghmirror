@@ -1,13 +1,13 @@
 (*
 To setup on Unix/macOS:
-  eval $(opam env --switch diskuv-system --set-switch)
+  eval $(opam env --switch diskuv-host-tools --set-switch)
   # or: eval $(opam env) && opam install dune bos logs fmt sexplib sha
   opam install ocaml-lsp-server ocamlformat ocamlformat-rpc # optional, for vscode or emacs
 
 To setup on Windows:
   1. Make sure $DiskuvOCamlHome/share/dkml/functions/crossplatform-functions.sh exists.
   2. Run in MSYS2:
-    eval $(opam env --switch "$DiskuvOCamlHome/system" --set-switch)
+    eval $(opam env --switch "$DiskuvOCamlHome/host-tools" --set-switch)
 
 To test use x64-windows or arm64-osx for the DKML_VCPKG_HOST_TRIPLET (or leave that variable out):
     dune build --root installtime/msys2/apps/ with-dkml/with_dkml.exe
@@ -150,7 +150,7 @@ let remove_microsoft_visual_studio_entries () =
 
    The PATH environment variable on entry is used as a cache key.
 
-   If OPAM_SWITCH_PREFIX is not defined, then <dkmlhome_dir>/system (the Diskuv
+   If OPAM_SWITCH_PREFIX is not defined, then <dkmlhome_dir>/host-tools (the Diskuv
    System opam switch) is used instead.
 *)
 let set_msvc_entries cache_keys =

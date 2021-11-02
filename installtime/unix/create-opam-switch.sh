@@ -5,7 +5,7 @@
 # Purpose:
 # 1. Create an OPAMSWITCH (`opam switch create`) as
 #    a local switch that corresponds to the PLATFORM's BUILDTYPE
-#    or to the 'diskuv-system' switch. The created switch will have a working
+#    or to the 'diskuv-host-tools' switch. The created switch will have a working
 #    OCaml system compiler.
 #
 # Prerequisites:
@@ -68,11 +68,11 @@ usage() {
     printf "%s\n" "    create-opam-switch.sh -h                                  Display this help message" >&2
     printf "%s\n" "    create-opam-switch.sh -u OFF|ON -b BUILDTYPE -d STATEDIR  Create the Opam switch in directory STATEDIR/_opam" >&2
     printf "%s\n" "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM            (Deprecated) Create the Opam switch" >&2
-    printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s                   (Deprecated) Expert. Create the diskuv-system switch" >&2
+    printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s                   (Deprecated) Expert. Create the diskuv-host-tools switch" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
     printf "%s\n" "    -d STATEDIR: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
-    printf "%s\n" "    -s: Select the 'diskuv-system' switch" >&2
+    printf "%s\n" "    -s: Select the 'diskuv-host-tools' switch" >&2
     printf "%s\n" "    -b BUILDTYPE: The build type which is one of:" >&2
     printf "%s\n" "        Debug" >&2
     printf "%s\n" "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
@@ -184,7 +184,7 @@ if [ -z "${DKMLDIR:-}" ]; then
 fi
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then printf "%s\n" "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
-# `diskuv-system` is the host architecture, so use `dev` as its platform
+# `diskuv-host-tools` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         PLATFORM=dev
@@ -387,7 +387,7 @@ else
         fi
 
         # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
-        #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/system/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
+        #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/host-tools/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
         #   cl : Command line error D8016 : '/RTC1' and '/O2' command-line options are incompatible
         # we remove any /RTC1 from the flags
         OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's#\B/RTC1\b##g')
@@ -432,7 +432,7 @@ fi
 # Make launchers for opam switch create <...> and for opam <...>
 if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
-    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
+    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
     set_opamswitchdir_of_system
 
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
