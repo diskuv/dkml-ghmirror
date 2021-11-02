@@ -21,14 +21,19 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    install-dkmlplugin-withdkml.sh -h                   Display this help message" >&2
-    echo "    install-dkmlplugin-withdkml.sh -p PLATFORM          (Deprecated) Install the DKML plugin with-dkml" >&2
-    echo "    install-dkmlplugin-withdkml.sh [-d STATEDIR]        Install the DKML plugin with-dkml" >&2
-    echo "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
-    echo "Options:" >&2
-    echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    install-dkmlplugin-withdkml.sh -h                   Display this help message" >&2
+    printf "%s\n" "    install-dkmlplugin-withdkml.sh -p PLATFORM          (Deprecated) Install the DKML plugin with-dkml" >&2
+    printf "%s\n" "    install-dkmlplugin-withdkml.sh [-d STATEDIR]        Install the DKML plugin with-dkml" >&2
+    printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
+    printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
+    printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "       The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
 }
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -40,7 +45,9 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:p:d:" opt; do
+OPAMHOME=
+OCAMLVERSION_OR_HOME=
+while getopts ":h:p:d:o:v:" opt; do
     case ${opt} in
         h )
             usage
@@ -55,8 +62,10 @@ while getopts ":h:p:d:" opt; do
             # shellcheck disable=SC2034
             USERMODE=OFF
         ;;
+        o ) OPAMHOME=$OPTARG ;;
+        v ) OCAMLVERSION_OR_HOME=$OPTARG ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -106,18 +115,20 @@ set_opamrootdir
 if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
     # Compile with Dune into temp build directory
     WITHDKML_TMP_UNIX="$WORK"/with-dkml
-    APPS_WINDOWS="$DKMLDIR"/installtime/msys2/apps
+    APPS_BUILDHOST="$DKMLDIR"/installtime/msys2/apps
     if [ -x /usr/bin/cygpath ]; then
-        WITHDKML_TMP_WINDOWS=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
-        APPS_WINDOWS=$(/usr/bin/cygpath -aw "$APPS_WINDOWS")
+        WITHDKML_TMP_BUILDHOST=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
+        APPS_BUILDHOST=$(/usr/bin/cygpath -aw "$APPS_BUILDHOST")
     else
-        WITHDKML_TMP_WINDOWS="$WITHDKML_TMP_UNIX"
+        WITHDKML_TMP_BUILDHOST="$WITHDKML_TMP_UNIX"
     fi
     install -d "$WITHDKML_TMP_UNIX"
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -s \
+        -- exec -- dune build --root "$APPS_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" with-dkml/with_dkml.exe
     else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -d "$STATEDIR" -u "$USERMODE" -- exec -- dune build --root "$APPS_WINDOWS" --build-dir "$WITHDKML_TMP_WINDOWS" with-dkml/with_dkml.exe
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
+        -- exec -- dune build --root "$APPS_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" with-dkml/with_dkml.exe
     fi
 
     # Place in plugins

@@ -62,7 +62,7 @@ usage() {
     printf "%s\n" "          The bin/ subdir of the Opam home is added to the PATH" >&2
     printf "%s\n" "       -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
     printf "%s\n" "          Examples: 4.13.1, /usr, /opt/homebrew" >&2
-    printf "%s\n" "          The bin/ subdir of the OCaml home is added to the PATH; currently passing an OCaml version does nothing" >&2
+    printf "%s\n" "          The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
     printf "%s\n" "Advanced Options:" >&2
     printf "%s\n" "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
     printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
