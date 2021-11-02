@@ -757,7 +757,7 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
     if [ ! "$OLD_HASH" = "$NEW_HASH" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  upgrade"
+            printf "  upgrade --fixup"
             if [ "$YES" = ON ]; then printf " --yes" >> "$WORK"/switchcreateargs.sh; fi
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/upgrade.sh
