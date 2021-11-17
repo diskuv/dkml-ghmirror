@@ -5,26 +5,26 @@
 .Description
     Installs Git for Windows 2.33.0.
     Installs the MSBuild component of Visual Studio.
-.Parameter $ParentProgressId
+.Parameter ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
     that reports its own progress.
-.Parameter $SkipAutoInstallVsBuildTools
+.Parameter SkipAutoInstallVsBuildTools
     Do not automatically install Visual Studio Build Tools.
 
     Even with this switch is selected a compatibility check is
     performed to make sure there is a version of Visual Studio
     installed that has all the components necessary for Diskuv OCaml.
-.Parameter $SilentInstall
+.Parameter SilentInstall
     When specified no user interface should be shown.
     We do not recommend you do this unless you are in continuous
     integration (CI) scenarios.
-.Parameter $AllowRunAsAdmin
+.Parameter AllowRunAsAdmin
     When specified you will be allowed to run this script using
     Run as Administrator.
     We do not recommend you do this unless you are in continuous
     integration (CI) scenarios.
-.Parameter $SkipProgress
+.Parameter SkipProgress
     Do not use the progress user interface.
 #>
 

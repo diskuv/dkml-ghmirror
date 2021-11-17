@@ -34,7 +34,7 @@
     & $env:DiskuvOCamlHome\tools\MSYS2\msys2_shell.cmd
 
     `.\makeit.cmd` from a local project is way better though.
-.Parameter $Flavor
+.Parameter Flavor
     Which type of installation to perform.
 
     The `CI` flavor:
@@ -48,11 +48,11 @@
 
     The `Full` flavor installs everything, including human-centric applications
     like `utop`.
-.Parameter $ParentProgressId
+.Parameter ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
     that reports its own progress.
-.Parameter $SkipAutoUpgradeGitWhenOld
+.Parameter SkipAutoUpgradeGitWhenOld
     Ordinarily if Git for Windows is installed on the machine but
     it is less than version 1.7.2 then Git for Windows 2.33.0 is
     installed which will replace the old version.
@@ -70,19 +70,19 @@
 
     Even with this switch is selected, Git 2.33.0 will be installed
     if there is no Git available on the PATH.
-.Parameter $AllowRunAsAdmin
+.Parameter AllowRunAsAdmin
     When specified you will be allowed to run this script using
     Run as Administrator.
     We do not recommend you do this unless you are in continuous
     integration (CI) scenarios.
-.Parameter $SkipProgress
+.Parameter SkipProgress
     Do not use the progress user interface.
-.Parameter $OnlyOutputCacheKey
+.Parameter OnlyOutputCacheKey
     Only output the userprofile cache key. The cache key is 1-to-1 with
     the version of the Diskuv OCaml distribution.
-.Parameter $ForceDeploymentSlot0
+.Parameter ForceDeploymentSlot0
     Forces the blue-green deployer to use slot 0. Useful in CI situations.
-.Parameter $MSYS2Dir
+.Parameter MSYS2Dir
     When specified the specified MSYS2 installation directory will be used.
     Useful in CI situations.
 .Example
