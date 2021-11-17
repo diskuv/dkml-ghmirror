@@ -14,8 +14,9 @@ Vagrant.configure("2") do |config|
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "gusztavvargadr/windows-10-enterprise"
   #config.vm.box_version = "2101.0.2109"
-  # Use unique url so don't get HTTP 429 rate limiting
-  config.vm.box_url = "https://vagrantcloud.com/gusztavvargadr/boxes/windows-10-enterprise/versions/2101.0.2109/providers/virtualbox.box?uniqid=dkml"
+  # Do a `wget` on https://vagrantcloud.com/gusztavvargadr/boxes/windows-10-enterprise/versions/2101.0.2109/providers/virtualbox.box to see where
+  # it redirects. Want to avoid HTTP 429 rate limiting.
+  config.vm.box_url = "https://app.vagrantup.com/gusztavvargadr/boxes/windows-10-enterprise/versions/2101.0.2109/providers/virtualbox.box"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
