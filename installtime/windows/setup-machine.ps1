@@ -260,7 +260,7 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
 }
 
 Write-Host -ForegroundColor White -BackgroundColor DarkGreen "`n`nBEGIN Visual Studio(s) compatible with Diskuv OCaml"
-Write-Host ($CompatibleVisualStudios | ConvertTo-Json -Depth 2) # It is fine if we truncate at level 2 ... this is just meant to be a summary
+Write-Host ($CompatibleVisualStudios | ConvertTo-Json -Depth 1) # It is fine if we truncate at level 1 ... this is just meant to be a summary
 Write-Host -ForegroundColor White -BackgroundColor DarkGreen "END Visual Studio(s) compatible with Diskuv OCaml`n`n"
 
 # END Visual Studio Build Tools
