@@ -5,12 +5,20 @@ $SystemLocale = (Get-WinSystemLocale).Name
 Get-WinSystemLocale # display locale
 chcp.com # display code page
 
+# Get the version which can't be embedded in this UTF-16 BE file (encoding not supported by bumpversion)
+$HereScript = $MyInvocation.MyCommand.Path
+$HereDir = (get-item $HereScript).Directory
+if (!(Test-Path -Path $HereDir\dkmlversion.txt)) {
+    throw "Could not locate dkmlversion.txt in $HereDir"
+}
+$DkmlVersion = (Get-Content $HereDir\dkmlversion.txt -TotalCount 1).Trim()
+
 # Install instructions from https://diskuv.gitlab.io/diskuv-ocaml/index.html
 
 (Test-Path -Path ~\DiskuvOCamlProjects) -or $(New-Item ~\DiskuvOCamlProjects -ItemType Directory)
 
 Invoke-WebRequest `
-  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.5/distribution-portable.zip" `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/$DkmlVersion/distribution-portable.zip" `
   -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"
 
 Expand-Archive `
@@ -18,15 +26,14 @@ Expand-Archive `
   -DestinationPath ~\DiskuvOCamlProjects `
   -Force
 
-# Patch version 0 . 2 . 5
-# test: if (CURRENT_VERSION_FROM_bumpversion -match 0 . 2 . 5)
-if ("0.2.5" -match "0[.]2[.]5") {
+# Patch version 0.2.5
+if ("0.2.5" -eq "$DkmlVersion") {
   # Need 4319ddd67ed3dd211ad5042cf9ec4ba9058d636a: Remove wrong --installChannelUri
   Copy-Item -Force -Verbose C:\vagrant\patches\0_2_5_fixed_setup-machine.ps1 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-machine.ps1
 }
 
 # This deviates slightly from the real instructions ...
-# 0 . 2 . 6: ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
+# 0.2.6: ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-userprofile.bat -SkipProgress -AllowRunAsAdmin
 
