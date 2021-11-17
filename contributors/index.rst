@@ -183,43 +183,31 @@ Requirements
   hours. The *Diskuv OCaml* installer will be downloading and doing intensive compilation during these hours,
   and you are free to do other things on your computer while it downloads and compiles.
 
-Two-Step Installation Instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-ONE. *Download the distribution.*
-"""""""""""""""""""""""""""""""""
-
-1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
-2. Run the following in PowerShell to fetch the starter project from its Git repository:
-
-  .. code-block:: ps1con
-
-    PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
-
-    PS> iwr `
-      "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.5/distribution-portable.zip" `
-      -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
-
-    PS> Expand-Archive `
-      -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
-      -DestinationPath ~\DiskuvOCamlProjects `
-      -Force;
-
-TWO. *Run the Install World script.*
-""""""""""""""""""""""""""""""""""""
+Installation Instructions
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
 
-  **Be prepared to wait for at least 4 hours for the installer to finish.** In the meantime you can still use your
+  **Be prepared to wait for at least 2 hours for the installer to finish.** In the meantime you can still use your
   computer for other things like web browsing.
 
-1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``) if
-   it is not already open.
-2. Run the following in PowerShell to run the installer script:
+1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
+2. Run the following in PowerShell to download and install the distribution from its Git repository:
 
    .. code-block:: ps1con
 
-     PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+      PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+
+      PS> iwr `
+        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.5/distribution-portable.zip" `
+        -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+
+      PS> Expand-Archive `
+        -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+        -DestinationPath ~\DiskuvOCamlProjects `
+        -Force;
+
+      PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
