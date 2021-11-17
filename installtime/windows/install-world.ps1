@@ -1,9 +1,27 @@
-# ==========================
-# install-world.ps1
-#
-# Set up the machine and $env:USERPROFILE.
-#
-# ==========================
+<#
+.Synopsis
+    Set up the machine and $env:USERPROFILE.
+.Description
+    Installs Visual Studio Build Tools on the machine if a compatible installation of
+    Visual Studio Community/Enterprise/Professional/Build Tools is not found.
+
+    Installs Diskuv OCaml into a User directory.
+.Parameter SilentInstall
+    When specified no user interface should be shown.
+    We do not recommend you do this unless you are in continuous
+    integration (CI) scenarios.
+.Parameter AllowRunAsAdmin
+    When specified you will be allowed to run this script using
+    Run as Administrator.
+    We do not recommend you do this unless you are in continuous
+    integration (CI) scenarios.
+.Parameter ParentProgressId
+    The PowerShell progress identifier. Optional, defaults to -1.
+    Use when embedding this script within another setup program
+    that reports its own progress.
+.Parameter SkipProgress
+    Do not use the progress user interface.
+#>
 
 [CmdletBinding()]
 param (
@@ -12,6 +30,10 @@ param (
     $ParentProgressId = -1,
     [switch]
     $SkipAutoInstallVsBuildTools,
+    [switch]
+    $SilentInstall,
+    [switch]
+    $AllowRunAsAdmin,
     [switch]
     $SkipProgress
 )
@@ -64,7 +86,7 @@ function Write-ProgressStep {
 $global:ProgressActivity = "Setup machine"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipProgress:`$$SkipProgress -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools"
+Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipProgress:`$$SkipProgress -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools -AllowRunAsAdmin:`$$AllowRunAsAdmin -SilentInstall:`$$SilentInstall"
 
 # END Setup machine
 # ----------------------------------------------------------------
