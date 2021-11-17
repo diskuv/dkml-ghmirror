@@ -207,7 +207,7 @@ Installation Instructions
         -DestinationPath ~\DiskuvOCamlProjects `
         -Force;
 
-      PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+      PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress;
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
