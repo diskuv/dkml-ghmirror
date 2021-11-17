@@ -1,0 +1,26 @@
+name: Vagrant Testing for Windows
+
+on: [push]
+
+jobs:
+  vagrant-up:
+    # macOS is only GitHub CI runner that supports VirtualBox; https://stackoverflow.com/questions/66261101/using-vagrant-on-github-actions-ideally-incl-virtualbox
+    runs-on: macos-11
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache Vagrant boxes
+      uses: actions/cache@v2
+      with:
+        path: ~/.vagrant.d/boxes
+        key: ${{ runner.os }}-vagrant-${{ hashFiles('vagrant/win32/Vagrantfile') }}
+        restore-keys: |
+          ${{ runner.os }}-vagrant-
+
+    - name: Run vagrant up
+      run: cd vagrant/win32 && vagrant up
+
+    - name: Check test_installation.t status
+      run: |
+        set -x ; EXITC=$(awk 'NF>0{print $1}' vagrant/win32/test_installation.t/exitcode.en-US.txt) ; if [ ! "$EXITC" = 0 ]; then echo "FATAL: Vagrant test_installation.t FAILED"; exit 1; fi
