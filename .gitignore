@@ -1,2 +1,3 @@
 _ci/
 _build/
+.vagrant/
