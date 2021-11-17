@@ -192,7 +192,8 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     $CommonArgs = @(
         "--wait",
         "--nocache",
-        "--installPath", "$env:SystemDrive\DiskuvOCaml\BuildTools"
+        "--norestart",
+        "--installPath", "$env:SystemDrive\DiskuvOCaml\BuildTools",
 
         # We don't want unreproducible channel updates!
         # https://docs.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2019#layout-command-and-command-line-parameters
