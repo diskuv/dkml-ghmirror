@@ -685,7 +685,12 @@ print_opam_logs_on_error() {
 # * --info=progress2
 # * --human-readable
 spawn_rsync() {
-    if [ "${CI:-}" = true ]; then
+    spawn_rsync_TERMINAL=OFF
+    # check if stdout is a terminal
+    if [ -t 1 ]; then
+        spawn_rsync_TERMINAL=ON
+    fi
+    if [ "$spawn_rsync_TERMINAL" = OFF ] || [ "${CI:-}" = true ]; then
         rsync "$@"
     else
         # test whether --info=progress2 works
