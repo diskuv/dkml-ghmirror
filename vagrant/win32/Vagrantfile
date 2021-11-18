@@ -119,6 +119,7 @@ Vagrant.configure("2") do |config|
       Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name Default         -Value "$lang"
       Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name InstallLanguage -Value "$lang"
     SHELL
+    machine.vm.provision "shell", reboot: true, inline: "lpksetup /r /s /u en-US"
     machine.vm.provision "shell", inline: "C:\\vagrant\\test-language.ps1"
   end
 
@@ -141,6 +142,7 @@ Vagrant.configure("2") do |config|
       Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name Default         -Value "$lang"
       Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name InstallLanguage -Value "$lang"
     SHELL
+    machine.vm.provision "shell", reboot: true, inline: "lpksetup /r /s /u en-US"
     machine.vm.provision "shell", inline: "C:\\vagrant\\test-language.ps1"
   end
 end
