@@ -382,9 +382,11 @@ case "$subcommand" in
     exec)
         # The wrapper set in wrapper-{build|remove|install}-commands is only automatically used within `opam install`
         # and `opam remove`. So we directly use it here.
-        # There is one edge case: during Windows setup-userprofile.ps1 the dkmlvars.sexp will not exist until the
-        # very end of a successful setup-userprofile.ps1; we do _not_ use the wrapper since it will fail without
-        # dkmlvars.sexp (or worse, it will use an _old_ dkmlvars.sexp).
+        # There are edge cases during Windows installation/upgrade (setup-userprofile.ps1):
+        # 1. dkmlvars.sexp will not exist until the very end of a successful install; we do _not_ use the wrapper since it
+        #    will fail without dkmlvars.sexp (or worse, it will use an _old_ dkmlvars.sexp).
+        # 2. When compiling with-dkml.exe itself, we do not want to use an old with-dkml.exe (or any with-dkml.exe) to do
+        #    so, even if it mostly harmless
         if [ -e "$WITHDKMLEXE_BUILDHOST" ] && [ "${WITHDKML_ENABLE:-ON}" = ON ]; then
             if [ "$1" = "--" ]; then
                 shift
@@ -393,7 +395,9 @@ case "$subcommand" in
                 exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             fi
         else
-            exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            # Since we do not yet have with-dkml.exe (ie. we are in the middle of a new installation / upgrade), supply the compiler as an
+            # alternative so `opam exec -- dune build` works
+            exec_in_platform -c opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
     *)
