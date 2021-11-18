@@ -13,8 +13,8 @@ win32:oorepo-fetch-1:
     # Don't worry; we'll re-setup the OCAMLVERSION in the matrix job step.
     OCAMLVERSION: 4.13.1
   rules:
-    # - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   cache:
     key:
       files:
@@ -69,8 +69,8 @@ win32:oorepo-matrix-2:
     # full-opam-root/ available to us as an input
     - win32:oorepo-fetch-1
   rules:
-    # - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   parallel:
     matrix:
       - OCAMLVERSION: 4.12.0
