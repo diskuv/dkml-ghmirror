@@ -1288,7 +1288,7 @@ try {
 
     $ProgramRelBinDir = "bin"
     $ProgramBinDir = "$ProgramPath\$ProgramRelBinDir"
-    $DiskuvSystemDir = "$ProgramPath\system\_opam"
+    $DiskuvHostToolsDir = "$ProgramPath\host-tools\_opam"
 
     if (!(Test-Path -Path $ProgramBinDir)) { New-Item -Path $ProgramBinDir -ItemType Directory | Out-Null }
     foreach ($binary in $FlavorBinaries) {
@@ -1296,9 +1296,9 @@ try {
         # This helps IncrementalDiskuvOcamlDeployment installations, especially when a file is in use
         # but hasn't changed (especially `dune.exe`, `ocamllsp.exe` which may be open in an IDE)
         if (!(Test-Path -Path "$ProgramBinDir\$binary")) {
-            Copy-Item -Path "$DiskuvSystemDir\bin\$binary" -Destination $ProgramBinDir
-        } elseif ((Get-FileHash "$ProgramBinDir\$binary").hash -ne (Get-FileHash $DiskuvSystemDir\bin\$binary).hash) {
-            Copy-Item -Path "$DiskuvSystemDir\bin\$binary" -Destination $ProgramBinDir
+            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramBinDir
+        } elseif ((Get-FileHash "$ProgramBinDir\$binary").hash -ne (Get-FileHash $DiskuvHostToolsDir\bin\$binary).hash) {
+            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramBinDir
         }
     }
 
