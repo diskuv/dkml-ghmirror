@@ -27,12 +27,6 @@ Expand-Archive `
   -DestinationPath ~\DiskuvOCamlProjects `
   -Force
 
-# Patch version 0.2.5
-if ("0.2.5" -eq "$DkmlVersion") {
-  # Need 4319ddd67ed3dd211ad5042cf9ec4ba9058d636a: Remove wrong --installChannelUri
-  Copy-Item -Force -Verbose C:\vagrant\patches\0_2_5_fixed_setup-machine.ps1 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-machine.ps1
-}
-
 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
 
 # END Install instructions
