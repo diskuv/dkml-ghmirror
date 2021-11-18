@@ -10,8 +10,8 @@ windows:build-opam:
         PLATFORM: windows_x86_64
   needs: []
   rules:
-    - if: '$CI_COMMIT_TAG'
-    # - if: '$CI_COMMIT_BRANCH == "next"'
+    # - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "next"'
   script:
     - $env:MSYSTEM = 'MSYS2' # Start MSYS2 (not MinGW 32 or 64 bit) environments
     - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
@@ -45,9 +45,6 @@ windows:build-opam:
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-2-build-noargs.sh')
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/installtime/unix/private/reproducible-compile-opam-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\opam.exe")) { throw "Build failed" }
-
-    # Clean up excess files
-    - git -C "$DEPLOYDIR\src\opam" clean -d -f -x
 
     # Create .tar.gz and .zip
     - New-Item -Path "$EXTRASRC\opamdist" -ItemType Directory
