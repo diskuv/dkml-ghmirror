@@ -162,8 +162,8 @@ fi
 
 # Autodetect DKMLVARS and add to PATH
 autodetect_dkmlvars || true
-if [ -n "${DiskuvOCamlBinaryPaths:-}" ]; then
-    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths"
+if [ -n "${DiskuvOCamlBinaryPaths_UNIX:-}" ]; then
+    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths_UNIX"
 else
     ENV_PATH_PREFIX=
 fi

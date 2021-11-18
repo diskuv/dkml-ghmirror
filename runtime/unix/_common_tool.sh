@@ -355,7 +355,8 @@ exec_in_platform() {
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:DiskuvOCamlVarsVersion - set if DiskuvOCaml installed
 # - env:DiskuvOCamlHome - set if DiskuvOCaml installed
-# - env:DiskuvOCamlBinaryPaths - set if DiskuvOCaml installed
+# - env:DiskuvOCamlBinaryPaths_BUILDHOST - set if DiskuvOCaml installed. Paths will be in Windows (semicolon separated) or Unix (colon separated) format
+# - env:DiskuvOCamlBinaryPaths_UNIX - set if DiskuvOCaml installed. Paths will be in Unix (colon separated) format
 # Exit Code:
 # - 1 if DiskuvOCaml is not installed
 autodetect_dkmlvars() {
@@ -388,6 +389,18 @@ autodetect_dkmlvars() {
     if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
+
+    # Pathize DiskuvOCamlBinaryPaths
+    # shellcheck disable=SC2034
+    DiskuvOCamlBinaryPaths_BUILDHOST="$DiskuvOCamlBinaryPaths"
+    if [ -x /usr/bin/cygpath ]; then
+        DiskuvOCamlBinaryPaths_UNIX=$(/usr/bin/cygpath --path "$DiskuvOCamlBinaryPaths_BUILDHOST")
+    else
+        # shellcheck disable=SC2034
+        DiskuvOCamlBinaryPaths_UNIX="$DiskuvOCamlBinaryPaths_BUILDHOST"
+    fi
+    unset DiskuvOCamlBinaryPaths
+
     return 0
 }
 
