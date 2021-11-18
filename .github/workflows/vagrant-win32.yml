@@ -1,6 +1,12 @@
 name: Vagrant Testing for Windows
 
-on: [push]
+on:
+  # Because GitLab CI is the authoritative CI for diskuv-ocaml, and assets need to be generated (especially the Diskuv OCaml distribution .zip archives),
+  # we test on a schedule (daily) and we also test on manual workflow (which _could_ be triggered by GitLab CI; see
+  # https://docs.github.com/en/rest/reference/actions#create-a-workflow-dispatch-event).
+  schedule:
+    - cron: '25 8 * * *' # 08:25 UTC each day
+  workflow_dispatch:
 
 jobs:
   vagrant-up:
