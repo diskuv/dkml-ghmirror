@@ -232,19 +232,13 @@ if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_
     fi
 fi
 
-# Make a `default` repo that is actually an overlay of diskuv-opam-repo and fdopen (only on Windows) and finally the offical Opam repository.
+# Make a `default` repo that is actually an overlay of diskuv-opam-repo and fdopen (only on Windows and defined as --rank=2 in create-opam-switch.sh) and finally the offical Opam repository.
 # If we don't we get make a repo named "default" in opam 2.1.0 the following will happen:
 #     #=== ERROR while compiling ocamlbuild.0.14.0 ==================================#
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]; then
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
     run_opam repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
-fi
-if is_unixy_windows_build_machine && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]; then
-    # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
-    # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
-    OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
-    run_opam repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.

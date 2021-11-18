@@ -235,6 +235,9 @@ autodetect_posix_shell
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
 
+# Set DKMLPARENTHOME_BUILDHOST
+set_dkmlparenthomedir
+
 # Set BUILDHOST_ARCH
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     build_machine_arch
@@ -468,9 +471,28 @@ printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 printf "%s\n" "  --no-install \\" >> "$WORK"/switchcreateargs.sh
 
 if is_unixy_windows_build_machine; then
+    # create fdopen-mingw-xxx-yyy as rank=2 if not already exists; rank=0 and rank=1 defined in init-opam-root.sh
     # shellcheck disable=SC2154
-    printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version-$OCAMLVERSION" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version-$OCAMLVERSION.tar.gz" ]; then
+        # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
+        # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
+        if [ -x /usr/bin/cygpath ]; then
+            # shellcheck disable=SC2154
+            OPAMREPOS_MIXED=$(/usr/bin/cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
+        else
+            OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
+        fi
+        OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw/$OCAMLVERSION"
+        {
+            cat "$WORK"/nonswitchexec.sh
+            printf "  repository add fdopen-mingw-%s-%s '%s' --yes --dont-select --kind local --rank=2" "$dkml_root_version" "$OCAMLVERSION" "$OPAMREPO_WINDOWS_OCAMLOPAM"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        } > "$WORK"/repoadd.sh
+        log_shell "$WORK"/repoadd.sh
+    fi
+
+    printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
+    printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default' \\" >> "$WORK"/switchcreateargs.sh
     case "$OCAMLVERSION_OR_HOME" in
         /*) OCAMLVARIANT="ocaml-system.$OCAMLVERSION" ;;             # use Opam system compiler, which use ocaml from PATH
         *)  OCAMLVARIANT="$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS" ;; # use Opam base compiler, which compiles ocaml from scratch
