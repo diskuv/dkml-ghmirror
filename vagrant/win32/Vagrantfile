@@ -82,10 +82,6 @@ Vagrant.configure("2") do |config|
   # Locale
   # ------
   # Language tag in https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/a9eac961-e77d-41a6-90a5-ce1a8b0cdb9c
-  #
-  # Lang
-  # ----
-  # Language id in https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/a9eac961-e77d-41a6-90a5-ce1a8b0cdb9c
 
   config.vm.define "en-US", primary: true do |machine|
     machine.vm.provision "shell", inline: <<-SHELL
@@ -106,7 +102,6 @@ Vagrant.configure("2") do |config|
     machine.vm.provision "shell", reboot: true, inline: <<-SHELL
       $locale = "fr-FR"
       $geoid = "84"
-      $lang = "040C"
       Dism /online /Add-Package /PackagePath=D:\\x64\\langpacks\\Microsoft-Windows-Client-Language-Pack_x64_$locale.cab /NoRestart
       Add-AppxProvisionedPackage -Online -PackagePath D:\\LocalExperiencePack\\$locale\\LanguageExperiencePack.$locale.Neutral.appx -LicensePath D:\\LocalExperiencePack\\$locale\\License.xml
 
@@ -115,9 +110,6 @@ Vagrant.configure("2") do |config|
       Set-WinUILanguageOverride -Language $locale
       Set-WinUserLanguageList $locale -Force
       Set-WinHomeLocation -GeoId $geoid
-
-      Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name Default         -Value "$lang"
-      Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name InstallLanguage -Value "$lang"
     SHELL
     machine.vm.provision "shell", reboot: true, inline: "lpksetup /r /s /u en-US"
     machine.vm.provision "shell", inline: "C:\\vagrant\\test-language.ps1"
@@ -129,7 +121,6 @@ Vagrant.configure("2") do |config|
     machine.vm.provision "shell", reboot: true, inline: <<-SHELL
       $locale = "zh-CN"
       $geoid = "45"
-      $lang = "0804"
       Dism /online /Add-Package /PackagePath=D:\\x64\\langpacks\\Microsoft-Windows-Client-Language-Pack_x64_$locale.cab /NoRestart
       Add-AppxProvisionedPackage -Online -PackagePath D:\\LocalExperiencePack\\$locale\\LanguageExperiencePack.$locale.Neutral.appx -LicensePath D:\\LocalExperiencePack\\$locale\\License.xml
 
@@ -138,9 +129,6 @@ Vagrant.configure("2") do |config|
       Set-WinUILanguageOverride -Language $locale
       Set-WinUserLanguageList $locale -Force
       Set-WinHomeLocation -GeoId $geoid
-
-      Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name Default         -Value "$lang"
-      Set-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Language -Name InstallLanguage -Value "$lang"
     SHELL
     machine.vm.provision "shell", reboot: true, inline: "lpksetup /r /s /u en-US"
     machine.vm.provision "shell", inline: "C:\\vagrant\\test-language.ps1"
