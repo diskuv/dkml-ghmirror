@@ -13,7 +13,8 @@ if (!(Test-Path -Path $HereDir\dkmlversion.txt)) {
 }
 $DkmlVersion = (Get-Content $HereDir\dkmlversion.txt -TotalCount 1).Trim()
 
-# Install instructions from https://diskuv.gitlab.io/diskuv-ocaml/index.html
+# ========================
+# START Install instructions from https://diskuv.gitlab.io/diskuv-ocaml/index.html
 
 (Test-Path -Path ~\DiskuvOCamlProjects) -or $(New-Item ~\DiskuvOCamlProjects -ItemType Directory)
 
@@ -32,10 +33,10 @@ if ("0.2.5" -eq "$DkmlVersion") {
   Copy-Item -Force -Verbose C:\vagrant\patches\0_2_5_fixed_setup-machine.ps1 ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-machine.ps1
 }
 
-# This deviates slightly from the real instructions ...
-# 0.2.6: ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
-~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
-~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\setup-userprofile.bat -SkipProgress -AllowRunAsAdmin
+~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress -AllowRunAsAdmin -SilentInstall
+
+# END Install instructions
+# ========================
 
 # Refresh the PATH with newly installed User entries
 $env:Path = [Environment]::GetEnvironmentVariable('PATH', 'User') + [System.IO.Path]::PathSeparator + $env:Path
