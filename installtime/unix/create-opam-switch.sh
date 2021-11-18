@@ -85,16 +85,16 @@ usage() {
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
-    printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.source.sh exists," >&2
-    printf "%s\n" "    then the Opam commands in hook-switch-postcreate.source.sh will be executed." >&2
-    printf "%s\n" "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.source.sh exists where," >&2
-    printf "%s\n" "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.source.sh" >&2
+    printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
+    printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
+    printf "%s\n" "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.sh exists where," >&2
+    printf "%s\n" "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.sh" >&2
     printf "%s\n" "    will be executed." >&2
     printf "%s\n" "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
     printf "%s\n" "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
     printf "%s\n" "        Example: opam pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
-    printf "%s\n" "    hook-switch-postcreate.source.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
-    printf "%s\n" "        *.source.sh text eol=lf" >&2
+    printf "%s\n" "    hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
+    printf "%s\n" "        *.sh text eol=lf" >&2
     printf "%s\n" "    or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
 }
 
@@ -739,10 +739,10 @@ fi
 # --------------------------------
 # BEGIN opam post create hook
 
-if [ -n "$STATEDIR" ] && [ -e "$STATEDIR"/buildconfig/opam/hook-switch-postcreate.source.sh ]; then
-    HOOK_POSTCREATE="$STATEDIR"/buildconfig/opam/hook-switch-postcreate.source.sh
-elif [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.source.sh ]; then
-    HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.source.sh
+if [ -n "$STATEDIR" ] && [ -e "$STATEDIR"/buildconfig/opam/hook-switch-postcreate.sh ]; then
+    HOOK_POSTCREATE="$STATEDIR"/buildconfig/opam/hook-switch-postcreate.sh
+elif [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.sh ]; then
+    HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.sh
 else
     HOOK_POSTCREATE=
 fi
