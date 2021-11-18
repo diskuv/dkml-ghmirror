@@ -1,5 +1,6 @@
 variables:
-  OPAM_SYS_DEPLOY_FOLDER_WINDOWS: 'C:\DiskuvOCaml\OpamSys'
+  OPAM_SYS_DEPLOY_FOLDER_WINDOWS:  'C:\DiskuvOCaml\OpamSys'
+  OCAML_SYS_DEPLOY_FOLDER_WINDOWS: 'C:\DiskuvOCaml\OcamlSys'
 
 default:
   image: python:3.9-alpine

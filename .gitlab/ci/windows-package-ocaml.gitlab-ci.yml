@@ -16,11 +16,11 @@ win32:build-ocaml:
         OCAMLVER: ["4.13.1", "4.12.1"]
   needs: []
   rules:
-    # - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   script:
     - $env:MSYSTEM = 'MSYS2' # Start MSYS2 (not MinGW 32 or 64 bit) environments
-    - $DEPLOYDIR = "$env:OPAM_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
+    - $DEPLOYDIR = "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:BITS" # Separate directories only so that job can be run in parallel
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
     # ================ Prepare ================
@@ -56,13 +56,11 @@ win32:build-ocaml:
     - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" clean -d -f -x } }
     - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" submodule foreach --recursive "git clean -d -f -" } }
 
-    # Create .tar.gz and .zip
+    # Create .zip
     - New-Item -Path "$EXTRASRC\ocamldist" -ItemType Directory
-    - msys ('/usr/bin/tar cvCfz ''' + "$DEPLOYDIR" + ''' _ci/ocamldist/dist.tar.gz .')
     - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\ocamldist\dist.zip"
 
     # Create public packages
     - if ("${env:CI_COMMIT_TAG}" -ne "") { $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/${env:CI_COMMIT_TAG}"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { echo $PACKAGE_REGISTRY_URL; }
-    - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-${env:HOSTABI}${env:NAMESUFFIX}.tar.gz"; }
     - if ("${env:CI_COMMIT_TAG}" -ne "") { msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVER}-${env:HOSTABI}${env:NAMESUFFIX}.zip"; }
