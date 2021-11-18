@@ -1121,9 +1121,9 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         if ([Environment]::Is64BitOperatingSystem) {
-            $OpamBasenameArch = "win64"
+            $OpamBasenameArch = "windows_x86_64"
         } else {
-            $OpamBasenameArch = "win32"
+            $OpamBasenameArch = "windows_x86"
         }
         if (Test-Path -Path "$ProgramPath\bin\opam.exe") {
             # okay. already installed
