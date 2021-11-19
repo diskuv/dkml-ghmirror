@@ -241,9 +241,6 @@ set_ocaml_variant_for_windows_switches() {
 # (Deprecated functionality) The text of the arguments $@, PLATFORM_EXEC_PRE_SINGLE and
 # PLATFORM_EXEC_PRE_DOUBLE have their macros expanded:
 #
-#   @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@: The directory containing dkmlvars.sh.
-#     Only available when `is_unixy_windows_build_machine` is true (return code 0).
-#     When running in MSYS2 the directory will be Windows style (ex. C:\)
 #   @@EXPAND_TOPDIR@@: The top project directory containing `dune-project`.
 #     When running in MSYS2 the directory will be Windows style (ex. C:\)
 exec_in_platform() {
@@ -279,9 +276,6 @@ exec_in_platform() {
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
-                if is_unixy_windows_build_machine; then
-                    _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
-                fi
             fi
             printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
@@ -289,18 +283,12 @@ exec_in_platform() {
             ACTUAL_PRE_HOOK_SINGLE="$PLATFORM_EXEC_PRE_SINGLE"
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 ACTUAL_PRE_HOOK_SINGLE=$(replace_all "${ACTUAL_PRE_HOOK_SINGLE}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
-                if is_unixy_windows_build_machine; then
-                    ACTUAL_PRE_HOOK_SINGLE=$(replace_all "${ACTUAL_PRE_HOOK_SINGLE}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
-                fi
             fi
         fi
         if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then
             ACTUAL_PRE_HOOK_DOUBLE="$PLATFORM_EXEC_PRE_DOUBLE"
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 ACTUAL_PRE_HOOK_DOUBLE=$(replace_all "${ACTUAL_PRE_HOOK_DOUBLE}" @@EXPAND_TOPDIR@@ "${_exec_dev_or_arch_helper_ACTUALTOPDIR}")
-                if is_unixy_windows_build_machine; then
-                    ACTUAL_PRE_HOOK_DOUBLE=$(replace_all "${ACTUAL_PRE_HOOK_DOUBLE}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "${_exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME}")
-                fi
             fi
         fi
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -312,7 +300,6 @@ exec_in_platform() {
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
-                _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             fi
             printf "%s\n  '%s'" " \\" "$_exec_dev_or_arch_helper_ARG" >> "$_exec_dev_or_arch_helper_CMDARGS"
         done
@@ -320,14 +307,12 @@ exec_in_platform() {
             ACTUAL_PRE_HOOK_SINGLE="$PLATFORM_EXEC_PRE_SINGLE"
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 ACTUAL_PRE_HOOK_SINGLE=$(replace_all "${ACTUAL_PRE_HOOK_SINGLE}" @@EXPAND_TOPDIR@@ "/work")
-                ACTUAL_PRE_HOOK_SINGLE=$(replace_all "${ACTUAL_PRE_HOOK_SINGLE}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             fi
         fi
         if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then
             ACTUAL_PRE_HOOK_DOUBLE="$PLATFORM_EXEC_PRE_DOUBLE"
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 ACTUAL_PRE_HOOK_DOUBLE=$(replace_all "${ACTUAL_PRE_HOOK_DOUBLE}" @@EXPAND_TOPDIR@@ "/work")
-                ACTUAL_PRE_HOOK_DOUBLE=$(replace_all "${ACTUAL_PRE_HOOK_DOUBLE}" @@EXPAND_WINDOWS_DISKUVOCAMLHOME@@ "/opt/diskuv-ocaml")
             fi
         fi
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -339,69 +324,6 @@ exec_in_platform() {
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
 
     log_shell "$_exec_dev_or_arch_helper_CMDFILE"
-}
-
-# Detects DiskuvOCaml and sets its variables.
-#
-# If the environment variables already exist they are not overwritten.
-# Setting these variables is useful for example _during_ a deployment, where the
-# version of dkmlvars.sh in the filesystem is either pre-deployment (too old) or not present.
-#
-# Inputs:
-# - env:DiskuvOCamlVarsVersion - optional
-# - env:DiskuvOCamlHome - optional
-# - env:DiskuvOCamlBinaryPaths - optional
-# Outputs:
-# - env:DKMLPARENTHOME_BUILDHOST
-# - env:DiskuvOCamlVarsVersion - set if DiskuvOCaml installed
-# - env:DiskuvOCamlHome - set if DiskuvOCaml installed
-# - env:DiskuvOCamlBinaryPaths_BUILDHOST - set if DiskuvOCaml installed. Paths will be in Windows (semicolon separated) or Unix (colon separated) format
-# - env:DiskuvOCamlBinaryPaths_UNIX - set if DiskuvOCaml installed. Paths will be in Unix (colon separated) format
-# Exit Code:
-# - 1 if DiskuvOCaml is not installed
-autodetect_dkmlvars() {
-    autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
-    autodetect_dkmlvars_DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
-    autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
-    set_dkmlparenthomedir
-    if is_unixy_windows_build_machine; then
-        if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
-            if [ -x /usr/bin/cygpath ]; then
-                autodetect_dkmlvars_VARSSCRIPT=$(cygpath -a "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh")
-                # shellcheck disable=SC1090
-                . "$autodetect_dkmlvars_VARSSCRIPT"
-            else
-                # shellcheck disable=SC1090
-                . "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
-            fi
-        fi
-    else
-        if [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]; then
-            # shellcheck disable=SC1091
-            . "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
-        fi
-    fi
-    # Overrides
-    if [ -n "${autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override"; fi
-    if [ -n "${autodetect_dkmlvars_DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$autodetect_dkmlvars_DiskuvOCamlHome_Override"; fi
-    if [ -n "${autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override"; fi
-    # Check if any vars are still unset
-    if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
-    if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
-    if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
-
-    # Pathize DiskuvOCamlBinaryPaths
-    # shellcheck disable=SC2034
-    DiskuvOCamlBinaryPaths_BUILDHOST="$DiskuvOCamlBinaryPaths"
-    if [ -x /usr/bin/cygpath ]; then
-        DiskuvOCamlBinaryPaths_UNIX=$(/usr/bin/cygpath --path "$DiskuvOCamlBinaryPaths_BUILDHOST")
-    else
-        # shellcheck disable=SC2034
-        DiskuvOCamlBinaryPaths_UNIX="$DiskuvOCamlBinaryPaths_BUILDHOST"
-    fi
-    unset DiskuvOCamlBinaryPaths
-
-    return 0
 }
 
 # Inputs:
@@ -491,11 +413,13 @@ set_opamrootdir() {
 set_opamswitchdir_of_system() {
     # Set OPAMROOTDIR_BUILDHOST
     set_opamrootdir
+    # Set DKMLHOME_UNIX if available
+    autodetect_dkmlvars || true
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        if [ -n "${DiskuvOCamlHome:-}" ]; then
-            OPAMSWITCHFINALDIR_BUILDHOST="$DiskuvOCamlHome/host-tools/_opam"
-            OPAMSWITCHDIR_EXPAND="@@EXPAND_WINDOWS_DISKUVOCAMLHOME@@/host-tools"
+        if [ -n "${DKMLHOME_UNIX:-}" ] && [ -n "${DKMLHOME_BUILDHOST:-}" ]; then
+            OPAMSWITCHFINALDIR_BUILDHOST="$DKMLHOME_UNIX/host-tools/_opam"
+            OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}host-tools"
         else
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-host-tools"
             OPAMSWITCHDIR_EXPAND="diskuv-host-tools"
@@ -505,8 +429,8 @@ set_opamswitchdir_of_system() {
             OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}host-tools"
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
         else
-            if [ -n "${DiskuvOCamlHome:-}" ]; then
-                OPAMSWITCHDIR_EXPAND="$DiskuvOCamlHome${OS_DIR_SEP}host-tools"
+            if [ -n "${DKMLHOME_BUILDHOST:-}" ]; then
+                OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}host-tools"
                 OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
             else
                 OPAMSWITCHDIR_EXPAND="diskuv-host-tools"

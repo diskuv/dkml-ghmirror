@@ -251,9 +251,6 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     fi
 fi
 
-# Set $DiskuvOCamlHome and other vars
-autodetect_dkmlvars || true
-
 # Get the OCaml version
 case "$OCAMLVERSION_OR_HOME" in
     /*) OCAMLVERSION=$("$OCAMLVERSION_OR_HOME"/bin/ocamlc -version) ;;
@@ -751,7 +748,7 @@ if [ -n "$HOOK_POSTCREATE" ]; then
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  exec -- sh '%s'" "$HOOK_POSTCREATE"
+            printf "  exec -- %s '%s'" "$DKML_POSIX_SHELL" "$WORK"/host-postcreate-wrapper.sh
         } > "$WORK"/postcreate.sh
         log_shell "$WORK"/postcreate.sh
 

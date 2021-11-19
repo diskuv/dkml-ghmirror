@@ -65,12 +65,108 @@ autodetect_posix_shell() {
     fi
 }
 
+# Set the parent directory of DiskuvOCamlHome.
+#
+# Always defined, even on Unix. It is your responsibility to check if it exists.
+#
+# Outputs:
+# - env:DKMLPARENTHOME_BUILDHOST
+set_dkmlparenthomedir() {
+    if [ -n "${LOCALAPPDATA:-}" ]; then
+        DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
+    else
+        # shellcheck disable=SC2034
+        DKMLPARENTHOME_BUILDHOST="${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml"
+    fi
+}
+
+# Detects DiskuvOCaml and sets its variables.
+#
+# If the environment variables already exist they are not overwritten.
+# Setting these variables is useful for example _during_ a deployment, where the
+# version of dkmlvars.sh in the filesystem is either pre-deployment (too old) or not present.
+#
+# Inputs:
+# - env:DiskuvOCamlVarsVersion - optional
+# - env:DiskuvOCamlHome - optional
+# - env:DiskuvOCamlBinaryPaths - optional
+# Outputs:
+# - env:DKMLPARENTHOME_BUILDHOST
+# - env:DKMLHOME_BUILDHOST - set if DiskuvOCaml installed. Path will be in Windows (semicolon separated) or Unix (colon separated) format
+# - env:DKMLHOME_UNIX - set if DiskuvOCaml installed. Path will be in Unix (colon separated) format
+# - env:DKMLBINPATHS_BUILDHOST - set if DiskuvOCaml installed. Paths will be in Windows (semicolon separated) or Unix (colon separated) format
+# - env:DKMLBINPATHS_UNIX - set if DiskuvOCaml installed. Paths will be in Unix (colon separated) format
+# Exit Code:
+# - 1 if DiskuvOCaml is not installed
+autodetect_dkmlvars() {
+    autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
+    autodetect_dkmlvars_DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
+    autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
+    set_dkmlparenthomedir
+    if is_unixy_windows_build_machine; then
+        if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
+            if [ -x /usr/bin/cygpath ]; then
+                autodetect_dkmlvars_VARSSCRIPT=$(cygpath -a "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh")
+                # shellcheck disable=SC1090
+                . "$autodetect_dkmlvars_VARSSCRIPT"
+            else
+                # shellcheck disable=SC1090
+                . "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
+            fi
+        fi
+    else
+        if [ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]; then
+            # shellcheck disable=SC1091
+            . "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
+        fi
+    fi
+    # Overrides
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$autodetect_dkmlvars_DiskuvOCamlHome_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override"; fi
+    # Check if any vars are still unset
+    if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
+
+    # Validate DiskuvOCamlVarsVersion
+    if [ ! "$DiskuvOCamlVarsVersion" = "1" ]; then
+        printf "FATAL: Only able to read Diskuv OCaml variables version '1'. Instead Diskuv OCaml variables for %s were on version '%s'\n" "$DiskuvOCamlHome" "$DiskuvOCamlVarsVersion" >&2
+        exit 107
+    fi
+    unset DiskuvOCamlVarsVersion
+
+    # Unixize DiskuvOCamlHome
+    DKMLHOME_BUILDHOST="$DiskuvOCamlHome"
+    if [ -x /usr/bin/cygpath ]; then
+        DKMLHOME_UNIX=$(/usr/bin/cygpath -au "$DKMLHOME_BUILDHOST")
+    else
+        # shellcheck disable=SC2034
+        DKMLHOME_UNIX="$DKMLHOME_BUILDHOST"
+    fi
+    unset DiskuvOCamlHome
+
+    # Pathize DiskuvOCamlBinaryPaths
+    # shellcheck disable=SC2034
+    DKMLBINPATHS_BUILDHOST="$DiskuvOCamlBinaryPaths"
+    if [ -x /usr/bin/cygpath ]; then
+        DKMLBINPATHS_UNIX=$(/usr/bin/cygpath --path "$DKMLBINPATHS_BUILDHOST")
+    else
+        # shellcheck disable=SC2034
+        DKMLBINPATHS_UNIX="$DKMLBINPATHS_BUILDHOST"
+    fi
+    unset DiskuvOCamlBinaryPaths
+
+    return 0
+}
+
 # Get a path that has system binaries, and nothing else.
 #
 # Purpose: Use whenever you have something meant to be reproducible.
 #
 # On Windows this includes the Cygwin/MSYS2 paths but also Windows directories
-# like C:\Windows\System32 and C:\Windows\System32\OpenSSH.
+# like C:\Windows\System32 and C:\Windows\System32\OpenSSH and also
+# $env:DiskuvOCamlHome\bin
 #
 # Output:
 #   env:DKML_SYSTEM_PATH - A PATH containing only system directories like /usr/bin.
@@ -81,6 +177,7 @@ autodetect_system_path() {
         autodetect_system_path_SYSDIR=$(/usr/bin/cygpath --sysdir)
         autodetect_system_path_WINDIR=$(/usr/bin/cygpath --windir)
     fi
+
     if is_cygwin_build_machine; then
         DKML_SYSTEM_PATH=/usr/bin:/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
     elif is_msys2_msys_build_machine; then
@@ -88,6 +185,14 @@ autodetect_system_path() {
         DKML_SYSTEM_PATH=/usr/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
     else
         DKML_SYSTEM_PATH=/usr/bin:/bin
+    fi
+
+    # Set DKMLHOME_UNIX if available
+    autodetect_dkmlvars || true
+
+    # Add $DKMLHOME_UNIX/bin
+    if [ -n "${DKMLHOME_UNIX:-}" ]; then
+        DKML_SYSTEM_PATH="$DKMLHOME_UNIX/bin:$DKML_SYSTEM_PATH"
     fi
 }
 
@@ -677,21 +782,6 @@ disambiguate_filesystem_paths() {
     fi
 }
 
-# Set the parent directory of DiskuvOCamlHome.
-#
-# Always defined, even on Unix. It is your responsibility to check if it exists.
-#
-# Outputs:
-# - env:DKMLPARENTHOME_BUILDHOST
-set_dkmlparenthomedir() {
-    if [ -n "${LOCALAPPDATA:-}" ]; then
-        DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
-    else
-        # shellcheck disable=SC2034
-        DKMLPARENTHOME_BUILDHOST="${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml"
-    fi
-}
-
 # Get the number of CPUs available.
 #
 # Inputs:
@@ -830,7 +920,33 @@ autodetect_vsdev() {
     VSDEV_CMAKEGENERATOR="$autodetect_vsdev_VSSTUDIOCMAKEGENERATOR"
 }
 
+# Creates a program launcher that will use the system PATH.
+#
+# create_system_launcher OUTPUT_SCRIPT
+create_system_launcher() {
+    create_system_launcher_OUTPUTFILE="$1"
+    shift
+
+    # Set DKML_SYSTEM_PATH
+    autodetect_system_path
+    # Set DKML_POSIX_SHELL if not already set
+    autodetect_posix_shell
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
+    if [ -x /usr/bin/cygpath ]; then
+        create_system_launcher_SYSTEMPATHUNIX=$(/usr/bin/cygpath --path "$DKML_SYSTEM_PATH")
+    else
+        create_system_launcher_SYSTEMPATHUNIX="$DKML_SYSTEM_PATH"
+    fi
+
+    printf "#!%s\nexec %s PATH='%s' %s\n" "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" "$create_system_launcher_SYSTEMPATHUNIX" '$*' > "$create_system_launcher_OUTPUTFILE".tmp
+    "$DKMLSYS_CHMOD" +x "$create_system_launcher_OUTPUTFILE".tmp
+    "$DKMLSYS_MV" "$create_system_launcher_OUTPUTFILE".tmp "$create_system_launcher_OUTPUTFILE"
+}
+
 # Detects a compiler like Visual Studio and sets its variables.
+#
 # autodetect_compiler [--sexp] OUTPUT_SCRIPT_OR_SEXP [EXTRA_PREFIX]
 #
 # (Deprecated functionality) Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
@@ -842,8 +958,9 @@ autodetect_vsdev() {
 # The generated launcher.sh behaves like a `env` command. You may place environment variable
 # definitions before your target executable. Also you may use `-u name` to unset an environment
 # variable. In fact, if there is no compiler detected than the generated launcher.sh is simply
-# a file containing the line `exec env "$@"`. The launcher script will prepend to the existing
-# PATH (and replace most other environment variables), so it can be re-usable if used with care.
+# a file containing the line `exec env "$@"`.
+#
+# The launcher script will use the system PATH; any existing PATH will be ignored.
 #
 # If `--sexp` was used, then the output file is an s-expr (https://github.com/janestreet/sexplib#lexical-conventions-of-s-expression)
 # file. It contains an association list of the environment variables; that is, a list of pairs where each pair is a 2-element
@@ -941,9 +1058,7 @@ autodetect_compiler() {
     elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
         true > "$autodetect_compiler_OUTPUTFILE"
     elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
-        printf '#!%s\nexec %s "$@"\n' "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" > "$autodetect_compiler_OUTPUTFILE".tmp
-        "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
-        "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
+        create_system_launcher "$autodetect_compiler_OUTPUTFILE"
     fi
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_BUILDHOST=

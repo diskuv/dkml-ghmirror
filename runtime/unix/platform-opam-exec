@@ -245,7 +245,7 @@ fi
 # ------------
 # BEGIN --switch
 
-# Set $DiskuvOCamlHome, $DKMLPARENTHOME_BUILDHOST and other vars
+# Set $DKMLHOME_UNIX, $DKMLPARENTHOME_BUILDHOST and other vars
 autodetect_dkmlvars || true
 
 # Q: What if there was no switch but there was a root?

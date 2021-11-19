@@ -41,7 +41,7 @@ fi
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
 
-# Set $DiskuvOCamlHome and other vars if on Windows
+# Set $DKMLHOME_UNIX and other vars if on Windows
 autodetect_dkmlvars || true
 
 # If and only the Opam root exists ...

@@ -202,18 +202,14 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         VCPKG_VISUAL_STUDIO_PATH=""
     fi
 
-    # Set DiskuvOCamlHome if available
+    # Set DKMLHOME_UNIX if available
     autodetect_dkmlvars || true
 
     # Set PATH for vcpkg
-    if [ -n "${DiskuvOCamlHome:-}" ]; then
+    if [ -n "${DKMLHOME_UNIX:-}" ]; then
         # We don't want vcpkg installing cmake again if we have a modern one
-        if [ -x /usr/bin/cygpath ]; then
-            DOCH_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
-        else
-            DOCH_UNIX="$DiskuvOCamlHome"
-        fi
-        VCPKG_PATH="$DOCH_UNIX/tools/cmake/bin:$DOCH_UNIX/tools/ninja:$PATH"
+        # shellcheck disable=SC2154
+        VCPKG_PATH="$DKMLHOME_UNIX/tools/cmake/bin:$DKMLHOME_UNIX/tools/ninja:$PATH"
     else
         VCPKG_PATH="$PATH"
     fi

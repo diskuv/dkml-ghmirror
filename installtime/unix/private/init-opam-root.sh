@@ -127,6 +127,9 @@ fi
 # END dkmlvars.sexp
 # -------------------
 
+# Set DKMLHOME_UNIX if available
+autodetect_dkmlvars || true
+
 # -----------------------
 # BEGIN install opam repositories
 
@@ -151,15 +154,12 @@ else
     OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
     OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
 fi
-if is_unixy_windows_build_machine; then
-    # shellcheck disable=SC2154
-    DISKUVOCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
-fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
-    if is_unixy_windows_build_machine; then
+    if [ -n "${DKMLHOME_UNIX:-}" ] && is_unixy_windows_build_machine; then
+        # shellcheck disable=SC2154
         log_trace spawn_rsync -ap \
-            "$DISKUVOCAMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
+            "$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
             "$OPAMREPOS_UNIX"/fdopen-mingw
     fi
     log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"

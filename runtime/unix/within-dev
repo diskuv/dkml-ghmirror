@@ -162,8 +162,8 @@ fi
 
 # Autodetect DKMLVARS and add to PATH
 autodetect_dkmlvars || true
-if [ -n "${DiskuvOCamlBinaryPaths_UNIX:-}" ]; then
-    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths_UNIX"
+if [ -n "${DKMLBINPATHS_UNIX:-}" ]; then
+    ENV_PATH_PREFIX="$DKMLBINPATHS_UNIX"
 else
     ENV_PATH_PREFIX=
 fi
@@ -213,7 +213,9 @@ if [ -n "$PREHOOK_DOUBLE" ]; then
 fi
 
 # Autodetect compiler like Visual Studio on Windows.
-LAUNCHER="$WORK"/launch-compiler.sh
+# Whether or not compilation is needed, make a launcher that uses the system PATH plus optionally
+# any compiler PATH and optionally any other compiler environment variables.
+LAUNCHER="$WORK"/launch-dev-compiler.sh
 if [ "$COMPILATION" = ON ]; then
     # If we have an Opam switch with a Opam command wrapper, we don't need to waste a few seconds detecting the compiler.
     if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX"/.dkml/wrap-commands.exist ]; then
@@ -228,7 +230,7 @@ if [ "$COMPILATION" = ON ]; then
     fi
 fi
 if [ ! -e "$LAUNCHER" ]; then
-    echo 'exec env "$@"' > "$LAUNCHER"
+    create_system_launcher "$LAUNCHER"
 fi
 
 # If macOS then make sure we are running the correct architecture.
