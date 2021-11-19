@@ -10,12 +10,16 @@
 # -------------------------------------------------------
 set -euf
 
-# shellcheck disable=SC2034
-PLATFORM=$1
-shift
-
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../../.." && pwd)
+
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
+# shellcheck disable=SC2034
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+# shellcheck disable=SC2034
+USERMODE=ON
+# shellcheck disable=SC2034
+STATEDIR=
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh

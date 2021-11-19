@@ -1181,12 +1181,13 @@ try {
     # Upgrades. Possibly ask questions to delete things, so no progress indicator
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -ForceConsole `
-        -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\deinit-opam-root.sh' dev"
+        -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\deinit-opam-root.sh'"
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\init-opam-root.sh' -p dev"
+            -Command ("env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON " +
+                "'$DkmlPath\installtime\unix\private\init-opam-root.sh' -o '$ProgramMSYS2AbsPath'")
     }
 
     # END opam init
