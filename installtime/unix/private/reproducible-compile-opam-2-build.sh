@@ -134,6 +134,10 @@ else
     PATH=/usr/bin:/bin
 fi
 if [ -n "$OCAMLHOME" ]; then
+    if [ ! -x "$OCAMLHOME/bin/ocaml" ] && [ ! -x "$OCAMLHOME/bin/ocaml.exe" ]; then
+        printf "FATAL: The OCAMLHOME='%s' does not have a bin/ocaml or bin/ocaml.exe\n" "$OCAMLHOME" >&2
+        exit 107
+    fi
     if [ -x /usr/bin/cygpath ]; then
         OCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$OCAMLHOME")
     else

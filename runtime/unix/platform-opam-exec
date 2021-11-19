@@ -317,6 +317,10 @@ PLATFORM_EXEC_PRE_DOUBLE="${OPAM_ENV_STMT:-} ${PLATFORM_EXEC_PRE_DOUBLE:-}"
 # We make another prehook so that `PATH=<OPAMHOME>/bin:"$PATH"` at the beginning of all the hooks.
 # That way `opam` will work including from any child processes that opam spawns.
 if [ -n "$OPAMHOME" ]; then
+    if [ ! -x "$OPAMHOME/bin/opam" ] && [ ! -x "$OPAMHOME/bin/opam.exe" ]; then
+        printf "FATAL: The OPAMHOME='%s' does not have a bin/opam or bin/opam.exe\n" "$OPAMHOME" >&2
+        exit 107
+    fi
     {
         printf "PATH='%s'/bin:\"\$PATH\"\n" "$OPAMHOME"
         if [ -n "$PLATFORM_EXEC_PRE_SINGLE" ]; then
