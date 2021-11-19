@@ -968,7 +968,8 @@ create_system_launcher() {
 #
 # If `--sexp` was used, then the output file is an s-expr (https://github.com/janestreet/sexplib#lexical-conventions-of-s-expression)
 # file. It contains an association list of the environment variables; that is, a list of pairs where each pair is a 2-element
-# list (KEY VALUE). The s-exp output will always use the full Windows PATH.
+# list (KEY VALUE). The s-exp output will always use the full PATH, but the variable PATH_COMPILER will be the
+# parts of PATH that are specific to the compiler (you can prepend it to an existing PATH).
 #
 # If `--msvs` was used, then the output file is compatible
 # with the shell output of https://github.com/metastack/msvs-tools#msvs-detect
@@ -1403,25 +1404,26 @@ autodetect_compiler_vsdev() {
     # SIXTH, set autodetect_compiler_COMPILER_UNIQ_PATH so that it is only the _unique_ entries
     # (the set {autodetect_compiler_COMPILER_UNIQ_PATH} - {DKML_SYSTEM_PATH}) are used. But maintain the order
     # that Microsoft places each path entry.
-    printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
-    "$DKMLSYS_SORT" -u "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt
+    printf "%s\n" "$autodetect_compiler_COMPILER_PATH_UNIX" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' > "$autodetect_compiler_TEMPDIR"/vcvars_entries_unix.txt
+    "$DKMLSYS_SORT" -u "$autodetect_compiler_TEMPDIR"/vcvars_entries_unix.txt > "$autodetect_compiler_TEMPDIR"/vcvars_entries_unix.sortuniq.txt
     printf "%s\n" "$DKML_SYSTEM_PATH" | "$DKMLSYS_AWK" 'BEGIN{RS=":"} {print}' | "$DKMLSYS_SORT" -u > "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt
     "$DKMLSYS_COMM" \
         -23 \
-        "$autodetect_compiler_TEMPDIR"/vcvars_entries.sortuniq.txt \
+        "$autodetect_compiler_TEMPDIR"/vcvars_entries_unix.sortuniq.txt \
         "$autodetect_compiler_TEMPDIR"/path.sortuniq.txt \
         > "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt
-    autodetect_compiler_COMPILER_UNIQ_PATH=
+    autodetect_compiler_COMPILER_UNIX_UNIQ_PATH=
     while IFS='' read -r autodetect_compiler_line; do
         # if and only if the $autodetect_compiler_line matches one of the lines in vcvars_uniq.txt
         if ! printf "%s\n" "$autodetect_compiler_line" | "$DKMLSYS_COMM" -12 - "$autodetect_compiler_TEMPDIR"/vcvars_uniq.txt | "$DKMLSYS_AWK" 'NF>0{exit 1}'; then
-            if [ -z "$autodetect_compiler_COMPILER_UNIQ_PATH" ]; then
-                autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_line"
+            if [ -z "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH" ]; then
+                autodetect_compiler_COMPILER_UNIX_UNIQ_PATH="$autodetect_compiler_line"
             else
-                autodetect_compiler_COMPILER_UNIQ_PATH="$autodetect_compiler_COMPILER_UNIQ_PATH:$autodetect_compiler_line"
+                autodetect_compiler_COMPILER_UNIX_UNIQ_PATH="$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH:$autodetect_compiler_line"
             fi
         fi
-    done < "$autodetect_compiler_TEMPDIR"/vcvars_entries.txt
+    done < "$autodetect_compiler_TEMPDIR"/vcvars_entries_unix.txt
+    autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH" | /usr/bin/cygpath -w --path -f -)
 
     # SEVENTH, make the launcher script or s-exp
     if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
@@ -1479,10 +1481,12 @@ autodetect_compiler_vsdev() {
         # Add PATH
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             autodetect_compiler_COMPILER_PATH_WIN_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_PATH_WIN" | autodetect_compiler_escape)
+            autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH" | autodetect_compiler_escape)
             printf "%s\n" "  (\"PATH\" \"$autodetect_compiler_COMPILER_PATH_WIN_QUOTED\")"
+            printf "%s\n" "  (\"PATH_COMPILER\" \"$autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH_QUOTED\")"
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
-            autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | autodetect_compiler_escape)
-            printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIQ_PATH':\"\$PATH\" \\"
+            autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH" | autodetect_compiler_escape)
+            printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH':\"\$PATH\" \\"
         fi
 
         # For MSVS-only
@@ -1524,7 +1528,6 @@ autodetect_compiler_vsdev() {
                 echo "FATAL: No /usr/bin/cygpath which is needed for MSVS_PATH variable" >&2
                 exit 107
             fi
-            autodetect_compiler_COMPILER_UNIX_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIQ_PATH" | /usr/bin/cygpath --path -f -)
             printf "MSVS_PATH='%s:'\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH"
 
             # MSVS_INC which must have a trailing semicolon

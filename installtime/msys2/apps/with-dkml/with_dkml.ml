@@ -167,11 +167,19 @@ let set_msvc_entries cache_keys =
       let do_set setvars =
         List.iter
           (fun (varname, varvalue) ->
-            OS.Env.set_var varname (Some varvalue)
-            |> Rresult.R.error_msg_to_invalid_arg;
-
-            Logs.debug (fun m ->
-                m "Setting (name,value) = (%s,%s)" varname varvalue))
+            if varname = "PATH_COMPILER" then (
+              OS.Env.set_var "PATH" (Some (varvalue ^ ";" ^ path))
+              |> Rresult.R.error_msg_to_invalid_arg;
+              Logs.debug (fun m ->
+                m "Prepending PATH_COMPILER to PATH. (prefix <|> existing) = (%s <|> %s)" varvalue path)
+            )
+            else (
+              OS.Env.set_var varname (Some varvalue)
+              |> Rresult.R.error_msg_to_invalid_arg;
+              Logs.debug (fun m ->
+                m "Setting (name,value) = (%s,%s)" varname varvalue)
+            )
+          )
           (association_list_of_sexp setvars)
       in
       Lazy.force get_opam_switch_prefix >>= fun opam_switch_prefix ->
@@ -240,7 +248,7 @@ let set_msvc_entries cache_keys =
           in
           Logs.debug (fun m -> m "autodetect_compiler output vars:@\n%a" Fmt.(list (Dump.pair string string)) env_vars);
 
-          (* Store the as-is and PATH compiler environment variables in an association list *)
+          (* Store the as-is and PATH_COMPILER compiler environment variables in an association list *)
           let setvars =
             List.filter_map
               (fun varname ->
@@ -248,7 +256,7 @@ let set_msvc_entries cache_keys =
                 | Some varvalue ->
                     Some Sexp.(List [ Atom varname; Atom varvalue ])
                 | None -> None)
-              ("PATH" :: (msvc_as_is_vars @ autodetect_compiler_as_is_vars))
+              ("PATH_COMPILER" :: (msvc_as_is_vars @ autodetect_compiler_as_is_vars))
           in
           Sexp.List setvars
         in
