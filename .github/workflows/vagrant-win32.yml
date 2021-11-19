@@ -30,7 +30,7 @@ jobs:
 
     - name: '"vagrant up" for **previous** release'
       if: ${{ github.ref_type != 'tag' }}
-      run: 'cat .dkmlroot && cd vagrant/win32 && if ! vagrant up; printf "FATAL: Vagrant failed to start up for\n"; sed "s/^/  /" .dkmlroot; fi'
+      run: 'cat .dkmlroot && cd vagrant/win32 && if ! vagrant up; then printf "FATAL: Vagrant failed to start up for\n"; sed "s/^/  /" .dkmlroot; fi'
 
     - name: Check test_installation.t status
       run: |
