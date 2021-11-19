@@ -230,7 +230,7 @@ ocaml_configure() {
     DKML_TARGET_PLATFORM="$ocaml_configure_ABI"
     # Sets OCAML_HOST_TRIPLET that corresponds to ocaml_configure_ABI, and creates the specified script
     autodetect_compiler "$WORK"/env-with-compiler.sh
-    autodetect_compiler --msvs "$WORK"/env-with-compiler.msvs
+    autodetect_compiler --msvs-detect "$WORK"/msvs-detect
     # shellcheck disable=SC2034
     DKML_TARGET_PLATFORM=$ocaml_configure_SAVE_DTP
 
@@ -241,8 +241,9 @@ ocaml_configure() {
     }
 
     # Get MSVS_* aligned to the DKML compiler
+    bash "$WORK"/msvs-detect > "$WORK"/msvs-detect.out
     # shellcheck disable=SC1091
-    . "$WORK"/env-with-compiler.msvs
+    . "$WORK"/msvs-detect.out
     if [ -z "${MSVS_NAME}" ] ; then
       printf "%s\n" "No appropriate C compiler was found -- unable to build OCaml"
       exit 1

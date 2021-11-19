@@ -981,8 +981,14 @@ create_system_launcher() {
 # list (KEY VALUE). The s-exp output will always use the full PATH, but the variable PATH_COMPILER will be the
 # parts of PATH that are specific to the compiler (you can prepend it to an existing PATH).
 #
-# If `--msvs` was used, then the output file is compatible
-# with the shell output of https://github.com/metastack/msvs-tools#msvs-detect
+# If `--msvs-detect` was used, then the output file will be a script that can replace
+# https://github.com/metastack/msvs-tools#msvs-detect. The shell output from the output script
+# will be the Visual Studio installation detected by this function.
+#
+# Example:
+#   DKML_TARGET_PLATFORM=windows_x86 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON autodetect_compiler --msvs-detect /tmp/msvs-detect
+#   eval `bash /tmp/msvs-detect` # this is what https://github.com/ocaml/opam/blob/c7759e08722520d3ab8a8e162f3841d270191490/configure#L3655 does
+#   echo $MSVS_NAME # etc.
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
@@ -1029,8 +1035,8 @@ autodetect_compiler() {
     if [ "$1" = --sexp ]; then
         autodetect_compiler_OUTPUTMODE=SEXP
         shift
-    elif [ "$1" = --msvs ]; then
-        autodetect_compiler_OUTPUTMODE=MSVS
+    elif [ "$1" = --msvs-detect ]; then
+        autodetect_compiler_OUTPUTMODE=MSVS_DETECT
         shift
     fi
     autodetect_compiler_OUTPUTFILE="$1"
@@ -1070,8 +1076,9 @@ autodetect_compiler() {
     if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
         printf '()' > "$autodetect_compiler_OUTPUTFILE".tmp
         "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
-    elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
+    elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
         true > "$autodetect_compiler_OUTPUTFILE"
+        "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE"
     elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
         create_system_launcher "$autodetect_compiler_OUTPUTFILE"
     fi
@@ -1250,6 +1257,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
+            autodetect_compiler_vsdev_MSVS_ML="ml"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1259,6 +1267,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
+            autodetect_compiler_vsdev_MSVS_ML="ml64"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1268,6 +1277,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
+            autodetect_compiler_vsdev_MSVS_ML="armasm64"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1277,6 +1287,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
+            autodetect_compiler_vsdev_MSVS_ML="armasm"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107
@@ -1292,6 +1303,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
+            autodetect_compiler_vsdev_MSVS_ML="ml64"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1301,6 +1313,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
+            autodetect_compiler_vsdev_MSVS_ML="ml"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1310,6 +1323,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
+            autodetect_compiler_vsdev_MSVS_ML="armasm64"
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
@@ -1319,6 +1333,7 @@ autodetect_compiler_vsdev() {
             }
             OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
+            autodetect_compiler_vsdev_MSVS_ML="armasm"
         else
             printf "%s\n" "FATAL: check_state autodetect_compiler BUILDHOST_ARCH=$BUILDHOST_ARCH autodetect_compiler_PLATFORM_ARCH=$autodetect_compiler_PLATFORM_ARCH" >&2
             exit 107
@@ -1442,7 +1457,7 @@ autodetect_compiler_vsdev() {
             # Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`
             "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
         }
-    elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ] || [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
+    elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ] || [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
         autodetect_compiler_escape() {
             # Since we will embed each name/value pair in single quotes
             # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
@@ -1499,8 +1514,8 @@ autodetect_compiler_vsdev() {
             printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH':\"\$PATH\" \\"
         fi
 
-        # For MSVS-only
-        if [ "$autodetect_compiler_OUTPUTMODE" = MSVS ]; then
+        # For MSVS_DETECT-only
+        if [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
             # MSVS_NAME
             # shellcheck disable=SC2016
             "$DKMLSYS_AWK" '
@@ -1529,7 +1544,7 @@ autodetect_compiler_vsdev() {
             autodetect_compiler_MSVS3=$(cat "$autodetect_compiler_TEMPDIR"/msvs3.txt)
             autodetect_compiler_MSVS4=$(cat "$autodetect_compiler_TEMPDIR"/msvs4.txt)
             autodetect_compiler_MSVS5=$(cat "$autodetect_compiler_TEMPDIR"/msvs5.txt)
-            printf "MSVS_NAME='%s %s %s %s %s at %s'\n" "$autodetect_compiler_MSVS1" \
+            printf "MSVS_NAME='%s %s %s %s %s in %s'\n" "$autodetect_compiler_MSVS1" \
                 "$autodetect_compiler_MSVS4" "$autodetect_compiler_MSVS5" \
                 "$autodetect_compiler_MSVS2" "$autodetect_compiler_MSVS3" "$VSDEV_HOME_BUILDHOST"
 
@@ -1553,16 +1568,7 @@ autodetect_compiler_vsdev() {
             ' "$autodetect_compiler_TEMPDIR"/vcvars.txt
 
             # MSVS_ML
-            # shellcheck disable=SC2016
-            "$DKMLSYS_AWK" '
-            BEGIN{FS="="} $1 == "Platform" {name=$1; value=$0; sub(/^[^=]*=/,"",value);                print value}
-            ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/platform.txt
-            case $(cat "$autodetect_compiler_TEMPDIR"/platform.txt) in
-                x64)   printf "MSVS_ML=ml64\n" ;;
-                arm)   printf "MSVS_ML=armasm\n" ;;
-                arm64) printf "MSVS_ML=armasm64\n" ;;
-                x86)   printf "MSVS_ML=ml\n" ;;
-            esac
+            printf "MSVS_ML='%s'\n" "$autodetect_compiler_vsdev_MSVS_ML"
         fi
 
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
@@ -1570,6 +1576,9 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             # Add arguments
             printf "%s\n" '  "$@"'
+        elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
+            # Dump variables to standard output with proper quoting (which `set` does for us)
+            printf "set | awk '%s'\n" '/^MS(VS|VS64)_(NAME|PATH|INC|LIB|ML)=/{print}'
         fi
     } > "$autodetect_compiler_OUTPUTFILE".tmp
     "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp

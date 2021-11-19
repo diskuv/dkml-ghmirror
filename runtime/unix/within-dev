@@ -17,10 +17,8 @@ usage() {
     echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
     echo "    within-dev -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
-    echo "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    echo "          Defaults to ON; ie. using Opam 2.2+ default root" >&2
-    echo "       -d STATEDIR: DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be subdirectories." >&2
-    echo "          If -u is ON (default) then DKML_DUNE_BUILD_DIR will be _build/ dir of the project" >&2
+    echo "       -u ON|OFF: User mode. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
+    echo "       -d STATEDIR: State directory. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
     echo "Advanced Options:" >&2
     echo "       -c: If specified, compilation flags like CC are added to the environment." >&2
     echo "             This can take several seconds on Windows since vcdevcmd.bat needs to run" >&2
