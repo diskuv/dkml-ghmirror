@@ -176,18 +176,20 @@ else
 fi
 
 # REPLACE - msvs-detect
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if is_dev_platform; then
-        # Set BUILDHOST_ARCH
-        build_machine_arch
-        DKML_TARGET_PLATFORM=$BUILDHOST_ARCH autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+if [ ! -e "$OPAMSRC_UNIX"/shell/msvs-detect ]; then
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        if is_dev_platform; then
+            # Set BUILDHOST_ARCH
+            build_machine_arch
+            DKML_TARGET_PLATFORM=$BUILDHOST_ARCH autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+        else
+            DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+        fi
     else
         DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
     fi
-else
-    DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+    install "$WORK"/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 fi
-install "$WORK"/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 
 # Copy self into share/dkml-bootstrap/110-compile-opam
 export BOOTSTRAPNAME=110-compile-opam

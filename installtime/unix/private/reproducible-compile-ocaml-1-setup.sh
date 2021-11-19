@@ -286,23 +286,15 @@ apply_ocaml_crosscompile_patch() {
 # ---------------------
 # Get OCaml source code
 
-# Ensure the source code can have a recent (0.5.0+) version of msvs.
-# 0.5.0+ will detect Diskuv OCaml installations (and others) that use Visual Studio Build Tools.
-install -d "$WORK"/msvs
-MSVS_MIXED="$WORK"/msvs
-ZIP_MIXED="$WORK"/msvs-tools.zip
-if [ -x /usr/bin/cygpath ]; then
-    # unzip and wget may be native Windows so use mixed Unix/Windows path convention
-    ZIP_MIXED=$(/usr/bin/cygpath -am "$ZIP_MIXED")
-    MSVS_MIXED=$(/usr/bin/cygpath -am "$MSVS_MIXED")
-fi
-log_trace downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
-unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
+# Set BUILDHOST_ARCH
+build_machine_arch
 
 get_ocaml_source() {
     get_ocaml_source_SRCUNIX="$1"
     shift
     get_ocaml_source_SRCMIXED="$1"
+    shift
+    get_ocaml_source_TARGETPLATFORM="$1"
     shift
     if [ ! -e "$get_ocaml_source_SRCUNIX/Makefile" ] || [ ! -e "$get_ocaml_source_SRCUNIX/.git" ]; then
         install -d "$get_ocaml_source_SRCUNIX"
@@ -319,7 +311,10 @@ get_ocaml_source() {
     fi
 
     # Install msvs-detect
-    install "$WORK"/msvs/msvs-detect "$get_ocaml_source_SRCUNIX"/msvs-detect
+    if [ ! -e "$get_ocaml_source_SRCUNIX"/msvs-detect ]; then
+        DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM=$get_ocaml_source_TARGETPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+        install "$WORK"/msvs-detect "$get_ocaml_source_SRCUNIX"/msvs-detect
+    fi
 
     # Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
     if [ ! -e "$get_ocaml_source_SRCUNIX"/flexdll ]; then
@@ -331,7 +326,7 @@ get_ocaml_source() {
 # It is hard to reason about mutated source directories with different-platform object files, so we use a pristine source dir
 # for the host and other pristine source dirs for each target.
 
-get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED"
+get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED" "$BUILDHOST_ARCH"
 
 # Find but do not apply the cross-compiling patches to the host ABI
 _OCAMLVER=$(awk 'NR==1{print}' "$OCAMLSRC_UNIX"/VERSION)
@@ -348,7 +343,7 @@ if [ -n "$TARGETABIS" ]; then
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
         # git clone
-        get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml"
+        get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml" "$_targetabi"
         # git patch src/ocaml
         apply_ocaml_crosscompile_patch "$OCAMLPATCHFILE"  "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
         if [ -n "$OCAMLPATCHEXTRA" ]; then
