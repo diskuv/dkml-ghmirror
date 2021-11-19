@@ -174,7 +174,6 @@ autodetect_system_binaries
 # and escapes).
 autodetect_system_path # Autodetect DKML_SYSTEM_PATH
 PATH="$DKML_SYSTEM_PATH"
-printf "%s\n" "PATH ={within-dev#1} $PATH" >&2
 
 # # Autodetect DKMLVARS and add to PATH
 # autodetect_dkmlvars || true

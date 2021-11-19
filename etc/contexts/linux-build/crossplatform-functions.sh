@@ -129,9 +129,9 @@ autodetect_dkmlvars() {
     if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
 
-    # Validate DiskuvOCamlVarsVersion
-    if [ ! "$DiskuvOCamlVarsVersion" = "1" ]; then
-        printf "FATAL: Only able to read Diskuv OCaml variables version '1'. Instead Diskuv OCaml variables for %s were on version '%s'\n" "$DiskuvOCamlHome" "$DiskuvOCamlVarsVersion" >&2
+    # Validate DiskuvOCamlVarsVersion. Can be v1 or v2 since only the .sexp file changed in v2.
+    if [ ! "$DiskuvOCamlVarsVersion" = "1" ] && [ ! "$DiskuvOCamlVarsVersion" = "2" ]; then
+        printf "FATAL: Only able to read Diskuv OCaml variables version '1' and '2'. Instead Diskuv OCaml variables for %s were on version '%s'\n" "$DiskuvOCamlHome" "$DiskuvOCamlVarsVersion" >&2
         exit 107
     fi
     unset DiskuvOCamlVarsVersion

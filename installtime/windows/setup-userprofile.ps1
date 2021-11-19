@@ -918,7 +918,7 @@ try {
         $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
         $CygwinVarsArray = @(
             # Every dkml variable is defined except DiskuvOCamlMSYS2Dir
-            "DiskuvOCamlVarsVersion=1",
+            "DiskuvOCamlVarsVersion=2",
             "DiskuvOCamlHome='$ProgramCygwinAbsPath'",
             "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'",
             "DiskuvOCamlDeploymentId='$DeploymentId'",
@@ -1072,7 +1072,7 @@ try {
     $ProgramParentMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramParentPath"
     $ProgramMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramPath"
     $UnixVarsArray = @(
-        "DiskuvOCamlVarsVersion=1",
+        "DiskuvOCamlVarsVersion=2",
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
         "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/usr/bin:$ProgramMSYS2AbsPath/bin'",
         "DiskuvOCamlMSYS2Dir='/'",
@@ -1081,7 +1081,7 @@ try {
     )
     $UnixVarsContents = $UnixVarsArray -join [environment]::NewLine
     $PowershellVarsContents = @"
-`$env:DiskuvOCamlVarsVersion = 1
+`$env:DiskuvOCamlVarsVersion = 2
 `$env:DiskuvOCamlHome = '$ProgramPath'
 `$env:DiskuvOCamlBinaryPaths = '$ProgramPath\usr\bin;$ProgramPath\bin'
 `$env:DiskuvOCamlMSYS2Dir = '$MSYS2Dir'
@@ -1089,7 +1089,7 @@ try {
 `$env:DiskuvOCamlVersion = '$dkml_root_version'
 "@
     $CmdVarsContents = @"
-`@SET DiskuvOCamlVarsVersion=1
+`@SET DiskuvOCamlVarsVersion=2
 `@SET DiskuvOCamlHome=$ProgramPath
 `@SET DiskuvOCamlBinaryPaths=$ProgramPath\usr\bin;$ProgramPath\bin
 `@SET DiskuvOCamlMSYS2Dir=$MSYS2Dir
@@ -1100,12 +1100,12 @@ try {
     $ProgramPathDoubleSlashed = $ProgramPath.Replace('\', '\\')
     $SexpVarsContents = @"
 `(
-`("DiskuvOCamlVarsVersion" "1")
-`("DiskuvOCamlHome" "$ProgramPathDoubleSlashed")
+`("DiskuvOCamlVarsVersion" ("2"))
+`("DiskuvOCamlHome" ("$ProgramPathDoubleSlashed"))
 `("DiskuvOCamlBinaryPaths" ("$ProgramPathDoubleSlashed\\usr\\bin" "$ProgramPathDoubleSlashed\\bin"))
-`("DiskuvOCamlMSYS2Dir" "$($MSYS2Dir.Replace('\', '\\'))")
-`("DiskuvOCamlDeploymentId" "$DeploymentId")
-`("DiskuvOCamlVersion" "$dkml_root_version")
+`("DiskuvOCamlMSYS2Dir" ("$($MSYS2Dir.Replace('\', '\\'))"))
+`("DiskuvOCamlDeploymentId" ("$DeploymentId"))
+`("DiskuvOCamlVersion" ("$dkml_root_version"))
 `)
 "@
 
@@ -1284,7 +1284,7 @@ try {
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine WITHDKML_ENABLE=OFF TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
             "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
@@ -1292,7 +1292,7 @@ try {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine WITHDKML_ENABLE=OFF TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
