@@ -148,17 +148,20 @@ let remove_microsoft_visual_studio_entries () =
    Microsoft Visual Studio entries like LIB, INCLUDE and the others listed in
    [msvc_as_is_vars] and in [autodetect_compiler_as_is_vars]. Additionally PATH is updated.
 
-   The PATH environment variable on entry is used as a cache key.
+   The PATH and DiskuvOCamlHome environment variables on entry are used as a cache key.
 
    If OPAM_SWITCH_PREFIX is not defined, then <dkmlhome_dir>/host-tools (the Diskuv
    System opam switch) is used instead.
 *)
 let set_msvc_entries cache_keys =
+  OS.Env.req_var "PATH" >>= fun path ->
+  let dkmlhome = OS.Env.opt_var "DiskuvOCamlHome" ~absent:"" in
+  let cache_keys = path :: dkmlhome :: cache_keys in
   (* 1. Remove MSVC entries *)
   remove_microsoft_visual_studio_entries () >>= fun () ->
   (* 2. Add MSVC entries *)
   Lazy.force get_msys2_dir_opt >>= function
-  | None -> R.ok ()
+  | None -> R.ok cache_keys
   | Some msys2_dir -> (
       Lazy.force get_dkmlhome_dir >>= fun dkmlhome_dir ->
       let do_set setvars =
@@ -171,7 +174,6 @@ let set_msvc_entries cache_keys =
                 m "Setting (name,value) = (%s,%s)" varname varvalue))
           (association_list_of_sexp setvars)
       in
-      OS.Env.req_var "PATH" >>= fun path ->
       Lazy.force get_opam_switch_prefix >>= fun opam_switch_prefix ->
       let cache_dir = Fpath.(opam_switch_prefix / ".dkml" / "compiler-cache") in
       let cache_key =
@@ -197,7 +199,7 @@ let set_msvc_entries cache_keys =
             m "Loading compiler cache entry %a" Fpath.pp cache_file);
         let setvars = Sexp.load_sexp (Fpath.to_string cache_file) in
         do_set setvars;
-        Ok ())
+        Ok cache_keys)
       else
         (* Cache miss *)
         let cache_miss tmp_sexp_file _oc _v =
@@ -261,7 +263,7 @@ let set_msvc_entries cache_keys =
                 m "Saving compiler cache entry %a" Fpath.pp cache_file);
 
             Sexp.save_hum (Fpath.to_string cache_file) setvars;
-            Ok ()
+            Ok cache_keys
         | Ok (Error _ as err) -> err
         | Error _ as err -> err)
 
@@ -527,16 +529,16 @@ let main_with_result () =
   *)
   set_msys2_entries target_platform_name >>= fun () ->
   (* THIRD, set MSVC entries *)
-  set_msvc_entries cache_keys >>= fun () ->
+  set_msvc_entries cache_keys >>= fun cache_keys ->
   (* FOURTH, set vcpkg entries.
      - Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
        _after_ MSVC.
   *)
-  set_vcpkg_entries cache_keys >>= fun _cache_keys ->
+  set_vcpkg_entries cache_keys >>= fun cache_keys ->
   (* FIFTH, set third-party (3p) prefix entries.
      Since MSVC overwrites INCLUDE and LIB entirely, we have to do vcpkg entries
      _after_ MSVC. *)
-  set_3p_prefix_entries cache_keys >>= fun _cache_keys ->
+  set_3p_prefix_entries cache_keys >>= fun cache_keys ->
   (* SIXTH, set third-party (3p) program entries. *)
   set_3p_program_entries cache_keys >>= fun _cache_keys ->
   (* SEVENTH, stop special variables from propagating. *)
