@@ -96,6 +96,14 @@ fi
 # END Command line processing
 # ------------------
 
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
+# shellcheck disable=SC2034
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+# shellcheck disable=SC2034
+USERMODE=ON
+# shellcheck disable=SC2034
+STATEDIR=
+
 # shellcheck disable=SC1091
 . "$DKMLDIR/runtime/unix/_common_tool.sh"
 
@@ -126,7 +134,12 @@ else
     PATH=/usr/bin:/bin
 fi
 if [ -n "$OCAMLHOME" ]; then
-    POST_BOOTSTRAP_PATH="$OCAMLHOME"/bin:"$PATH"
+    if [ -x /usr/bin/cygpath ]; then
+        OCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$OCAMLHOME")
+    else
+        OCAMLHOME_UNIX="$OCAMLHOME"
+    fi
+    POST_BOOTSTRAP_PATH="$OCAMLHOME_UNIX"/bin:"$PATH"
 else
     POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
 fi

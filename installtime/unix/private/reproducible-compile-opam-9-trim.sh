@@ -78,8 +78,13 @@ fi
 # END Command line processing
 # ------------------
 
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
 # shellcheck disable=SC2034
-PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+# shellcheck disable=SC2034
+USERMODE=ON
+# shellcheck disable=SC2034
+STATEDIR=
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/runtime/unix/_common_tool.sh"

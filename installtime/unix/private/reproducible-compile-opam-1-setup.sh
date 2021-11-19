@@ -53,7 +53,7 @@ usage() {
     printf "%s\n" "   -v COMMIT: Git commit or tag for the git repository. Strongly prefer a commit id for much stronger" >&2
     printf "%s\n" "      reproducibility guarantees" >&2
     printf "%s\n" "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
-    printf "%s\n" "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    printf "%s\n" "      Defaults to 'dev' (deprecated). Ex. dev, windows_x86, windows_x86_64" >&2
     printf "%s\n" "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
     printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
     printf "%s\n" "      will not choose a compiler based on environment variables." >&2
@@ -68,6 +68,7 @@ GIT_URL=https://github.com/ocaml/opam
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 PRESERVEGIT=OFF
+PLATFORM=dev
 while getopts ":d:u:v:t:a:b:c:e:h" opt; do
     case ${opt} in
         h )
@@ -97,6 +98,7 @@ while getopts ":d:u:v:t:a:b:c:e:h" opt; do
             SETUP_ARGS+=( -t . )
         ;;
         a )
+            PLATFORM="$OPTARG"
             BUILD_ARGS+=( -a "$OPTARG" )
             SETUP_ARGS+=( -a "$OPTARG" )
         ;;
@@ -133,8 +135,13 @@ TRIM_ARGS+=( -e "$PRESERVEGIT" )
 # END Command line processing
 # ------------------
 
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
 # shellcheck disable=SC2034
-PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+# shellcheck disable=SC2034
+USERMODE=ON
+# shellcheck disable=SC2034
+STATEDIR=
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/runtime/unix/_common_tool.sh"
@@ -168,21 +175,19 @@ else
     log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
 fi
 
-# PATCH - msvs-detect
-# Ensure we have a recent (0.5.0+) version of msvs.
-# 0.5.0+ will detect Diskuv OCaml installations (and others) that use Visual Studio Build Tools.
-# Remove this patch when Opam branch is updated.
-install -d "$WORK"/msvs
-MSVS_MIXED="$WORK"/msvs
-ZIP_MIXED="$WORK"/msvs-tools.zip
-if [ -x /usr/bin/cygpath ]; then
-    # unzip and wget may be native Windows so use mixed Unix/Windows path convention
-    ZIP_MIXED=$(/usr/bin/cygpath -am "$ZIP_MIXED")
-    MSVS_MIXED=$(/usr/bin/cygpath -am "$MSVS_MIXED")
+# REPLACE - msvs-detect
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if is_dev_platform; then
+        # Set BUILDHOST_ARCH
+        build_machine_arch
+        DKML_TARGET_PLATFORM=$BUILDHOST_ARCH autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+    else
+        DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+    fi
+else
+    DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
 fi
-log_trace downloadfile https://github.com/metastack/msvs-tools/archive/refs/tags/0.5.0.zip "$ZIP_MIXED" 9e0a87dd09e6663dac9396a5a7fc9ec7c0b2b22ccf1f5bd9a33bf2543324aad2
-unzip -j -d "$MSVS_MIXED" "$ZIP_MIXED"
-install "$WORK"/msvs/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
+install "$WORK"/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
 
 # Copy self into share/dkml-bootstrap/110-compile-opam
 export BOOTSTRAPNAME=110-compile-opam
