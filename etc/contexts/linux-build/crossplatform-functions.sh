@@ -167,7 +167,7 @@ autodetect_dkmlvars() {
 #
 # Purpose: Use whenever you have something meant to be reproducible.
 #
-# On Windows this includes the Cygwin/MSYS2 paths but also Windows directories
+# On Windows this includes the Cygwin/MSYS2 paths, the  but also Windows directories
 # like C:\Windows\System32 and C:\Windows\System32\OpenSSH and also the essential binaries in
 # $env:DiskuvOCamlHome\bin. The general binaries in $env:DiskuvOCamlHome\usr\bin are not
 # included.
@@ -194,7 +194,17 @@ autodetect_system_path() {
     # Set DKMLHOME_UNIX if available
     autodetect_dkmlvars || true
 
-    # Add $DKMLHOME_UNIX/bin
+    # Add Git at beginning of PATH
+    autodetect_system_path_GITEXE=$(command -v git || true)
+    if [ -n "$autodetect_system_path_GITEXE" ]; then
+        autodetect_system_path_GITDIR=$(dirname "$autodetect_system_path_GITEXE")
+        case "$autodetect_system_path_GITDIR" in
+            /usr/bin|/bin) ;;
+            *) DKML_SYSTEM_PATH="$autodetect_system_path_GITDIR:$DKML_SYSTEM_PATH"
+        esac
+    fi
+
+    # Add $DKMLHOME_UNIX/bin at beginning of PATH
     if [ -n "${DKMLHOME_UNIX:-}" ] && [ -d "$DKMLHOME_UNIX/bin" ]; then
         DKML_SYSTEM_PATH="$DKMLHOME_UNIX/bin:$DKML_SYSTEM_PATH"
     fi
