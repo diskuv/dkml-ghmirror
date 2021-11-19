@@ -23,6 +23,13 @@ Summary
    and `CMAKE_PROGRAM_PATH <https://cmake.org/cmake/help/latest/variable/CMAKE_PROGRAM_PATH.html>`_
    variables, respectively.
 
+   **Any existing PATH is ignored**. The default or currently selected Opam switch will be
+   the basis the PATH and OCaml environment variables. For example, if in Windows PowerShell
+   an Opam switch is selected (which can be seen by typing ``opam switch`` and looking for the
+   ``→`` arrow), then running ``with-dkml.exe bash`` will launch a Bash prompt with the PATH and
+   other environment variables from that Opam switch. If there is no selected or default Opam
+   switch then the system PATH (``/usr/bin`` and ``/bin`` on Unix) is the basis for PATH. Other
+   PATH entries like those in ``DKML_3P_PROGRAM_PATH`` are added as described in this documentation.
 
 Usage
    .. code-block:: bash

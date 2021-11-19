@@ -263,13 +263,8 @@ exec_in_platform() {
         printf "  -c" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
     if is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
-        if is_unixy_windows_build_machine && [ -z "${DiskuvOCamlHome:-}" ]; then
-            echo "FATAL: You must run $DKMLDIR/installtime/windows/install-world.ps1 at least once" >&2
-            exit 79
-        fi
         if [ -x /usr/bin/cygpath ]; then
             _exec_dev_or_arch_helper_ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
-            _exec_dev_or_arch_helper_ACTUALDISKUVOCAMLHOME=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
         else
             _exec_dev_or_arch_helper_ACTUALTOPDIR="$TOPDIR"
         fi

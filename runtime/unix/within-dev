@@ -160,24 +160,38 @@ else
     fi
 fi
 
-# Autodetect DKMLVARS and add to PATH
-autodetect_dkmlvars || true
-if [ -n "${DKMLBINPATHS_UNIX:-}" ]; then
-    ENV_PATH_PREFIX="$DKMLBINPATHS_UNIX"
-else
-    ENV_PATH_PREFIX=
-fi
+# Autodetect DKMLSYS_*
+autodetect_system_binaries
 
-# Set PATH and run any prehooks
-# Also, normalize the PATH. If we end up with any double quotes in the Windows PATH passed to
+# Reset PATH to the system PATH.
+#
+# Alternative: Normalize the PATH. But for reproducibility just use the system PATH.
+#
+# Note: If we end up with any double quotes in the Windows PATH passed to
 # vsdevcmd.bat then we will get '\Microsoft was unexpected at this time'
 # (https://social.msdn.microsoft.com/Forums/vstudio/en-US/21821c4a-b415-4b55-8779-1d22694a8f82/microsoft-was-unexpected-at-this-time?forum=vssetup).
 # That will happen if we have trailing slashes in our PATH (which Opam.exe internally cygpaths
-# and escapes). Regardless, even if this didn't happen we still want normalized PATHs.
-if [ -n "$ENV_PATH_PREFIX" ]; then
-    PATH="$ENV_PATH_PREFIX:$PATH"
-fi
-PATH=$(echo "$PATH" | PATH="/usr/bin:/bin:$PATH" sed 's#/:#:#g; s#/$##') # remove trailing slashes
+# and escapes).
+autodetect_system_path # Autodetect DKML_SYSTEM_PATH
+PATH="$DKML_SYSTEM_PATH"
+printf "%s\n" "PATH ={within-dev#1} $PATH" >&2
+
+# # Autodetect DKMLVARS and add to PATH
+# autodetect_dkmlvars || true
+# if [ -n "${DKMLBINPATHS_UNIX:-}" ]; then
+#     ENV_PATH_PREFIX="$DKMLBINPATHS_UNIX"
+# else
+#     ENV_PATH_PREFIX=
+# fi
+
+# # Add prefix if specified
+# if [ -n "$ENV_PATH_PREFIX" ]; then
+#     ENV_PATH_PREFIX=$(printf "%s" "$ENV_PATH_PREFIX" | $DKMLSYS_SED 's#/:#:#g; s#/$##') # remove trailing slashes
+#     PATH="$ENV_PATH_PREFIX:$PATH"
+# fi
+# printf "%s\n" "PATH ={within-dev#2} $PATH" >&2
+
+# Run any prehooks
 sanitize_path() {
     # At this point the prehook may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
@@ -205,11 +219,16 @@ fi
 if [ -n "$PREHOOK_DOUBLE" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] $PREHOOK_DOUBLE" >&2; fi
     # the `awk ...` is dos2unix equivalent
-    eval "$PREHOOK_DOUBLE" | awk '{ sub(/\r$/,""); print }' > "$WORK"/prehook.eval
-    # shellcheck disable=SC1091
-    . "$WORK"/prehook.eval
-    sanitize_path
+    if ! eval "$PREHOOK_DOUBLE" > "$WORK"/prehook.eval; then
+        printf "FATAL: The following prehook failed:\n>>>\n%s\n<<<\n" "$PREHOOK_DOUBLE" >&2
+        exit 107
+    fi
+    awk '{ sub(/\r$/,""); print }' "$WORK"/prehook.eval > "$WORK"/prehook.dos2unix.eval
     rm -f "$WORK"/prehook.eval
+    # shellcheck disable=SC1091
+    . "$WORK"/prehook.dos2unix.eval
+    sanitize_path
+    rm -f "$WORK"/prehook.dos2unix.eval
 fi
 
 # Autodetect compiler like Visual Studio on Windows.

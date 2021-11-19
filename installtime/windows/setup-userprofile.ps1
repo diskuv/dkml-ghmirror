@@ -1074,7 +1074,7 @@ try {
     $UnixVarsArray = @(
         "DiskuvOCamlVarsVersion=1",
         "DiskuvOCamlHome='$ProgramMSYS2AbsPath'",
-        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/bin'",
+        "DiskuvOCamlBinaryPaths='$ProgramMSYS2AbsPath/usr/bin:$ProgramMSYS2AbsPath/bin'",
         "DiskuvOCamlMSYS2Dir='/'",
         "DiskuvOCamlDeploymentId='$DeploymentId'",
         "DiskuvOCamlVersion='$dkml_root_version'"
@@ -1083,7 +1083,7 @@ try {
     $PowershellVarsContents = @"
 `$env:DiskuvOCamlVarsVersion = 1
 `$env:DiskuvOCamlHome = '$ProgramPath'
-`$env:DiskuvOCamlBinaryPaths = '$ProgramPath\bin'
+`$env:DiskuvOCamlBinaryPaths = '$ProgramPath\usr\bin;$ProgramPath\bin'
 `$env:DiskuvOCamlMSYS2Dir = '$MSYS2Dir'
 `$env:DiskuvOCamlDeploymentId = '$DeploymentId'
 `$env:DiskuvOCamlVersion = '$dkml_root_version'
@@ -1091,17 +1091,18 @@ try {
     $CmdVarsContents = @"
 `@SET DiskuvOCamlVarsVersion=1
 `@SET DiskuvOCamlHome=$ProgramPath
-`@SET DiskuvOCamlBinaryPaths=$ProgramPath\bin
+`@SET DiskuvOCamlBinaryPaths=$ProgramPath\usr\bin;$ProgramPath\bin
 `@SET DiskuvOCamlMSYS2Dir=$MSYS2Dir
 `@SET DiskuvOCamlDeploymentId=$DeploymentId
 `@SET DiskuvOCamlVersion=$dkml_root_version
 "@
 
+    $ProgramPathDoubleSlashed = $ProgramPath.Replace('\', '\\')
     $SexpVarsContents = @"
 `(
 `("DiskuvOCamlVarsVersion" "1")
-`("DiskuvOCamlHome" "$($ProgramPath.Replace('\', '\\'))")
-`("DiskuvOCamlBinaryPaths" "$($ProgramPath.Replace('\', '\\'))\\bin")
+`("DiskuvOCamlHome" "$ProgramPathDoubleSlashed")
+`("DiskuvOCamlBinaryPaths" ("$ProgramPathDoubleSlashed\\usr\\bin" "$ProgramPathDoubleSlashed\\bin"))
 `("DiskuvOCamlMSYS2Dir" "$($MSYS2Dir.Replace('\', '\\'))")
 `("DiskuvOCamlDeploymentId" "$DeploymentId")
 `("DiskuvOCamlVersion" "$dkml_root_version")
@@ -1121,6 +1122,10 @@ try {
     $global:ProgressActivity = "Install Native Windows OPAM.EXE"
     Write-ProgressStep
 
+    $ProgramRelEssentialBinDir = "bin"
+    $ProgramEssentialBinDir = "$ProgramPath\$ProgramRelEssentialBinDir"
+    $ProgramEssentialBinMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramEssentialBinDir"
+
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         if ([Environment]::Is64BitOperatingSystem) {
@@ -1128,17 +1133,34 @@ try {
         } else {
             $OpamBasenameArch = "windows_x86"
         }
-        if (Test-Path -Path "$ProgramPath\bin\opam.exe") {
+        # The following go into sbin/ because they are required by _all_ with-dkml.exe and compiler invocations:
+        #   opam.exe
+        #   opam-putenv.exe
+        #   opam-installer.exe
+        $MoveIntoEssentialBin = $false
+        if ((Test-Path -Path "$ProgramEssentialBinDir\opam.exe") -and `
+            (Test-Path -Path "$ProgramEssentialBinDir\opam-putenv.exe") -and `
+            (Test-Path -Path "$ProgramEssentialBinDir\opam-installer.exe")) {
             # okay. already installed
         } elseif (Import-DiskuvOCamlAsset `
                 -PackageName "opam-reproducible" `
                 -ZipFile "opam-$OpamBasenameArch.zip" `
                 -TmpPath "$TempPath" `
                 -DestinationPath "$ProgramPath") {
-            # okay. just imported
+            # okay. just imported into bin/
+            $MoveIntoEssentialBin = $true
         } else {
+            # build into bin/
             Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
                 -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-opam.sh '$DkmlMSYS2AbsPath' $DV_AvailableOpamVersion '$ProgramMSYS2AbsPath'"
+            $MoveIntoEssentialBin = $true
+        }
+        if ($MoveIntoEssentialBin -and "$ProgramRelEssentialBinDir" -ne "bin") {
+            Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+                -Command (
+                    "install -d '$ProgramEssentialBinMSYS2AbsPath' && " +
+                    "mv '$ProgramMSYS2AbsPath'/bin/opam.exe '$ProgramMSYS2AbsPath'/bin/opam-putenv.exe '$ProgramMSYS2AbsPath'/bin/opam-installer.exe '$ProgramEssentialBinMSYS2AbsPath'/"
+                )
         }
     }
 
@@ -1281,31 +1303,31 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN install `diskuv-host-tools` and `with-dkml` to Programs
+    # BEGIN install host-tools and `with-dkml` to Programs
 
-    $global:ProgressActivity = "Install diskuv-host-tools binaries"
+    $global:ProgressActivity = "Install host-tools binaries"
     Write-ProgressStep
 
-    $ProgramRelBinDir = "bin"
-    $ProgramBinDir = "$ProgramPath\$ProgramRelBinDir"
+    $ProgramRelGeneralBinDir = "usr\bin"
+    $ProgramGeneralBinDir = "$ProgramPath\$ProgramRelGeneralBinDir"
     $DiskuvHostToolsDir = "$ProgramPath\host-tools\_opam"
 
-    if (!(Test-Path -Path $ProgramBinDir)) { New-Item -Path $ProgramBinDir -ItemType Directory | Out-Null }
+    if (!(Test-Path -Path $ProgramGeneralBinDir)) { New-Item -Path $ProgramGeneralBinDir -ItemType Directory | Out-Null }
     foreach ($binary in $FlavorBinaries) {
         # Don't copy unless the target file doesn't exist -or- the target file is different from the source file.
         # This helps IncrementalDiskuvOcamlDeployment installations, especially when a file is in use
         # but hasn't changed (especially `dune.exe`, `ocamllsp.exe` which may be open in an IDE)
-        if (!(Test-Path -Path "$ProgramBinDir\$binary")) {
-            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramBinDir
-        } elseif ((Get-FileHash "$ProgramBinDir\$binary").hash -ne (Get-FileHash $DiskuvHostToolsDir\bin\$binary).hash) {
-            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramBinDir
+        if (!(Test-Path -Path "$ProgramGeneralBinDir\$binary")) {
+            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir
+        } elseif ((Get-FileHash "$ProgramGeneralBinDir\$binary").hash -ne (Get-FileHash $DiskuvHostToolsDir\bin\$binary).hash) {
+            Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir
         }
     }
 
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
-            "OPAMVARROOT=`$('$ProgramBinDir\opam.exe' var root) && " +
-            "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with-dkml.exe`" '$ProgramBinDir\with-dkml.exe'")
+            "OPAMVARROOT=`$('$ProgramEssentialBinDir\opam.exe' var root) && " +
+            "install `"`$OPAMVARROOT\plugins\diskuvocaml\with-dkml\$dkml_root_version\with-dkml.exe`" '$ProgramGeneralBinDir\with-dkml.exe'")
 
 
     # END opam install `diskuv-host-tools` to Programs
@@ -1376,15 +1398,27 @@ try {
         $userpath = [Environment]::GetEnvironmentVariable('PATH', 'User')
         $userpathentries = $userpath -split $splitter # all of the User's PATH in a collection
 
-        # Add bin\ to the User's PATH if it isn't already
-        if (!($userpathentries -contains $ProgramBinDir)) {
+        # Prepend usr\bin\ to the User's PATH if it isn't already
+        if (!($userpathentries -contains $ProgramGeneralBinDir)) {
             # remove any old deployments
-            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelBinDir
+            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelGeneralBinDir
             foreach ($possibleDir in $PossibleDirs) {
                 $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
             }
             # add new PATH entry
-            $userpathentries = @( $ProgramBinDir ) + $userpathentries
+            $userpathentries = @( $ProgramGeneralBinDir ) + $userpathentries
+            $PathModified = $true
+        }
+
+        # Prepend bin\ to the User's PATH if it isn't already
+        if (!($userpathentries -contains $ProgramEssentialBinDir)) {
+            # remove any old deployments
+            $PossibleDirs = Get-PossibleSlotPaths -ParentPath $ProgramParentPath -SubPath $ProgramRelEssentialBinDir
+            foreach ($possibleDir in $PossibleDirs) {
+                $userpathentries = $userpathentries | Where-Object {$_ -ne $possibleDir}
+            }
+            # add new PATH entry
+            $userpathentries = @( $ProgramEssentialBinDir ) + $userpathentries
             $PathModified = $true
         }
 

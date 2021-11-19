@@ -137,23 +137,26 @@ autodetect_dkmlvars() {
     unset DiskuvOCamlVarsVersion
 
     # Unixize DiskuvOCamlHome
-    DKMLHOME_BUILDHOST="$DiskuvOCamlHome"
     if [ -x /usr/bin/cygpath ]; then
-        DKMLHOME_UNIX=$(/usr/bin/cygpath -au "$DKMLHOME_BUILDHOST")
+        DKMLHOME_UNIX=$(/usr/bin/cygpath -au "$DiskuvOCamlHome")
+        DKMLHOME_BUILDHOST=$(/usr/bin/cygpath -aw "$DiskuvOCamlHome")
     else
+        DKMLHOME_UNIX="$DiskuvOCamlHome"
         # shellcheck disable=SC2034
-        DKMLHOME_UNIX="$DKMLHOME_BUILDHOST"
+        DKMLHOME_BUILDHOST="$DiskuvOCamlHome"
     fi
     unset DiskuvOCamlHome
 
     # Pathize DiskuvOCamlBinaryPaths
-    # shellcheck disable=SC2034
-    DKMLBINPATHS_BUILDHOST="$DiskuvOCamlBinaryPaths"
     if [ -x /usr/bin/cygpath ]; then
-        DKMLBINPATHS_UNIX=$(/usr/bin/cygpath --path "$DKMLBINPATHS_BUILDHOST")
+        # Going from Windows to Unix is safe. Going from Unix to Windows is safe.
+        # But Windows to Windows has garbled output from cygpath.
+        DKMLBINPATHS_UNIX=$(/usr/bin/cygpath --path "$DiskuvOCamlBinaryPaths")
+        DKMLBINPATHS_BUILDHOST=$(/usr/bin/cygpath -w --path "$DKMLBINPATHS_UNIX")
     else
+        DKMLBINPATHS_UNIX="$DiskuvOCamlBinaryPaths"
         # shellcheck disable=SC2034
-        DKMLBINPATHS_UNIX="$DKMLBINPATHS_BUILDHOST"
+        DKMLBINPATHS_BUILDHOST="$DiskuvOCamlBinaryPaths"
     fi
     unset DiskuvOCamlBinaryPaths
 
@@ -165,8 +168,9 @@ autodetect_dkmlvars() {
 # Purpose: Use whenever you have something meant to be reproducible.
 #
 # On Windows this includes the Cygwin/MSYS2 paths but also Windows directories
-# like C:\Windows\System32 and C:\Windows\System32\OpenSSH and also
-# $env:DiskuvOCamlHome\bin
+# like C:\Windows\System32 and C:\Windows\System32\OpenSSH and also the essential binaries in
+# $env:DiskuvOCamlHome\bin. The general binaries in $env:DiskuvOCamlHome\usr\bin are not
+# included.
 #
 # Output:
 #   env:DKML_SYSTEM_PATH - A PATH containing only system directories like /usr/bin.
@@ -191,7 +195,7 @@ autodetect_system_path() {
     autodetect_dkmlvars || true
 
     # Add $DKMLHOME_UNIX/bin
-    if [ -n "${DKMLHOME_UNIX:-}" ]; then
+    if [ -n "${DKMLHOME_UNIX:-}" ] && [ -d "$DKMLHOME_UNIX/bin" ]; then
         DKML_SYSTEM_PATH="$DKMLHOME_UNIX/bin:$DKML_SYSTEM_PATH"
     fi
 }
