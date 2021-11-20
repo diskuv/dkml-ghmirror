@@ -645,9 +645,9 @@ validate_and_explore_ocamlhome() {
     validate_and_explore_ocamlhome_HOME=$1
     shift
     # Set DKML_OCAMLHOME_BINDIR_UNIX. Validate
-    if [ -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml" ] || [ ! -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml.exe" ]; then
+    if [ -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml" ] || [ -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml.exe" ]; then
         DKML_OCAMLHOME_BINDIR_UNIX=usr/bin
-    elif [ -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml" ] || [ ! -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml.exe" ]; then
+    elif [ -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml" ] || [ -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml.exe" ]; then
         # shellcheck disable=SC2034
         DKML_OCAMLHOME_BINDIR_UNIX=bin
     else
