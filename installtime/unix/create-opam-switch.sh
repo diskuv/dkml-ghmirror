@@ -308,8 +308,8 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
     OPAM_SWITCH_CC=
     OPAM_SWITCH_ASPP=
     OPAM_SWITCH_AS=
-    true > "$WORK"/invariant.formula.head.txt
-    true > "$WORK"/invariant.formula.tail.txt
+    true > "$WORK"/invariant_for_base.formula.head.txt
+    true > "$WORK"/invariant_for_base.formula.tail.txt
     case "$BUILDTYPE" in
         Debug*) BUILD_DEBUG=ON; BUILD_RELEASE=OFF ;;
         Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
@@ -443,22 +443,22 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
     if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
         # Frame pointer should be on in Debug mode.
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-        printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
+        printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant_for_base.formula.tail.txt
     fi
     if [ "$BUILDTYPE" = ReleaseCompatPerf ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
         # If we need Linux `perf` we need frame pointers enabled
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-fp
-        printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant.formula.tail.txt
+        printf ",'%s'" ocaml-option-fp >> "$WORK"/invariant_for_base.formula.tail.txt
     fi
     if [ $BUILD_RELEASE = ON ]; then
         # All release builds should get flambda optimization
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
-        printf ",'%s'" ocaml-option-flambda >> "$WORK"/invariant.formula.tail.txt
+        printf ",'%s'" ocaml-option-flambda >> "$WORK"/invariant_for_base.formula.tail.txt
     fi
     if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
         # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
-        printf ",'%s'" ocaml-option-afl >> "$WORK"/invariant.formula.tail.txt
+        printf ",'%s'" ocaml-option-afl >> "$WORK"/invariant_for_base.formula.tail.txt
     fi
 fi
 
@@ -551,11 +551,11 @@ fi
 if [ "$BUILD_OCAML_BASE" = ON ]; then
     # ex. '"ocaml-variants" {= "4.12.0+options"}'
     printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
-    printf '%socaml-variants.%s%s' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant.formula.head.txt
+    printf '%socaml-variants.%s%s' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant_for_base.formula.head.txt
 else
     # ex. '"ocaml-system" {= "4.12.1"}'
     printf "%s\n" "  --packages='ocaml-system.$OCAMLVERSION' \\" >> "$WORK"/switchcreateargs.sh
-    printf '%socaml-system.%s%s' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant.formula.head.txt
+    printf '%socaml-system.%s%s' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant_for_base.formula.head.txt
 fi
 
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
@@ -617,7 +617,7 @@ else
         log_shell "$WORK"/update.sh
     fi
 
-    # a DKML upgrade could have changed the invariant; we do not change it here; instead we wait until after
+    # A DKML upgrade could have changed the invariant; we do not change it here; instead we wait until after
     # the pins and options (especially the wrappers) have changed because changing the invariant can recompile
     # _all_ packages (many of them need wrappers, and many of them need a pin upgrade to support a new OCaml version)
     NEEDS_INVARIANT=ON
@@ -809,8 +809,12 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  switch set-invariant --packages="
-        cat "$WORK"/invariant.formula.head.txt
-        cat "$WORK"/invariant.formula.tail.txt
+        if [ "$BUILD_OCAML_BASE" = ON ]; then
+            cat "$WORK"/invariant_for_base.formula.head.txt
+            cat "$WORK"/invariant_for_base.formula.tail.txt
+        else
+            printf "ocaml-system.%s" "$OCAMLVERSION"
+        fi
     } > "$WORK"/set-invariant.sh
     log_shell "$WORK"/set-invariant.sh
 
