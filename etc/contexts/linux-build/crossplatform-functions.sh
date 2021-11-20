@@ -1608,8 +1608,8 @@ log_shell() {
             # print args with prefix ... @+:
             escape_args_for_shell "$@" | "$DKMLSYS_SED" 's/^/@+: /' >&2
             printf "\n" >&2
-            # print file with prefix ... @+|
-            "$DKMLSYS_SED" 's/^/@+| /' "$log_shell_1" >&2
+            # print file with prefix ... @+| . Also make sure each line is newline terminated using awk.
+            "$DKMLSYS_SED" 's/^/@+| /' "$log_shell_1" | "$DKMLSYS_AWK" '{print}' >&2
             "$DKML_POSIX_SHELL" -eufx "$log_shell_1" "$@"
         else
             "$DKML_POSIX_SHELL" -eufx "$@"
