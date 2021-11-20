@@ -647,7 +647,7 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml/opam-cache
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "%s" "  option setenv+='LUV_USE_SYSTEM_LIBUV += \"yes\"' "
+        printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV += "yes"'
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 

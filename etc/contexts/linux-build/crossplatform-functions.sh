@@ -233,6 +233,7 @@ autodetect_system_path() {
 # - env:DKMLSYS_SORT - Location of `sort`
 # - env:DKMLSYS_CAT - Location of `cat`
 # - env:DKMLSYS_STAT - Location of `stat`
+# - env:DKMLSYS_GREP - Location of `grep`
 autodetect_system_binaries() {
     if [ -z "${DKMLSYS_MV:-}" ]; then
         if [ -x /usr/bin/mv ]; then
@@ -318,7 +319,14 @@ autodetect_system_binaries() {
             DKMLSYS_STAT=/bin/stat
         fi
     fi
-    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT
+    if [ -z "${DKMLSYS_GREP:-}" ]; then
+        if [ -x /usr/bin/grep ]; then
+            DKMLSYS_GREP=/usr/bin/grep
+        else
+            DKMLSYS_GREP=/bin/grep
+        fi
+    fi
+    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP
 }
 
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
@@ -954,7 +962,7 @@ create_system_launcher() {
         create_system_launcher_SYSTEMPATHUNIX="$DKML_SYSTEM_PATH"
     fi
 
-    printf "#!%s\nexec %s PATH='%s' %s\n" "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" "$create_system_launcher_SYSTEMPATHUNIX" '$*' > "$create_system_launcher_OUTPUTFILE".tmp
+    printf "#!%s\nexec %s PATH='%s' %s\n" "$DKML_POSIX_SHELL" "$DKMLSYS_ENV" "$create_system_launcher_SYSTEMPATHUNIX" '"$@"' > "$create_system_launcher_OUTPUTFILE".tmp
     "$DKMLSYS_CHMOD" +x "$create_system_launcher_OUTPUTFILE".tmp
     "$DKMLSYS_MV" "$create_system_launcher_OUTPUTFILE".tmp "$create_system_launcher_OUTPUTFILE"
 }
@@ -1592,10 +1600,23 @@ autodetect_compiler_vsdev() {
 #   - env:DKML_POSIX_SHELL - The path to the POSIX shell. Only set if it wasn't already
 #     set.
 log_shell() {
+    autodetect_system_binaries
     autodetect_posix_shell
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
-        "$DKML_POSIX_SHELL" -eufx "$@"
+        # If trace level > 2 and the first argument is a _non binary_ file then print contents
+        if [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ] && [ -e "$1" ] && "$DKMLSYS_GREP" -qI . "$1"; then
+            log_shell_1="$1"
+            shift
+            # print args with prefix ... @+:
+            escape_args_for_shell "$@" | "$DKMLSYS_SED" 's/^/@+: /' >&2
+            printf "\n" >&2
+            # print file with prefix ... @+|
+            "$DKMLSYS_SED" 's/^/@+| /' "$log_shell_1" >&2
+            "$DKML_POSIX_SHELL" -eufx "$log_shell_1" "$@"
+        else
+            "$DKML_POSIX_SHELL" -eufx "$@"
+        fi
     else
         "$DKML_POSIX_SHELL" -euf "$@"
     fi
@@ -1702,14 +1723,27 @@ cmake_flag_off() {
     esac
 }
 
+# DEPRECATED
+#
 # [escape_string_for_shell STR] takes the string STR and escapes it for use in a shell.
 # For example,
 #  in Bash: STR="hello singlequote=' doublequote=\" world" --> 'hello singlequote='\'' doublequote=" world'
 #  in Dash: STR="hello singlequote=' doublequote=\" world" --> 'hello singlequote='"'"' doublequote=" world'
+#
+# (deprecated) Use escape_args_for_shell() instead
 escape_string_for_shell() {
     # shellcheck disable=SC2034
     escape_string_for_shell_STR="$1"
     shift
     # We'll use the bash or dash builtin `set` which escapes spaces and quotes correctly.
     set | grep ^escape_string_for_shell_STR= | sed 's/[^=]*=//'
+}
+
+# escape_args_for_shell ARG1 ARG2 ...
+#
+# If `escape_args_for_shell asd sdfs 'hello there'` then prints `asd sdfs hello\ there`
+escape_args_for_shell() {
+    autodetect_system_binaries
+    # Confer %q in https://www.gnu.org/software/bash/manual/bash.html#Shell-Builtin-Commands
+    bash -c 'printf "%q " "$@"' -- "$@" | $DKMLSYS_SED 's/ $//' 
 }

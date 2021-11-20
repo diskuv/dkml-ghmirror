@@ -26,17 +26,21 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    create-diskuv-boot-DO-NOT-DELETE-switch.sh -h   Display this help message." >&2
-    echo "    create-diskuv-boot-DO-NOT-DELETE-switch.sh      Create the Opam switch." >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    create-diskuv-boot-DO-NOT-DELETE-switch.sh -h   Display this help message." >&2
+    printf "%s\n" "    create-diskuv-boot-DO-NOT-DELETE-switch.sh      Create the Opam switch." >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
 }
 
-while getopts ":h" opt; do
+OPAMHOME=
+while getopts ":o:h" opt; do
     case ${opt} in
         h )
             usage
             exit 0
         ;;
+        o ) OPAMHOME=$OPTARG ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -55,7 +59,14 @@ if [ -z "${DKMLDIR:-}" ]; then
 fi
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
-PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
+else
+    # shellcheck disable=SC2034
+    STATEDIR=
+    # shellcheck disable=SC2034
+    USERMODE=ON
+fi
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
@@ -70,6 +81,16 @@ cd "$TOPDIR"
 
 # -----------------------
 # BEGIN opam switch create  --empty
+
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    run_opam() {
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "$@"
+    }
+else
+    run_opam() {
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+    }
+fi
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
@@ -87,11 +108,9 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-le
 
 if ! is_empty_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" switch remove "$OPAMSWITCHDIR_EXPAND" --yes || \
-        rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+    run_opam switch remove "$OPAMSWITCHDIR_EXPAND" --yes || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
     # do real install
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
-        switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_ARGS[@]}"
+    run_opam switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_ARGS[@]}"
 fi
 
 # END opam switch create --empty
