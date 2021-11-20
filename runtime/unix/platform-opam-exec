@@ -342,8 +342,9 @@ if [ -n "$OCAMLVERSION_OR_HOME" ]; then
     fi
     case "$OCAMLVERSION_OR_HOME_UNIX" in
         /*)
+            validate_and_explore_ocamlhome "$OCAMLVERSION_OR_HOME"
             {
-                printf "PATH='%s'/bin:\"\$PATH\"\n" "$OCAMLVERSION_OR_HOME"
+                printf "PATH='%s':\"\$PATH\"\n" "$DKML_OCAMLHOME_UNIX/$DKML_OCAMLHOME_BINDIR_UNIX"
                 if [ -n "$PLATFORM_EXEC_PRE_SINGLE" ]; then
                     printf "\n"
                     cat "$PLATFORM_EXEC_PRE_SINGLE"
