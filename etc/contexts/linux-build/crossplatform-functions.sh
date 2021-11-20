@@ -1468,7 +1468,7 @@ autodetect_compiler_vsdev() {
             # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
             # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
             # we need to replace single quotes (') with ('"'"').
-            "$DKMLSYS_SED" "s#'#'\"'\"'#g" "$@"
+            "$DKMLSYS_CAT" "$@" | escape_stdin_for_single_quote
         }
     fi
     {
@@ -1739,8 +1739,20 @@ escape_string_for_shell() {
 # escape_args_for_shell ARG1 ARG2 ...
 #
 # If `escape_args_for_shell asd sdfs 'hello there'` then prints `asd sdfs hello\ there`
+#
+# Prereq: autodetect_system_binaries
 escape_args_for_shell() {
-    autodetect_system_binaries
     # Confer %q in https://www.gnu.org/software/bash/manual/bash.html#Shell-Builtin-Commands
     bash -c 'printf "%q " "$@"' -- "$@" | $DKMLSYS_SED 's/ $//' 
+}
+
+# Make the standard input embeddable in single quotes
+# (ex. <stdin>=hi ' there ==> <stdout>=hi '"'"' there).
+# That is, replace single quotes (') with ('"'"').
+#
+# It is your responsibility to place outer single quotes around the stdout.
+#
+# Prereq: autodetect_system_binaries
+escape_stdin_for_single_quote() {
+    "$DKMLSYS_SED" "s#'#'\"'\"'#g"
 }
