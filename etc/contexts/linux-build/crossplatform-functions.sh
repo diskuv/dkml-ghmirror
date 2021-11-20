@@ -134,7 +134,6 @@ autodetect_dkmlvars() {
         printf "FATAL: Only able to read Diskuv OCaml variables version '1' and '2'. Instead Diskuv OCaml variables for %s were on version '%s'\n" "$DiskuvOCamlHome" "$DiskuvOCamlVarsVersion" >&2
         exit 107
     fi
-    unset DiskuvOCamlVarsVersion
 
     # Unixize DiskuvOCamlHome
     if [ -x /usr/bin/cygpath ]; then
@@ -145,7 +144,6 @@ autodetect_dkmlvars() {
         # shellcheck disable=SC2034
         DKMLHOME_BUILDHOST="$DiskuvOCamlHome"
     fi
-    unset DiskuvOCamlHome
 
     # Pathize DiskuvOCamlBinaryPaths
     if [ -x /usr/bin/cygpath ]; then
@@ -158,7 +156,6 @@ autodetect_dkmlvars() {
         # shellcheck disable=SC2034
         DKMLBINPATHS_BUILDHOST="$DiskuvOCamlBinaryPaths"
     fi
-    unset DiskuvOCamlBinaryPaths
 
     return 0
 }
