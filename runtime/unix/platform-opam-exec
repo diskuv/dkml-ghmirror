@@ -379,13 +379,13 @@ case "$subcommand" in
             exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
-    install)
+    install | upgrade)
         if [ "$DISKUV_HOST_TOOLS" = ON ]; then
-            # When we are installing the host tools, we must have a compiler so we can compile
+            # When we are upgrading / installing a package in the host tools switch, we must have a compiler so we can compile
             # with-dkml.exe
             exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         else
-            # When we are installing any other switch, we will have a with-dkml.exe wrapper to
+            # When we are upgrading / installing a package in any other switch, we will have a with-dkml.exe wrapper to
             # provide the compiler
             exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
