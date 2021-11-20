@@ -188,45 +188,66 @@ PATH="$DKML_SYSTEM_PATH"
 # fi
 # printf "%s\n" "PATH ={within-dev#2} $PATH" >&2
 
-# Run any prehooks
-sanitize_path() {
+# Make a script to run any prehooks
+{
+    printf "#!/bin/sh\n\n"
+
+    # [sanitize_path]
     # At this point the prehook may have set the PATH to be a Windows style path (ex. `opam env`).
     # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
-    if [ -x /usr/bin/cygpath ]; then PATH=$(/usr/bin/cygpath --path "$PATH"); fi
     # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
     # `trap 'rm -rf "$WORK"' EXIT` handler can find 'rm'.
     # We use a missing /usr/bin to trigger the PATH mutation since:
     # - MSYS2 mounts /usr/bin as /bin (so /bin is automatically converted to /usr/bin in MSYS2 PATH)
-    case "$PATH" in
+    cat <<EOF
+sanitize_path() {
+    if [ -x /usr/bin/cygpath ]; then PATH=\$(/usr/bin/cygpath --path "\$PATH"); fi
+    case "\$PATH" in
         /usr/bin) ;;
         *:/usr/bin) ;;
         /usr/bin:*) ;;
         *:/usr/bin:*) ;;
         *)
-            PATH=/usr/bin:/bin:"$PATH"
+            PATH=/usr/bin:/bin:"\$PATH"
     esac
 }
-if [ -n "$PREHOOK_SINGLE" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -n20 "$PREHOOK_SINGLE" >&2; fi
-    # shellcheck disable=SC1090
-    . "$PREHOOK_SINGLE"
-    sanitize_path
-    rm -f "$WORK"/prehook.eval
-fi
-if [ -n "$PREHOOK_DOUBLE" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] $PREHOOK_DOUBLE" >&2; fi
-    # the `awk ...` is dos2unix equivalent
-    if ! eval "$PREHOOK_DOUBLE" > "$WORK"/prehook.eval; then
-        printf "FATAL: The following prehook failed:\n>>>\n%s\n<<<\n" "$PREHOOK_DOUBLE" >&2
-        exit 107
+
+EOF
+
+    if [ -n "$PREHOOK_SINGLE" ]; then
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+            printf '%s\n' 'printf "+ [eval] ...\n" >&2'
+            printf '%s\n' "'$DKMLSYS_SED' 's/^/+| /' '$PREHOOK_SINGLE' >&2"
+        fi
+        printf '%s\n' ". '$PREHOOK_SINGLE'"
+        printf '%s\n\n' 'sanitize_path'
     fi
-    awk '{ sub(/\r$/,""); print }' "$WORK"/prehook.eval > "$WORK"/prehook.dos2unix.eval
-    rm -f "$WORK"/prehook.eval
-    # shellcheck disable=SC1091
-    . "$WORK"/prehook.dos2unix.eval
-    sanitize_path
-    rm -f "$WORK"/prehook.dos2unix.eval
+
+    if [ -n "$PREHOOK_DOUBLE" ]; then
+        PREHOOK_DOUBLE_SQ=$(printf '%s' "$PREHOOK_DOUBLE" | escape_stdin_for_single_quote)
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+            printf "printf %s '%s' >&2\n" \
+                '"%s\n"' \
+                "+ [eval] $PREHOOK_DOUBLE_SQ"
+        fi
+        # the `awk ...` is dos2unix equivalent
+        cat <<EOF
+if ! eval '$PREHOOK_DOUBLE_SQ' > '$WORK'/prehook.eval; then
+    printf "FATAL: The following prehook failed:\n>>>\n%s\n<<<\n" '$PREHOOK_DOUBLE_SQ' >&2
+    exit 107
 fi
+awk '{ sub(/\r$/,""); print }' '$WORK'/prehook.eval > '$WORK'/prehook.dos2unix.eval
+rm -f '$WORK'/prehook.eval
+. '$WORK'/prehook.dos2unix.eval
+sanitize_path
+rm -f '$WORK'/prehook.dos2unix.eval
+
+EOF
+    fi
+
+    printf 'exec "$@"\n'
+} > "$WORK"/launch-prehooks.sh
+"$DKMLSYS_CHMOD" +x "$WORK"/launch-prehooks.sh
 
 # Autodetect compiler like Visual Studio on Windows.
 # Whether or not compilation is needed, make a launcher that uses the system PATH plus optionally
@@ -269,4 +290,4 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)
 set +u # allow empty LAUNCHER_ARGS
-log_shell "$LAUNCHER" "${LAUNCHER_ARGS[@]}" "$@"
+log_shell "$LAUNCHER" "$WORK"/launch-prehooks.sh "${LAUNCHER_ARGS[@]}" "$@"
