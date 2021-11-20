@@ -273,7 +273,13 @@ else
 fi
 
 # Get the OCaml version and check whether to build an OCaml base (ocamlc compiler, etc.)
-case "$OCAMLVERSION_OR_HOME" in
+if [ -x /usr/bin/cygpath ]; then
+    # If OCAMLVERSION_OR_HOME=C:/x/y/z then match against /c/x/y/z
+    OCAMLVERSION_OR_HOME_UNIX=$(/usr/bin/cygpath -u "$OCAMLVERSION_OR_HOME")
+else
+    OCAMLVERSION_OR_HOME_UNIX="$OCAMLVERSION_OR_HOME"
+fi
+case "$OCAMLVERSION_OR_HOME_UNIX" in
     /*)
         validate_and_explore_ocamlhome "$OCAMLVERSION_OR_HOME"
         OCAMLVERSION=$("$DKML_OCAMLHOME_UNIX/$DKML_OCAMLHOME_BINDIR_UNIX/ocamlc" -version)

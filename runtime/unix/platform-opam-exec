@@ -334,7 +334,13 @@ if [ -n "$OPAMHOME" ]; then
 fi
 # Ditto for `ocaml`
 if [ -n "$OCAMLVERSION_OR_HOME" ]; then
-    case "$OCAMLVERSION_OR_HOME" in
+    if [ -x /usr/bin/cygpath ]; then
+        # If OCAMLVERSION_OR_HOME=C:/x/y/z then match against /c/x/y/z
+        OCAMLVERSION_OR_HOME_UNIX=$(/usr/bin/cygpath -u "$OCAMLVERSION_OR_HOME")
+    else
+        OCAMLVERSION_OR_HOME_UNIX="$OCAMLVERSION_OR_HOME"
+    fi
+    case "$OCAMLVERSION_OR_HOME_UNIX" in
         /*)
             {
                 printf "PATH='%s'/bin:\"\$PATH\"\n" "$OCAMLVERSION_OR_HOME"
