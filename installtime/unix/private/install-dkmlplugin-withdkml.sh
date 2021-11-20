@@ -12,7 +12,7 @@
 #
 # Prerequisites:
 # - init-opam-root.sh
-# - create-diskuv-host-tools-switch.sh
+# - create-tools-switch.sh
 #
 # -------------------------------------------------------
 set -euf

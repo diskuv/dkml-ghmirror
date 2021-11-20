@@ -1,6 +1,6 @@
 #!/bin/sh
 # -------------------------------------------------------
-# create-diskuv-host-tools-switch.sh
+# create-tools-switch.sh
 #
 # Purpose:
 # 1. Make or upgrade an Opam switch tied to the current installation of Diskuv OCaml
@@ -18,11 +18,11 @@ set -euf
 
 usage() {
     printf "%s\n" "Usage:" >&2
-    printf "%s\n" "    create-diskuv-host-tools-switch.sh -h           Display this help message" >&2
-    printf "%s\n" "    create-diskuv-host-tools-switch.sh              Create the Diskuv system switch" >&2
+    printf "%s\n" "    create-tools-switch.sh -h           Display this help message" >&2
+    printf "%s\n" "    create-tools-switch.sh              Create the Diskuv system switch" >&2
     printf "%s\n" "                                                    at <DiskuvOCamlHome>/host-tools on Windows or" >&2
     printf "%s\n" "                                                    <OPAMROOT>/host-tools/_opam on non-Windows" >&2
-    printf "%s\n" "    create-diskuv-host-tools-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
+    printf "%s\n" "    create-tools-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
     printf "%s\n" "                                                    at <STATEDIR>/host-tools" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p DKMLPLATFORM: Optional. The DKML target platform. If not specified then DKSDK_ environment" >&2
