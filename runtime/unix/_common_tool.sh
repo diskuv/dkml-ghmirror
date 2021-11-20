@@ -640,3 +640,26 @@ spawn_rsync() {
         fi
     fi
 }
+
+validate_and_explore_ocamlhome() {
+    validate_and_explore_ocamlhome_HOME=$1
+    shift
+    # Set DKML_OCAMLHOME_BINDIR_UNIX. Validate
+    if [ -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml" ] || [ ! -x "$validate_and_explore_ocamlhome_HOME/usr/bin/ocaml.exe" ]; then
+        DKML_OCAMLHOME_BINDIR_UNIX=usr/bin
+    elif [ -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml" ] || [ ! -x "$validate_and_explore_ocamlhome_HOME/bin/ocaml.exe" ]; then
+        # shellcheck disable=SC2034
+        DKML_OCAMLHOME_BINDIR_UNIX=bin
+    else
+        unset DKML_OCAMLHOME_BINDIR_UNIX
+        printf "FATAL: The OCAMLHOME='%s' does not have a usr/bin/ocaml, bin/ocaml, usr/bin/ocaml.exe or bin/ocaml.exe\n" "$validate_and_explore_ocamlhome_HOME" >&2
+        exit 107
+    fi
+    # Set DKML_OCAMLHOME_UNIX
+    if [ -x /usr/bin/cygpath ]; then
+        DKML_OCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$validate_and_explore_ocamlhome_HOME")
+    else
+        # shellcheck disable=SC2034
+        DKML_OCAMLHOME_UNIX="$validate_and_explore_ocamlhome_HOME"
+    fi
+}

@@ -341,6 +341,12 @@ if (!$global:RedeployIfExists -and $finished) {
 
 $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 
+if ([Environment]::Is64BitOperatingSystem) {
+    $DkmlPlatform = "windows_x86_64"
+} else {
+    $DkmlPlatform = "windows_x86"
+}
+
 function Import-DiskuvOCamlAsset {
     param (
         [Parameter(Mandatory)]
@@ -1128,11 +1134,6 @@ try {
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
-        if ([Environment]::Is64BitOperatingSystem) {
-            $OpamBasenameArch = "windows_x86_64"
-        } else {
-            $OpamBasenameArch = "windows_x86"
-        }
         # The following go into sbin/ because they are required by _all_ with-dkml.exe and compiler invocations:
         #   opam.exe
         #   opam-putenv.exe
@@ -1144,7 +1145,7 @@ try {
             # okay. already installed
         } elseif (Import-DiskuvOCamlAsset `
                 -PackageName "opam-reproducible" `
-                -ZipFile "opam-$OpamBasenameArch.zip" `
+                -ZipFile "opam-$DkmlPlatform.zip" `
                 -TmpPath "$TempPath" `
                 -DestinationPath "$ProgramPath") {
             # okay. just imported into bin/
@@ -1194,20 +1195,21 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
-    # BEGIN opam switch create <system>
+    # BEGIN opam switch create <host-tools>
 
     if ($StopBeforeInstallSystemSwitch) {
         Write-Host "Stopping before being completed finished due to -StopBeforeInstallSystemSwitch switch"
         exit 0
     }
 
-    $global:ProgressActivity = "Create system Opam Switch"
+    $global:ProgressActivity = "Create host-tools Opam Switch"
     Write-ProgressStep
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\private\create-diskuv-host-tools-switch.sh' -v '$OCamlLangVersion' -f '$Flavor'"
+            -Command ("env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON " +
+                "'$DkmlPath\installtime\unix\private\create-diskuv-host-tools-switch.sh' -v '$OCamlLangVersion' -p '$DkmlPlatform' -f '$Flavor' -o '$ProgramMSYS2AbsPath'")
         }
 
     # END opam switch create <system>

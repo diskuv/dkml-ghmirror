@@ -47,8 +47,8 @@ usage() {
     printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
     printf "%s\n" "      will not choose a compiler based on environment variables." >&2
     printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
-    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
-    printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
+    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing usr/bin/ocamlc or bin/ocamlc," >&2
+    printf "%s\n" "      and other OCaml binaries and libraries. If not specified will bootstrap its own OCaml home" >&2
     printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
 }
 
@@ -134,16 +134,8 @@ else
     PATH=/usr/bin:/bin
 fi
 if [ -n "$OCAMLHOME" ]; then
-    if [ ! -x "$OCAMLHOME/bin/ocaml" ] && [ ! -x "$OCAMLHOME/bin/ocaml.exe" ]; then
-        printf "FATAL: The OCAMLHOME='%s' does not have a bin/ocaml or bin/ocaml.exe\n" "$OCAMLHOME" >&2
-        exit 107
-    fi
-    if [ -x /usr/bin/cygpath ]; then
-        OCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$OCAMLHOME")
-    else
-        OCAMLHOME_UNIX="$OCAMLHOME"
-    fi
-    POST_BOOTSTRAP_PATH="$OCAMLHOME_UNIX"/bin:"$PATH"
+    validate_and_explore_ocamlhome "$OCAMLHOME"
+    POST_BOOTSTRAP_PATH="$DKML_OCAMLHOME_UNIX"/bin:"$PATH"
 else
     POST_BOOTSTRAP_PATH="$OPAMSRC_UNIX"/bootstrap/ocaml/bin:"$PATH"
 fi

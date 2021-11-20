@@ -20,11 +20,13 @@ usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    create-diskuv-host-tools-switch.sh -h           Display this help message" >&2
     printf "%s\n" "    create-diskuv-host-tools-switch.sh              Create the Diskuv system switch" >&2
-    printf "%s\n" "                                                at <DiskuvOCamlHome>/host-tools on Windows or" >&2
-    printf "%s\n" "                                                <OPAMROOT>/host-tools/_opam on non-Windows" >&2
+    printf "%s\n" "                                                    at <DiskuvOCamlHome>/host-tools on Windows or" >&2
+    printf "%s\n" "                                                    <OPAMROOT>/host-tools/_opam on non-Windows" >&2
     printf "%s\n" "    create-diskuv-host-tools-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
-    printf "%s\n" "                                                at <STATEDIR>/host-tools" >&2
+    printf "%s\n" "                                                    at <STATEDIR>/host-tools" >&2
     printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: Optional. The DKML target platform. If not specified then DKSDK_ environment" >&2
+    printf "%s\n" "       variables must be supplied by DKSDK which will be used to configure the switch" >&2
     printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
     printf "%s\n" "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use" >&2
@@ -41,7 +43,8 @@ fi
 OCAMLVERSION_OR_HOME=
 OPAMHOME=
 FLAVOR=CI
-while getopts ":h:d:o:v:f:" opt; do
+DKMLPLATFORM=
+while getopts ":h:d:o:p:v:f:" opt; do
     case ${opt} in
         h )
             usage
@@ -57,6 +60,15 @@ while getopts ":h:d:o:v:f:" opt; do
             OCAMLVERSION_OR_HOME=$OPTARG
         ;;
         o ) OPAMHOME=$OPTARG ;;
+        p )
+            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+                usage
+                printf "FATAL: The -p option is not supported unless DKML_FEATUREFLAG_CMAKE_PLATFORM=ON\n" >&2
+                exit 107
+            else
+                DKMLPLATFORM=$OPTARG
+            fi
+            ;;
         f )
             case "$OPTARG" in
                 Ci|CI|ci)       FLAVOR=CI ;;
@@ -111,7 +123,7 @@ autodetect_cpus
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release
 else
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -d "$STATEDIR" -u "$USERMODE" -b Release
+    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 fi
 
 # Flavor packages
@@ -132,7 +144,7 @@ fi
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     log_shell "$WORK"/config-diskuv-host-tools.sh
 else
-    log_shell "$WORK"/config-diskuv-host-tools.sh -d "$STATEDIR" -u "$USERMODE"
+    log_shell "$WORK"/config-diskuv-host-tools.sh -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 fi
 
 # END create system switch
