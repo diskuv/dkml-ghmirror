@@ -823,7 +823,7 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
         {
             cat "$WORK"/nonswitchexec.sh
             printf "  upgrade --fixup"
-            if [ "$YES" = ON ]; then printf " --yes" >> "$WORK"/switchcreateargs.sh; fi
+            if [ "$YES" = ON ]; then printf " --yes"; fi
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/upgrade.sh
         log_shell "$WORK"/upgrade.sh
