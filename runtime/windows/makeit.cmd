@@ -50,6 +50,8 @@ REM
 REM * Any variables we define here will appear inside the Makefile.
 REM ==» Use DKMAKE_INTERNAL_ as prefix for all variables.
 
+REM Developer Note: When you change this script, update DKSDKDetectUnixLauncher.cmake as well in the DKSDK product.
+
 REM Set DiskuvOCamlHome if unset
 IF defined DiskuvOCamlHome GOTO HaveDiskuvOCamlHome
 SET "DKMAKE_INTERNAL_DOCH_PARENT=%LOCALAPPDATA%\Programs\DiskuvOCaml"
@@ -349,6 +351,7 @@ if not defined DKMAKE_INTERNAL_MAKE (
 		MSYSTEM=MSYS ^
 		MSYSTEM_CARCH=x86_64 ^
 		MSYSTEM_CHOST=x86_64-pc-msys ^
+		MSYSTEM_PREFIX=/usr ^
 		"PATH=%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/bin:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/ninja:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/cmake/bin:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/apps:%DKMAKE_INTERNAL_GITPATH%:/usr/bin:/bin:%DKMAKE_INTERNAL_WINPATH%:%DKMAKE_INTERNAL_POWERSHELLPATH%" ^
 		make
 )
