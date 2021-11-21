@@ -269,16 +269,6 @@ build_world() {
   build_world_PRECONFIGURE=$1
   shift
 
-  # Idempotent shortcut: If a checksum of the inputs for cross-compiling (host binaries, this script) have
-  # not changed, then no need to do a full clean + build
-  if [ -e "$build_world_CHKSUM" ]; then
-    checksum_crosscompile_inputs "$WORK/build_world.chksum.txt"
-    if cmp -s "$build_world_CHKSUM" "$WORK/build_world.chksum.txt"; then
-      echo "INFO: No changes detected in the host binaries and the cross-compiling scripts, so not recompiling. Force a recompile by erasing $build_world_CHKSUM"
-      return
-    fi
-  fi
-
   # Wrappers
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib "
   log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib "
@@ -324,9 +314,6 @@ build_world() {
   log_trace cp "$OCAMLRUN" runtime/ocamlrun
   log_trace make_host "$build_world_BUILD_ROOT" install
   log_trace make_host "$build_world_BUILD_ROOT" -C debugger install
-
-  # Produce checksum
-  checksum_crosscompile_inputs "$build_world_CHKSUM"
 }
 
 
