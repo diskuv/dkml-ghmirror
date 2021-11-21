@@ -1627,7 +1627,17 @@ log_shell() {
 
 # A function that will print the command and possibly time it (if and only if it uses a full path to
 # an executable, so that 'time' does not fail on internal shell functions).
+# If --return-error-code is the first argument or LOG_TRACE_RETURN_ERROR_CODE=ON, then instead of exiting the
+# function will return the error code.
 log_trace() {
+    log_trace_RETURN=${LOG_TRACE_RETURN_ERROR_CODE:-OFF}
+
+    log_trace_1="$1"
+    if [ "$log_trace_1" = "--return-error-code" ]; then
+        shift
+        log_trace_RETURN=ON
+    fi
+
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
         printf "%s\n" "+ $*" >&2
         if [ -x "$1" ]; then
@@ -1635,13 +1645,17 @@ log_trace() {
         else
             "$@"
         fi
-        log_trace_ec="$?"
-        if [ "$log_trace_ec" -ne 0 ]; then
+    else
+        "$@"
+    fi
+    log_trace_ec="$?"
+    if [ "$log_trace_ec" -ne 0 ]; then
+        if [ "$log_trace_RETURN" = ON ]; then
+            return "$log_trace_ec"
+        else
             printf "FATAL: Command failed with exit code %s: %s\n" "$log_trace_ec" "$*"
             exit "$log_trace_ec"
         fi
-    else
-        "$@"
     fi
 }
 

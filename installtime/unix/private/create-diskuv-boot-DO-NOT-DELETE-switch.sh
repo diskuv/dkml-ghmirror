@@ -108,7 +108,7 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-le
 
 if ! is_empty_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    run_opam switch remove "$OPAMSWITCHDIR_EXPAND" --yes || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+    LOG_TRACE_RETURN_ERROR_CODE=ON run_opam switch remove "$OPAMSWITCHDIR_EXPAND" --yes || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
     # do real install
     run_opam switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_ARGS[@]}"
 fi

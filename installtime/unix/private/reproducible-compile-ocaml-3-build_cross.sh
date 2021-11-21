@@ -280,11 +280,11 @@ build_world() {
   fi
 
   # Wrappers
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$OCAML_HOST/bin/ocamlc.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib "
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$OCAML_HOST/bin/ocamlopt.opt$EXE_EXT -I $OCAML_HOST/lib/ocaml -nostdlib "
 
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT/ocamlc.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib ";
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib ";
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT/ocamlc.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -I $OCAML_HOST/lib/ocaml/stublibs -nostdlib "
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT/ocamlopt.opt$EXE_EXT -I $build_world_BUILD_ROOT/stdlib -I $build_world_BUILD_ROOT/otherlibs/unix -nostdlib "
 
   # clean (otherwise you will 'make inconsistent assumptions' errors with a mix of host + target binaries)
   make clean
