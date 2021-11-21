@@ -94,9 +94,6 @@ shift $((OPTIND -1))
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC2034
     PLATFORM=dev
-else
-    # shellcheck disable=SC2034
-    DISKUV_SYSTEM_SWITCH=ON
 fi
 
 DKMLDIR=$(dirname "$0")

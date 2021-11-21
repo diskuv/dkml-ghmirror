@@ -383,7 +383,7 @@ set_opamrootdir() {
     DKMLPLUGIN_EXPAND="$OPAMROOTDIR_EXPAND/plugins/diskuvocaml"
 }
 
-# Select the 'diskuv-host-tools' switch.
+# Select the '(diskuv-)(host|dksdk)-tools' switch.
 #
 # On Windows (anything with a DiskuvOCamlHome environment variable) the system will be a local
 # Opam switch inside DiskuvOCamlHome/host-tools. Otherwise the system will be the global Opam switch
@@ -392,9 +392,11 @@ set_opamrootdir() {
 # Inputs:
 # - env:DiskuvOCamlHome - Typically you get this from `autodetect_dkmlvars || true`. It will not set
 #   the variable on non-Windows system, which is supported.
+# - env:DKSDK_INVOCATION - Optional. Defaults to OFF. If ON the name of the switch will end in dksdk-tools
+#   rather than host-tools. The DKSDK system switch uses a system compiler rather than a base compiler, so
+#   the switches must be segregated.
 # - env:USERMODE
 # - env:STATEDIR
-# - env:DISKUV_SYSTEM_SWITCH
 # Outputs:
 # - env:OPAMSWITCHFINALDIR_BUILDHOST - Either:
 #     The path to the switch that represents the build directory that is usable only on the
@@ -406,6 +408,12 @@ set_opamrootdir() {
 #     The name of a global switch that represents the build directory.
 #     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
 set_opamswitchdir_of_system() {
+    if [ "$DKSDK_INVOCATION" = ON ]; then
+        set_opamswitchdir_of_system_SWITCHBASE="dksdk-tools"
+    else
+        set_opamswitchdir_of_system_SWITCHBASE="host-tools"
+    fi
+
     # Set OPAMROOTDIR_BUILDHOST
     set_opamrootdir
     # Set DKMLHOME_UNIX if available
@@ -413,24 +421,24 @@ set_opamswitchdir_of_system() {
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if [ -n "${DKMLHOME_UNIX:-}" ] && [ -n "${DKMLHOME_BUILDHOST:-}" ]; then
-            OPAMSWITCHFINALDIR_BUILDHOST="$DKMLHOME_UNIX/host-tools/_opam"
-            OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}host-tools"
+            OPAMSWITCHFINALDIR_BUILDHOST="$DKMLHOME_UNIX/${set_opamswitchdir_of_system_SWITCHBASE}/_opam"
+            OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}${set_opamswitchdir_of_system_SWITCHBASE}"
         else
-            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-host-tools"
-            OPAMSWITCHDIR_EXPAND="diskuv-host-tools"
+            OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/diskuv-${set_opamswitchdir_of_system_SWITCHBASE}"
+            OPAMSWITCHDIR_EXPAND="diskuv-${set_opamswitchdir_of_system_SWITCHBASE}"
         fi
     else
         if cmake_flag_off "$USERMODE"; then
-            OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}host-tools"
+            OPAMSWITCHDIR_EXPAND="$STATEDIR${OS_DIR_SEP}${set_opamswitchdir_of_system_SWITCHBASE}"
             OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
         else
             if [ -n "${DKMLHOME_BUILDHOST:-}" ]; then
-                OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}host-tools"
+                OPAMSWITCHDIR_EXPAND="$DKMLHOME_BUILDHOST${OS_DIR_SEP}${set_opamswitchdir_of_system_SWITCHBASE}"
                 OPAMSWITCHFINALDIR_BUILDHOST="$OPAMSWITCHDIR_EXPAND${OS_DIR_SEP}_opam"
             else
-                OPAMSWITCHDIR_EXPAND="diskuv-host-tools"
+                OPAMSWITCHDIR_EXPAND="diskuv-${set_opamswitchdir_of_system_SWITCHBASE}"
                 # shellcheck disable=SC2034
-                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-host-tools"
+                OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}diskuv-${set_opamswitchdir_of_system_SWITCHBASE}"
             fi
         fi
     fi
