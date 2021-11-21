@@ -203,8 +203,9 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
 
     # Standard autotools ./configure
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.
+    # Note: The launch-compiler.sh are needed on jonahbeckford desktops for 32-bit Windows builds, but not on GitLab CI for 32-bit Windows.
     pushd "$OPAMSRC_UNIX"
-    log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" ./configure --prefix="$TARGETDIR_MIXED"
+    log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" "$WORK"/launch-compiler.sh ./configure --prefix="$TARGETDIR_MIXED"
     popd
 fi
 
