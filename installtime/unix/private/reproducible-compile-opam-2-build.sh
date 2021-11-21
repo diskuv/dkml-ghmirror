@@ -35,14 +35,14 @@ OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 1-setup.sh
 usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    reproducible-compile-opam-2-build.sh" >&2
-    printf "%s\n" "        -h                       Display this help message." >&2
-    printf "%s\n" "        -d DIR -t DIR [-n NUM]   Do compilation of Opam." >&2
+    printf "%s\n" "        -h                              Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR -a DKMLPLATFORM   Do compilation of Opam." >&2
     printf "%s\n" "Options" >&2
     printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
     printf "%s\n" "   -t DIR: Target directory" >&2
     printf "%s\n" "   -n NUM: Number of CPUs. Autodetected with max of 8." >&2
-    printf "%s\n" "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
-    printf "%s\n" "      Defaults to 'dev'. Ex. dev, windows_x86, windows_x86_64" >&2
+    printf "%s\n" "   -a DKMLPLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
+    printf "%s\n" "      Ex. windows_x86, windows_x86_64" >&2
     printf "%s\n" "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
     printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
     printf "%s\n" "      will not choose a compiler based on environment variables." >&2
@@ -57,7 +57,7 @@ TARGETDIR=
 OCAMLHOME=
 NUMCPUS=
 PRESERVEGIT=OFF
-export PLATFORM=dev
+DKMLPLATFORM=
 while getopts ":d:t:n:a:b:c:e:h" opt; do
     case ${opt} in
         h )
@@ -74,7 +74,7 @@ while getopts ":d:t:n:a:b:c:e:h" opt; do
         ;;
         t ) TARGETDIR="$OPTARG";;
         n ) NUMCPUS="$OPTARG";;
-        a ) PLATFORM="$OPTARG";;
+        a ) DKMLPLATFORM="$OPTARG";;
         b ) OPT_MSVS_PREFERENCE="$OPTARG";;
         c ) OCAMLHOME="$OPTARG";;
         e ) PRESERVEGIT="$OPTARG";;
@@ -87,7 +87,7 @@ while getopts ":d:t:n:a:b:c:e:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ] || [ -z "$DKMLPLATFORM" ]; then
     printf "%s\n" "Missing required options" >&2
     usage
     exit 1
@@ -144,7 +144,7 @@ fi
 autodetect_cpus
 
 # Autodetect compiler like Visual Studio on Windows.
-autodetect_compiler "$WORK"/launch-compiler.sh
+DKML_TARGET_PLATFORM="$DKMLPLATFORM" autodetect_compiler "$WORK"/launch-compiler.sh
 if [ -n "$OCAML_HOST_TRIPLET" ]; then
     BOOTSTRAP_EXTRA_OPTS="--host=$OCAML_HOST_TRIPLET"
 else
