@@ -341,16 +341,19 @@ get_ocaml_source() {
     if [ ! -e "$get_ocaml_source_SRCUNIX/Makefile" ] || [ ! -e "$get_ocaml_source_SRCUNIX/.git" ]; then
         install -d "$get_ocaml_source_SRCUNIX"
         log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
-        log_trace git clone --recurse-submodules https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
+        # do NOT --recurse-submodules because we don't want submodules (ex. flexdll/) that are in HEAD but
+        # are not in $GIT_COMMITID_OR_TAG
+        log_trace git clone https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
     else
         # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
         if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
         log_trace git -C "$get_ocaml_source_SRCMIXED" fetch --tags
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-        log_trace git -C "$get_ocaml_source_SRCMIXED" reset --hard "$GIT_COMMITID_OR_TAG" # need patches to apply cleanly, so blow away any modified files tracked by Git
-        log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
+        # need patches to apply cleanly, so blow away any modified files tracked by Git (nit: redundant because we added `git clean` below, but let's be safe anyway)
+        log_trace git -C "$get_ocaml_source_SRCMIXED" reset --hard "$GIT_COMMITID_OR_TAG"
     fi
+    log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
 
     # OCaml compilation is _not_ idempotent. Example:
     #     config.status: creating Makefile.build_config
