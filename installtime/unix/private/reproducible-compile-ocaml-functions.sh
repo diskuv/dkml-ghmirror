@@ -104,11 +104,13 @@ windows_configure_and_define_make() {
   ocaml_make() {
     # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
     # is probably fine in Cygwin.
+    # Also, Windows needs IFLEXDIR=-I../flexdll makefile variable or else a prior system OCaml (or a prior OCaml in the PATH) can
+    # cause IFLEXDIR=..../ocaml/bin which will can hard-to-reproduce failures (missing flexdll.h, etc.).
     log_trace env --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
       PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:$DKML_SYSTEM_PATH" \
       LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
       INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
-      "${MAKE:-make}" "$@"
+      "${MAKE:-make}" "$@" IFLEXDIR=-I../flexdll
   }
 }
 
