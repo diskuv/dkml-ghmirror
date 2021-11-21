@@ -999,6 +999,19 @@ create_system_launcher() {
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
 # - env:DKML_TARGET_PLATFORM - This variable will select the compiler options necessary to cross-compile (or native compile)
 #   to the target PLATFORM. 'dev' is not a target platform.
+# - env:DKML_PREFER_CROSS_OVER_NATIVE - Optional. ON means prefer to create a cross-compiler, while OFF (the default)
+#   means to prefer to create a native compiler. The only time the preference is used is when both native and cross compilers
+#   are viable ways to produce a binary. Examples are:
+#      1. Windows x64 host can cross-compile to x86 binaries, but it can also use a x86 compiler to natively build x86 binaries.
+#         This is possible because 64-bit Windows Intel machines can run both x64 and x86.
+#      2. Apple Silicon (Mac M1) can cross-compile from ARM64 to x86_64, but it can also use a x86_64 compiler (under Rosetta emulator)
+#         to natively build x86_64 binaries.
+#         This is possible because Apple Silicon with a Rosetta emulator can run both ARM64 and x86_64.
+#   The tradeoff is that a native compiler will always produce the correct binaries if it can build the binary, but a cross-compiler
+#   has more opportunities to build a binary because it can have more RAM (ex. bigger symbol tables are available on a Win64 host
+#   cross-compiling to Win32 binary) and often runs faster (ex. QEMU emulation of a native compiler is slow). The tradeoff is similar to
+#   precision (correctness for native compiler) versus recall (binaries can be produced in more situations, more quickly, than a native compiler).
+#   The default is to prefer native compiler (ie. OFF) so that the generated binaries are always correct.
 # - env:PLATFORM - (Deprecated) Optional; if missing treated as 'dev'. This variable will select the Visual Studio
 #   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
 #   a native compilation.
@@ -1251,14 +1264,17 @@ autodetect_compiler_vsdev() {
     #  * we use armv7-pc-windows on ARM32 because OCaml's ./configure needs the ARM model (v6, v7, etc.).
     #    WinCE 7.0 and 8.0 support ARMv7, but don't mandate it; WinCE 8.0 extended support from MS is in
     #    2023 so ARMv7 should be fine.
+    autodetect_compiler_vsdev_dump_vars_helper() {
+        "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
+            "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
+            "$@" >&2
+    }
     if [ "$BUILDHOST_ARCH" = windows_x86 ]; then
         # The build host machine is 32-bit ...
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -arch=x86 >&2
+                autodetect_compiler_vsdev_dump_vars_helper -arch=x86
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
@@ -1266,9 +1282,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x86 -arch=x64 >&2
+                autodetect_compiler_vsdev_dump_vars_helper -host_arch=x86 -arch=x64
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
@@ -1276,9 +1290,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x86 -arch=arm >&2
+                autodetect_compiler_vsdev_dump_vars_helper -host_arch=x86 -arch=arm
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
@@ -1286,9 +1298,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x86 -arch=arm64 >&2
+                autodetect_compiler_vsdev_dump_vars_helper -host_arch=x86 -arch=arm64
             }
             OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
@@ -1302,9 +1312,7 @@ autodetect_compiler_vsdev() {
         if [ "$autodetect_compiler_PLATFORM_ARCH" = dev ] || [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86_64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -arch=x64 >&2
+                autodetect_compiler_vsdev_dump_vars_helper -arch=x64
             }
             OCAML_HOST_TRIPLET=x86_64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml64.exe"
@@ -1312,9 +1320,11 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_x86 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x64 -arch=x86 >&2
+                if [ "${DKML_PREFER_CROSS_OVER_NATIVE:-OFF}" = ON ]; then
+                    autodetect_compiler_vsdev_dump_vars_helper -host_arch=x64 -arch=x86
+                else
+                    autodetect_compiler_vsdev_dump_vars_helper -arch=x86
+                fi
             }
             OCAML_HOST_TRIPLET=i686-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="ml.exe"
@@ -1322,9 +1332,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm64 ]; then
             # The target machine is 64-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x64 -arch=arm64 >&2
+                autodetect_compiler_vsdev_dump_vars_helper -host_arch=x64 -arch=arm64
             }
             OCAML_HOST_TRIPLET=aarch64-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm64.exe"
@@ -1332,9 +1340,7 @@ autodetect_compiler_vsdev() {
         elif [ "$autodetect_compiler_PLATFORM_ARCH" = windows_arm32 ]; then
             # The target machine is 32-bit
             autodetect_compiler_vsdev_dump_vars() {
-                "$DKMLSYS_ENV" PATH="$autodetect_compiler_vsdev_SYSTEMPATHUNIX" __VSCMD_ARG_NO_LOGO=1 VSCMD_SKIP_SENDTELEMETRY=1 VSCMD_DEBUG="$autodetect_compiler_VSCMD_DEBUG" \
-                    "$autodetect_compiler_TEMPDIR"/vsdevcmd-and-printenv.bat -no_logo -vcvars_ver="$VSDEV_VCVARSVER" -winsdk="$VSDEV_WINSDKVER" \
-                    -host_arch=x64 -arch=arm >&2
+                autodetect_compiler_vsdev_dump_vars_helper -host_arch=x64 -arch=arm
             }
             OCAML_HOST_TRIPLET=armv7-pc-windows
             autodetect_compiler_vsdev_VALIDATECMD="armasm.exe"
