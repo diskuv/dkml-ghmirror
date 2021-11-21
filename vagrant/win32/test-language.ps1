@@ -38,4 +38,4 @@ $env:Path = [Environment]::GetEnvironmentVariable('PATH', 'User') + [System.IO.P
 # Clean, run test and save results
 dune clean --root C:\vagrant\test_installation.t
 with-dkml dune runtest --root C:\vagrant\test_installation.t
-Set-Content -Path "C:\vagrant\test_installation.t\exitcode.$SystemLocale.txt" -Value $LastExitCode -Encoding Ascii
+Set-Content -Path "C:\vagrant\test_installation.t\exitcode.$SystemLocale.txt" -Value $LastExitCode -NoNewline -Encoding Ascii
