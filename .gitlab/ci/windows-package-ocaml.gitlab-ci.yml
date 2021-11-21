@@ -52,9 +52,9 @@ win32:build-ocaml:
 
     # Clean up excess files, including git submodules and cross-compiled targets
     - git -C "$DEPLOYDIR\src\ocaml" clean -d -f -x
-    - git -C "$DEPLOYDIR\src\ocaml" submodule foreach --recursive "git clean -d -f -"
+    - git -C "$DEPLOYDIR\src\ocaml" submodule foreach --recursive "git clean -d -f -x -"
     - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" clean -d -f -x } }
-    - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" submodule foreach --recursive "git clean -d -f -" } }
+    - if (Test-Path "$DEPLOYDIR\opt\mlcross") { Get-ChildItem -Path "$DEPLOYDIR\opt\mlcross" -Directory | ForEach-Object { Join-Path -Path $_.FullName -ChildPath src\ocaml } | ForEach-Object { git -C "$_" submodule foreach --recursive "git clean -d -f -x -" } }
 
     # Create .zip
     - New-Item -Path "$EXTRASRC\ocamldist" -ItemType Directory

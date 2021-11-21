@@ -377,6 +377,7 @@ get_ocaml_source() {
     #     ocamlrun.exe : fatal error LNK1120: 5 unresolved externals
     # So clean directory every build
     log_trace git -C "$get_ocaml_source_SRCMIXED" clean -d -x -f
+    log_trace git -C "$get_ocaml_source_SRCMIXED" submodule foreach --recursive "git clean -d -x -f -"
 
     # Install a synthetic msvs-detect
     if [ ! -e "$get_ocaml_source_SRCUNIX"/msvs-detect ]; then
