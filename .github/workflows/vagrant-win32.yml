@@ -30,8 +30,8 @@ jobs:
 
     - name: '"vagrant up" for **previous** release'
       if: ${{ github.ref_type != 'tag' }}
-      run: 'cat .dkmlroot && cd vagrant/win32 && if ! vagrant up; then printf "FATAL: Vagrant failed to start up for\n"; sed "s/^/  /" .dkmlroot; fi'
+      run: 'DKMLDIR=$PWD; cat $DKMLDIR/.dkmlroot && cd vagrant/win32 && if ! vagrant up; then printf "FATAL: Vagrant failed to start up for\n"; sed "s/^/  /" $DKMLDIR/.dkmlroot; fi'
 
     - name: Check test_installation.t status
       run: |
-        set -x ; EXITC=$(awk 'NF>0{print $1}' vagrant/win32/test_installation.t/exitcode.en-US.txt) ; if [ ! "$EXITC" = 0 ]; then echo "FATAL: Vagrant test_installation.t FAILED"; exit 1; fi
+        set -x ; EXITC=$(awk 'NF>0{print $1}' vagrant/win32/test_installation.t/exitcode.en-US.txt) ; if [ ! "$EXITC" = 0 ]; then echo "FATAL: Vagrant test_installation.t FAILED with exit code $EXITC"; exit 1; fi
