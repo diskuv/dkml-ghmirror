@@ -61,7 +61,6 @@ usage() {
         printf "%s\n" "    ocamldep.opt"
         printf "%s\n" "    ocamldoc"
         printf "%s\n" "    ocamldoc.opt"
-        printf "%s\n" "    ocamlfind"
         printf "%s\n" "    ocamllex.byte"
         printf "%s\n" "    ocamllex"
         printf "%s\n" "    ocamllex.opt"
