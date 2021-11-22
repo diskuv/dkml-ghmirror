@@ -64,12 +64,12 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "bos:0.2.1"
     "dune:2.9.1"
     "jingoo:1.4.3"
-    "lsp:1.8.2"
-    "ocaml-lsp-server:1.8.2"
+    "lsp:1.8.3"
+    "ocaml-lsp-server:1.8.3"
     # "ocamlfind:1.9.1" in PINNED_PACKAGES_DKML_PATCHES
-    "ocamlformat:0.18.0"
-    "ocamlformat-rpc:0.18.0"
-    "ocamlformat-rpc-lib:0.18.0"
+    "ocamlformat:0.19.0"
+    "ocamlformat-rpc:0.19.0"
+    "ocamlformat-rpc-lib:0.19.0"
     # "ocp-indent:1.8.2-windowssupport" in PINNED_PACKAGES_DKML_PATCHES
     "sexplib:v0.14.0"
     "sha:1.15.1"
