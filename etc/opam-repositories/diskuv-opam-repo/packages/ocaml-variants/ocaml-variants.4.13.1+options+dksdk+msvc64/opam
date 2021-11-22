@@ -5,7 +5,7 @@
 # options files to select 32bit vs 64bit rather than use options.
 # Also, dksdk is different from dkml: no setenv CC for dksdk since CC is a full path from CMake (no more needing command line prompt)
 opam-version: "2.0"
-synopsis: "OCaml 4.13.1 (options + Diskuv SDK 0.3.0 + 64-bit MSVC)"
+synopsis: "OCaml 4.13.1 (options + Diskuv SDK 0.3.0-prerel1 + 64-bit MSVC)"
 maintainer: "[Diskuv, Inc. <support@diskuv.com>]"
 authors: "Xavier Leroy and many contributors"
 homepage: "https://ocaml.org"
