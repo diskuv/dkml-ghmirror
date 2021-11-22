@@ -49,6 +49,14 @@ autodetect_posix_shell() {
     export DKML_HOST_POSIX_SHELL
     if [ -n "${DKML_POSIX_SHELL:-}" ] && [ -n "${DKML_HOST_POSIX_SHELL}" ]; then
         return
+    # On MSYS2 especially, binaries look like they exist simultaneously in /usr/bin and /bin but
+    # only if you are inside MSYS2. The binaries in /bin are in fact a mount of /usr/bin.
+    # This is a critical problem for `opam exec -- /bin/dash.exe` which will fail because Opam cannot
+    # see the mount.
+    elif [ -e /usr/bin/dash.exe ]; then
+        DKML_POSIX_SHELL=/usr/bin/dash.exe
+    elif [ -e /usr/bin/dash ]; then
+        DKML_POSIX_SHELL=/usr/bin/dash
     elif [ -e /bin/dash.exe ]; then
         DKML_POSIX_SHELL=/bin/dash.exe
     elif [ -e /bin/dash ]; then
