@@ -408,7 +408,7 @@ set_opamrootdir() {
 #     The name of a global switch that represents the build directory.
 #     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
 set_opamswitchdir_of_system() {
-    if [ "$DKSDK_INVOCATION" = ON ]; then
+    if [ "${DKSDK_INVOCATION:-OFF}" = ON ]; then
         set_opamswitchdir_of_system_SWITCHBASE="dksdk-tools"
     else
         set_opamswitchdir_of_system_SWITCHBASE="host-tools"
