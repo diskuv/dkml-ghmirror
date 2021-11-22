@@ -99,6 +99,7 @@ export PACKAGES_TO_REMOVE="
     feather
     ctypes
     ctypes-foreign
+    ocamlfind
 
     dune-build-info
     jst-config

@@ -39,6 +39,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     feather,0.3.0
     ctypes,0.19.2-windowssupport-r4
     ctypes-foreign,0.19.2-windowssupport-r4
+    ocamlfind,1.9.1
     "
 
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
