@@ -66,7 +66,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "jingoo:1.4.3"
     "lsp:1.8.2"
     "ocaml-lsp-server:1.8.2"
-    "ocamlfind:1.9.1"
+    # "ocamlfind:1.9.1" in PINNED_PACKAGES_DKML_PATCHES
     "ocamlformat:0.18.0"
     "ocamlformat-rpc:0.18.0"
     "ocamlformat-rpc-lib:0.18.0"
