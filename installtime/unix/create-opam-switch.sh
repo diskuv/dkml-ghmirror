@@ -789,7 +789,7 @@ if [ -n "$HOOK_POSTCREATE" ]; then
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  exec -- %s '%s'" "$DKML_POSIX_SHELL" "$HOOK_POSTCREATE"
+            printf "  exec -- '%s' '%s'" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
         } > "$WORK"/postcreate.sh
         log_shell "$WORK"/postcreate.sh
 
