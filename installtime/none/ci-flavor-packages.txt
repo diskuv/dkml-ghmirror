@@ -1,6 +1,6 @@
 # Dune is needed to compile dkml-findup.exe
-dune.2.9.0
+dune.2.9.1
 # Bos, sha and sexplib is needed to compile with-dkml.exe
-bos.0.2.0
-sha.1.14
+bos.0.2.1
+sha.1.15.1
 sexplib.v0.14.0

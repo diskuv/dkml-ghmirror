@@ -1,0 +1,49 @@
+diff --git a/otherlibs/configurator/src/v1.ml b/otherlibs/configurator/src/v1.ml
+index dffb7832b..5a41a727f 100644
+--- a/otherlibs/configurator/src/v1.ml
++++ b/otherlibs/configurator/src/v1.ml
+@@ -408,9 +408,18 @@ let compile_and_link_c_prog t ?(c_flags = []) ?(link_flags = []) code =
+     Process.run_command_ok t ~dir (Process.command_args t.c_compiler args)
+   in
+   let ok =
++    (*
++      For MSVC the "-o" option is deprecated:
++        | cl : Command line warning D9035 : option 'o' has been deprecated and will be removed in a future release
++      MSVC uses -Fe (executable) or -Fo (object) flags to specify the output file and type.
++      See https://docs.microsoft.com/en-us/cpp/build/reference/fe-name-exe-file?view=msvc-160
++      and https://docs.microsoft.com/en-us/cpp/build/reference/fo-object-file-name?view=msvc-160 .
++      We use dash (ex. -Fe) rather than slash (ex. /Fe) to avoid MSYS2 interpreting the option as a file
++      path for which it will automatically try to convert it to a Windows path (ex. C:\Fe).
++     *)
+     if need_to_compile_and_link_separately t then
+       run_ok (c_flags @ [ "-I"; t.stdlib_dir; "-c"; c_fname ])
+-      && run_ok ("-o" :: exe_fname :: obj_fname :: link_flags)
++      && run_ok (("-Fe" ^ exe_fname) :: obj_fname :: link_flags)
+     else
+       run_ok
+         (List.concat
+@@ -434,9 +443,22 @@ let compile_c_prog t ?(c_flags = []) code =
+   logf t "compiling c program:";
+   List.iter (String.split_lines code) ~f:(logf t " | %s");
+   let ok =
+-    Process.run_command_ok t ~dir
++    (*
++      For MSVC the "-o" option is deprecated:
++        | cl : Command line warning D9035 : option 'o' has been deprecated and will be removed in a future release
++      MSVC uses -Fe (executable) or -Fo (object) flags to specify the output file and type.
++      See https://docs.microsoft.com/en-us/cpp/build/reference/fe-name-exe-file?view=msvc-160
++      and https://docs.microsoft.com/en-us/cpp/build/reference/fo-object-file-name?view=msvc-160
++      We use dash (ex. -Fe) rather than slash (ex. /Fe) to avoid MSYS2 interpreting the option as a file
++      path for which it will automatically try to convert it to a Windows path (ex. C:\Fe).
++     *)
++    let output_object =
++      if need_to_compile_and_link_separately t then ["-Fo" ^ obj_fname]
++      else ["-o"; obj_fname]
++    in
++     Process.run_command_ok t ~dir
+       (Process.command_args t.c_compiler
+-         (c_flags @ [ "-I"; t.stdlib_dir; "-o"; obj_fname; "-c"; c_fname ]))
++         (c_flags @ [ "-I"; t.stdlib_dir] @ output_object @ ["-c"; c_fname ]))
+   in
+   if ok then
+     Ok obj_fname

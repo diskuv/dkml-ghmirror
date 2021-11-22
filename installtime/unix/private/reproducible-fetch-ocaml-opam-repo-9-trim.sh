@@ -61,8 +61,8 @@ export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
 export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "seq:base"
 
-    "bos:0.2.0"
-    "dune:2.9.0"
+    "bos:0.2.1"
+    "dune:2.9.1"
     "jingoo:1.4.3"
     "lsp:1.8.2"
     "ocaml-lsp-server:1.8.2"
@@ -72,7 +72,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "ocamlformat-rpc-lib:0.18.0"
     # "ocp-indent:1.8.2-windowssupport" in PINNED_PACKAGES_DKML_PATCHES
     "sexplib:v0.14.0"
-    "sha:1.14"
+    "sha:1.15.1"
     "utop:2.8.0"
 )
 

@@ -23,7 +23,7 @@ set -euf
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
 # Summary: DKML provides patches for these
 PINNED_PACKAGES_DKML_PATCHES="
-    dune-configurator,2.9.0
+    dune-configurator,2.9.1
     bigstringaf,0.8.0
     ppx_expect,v0.14.1
     digestif,1.0.1
