@@ -64,7 +64,6 @@ fi
 if [ -n "$SANDBOX_PRE_HOOK_SINGLE" ]; then
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -n20 "$SANDBOX_PRE_HOOK_SINGLE" >&2; fi
     tmpe="$(mktemp)"
-    # the `awk ...` is dos2unix equivalent
     # shellcheck disable=SC1090
     . "$SANDBOX_PRE_HOOK_SINGLE"
     rm -f "$tmpe"
