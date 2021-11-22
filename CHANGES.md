@@ -1,3 +1,72 @@
+## 0.2.6 (2021-11-22)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+* OCaml has been upgraded from 4.12.0 to [4.12.1](https://ocaml.org/releases/4.12.1.html).
+  [4.13.1](https://ocaml.org/releases/4.13.1.html) is also available but is not yet supported by Diskuv.
+* The `system` switch has been renamed to `host-tools` to lessen confusion.
+  You can remove the `system` switch after upgrading to save space.
+* Introduce "Vanilla OCaml" zip archives for 32-bit and 64-bit at https://gitlab.com/diskuv/diskuv-ocaml/-/releases. Contains
+  `ocaml.exe`, `ocamlc.opt.exe`, the other `ocaml*.exe` and `flexlink.exe`. Since the standard library directories are hardcoded
+  by `ocamlc -config` as `C:/DiskuvOCaml/OcamlSys/32/lib/ocaml` and `C:/DiskuvOCaml/OcamlSys/64/lib/ocaml` the most useful scenario
+  is continuous integration (GitHub Actions, etc.) where you can extract the archive to `C:\DiskuvOCaml\OcamlSys\{32|64}`. The archive
+  contains reproducible source code which is Apache v2.0 licensed. `ocamlc` must be run from a x64 or x86 Native Tools Command
+  Prompt (Visual Studio).
+* Work to split DKML (Diskuv OCaml distribution) and DKSDK (Diskuv SDK) has started. DKSDK will support CMake,
+  cross-compilation and building desktop/mobile/embedded applications, where DKML will be a full-featured OCaml
+  distribution used with native (ie. Microsoft, Apple) compilers.
+  * Allow which compiler is chosen in `with-dkml.exe` to be overridden with DKML_TARGET_PLATFORM_OVERRIDE environment variable,
+    to support cross-compilation
+  * Add feature flag DKML_FEATUREFLAG_CMAKE_PLATFORM=ON environment variable to support passing of compiler settings from CMake
+    into Opam and Dune through `with-dkml.exe`
+  * Deprecate vcpkg environment variables that influence `with-dkml.exe`; instead any third-party libraries can be accepted
+    using the documentation at https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html
+* Introduce vagrant to simplify testing Windows installations even on Linux machines. Assuming you have VirtualBox and
+  Vagrant installed, just do `cd vagrant/win32 ; vagrant up ; vagrant ssh` to open a Command Prompt terminal. From there you can do
+  `with-dkml dune build`, `with-dkml ocamlc ...`, etc. to build and test your application
+
+Known issues:
+* Installing from mainline China frequently errors out. A short term fix is available at
+  https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601
+
+### Upgrading from v0.2.0/.../v0.2.5 to v0.2.6
+
+You will need to:
+* *(Windows only)* upgrade your *Diskuv OCaml* system
+* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+  which can be done at your leisure **before** the next system upgrade
+
+FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
+
+```powershell
+(Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+
+iwr `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.2.6/distribution-portable.zip" `
+  -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+
+Expand-Archive `
+  -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+  -DestinationPath ~\DiskuvOCamlProjects `
+  -Force;
+
+~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+```
+
+SECOND, in each of your Local Project directories (both Windows + Linux/macOS), do the following:
+
+```bash
+git -C vendor/diskuv-ocaml fetch
+git -C vendor/diskuv-ocaml reset --hard v0.2.6
+git commit -m "Upgrade diskuv-ocaml to 0.2.6" vendor/diskuv-ocaml
+./makeit prepare-dev
+```
+
 ## 0.2.5 (2021-10-13)
 
 > The *Diskuv OCaml* distribution is available under the
