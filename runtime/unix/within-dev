@@ -245,7 +245,7 @@ rm -f '$WORK'/prehook.dos2unix.eval
 EOF
     fi
 
-    printf 'exec "$@"\n'
+    printf 'exec env "$@"\n'
 } > "$WORK"/launch-prehooks.sh
 "$DKMLSYS_CHMOD" +x "$WORK"/launch-prehooks.sh
 
