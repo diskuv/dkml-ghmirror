@@ -63,6 +63,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
 
     "bos:0.2.1"
     "dune:2.9.1"
+    "fmt:0.8.10"
     "jingoo:1.4.3"
     # "jsonrpc:1.9.0" in PINNED_PACKAGES_OPAM
     # "lsp:1.9.0" in PINNED_PACKAGES_OPAM
@@ -72,6 +73,7 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "ocamlformat-rpc:0.19.0"
     "ocamlformat-rpc-lib:0.19.0"
     # "ocp-indent:1.8.2-windowssupport" in PINNED_PACKAGES_DKML_PATCHES
+    "rresult:0.7.0"
     "sexplib:v0.14.0"
     "sha:1.15.1"
     "utop:2.8.0"
