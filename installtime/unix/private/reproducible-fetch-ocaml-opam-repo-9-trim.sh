@@ -81,12 +81,23 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "utop:2.8.0"
 )
 
-# The first section:
+# The first section is where we don't care what pkg version is used, but we know we don't want fdopen's version:
 # * depext is unnecessary as of Opam 2.1
-# The last two sections correspond to PINNED_PACKAGES_DKML_PATCHES and PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
+# * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
+#   reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
+# The second section is where we need all the DKML patched package versions for:
+# * ocaml-variants since which package to choose is an install-time calculation (32/64 bit, dkml/dksdk, 4.12.1/4.13.1)
+# The last two sections correspond to:
+# * PINNED_PACKAGES_DKML_PATCHES in installtime\unix\create-opam-switch.sh
+# * PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
 # and MUST BE IN SYNC.
-export PACKAGES_TO_REMOVE="
+export PACKAGES_FDOPEN_TO_REMOVE="
     depext
+    dune-build-info
+    jst-config
+    ocaml-compiler-libs
+
+    ocaml-variants
 
     dune-configurator
     bigstringaf
@@ -105,17 +116,16 @@ export PACKAGES_TO_REMOVE="
     ctypes
     ctypes-foreign
     ocamlfind
+
+    ppxlib
     jsonrpc
     lsp
     ocaml-lsp-server
     bos
+    sexplib
+    sha
     fmt
     rresult
-
-    dune-build-info
-    jst-config
-    ocaml-compiler-libs
-    ocaml-variants
 "
 
 # ------------------
@@ -338,7 +348,7 @@ trim_package() {
     read -r -a trim_package_PREPINNED_PACKAGES <<< "$PACKAGES_PREPINNED"
     read -r -a trim_package_PREPINNED_VERSIONS <<< "$VERSIONS_PREPINNED"
     trim_package_PKG="$1"
-    if list_contains "$PACKAGES_TO_REMOVE" "$trim_package_PKG"; then
+    if list_contains "$PACKAGES_FDOPEN_TO_REMOVE" "$trim_package_PKG"; then
         if [[ "$DRYRUN" = OFF ]]; then
             echo "[$trim_package_PKG] Removing package since on the predefined removal list"
             rm -rf "$OOREPO_UNIX/packages/$trim_package_PKG"

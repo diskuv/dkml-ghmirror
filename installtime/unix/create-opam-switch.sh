@@ -20,7 +20,7 @@ set -euf
 #
 # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
 # Summary: DKML provides patches for these
 PINNED_PACKAGES_DKML_PATCHES="
     dune-configurator,2.9.1
@@ -42,22 +42,23 @@ PINNED_PACKAGES_DKML_PATCHES="
     ocamlfind,1.9.1
     "
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_TO_REMOVE.
-# Summary: Packages which need to be pinned and come from the central Opam repository.
+# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
+# Summary: Packages which MUST be pinned and come from the central Opam repository.
+# Reasons:
+# a) pkg used a major version bump and caused major breaking changes to downstream packages
+# b) pkgver not yet present in fdopen
+# c) pkgver is in fdopen, but `opam` file is equivalent to central Opam repository (so no fdopen modifications)
 #
 # Callouts:
-# * ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
+# * (a) ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
 #   That is, ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
-# * jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
-# * bos, sha and sexplib is needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as opam.ocaml.org
-# * ocamlformat-rpc-lib,0.18.0 may be needed (it is part of the good set), but since everything else is 0.19.0 we unpin it.
-# * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
-#   reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
+# * (b) jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
+# * (c) bos, sha and sexplib is needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as opam.ocaml.org
 PINNED_PACKAGES_OPAM="
+    ppxlib,0.22.0
     jsonrpc,1.9.0
     lsp,1.9.0
     ocaml-lsp-server,1.9.0
-    ppxlib,0.22.0
     bos,0.2.1
     sexplib,v0.14.0
     sha,1.15.1
