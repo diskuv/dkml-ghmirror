@@ -86,7 +86,7 @@ set_opamrootandswitchdir() {
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
             OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR_BUILDHOST${OS_DIR_SEP}_opam"
             if [ -z "$BUILD_BASEPATH" ]; then
-                OPAMSWITCHDIR_EXPAND="$OPAMSWITCHNAME_BUILDHOST"
+                OPAMSWITCHDIR_EXPAND="$BUILDDIR_BUILDHOST"
             else
                 OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
             fi
@@ -101,6 +101,7 @@ set_opamrootandswitchdir() {
             OPAMSWITCHFINALDIR_BUILDHOST="$set_opamrootandswitchdir_EXPAND${OS_DIR_SEP}_opam"
             # shellcheck disable=SC2034
             OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_EXPAND"
+            # shellcheck disable=SC2034
             OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_EXPAND"
         fi
     fi
