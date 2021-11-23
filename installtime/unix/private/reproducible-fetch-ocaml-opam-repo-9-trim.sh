@@ -64,8 +64,9 @@ export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "bos:0.2.1"
     "dune:2.9.1"
     "jingoo:1.4.3"
-    "lsp:1.9.0"
-    "ocaml-lsp-server:1.9.0"
+    # "jsonrpc:1.9.0" in PINNED_PACKAGES_OPAM
+    # "lsp:1.9.0" in PINNED_PACKAGES_OPAM
+    # "ocaml-lsp-server:1.9.0" in PINNED_PACKAGES_OPAM
     # "ocamlfind:1.9.1" in PINNED_PACKAGES_DKML_PATCHES
     "ocamlformat:0.19.0"
     "ocamlformat-rpc:0.19.0"

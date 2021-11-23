@@ -48,12 +48,15 @@ PINNED_PACKAGES_DKML_PATCHES="
 # Callouts:
 # * ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
 #   That is, ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
+# * jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
 # * ocamlformat-rpc-lib,0.18.0 may be needed (it is part of the good set), but since everything else is 0.19.0 we unpin it.
 # * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
 #   reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
 PINNED_PACKAGES_OPAM="
+    jsonrpc,1.9.0
+    lsp,1.9.0
+    ocaml-lsp-server,1.9.0
     ppxlib,0.22.0
-
     "
 
 OCAML_DEFAULT_VERSION=4.12.1
