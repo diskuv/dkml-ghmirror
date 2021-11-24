@@ -126,6 +126,13 @@ export PACKAGES_FDOPEN_TO_REMOVE="
     sha
     fmt
     rresult
+    cmdliner
+    opam-client
+    opam-state
+    opam-solver
+    opam-repository
+    opam-format
+    opam-core
 "
 
 # ------------------

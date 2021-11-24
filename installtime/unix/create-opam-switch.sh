@@ -53,7 +53,8 @@ PINNED_PACKAGES_DKML_PATCHES="
 # * (a) ppxlib incorrectly did not use a major version bump and caused major breaking changes to downstream packages.
 #   That is, ppxlib.0.23.0 breaks ppx_variants_conv.v0.14.1. PR to fix is https://github.com/janestreet/ppx_variants_conv/pull/9
 # * (b) jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
-# * (c) bos, sha and sexplib is needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as opam.ocaml.org
+# * (c) bos, sha and sexplib are needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as https://opam.ocaml.org/
+# * (c) cmdliner and opam-client (+ opam-*) are needed to compile opam-dkml.exe; same `opam` as https://opam.ocaml.org/
 PINNED_PACKAGES_OPAM="
     ppxlib,0.22.0
     jsonrpc,1.9.0
@@ -64,6 +65,13 @@ PINNED_PACKAGES_OPAM="
     sha,1.15.1
     fmt,0.8.10
     rresult,0.7.0
+    cmdliner,1.0.4
+    opam-client,2.1.0
+    opam-state,2.1.0
+    opam-solver,2.1.0
+    opam-repository,2.1.0
+    opam-format,2.1.0
+    opam-core,2.1.0
     "
 
 OCAML_DEFAULT_VERSION=4.12.1

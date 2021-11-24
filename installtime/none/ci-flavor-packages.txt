@@ -1,9 +1,17 @@
 # Dune is needed to compile dkml-findup.exe
 dune.2.9.1
-# Bos, sha and sexplib is needed to compile with-dkml.exe
+# Bos, sha and sexplib are needed to compile with-dkml.exe
 # Bos needs rresult and fmt
 bos.0.2.1
 fmt.0.8.10
 rresult.0.7.0
 sha.1.15.1
 sexplib.v0.14.0
+# Cmdliner and opam-client (and its dependencies) are needed to compile opam-dkml.exe
+cmdliner.1.0.4
+opam-client.2.1.0
+opam-state.2.1.0
+opam-solver.2.1.0
+opam-repository.2.1.0
+opam-format.2.1.0
+opam-core.2.1.0
