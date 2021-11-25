@@ -67,12 +67,6 @@ PINNED_PACKAGES_OPAM="
     fmt,0.8.10
     rresult,0.7.0
     cmdliner,1.0.4
-    opam-client,2.1.0
-    opam-state,2.1.0
-    opam-solver,2.1.0
-    opam-repository,2.1.0
-    opam-format,2.1.0
-    opam-core,2.1.0
     "
 
 OCAML_DEFAULT_VERSION=4.12.1

@@ -63,7 +63,6 @@ export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
 export PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC=(
     "seq:base"
 
-    "dose3:5.0.1-1"
     "dune:2.9.1"
     "jingoo:1.4.3"
     "extlib:1.7.7-1"
@@ -119,12 +118,6 @@ export PACKAGES_FDOPEN_TO_REMOVE="
     fmt
     rresult
     cmdliner
-    opam-client
-    opam-state
-    opam-solver
-    opam-repository
-    opam-format
-    opam-core
 "
 
 # ------------------
