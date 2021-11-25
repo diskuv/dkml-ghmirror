@@ -40,6 +40,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     ctypes,0.19.2-windowssupport-r4
     ctypes-foreign,0.19.2-windowssupport-r4
     ocamlfind,1.9.1
+    mccs,1.1+13
     "
 
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
@@ -72,7 +73,6 @@ PINNED_PACKAGES_OPAM="
     opam-repository,2.1.0
     opam-format,2.1.0
     opam-core,2.1.0
-    mccs,1.1+13
     "
 
 OCAML_DEFAULT_VERSION=4.12.1
