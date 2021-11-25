@@ -72,6 +72,7 @@ PINNED_PACKAGES_OPAM="
     opam-repository,2.1.0
     opam-format,2.1.0
     opam-core,2.1.0
+    mccs,1.1+13
     "
 
 OCAML_DEFAULT_VERSION=4.12.1

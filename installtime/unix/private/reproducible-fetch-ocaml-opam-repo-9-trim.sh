@@ -125,6 +125,7 @@ export PACKAGES_FDOPEN_TO_REMOVE="
     opam-repository
     opam-format
     opam-core
+    mccs
 "
 
 # ------------------
