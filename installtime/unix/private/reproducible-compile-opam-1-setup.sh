@@ -21,7 +21,7 @@
 #   build files.
 #
 ######################################
-# reproducible-compile-opam-1-setup.sh -d DKMLDIR -t TARGETDIR -g GIT_COMMITID_OR_TAG [-a PLATFORM]
+# reproducible-compile-opam-1-setup.sh -d DKMLDIR -t TARGETDIR -g GIT_COMMITID_OR_TAG [-a DKMLPLATFORM]
 #
 # Sets up the source code for a reproducible build of Opam
 
@@ -44,24 +44,23 @@ OPT_MSVS_PREFERENCE='VS16.*;VS15.*;VS14.0' # KEEP IN SYNC with 2-build.sh
 usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    reproducible-compile-opam-1-setup.sh" >&2
-    printf "%s\n" "        -h                       Display this help message." >&2
-    printf "%s\n" "        -d DIR -t DIR -v COMMIT  Setup compilation of Opam." >&2
+    printf "%s\n" "        -h                                       Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR -v COMMIT -a DKMLPLATFORM  Setup compilation of Opam." >&2
     printf "%s\n" "Options" >&2
     printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
     printf "%s\n" "   -t DIR: Target directory" >&2
     printf "%s\n" "   -u URL: Git repository url. Defaults to https://github.com/ocaml/opam" >&2
     printf "%s\n" "   -v COMMIT: Git commit or tag for the git repository. Strongly prefer a commit id for much stronger" >&2
     printf "%s\n" "      reproducibility guarantees" >&2
-    printf "%s\n" "   -a PLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
-    printf "%s\n" "      Defaults to 'dev' (deprecated). Ex. dev, windows_x86, windows_x86_64" >&2
+    printf "%s\n" "   -a DKMLPLATFORM: Target platform for bootstrapping an OCaml compiler." >&2
+    printf "%s\n" "      Ex. windows_x86, windows_x86_64" >&2
     printf "%s\n" "   -b PREF: The msvs-tools MSVS_PREFERENCE setting, needed only for Windows." >&2
     printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@'," >&2
     printf "%s\n" "      will not choose a compiler based on environment variables." >&2
     printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect" >&2
-    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
-    printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
+    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing usr/bin/ocamlc or bin/ocamlc," >&2
+    printf "%s\n" "      and other OCaml binaries and libraries. If not specified will bootstrap its own OCaml home" >&2
     printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
-    printf "%s\n" "   -f ON|OFF: Optional; default is OFF. If ON will install libraries like opam-client" >&2
 }
 
 DKMLDIR=
@@ -69,9 +68,8 @@ GIT_URL=https://github.com/ocaml/opam
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 PRESERVEGIT=OFF
-INSTALL_LIBS=OFF
-PLATFORM=dev
-while getopts ":d:u:v:t:a:b:c:e:f:h" opt; do
+DKMLPLATFORM=
+while getopts ":d:u:v:t:a:b:c:e:h" opt; do
     case ${opt} in
         h )
             usage
@@ -100,7 +98,7 @@ while getopts ":d:u:v:t:a:b:c:e:f:h" opt; do
             SETUP_ARGS+=( -t . )
         ;;
         a )
-            PLATFORM="$OPTARG"
+            DKMLPLATFORM="$OPTARG"
             BUILD_ARGS+=( -a "$OPTARG" )
             SETUP_ARGS+=( -a "$OPTARG" )
         ;;
@@ -116,10 +114,6 @@ while getopts ":d:u:v:t:a:b:c:e:f:h" opt; do
             PRESERVEGIT="$OPTARG"
             SETUP_ARGS+=( -e "$PRESERVEGIT" )
         ;;
-        f )
-            INSTALL_LIBS="$OPTARG"
-            SETUP_ARGS+=( -f "$OPTARG" )
-        ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -129,13 +123,13 @@ while getopts ":d:u:v:t:a:b:c:e:f:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ] || [ -z "$DKMLPLATFORM" ]; then
     printf "%s\n" "Missing required options" >&2
     usage
     exit 1
 fi
 
-BUILD_ARGS+=( -e "$PRESERVEGIT" -f "$INSTALL_LIBS" )
+BUILD_ARGS+=( -e "$PRESERVEGIT" )
 TRIM_ARGS+=( -e "$PRESERVEGIT" )
 
 # END Command line processing
@@ -189,10 +183,10 @@ if [ ! -e "$OPAMSRC_UNIX"/shell/msvs-detect ] || [ ! -e "$OPAMSRC_UNIX"/shell/ms
             build_machine_arch
             DKML_TARGET_PLATFORM=$BUILDHOST_ARCH autodetect_compiler --msvs-detect "$WORK"/msvs-detect
         else
-            DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+            DKML_TARGET_PLATFORM=$DKMLPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
         fi
     else
-        DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+        DKML_TARGET_PLATFORM=$DKMLPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
     fi
     install "$WORK"/msvs-detect "$OPAMSRC_UNIX"/shell/msvs-detect
     touch "$OPAMSRC_UNIX"/shell/msvs-detect.complete

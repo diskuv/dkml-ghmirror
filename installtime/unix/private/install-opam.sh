@@ -14,8 +14,14 @@ shift
 INSTALLDIR=$1
 shift
 
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
 # shellcheck disable=SC2034
-PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+# shellcheck disable=SC2034
+USERMODE=ON
+# shellcheck disable=SC2034
+STATEDIR=
+
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
 
@@ -31,15 +37,15 @@ cd "$DKMLDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-if [ -e "$INSTALLDIR"/bin/opam.exe ]; then
-    echo 'SUCCESS. Already installed'
-    exit 0
-fi
+# Set BUILDHOST_ARCH
+build_machine_arch
 
 # Install the source code
 log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
+    -a "$BUILDHOST_ARCH" \
+    -c "$INSTALLDIR" \
     -f ON \
     -u https://github.com/diskuv/opam \
     -v "$GIT_TAG"
