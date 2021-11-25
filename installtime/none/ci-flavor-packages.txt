@@ -1,3 +1,8 @@
+# All packages listed in this file must go into either:
+# 1. PINNED_PACKAGES_OPAM and PACKAGES_FDOPEN_TO_REMOVE or
+# 2. PINNED_PACKAGES_DKML_PATCHES
+# 3. PREPINNED_AGNOSTIC_PACKAGE_VERSIONS
+
 # Dune is needed to compile dkml-findup.exe
 dune.2.9.1
 # Bos, sha and sexplib are needed to compile with-dkml.exe
@@ -7,7 +12,7 @@ fmt.0.8.10
 rresult.0.7.0
 sha.1.15.1
 sexplib.v0.14.0
-# Cmdliner and opam-client (and its dependencies) are needed to compile opam-dkml.exe
+# Cmdliner and opam-client (and its dependencies incl. dose3) are needed to compile opam-dkml.exe
 cmdliner.1.0.4
 opam-client.2.1.0
 opam-state.2.1.0
@@ -15,3 +20,4 @@ opam-solver.2.1.0
 opam-repository.2.1.0
 opam-format.2.1.0
 opam-core.2.1.0
+dose3.5.0.1-1

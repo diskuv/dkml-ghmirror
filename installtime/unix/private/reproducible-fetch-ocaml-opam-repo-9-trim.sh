@@ -63,21 +63,12 @@ export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
 export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
     "seq:base"
 
-    # "bos:0.2.1" in PINNED_PACKAGES_OPAM
+    "dose3:5.0.1-1"
     "dune:2.9.1"
-    # "fmt:0.8.10" in PINNED_PACKAGES_OPAM
     "jingoo:1.4.3"
-    # "jsonrpc:1.9.0" in PINNED_PACKAGES_OPAM
-    # "lsp:1.9.0" in PINNED_PACKAGES_OPAM
-    # "ocaml-lsp-server:1.9.0" in PINNED_PACKAGES_OPAM
-    # "ocamlfind:1.9.1" in PINNED_PACKAGES_DKML_PATCHES
     "ocamlformat:0.19.0"
     "ocamlformat-rpc:0.19.0"
     "ocamlformat-rpc-lib:0.19.0"
-    # "ocp-indent:1.8.2-windowssupport" in PINNED_PACKAGES_DKML_PATCHES
-    # "rresult:0.7.0" in PINNED_PACKAGES_OPAM
-    # "sexplib:v0.14.0" in PINNED_PACKAGES_OPAM
-    # "sha:1.15.1" in PINNED_PACKAGES_OPAM
     "utop:2.8.0"
 )
 
