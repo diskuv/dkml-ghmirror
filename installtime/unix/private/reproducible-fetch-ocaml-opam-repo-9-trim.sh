@@ -60,12 +60,13 @@ export PREPINNED_4_13_1_PACKAGE_VERSIONS=(
 #     any in PINNED_PACKAGES_DKML_PATCHES or PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
 # TODO: The second section should be moved into PINNED_PACKAGES_OPAM (or PINNED_PACKAGES_DKML_PATCHES) over time
 # until it is empty. These pins should be reserved _only_ for fdopen repository.
-export PREPINNED_AGNOSTIC_PACKAGE_VERSIONS=(
+export PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC=(
     "seq:base"
 
     "dose3:5.0.1-1"
     "dune:2.9.1"
     "jingoo:1.4.3"
+    "extlib:1.7.7-1"
     "ocamlformat:0.19.0"
     "ocamlformat-rpc:0.19.0"
     "ocamlformat-rpc-lib:0.19.0"
@@ -237,19 +238,19 @@ true > "$WORK"/pins
 install -d "$WORK"/pin-assembly
 
 # [assemble_prepins] populates PREPINNED_PACKAGES and PREPINNED_VERSIONS from
-# PREPINNED_AGNOSTIC_PACKAGE_VERSIONS and PREPINNED_4_12_0_PACKAGE_VERSIONS, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
+# PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC and PREPINNED_4_12_0_PACKAGE_VERSIONS, and fills in PACKAGES_PREPINNED and VERSIONS_PREPINNED
 assemble_prepins() {
     assemble_prepins_PREPINNED_PACKAGES=()
     assemble_prepins_PREPINNED_VERSIONS=()
     case "$OCAML_LANG_VERSION" in
         4.12.0)
-            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_0_PACKAGE_VERSIONS[@]}")
+            assemble_prepins_PPVS=("${PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC[@]}" "${PREPINNED_4_12_0_PACKAGE_VERSIONS[@]}")
             ;;
         4.12.1)
-            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_12_1_PACKAGE_VERSIONS[@]}")
+            assemble_prepins_PPVS=("${PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC[@]}" "${PREPINNED_4_12_1_PACKAGE_VERSIONS[@]}")
             ;;
         4.13.1)
-            assemble_prepins_PPVS=("${PREPINNED_AGNOSTIC_PACKAGE_VERSIONS[@]}" "${PREPINNED_4_13_1_PACKAGE_VERSIONS[@]}")
+            assemble_prepins_PPVS=("${PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC[@]}" "${PREPINNED_4_13_1_PACKAGE_VERSIONS[@]}")
             ;;
         *)
             echo "FATAL: Unsupported OCaml version: $OCAML_LANG_VERSION" >&2
