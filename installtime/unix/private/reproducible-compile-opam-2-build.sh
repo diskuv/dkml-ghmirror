@@ -50,6 +50,7 @@ usage() {
     printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing usr/bin/ocamlc or bin/ocamlc," >&2
     printf "%s\n" "      and other OCaml binaries and libraries. If not specified will bootstrap its own OCaml home" >&2
     printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
+    printf "%s\n" "   -f ON|OFF: Optional; default is OFF. If ON will install libraries like opam-client" >&2
 }
 
 DKMLDIR=
@@ -57,8 +58,9 @@ TARGETDIR=
 OCAMLHOME=
 NUMCPUS=
 PRESERVEGIT=OFF
+INSTALL_LIBS=OFF
 DKMLPLATFORM=
-while getopts ":d:t:n:a:b:c:e:h" opt; do
+while getopts ":d:t:n:a:b:c:e:f:h" opt; do
     case ${opt} in
         h )
             usage
@@ -78,6 +80,7 @@ while getopts ":d:t:n:a:b:c:e:h" opt; do
         b ) OPT_MSVS_PREFERENCE="$OPTARG";;
         c ) OCAMLHOME="$OPTARG";;
         e ) PRESERVEGIT="$OPTARG";;
+        f ) INSTALL_LIBS="$OPTARG";;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -219,3 +222,8 @@ fi
 
 log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" # parallelism does not work here
 log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" install
+
+if [ "$INSTALL_LIBS" = "ON" ]; then
+    # build libraries for opam-client, etc.
+    log_trace env PATH="$POST_BOOTSTRAP_PATH" make -C "$OPAMSRC_UNIX" libinstall
+fi

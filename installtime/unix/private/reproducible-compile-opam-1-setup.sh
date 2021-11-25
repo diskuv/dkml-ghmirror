@@ -61,6 +61,7 @@ usage() {
     printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing bin/ocamlc and other OCaml binaries" >&2
     printf "%s\n" "      and libraries. If not specified will bootstrap its own OCaml home" >&2
     printf "%s\n" "   -e ON|OFF: Optional; default is OFF. If ON will preserve .git folders in the target directory" >&2
+    printf "%s\n" "   -f ON|OFF: Optional; default is OFF. If ON will install libraries like opam-client" >&2
 }
 
 DKMLDIR=
@@ -68,8 +69,9 @@ GIT_URL=https://github.com/ocaml/opam
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 PRESERVEGIT=OFF
+INSTALL_LIBS=OFF
 PLATFORM=dev
-while getopts ":d:u:v:t:a:b:c:e:h" opt; do
+while getopts ":d:u:v:t:a:b:c:e:f:h" opt; do
     case ${opt} in
         h )
             usage
@@ -114,6 +116,10 @@ while getopts ":d:u:v:t:a:b:c:e:h" opt; do
             PRESERVEGIT="$OPTARG"
             SETUP_ARGS+=( -e "$PRESERVEGIT" )
         ;;
+        f )
+            INSTALL_LIBS="$OPTARG"
+            SETUP_ARGS+=( -f "$OPTARG" )
+        ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -129,7 +135,7 @@ if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; th
     exit 1
 fi
 
-BUILD_ARGS+=( -e "$PRESERVEGIT" )
+BUILD_ARGS+=( -e "$PRESERVEGIT" -f "$INSTALL_LIBS" )
 TRIM_ARGS+=( -e "$PRESERVEGIT" )
 
 # END Command line processing
