@@ -193,13 +193,13 @@ ocaml_configure() {
   # Compiler
   # --------
 
-  printf "%s\n" "exec env \$@" > "$WORK"/basic-env.sh
+  printf "%s\n" 'exec env "$@"' > "$WORK"/basic-env.sh
   make_preconfigured_env_script "$WORK"/basic-env.sh "$WORK"/preconfigured-env.sh
 
   if [ -x /usr/bin/cygpath ]; then
     # We will use MSVS to detect Visual Studio
     with_environment_for_ocaml_configure() {
-      log_trace "$WORK"/preconfigured-env.sh "$@"
+      log_shell "$WORK"/preconfigured-env.sh "$@"
     }
     # There is a nasty bug (?) with MSYS2's dash.exe (probably _all_ dash) which will not accept the 'ProgramFiles(x86)' environment,
     # presumably because of the parentheses in it may or may not violate the POSIX standard. Typically that means that dash cannot
@@ -216,7 +216,7 @@ ocaml_configure() {
   else
     # We will be using the operating system C compiler
     with_environment_for_ocaml_configure() {
-      log_trace "$WORK"/preconfigured-env.sh "$@"
+      log_shell "$WORK"/preconfigured-env.sh "$@"
     }
     msvs_detect() {
       log_trace ./msvs-detect "$@"
@@ -239,7 +239,7 @@ ocaml_configure() {
     # When we run OCaml's ./configure, the DKML compiler must be available
     make_preconfigured_env_script "$WORK"/env-with-compiler.sh "$WORK"/preconfigured-env-with-compiler.sh
     with_environment_for_ocaml_configure() {
-      log_trace "$WORK"/preconfigured-env-with-compiler.sh "$@"
+      log_shell "$WORK"/preconfigured-env-with-compiler.sh "$@"
     }
 
     # Get MSVS_* aligned to the DKML compiler
