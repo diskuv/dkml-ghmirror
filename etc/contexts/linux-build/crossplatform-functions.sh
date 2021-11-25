@@ -98,6 +98,9 @@ set_dkmlparenthomedir() {
 # - env:DiskuvOCamlVarsVersion - optional
 # - env:DiskuvOCamlHome - optional
 # - env:DiskuvOCamlBinaryPaths - optional
+# - env:DiskuvOCamlDeploymentId - optional
+# - env:DiskuvOCamlVersion - optional
+# - env:DiskuvOCamlMSYS2Dir - optional
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:DKMLHOME_BUILDHOST - set if DiskuvOCaml installed. Path will be in Windows (semicolon separated) or Unix (colon separated) format
@@ -110,6 +113,9 @@ autodetect_dkmlvars() {
     autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
     autodetect_dkmlvars_DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
     autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
+    autodetect_dkmlvars_DiskuvOCamlDeploymentId_Override=${DiskuvOCamlDeploymentId:-}
+    autodetect_dkmlvars_DiskuvOCamlVersion_Override=${DiskuvOCamlVersion:-}
+    autodetect_dkmlvars_DiskuvOCamlMSYS2Dir_Override=${DiskuvOCamlMSYS2Dir:-}
     set_dkmlparenthomedir
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
@@ -132,10 +138,16 @@ autodetect_dkmlvars() {
     if [ -n "${autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override:-}" ]; then DiskuvOCamlVarsVersion="$autodetect_dkmlvars_DiskuvOCamlVarsVersion_Override"; fi
     if [ -n "${autodetect_dkmlvars_DiskuvOCamlHome_Override:-}" ]; then DiskuvOCamlHome="$autodetect_dkmlvars_DiskuvOCamlHome_Override"; fi
     if [ -n "${autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override:-}" ]; then DiskuvOCamlBinaryPaths="$autodetect_dkmlvars_DiskuvOCamlBinaryPaths_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlDeploymentId_Override:-}" ]; then DiskuvOCamlDeploymentId="$autodetect_dkmlvars_DiskuvOCamlDeploymentId_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlVersion_Override:-}" ]; then DiskuvOCamlVersion="$autodetect_dkmlvars_DiskuvOCamlVersion_Override"; fi
+    if [ -n "${autodetect_dkmlvars_DiskuvOCamlMSYS2Dir_Override:-}" ]; then DiskuvOCamlMSYS2Dir="$autodetect_dkmlvars_DiskuvOCamlMSYS2Dir_Override"; fi
     # Check if any vars are still unset
     if [ -z "${DiskuvOCamlVarsVersion:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlHome:-}" ]; then return 1; fi
     if [ -z "${DiskuvOCamlBinaryPaths:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlDeploymentId:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlVersion:-}" ]; then return 1; fi
+    if [ -z "${DiskuvOCamlMSYS2Dir:-}" ]; then return 1; fi
 
     # Validate DiskuvOCamlVarsVersion. Can be v1 or v2 since only the .sexp file changed in v2.
     if [ ! "$DiskuvOCamlVarsVersion" = "1" ] && [ ! "$DiskuvOCamlVarsVersion" = "2" ]; then
@@ -1771,7 +1783,7 @@ escape_string_for_shell() {
 # Prereq: autodetect_system_binaries
 escape_args_for_shell() {
     # Confer %q in https://www.gnu.org/software/bash/manual/bash.html#Shell-Builtin-Commands
-    bash -c 'printf "%q " "$@"' -- "$@" | $DKMLSYS_SED 's/ $//' 
+    bash -c 'printf "%q " "$@"' -- "$@" | $DKMLSYS_SED 's/ $//'
 }
 
 # Make the standard input embeddable in single quotes
