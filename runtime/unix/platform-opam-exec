@@ -379,7 +379,8 @@ case "$subcommand" in
             exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
-    install | upgrade)
+    install | upgrade | pin)
+        # FYI: `pin add` and probably other pin commands can (re-)install packages, so compiler is needed
         if [ "$DISKUV_HOST_TOOLS" = ON ]; then
             # When we are upgrading / installing a package in the host tools switch, we must have a compiler so we can compile
             # with-dkml.exe
