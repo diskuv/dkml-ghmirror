@@ -36,6 +36,14 @@ let run f_setup localdir_fp_opt buildtype yes =
       (* Get local directory *)
       Option.fold ~none:(OS.Dir.current ()) ~some:Result.ok localdir_fp_opt
       >>= fun localdir_fp ->
+      (* Find env *)
+      Fpath.of_string "/" >>= fun slash ->
+      (Lazy.force get_msys2_dir_opt >>= function
+       | None -> Ok Fpath.(slash / "usr" / "bin" / "env")
+       | Some msys2_dir ->
+           Logs.debug (fun m -> m "MSYS2 directory: %a" Fpath.pp msys2_dir);
+           Ok Fpath.(msys2_dir / "usr" / "bin" / "env.exe"))
+      >>= fun env_exe ->
       (* Figure out OPAMHOME containing bin/opam *)
       OS.Cmd.get_tool (Cmd.v "opam") >>= fun opam_fp ->
       let opam_bin1_fp, _ = Fpath.split_base opam_fp in
@@ -65,10 +73,9 @@ let run f_setup localdir_fp_opt buildtype yes =
       let cmd =
         Cmd.of_list
           ([
-             "env";
+             Fpath.to_string env_exe;
              "DKML_FEATUREFLAG_CMAKE_PLATFORM=ON";
-             (* Fmt.str "TOPDIR=%a" Fpath.pp project_dir_fp; *)
-             "sh";
+             "/bin/sh";
              Fpath.to_string create_switch_fp;
              "-d";
              Fpath.to_string localdir_fp;
