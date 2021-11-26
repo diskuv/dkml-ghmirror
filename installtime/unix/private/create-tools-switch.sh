@@ -29,7 +29,8 @@ usage() {
     printf "%s\n" "       variables must be supplied by DKSDK which will be used to configure the switch" >&2
     printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
     printf "%s\n" "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
-    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
+    printf "%s\n" "       to use. The OCaml home determines the native code produced by the switch." >&2
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
 }
@@ -125,7 +126,7 @@ fi
 
 # Flavor packages
 {
-    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -s -v '$OCAMLVERSION_OR_HOME' -o '$OPAMHOME' \"\$@\" install -y"
+    printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -s -v '$OCAMLVERSION_OR_HOME' -o '$OPAMHOME' \"\$@\" install -y"
     printf " %s" "--jobs=$NUMCPUS"
     case "$FLAVOR" in
         CI)

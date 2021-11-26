@@ -41,6 +41,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     ctypes-foreign,0.19.2-windowssupport-r4
     ocamlfind,1.9.1
     mccs,1.1+13
+    ptime,0.8.6-msvcsupport
     "
 
 # These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
@@ -233,7 +234,7 @@ if [ -n "$STATEDIR" ]; then
     # shellcheck disable=SC2034
     DKML_DUNE_BUILD_DIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
     # shellcheck disable=SC2034
-    TOPDIR_CANDIDATE="$STATEDIR"
+    TOPDIR="$STATEDIR"
 fi
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -348,7 +349,7 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         # * `ocaml-option-musl` has a good defaults for embedded systems. But we don't want to optimize for size on a non-embedded system.
         #   Since we have fine grained information about whether we are on a tiny system (ie. ARM 32-bit) we set the CFLAGS ourselves.
         # * Advanced: You can use OCAMLPARAM through `opam config set ocamlparam` (https://github.com/ocaml/opam-repository/pull/16619) or
-        #   just set it in `within-dev` or `sandbox-entrypoint.sh`.
+        #   just set it in `within-dev.sh` or `sandbox-entrypoint.sh`.
         # `is_reproducible_platform && case "$PLATFORM" in linux*) ... ;;` then
         #     # NOTE 2021/08/04: When this block is enabled we get the following error, which means the config is doing something that we don't know how to inspect ...
         #
@@ -524,7 +525,7 @@ else
         OPAM_EXEC_OPTS=" -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 fi
-printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec \\" > "$WORK"/nonswitchexec.sh
+printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchexec.sh
 printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchexec.sh
 
 printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
@@ -590,13 +591,13 @@ chmod +x "$WORK"/switch-create-prehook.sh
 if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS switch remove \\" > "$WORK"/switchremoveargs.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh $OPAM_EXEC_OPTS switch remove \\" > "$WORK"/switchremoveargs.sh
     if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
     log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
-    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec $OPAM_EXEC_OPTS -0 '$WORK/switch-create-prehook.sh' \\" > "$WORK"/switchcreateexec.sh
+    printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh $OPAM_EXEC_OPTS -0 '$WORK/switch-create-prehook.sh' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
     printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh

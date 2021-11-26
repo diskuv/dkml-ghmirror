@@ -1,0 +1,15 @@
+opam-version: "2.0"
+synopsis: "An opam plugin for DKML"
+maintainer: "opensource+diskuv-ocaml@support.diskuv.com"
+authors: "[Diskuv, Inc. <opensource+diskuv-ocaml@support.diskuv.com>]"
+license: "Apache-2.0"
+homepage: ["https://diskuv.gitlab.io/diskuv-ocaml"]
+bug-reports: ["https://gitlab.com/diskuv/diskuv-ocaml/-/issues"]
+dev-repo: "git+https://gitlab.com/diskuv/diskuv-ocaml.git"
+flags: plugin
+build: ["dune" "build" "-p" name "-j" jobs]
+depends: [
+  "ocaml" {>= "4.02"}
+  "dune" {>= "2.0"}
+  "cmdliner" {>= "1.0"}
+]

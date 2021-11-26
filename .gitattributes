@@ -15,10 +15,6 @@ dune text
 opam text
 
 # Declare files that will always have LF line endings on checkout.
-platform-opam-exec text eol=lf
-platform-dune-exec text eol=lf
-within-dev text eol=lf
-within-sandbox text eol=lf
 *.patch text eol=lf
 *.sexp text eol=lf
 *.sh text eol=lf

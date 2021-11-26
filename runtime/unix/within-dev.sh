@@ -1,8 +1,8 @@
 #!/bin/bash
 # --------------------------
-# within-dev
+# within-dev.sh
 #
-# Analog of within-sandbox and sandbox-entrypoint.sh. Most of the same environment variables should be set albeit with different values.
+# Analog of within-sandbox.sh and sandbox-entrypoint.sh. Most of the same environment variables should be set albeit with different values.
 # --------------------------
 set -euf
 
@@ -11,12 +11,12 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    within-dev -h                          Display this help message." >&2
-    echo "    within-dev -h                          Display this help message." >&2
-    echo "    within-dev [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
+    echo "    within-dev.sh -h                          Display this help message." >&2
+    echo "    within-dev.sh -h                          Display this help message." >&2
+    echo "    within-dev.sh [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
     echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
-    echo "    within-dev -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
+    echo "    within-dev.sh -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
     echo "       -u ON|OFF: User mode. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
     echo "       -d STATEDIR: State directory. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
     echo "Advanced Options:" >&2
@@ -186,7 +186,7 @@ PATH="$DKML_SYSTEM_PATH"
 #     ENV_PATH_PREFIX=$(printf "%s" "$ENV_PATH_PREFIX" | $DKMLSYS_SED 's#/:#:#g; s#/$##') # remove trailing slashes
 #     PATH="$ENV_PATH_PREFIX:$PATH"
 # fi
-# printf "%s\n" "PATH ={within-dev#2} $PATH" >&2
+# printf "%s\n" "PATH ={within-dev.sh#2} $PATH" >&2
 
 # Make a script to run any prehooks
 {

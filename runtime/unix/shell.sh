@@ -48,8 +48,8 @@ autodetect_dkmlvars || true
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Dump all the environment variables that Opam tells us.
     # This will also transitively include:
-    # * (no longer true) the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_compiler
-    # * the TOPDIR tools since platform-opam-exec -> within-dev
+    # * (no longer true) the C compiler environment variables since platform-opam-exec.sh -> within-dev.sh -> autodetect_compiler
+    # * the TOPDIR tools since platform-opam-exec.sh -> within-dev.sh
     if [ -x /usr/bin/cygpath ]; then
         SHELL_BUILDHOST=$(/usr/bin/cygpath -aw "$SHELL")
     else
@@ -57,20 +57,20 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     fi
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if [ -n "${BUILDTYPE:-}" ]; then
-            "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
         else
-            "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
         fi
     else
         if [ -n "${BUILDTYPE:-}" ]; then
-            "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
         else
-            "$DKMLDIR"/runtime/unix/platform-opam-exec exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh exec -- "$SHELL_BUILDHOST" -c set > "$WORK/1.sh"
         fi
     fi
 
     # Remove environment variables that are readonly (like UID) or simply should come from our
-    # environment rather than platform-opam-exec (like DKML_BUILD_TRACE and TERM).
+    # environment rather than platform-opam-exec.sh (like DKML_BUILD_TRACE and TERM).
     # If you get `read-only variables: ARGC` or something similar, you need to edit these.
     grep -Ev '^(0|ZSH_.*|BASH.*|ARGC|HISTCMD|LINENO|TTYIDLE|status|zsh_.*|DKML_BUILD_TRACE|DKMAKE_.*|DIRSTACK|EUID|GROUPS|LOGON.*|MAKE.*|PPID|SHELLOPTS|TEMP|TERM|UID|USERDOMAIN.*|_)=' "$WORK/1.sh" |
         grep -E '^[A-Za-z0-9_]+=' |

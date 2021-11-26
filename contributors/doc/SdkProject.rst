@@ -93,7 +93,7 @@ Visual Studio Code Development
 
         [diskuv-ocaml-starter]$ ./makeit dkml-devmode
         >> while true; do \
-        >>         DKML_BUILD_TRACE=OFF vendor/diskuv-ocaml/runtime/unix/platform-dune-exec -p dev -b Debug \
+        >>         DKML_BUILD_TRACE=OFF vendor/diskuv-ocaml/runtime/unix/platform-dune-exec.sh -p dev -b Debug \
         >>                 build --watch --terminal-persistence=clear-on-rebuild \
         >>                 bin lib   test ; \
         >>         sleep 5 || exit 0; \
@@ -587,7 +587,7 @@ is used as the development platform, unless noted otherwise.
       -  ``dune`` - Drop-in replacement for ``dune``
       -  ``opam`` - Drop-in replacement for ``opam``
 
-*Build PATH manipulation is done in ``.\scripts\unix\within-dev`` and
+*Build PATH manipulation is done in ``.\scripts\unix\within-dev.sh`` and
 ``contexts\linux-build\sandbox-entrypoint.sh``*
 
 OCaml
@@ -635,7 +635,7 @@ We expect a development lifecycle that looks like:
    or by `defining a
    site <https://dune.readthedocs.io/en/stable/sites.html>`__.
 
-The ``scripts/unix/platform-dune-exec`` script is used to launch all
+The ``scripts/unix/platform-dune-exec.sh`` script is used to launch all
 Dune builds:
 
 -  It sets the Dune profile to ``TARGET_PLATFORM-BUILD_TYPE`` (ex.
@@ -644,7 +644,7 @@ Dune builds:
    `build type <#build-types>`__. By default the profile is
    ``dev-Debug`` which is the "profile" setting in ``dune-workspace`` so
    that when you or and IDE runs ``dune ...`` *without*
-   platform-dune-exec Dune will use the Debug settings.
+   platform-dune-exec.sh Dune will use the Debug settings.
 -  It sets the build directory (ex. ``dune --build-dir XXX ...``) to
    place the Dune build files in:
 -  the standard ``_build`` directory for the ``dev-Debug`` platform.
@@ -1066,7 +1066,7 @@ arguments):
 
 .. code:: bash
 
-    scripts/unix/within-sandbox -p linux_arm64 -b Debug
+    scripts/unix/within-sandbox.sh -p linux_arm64 -b Debug
 
 Visual Studio Code
 ~~~~~~~~~~~~~~~~~~

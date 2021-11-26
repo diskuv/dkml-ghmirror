@@ -84,11 +84,11 @@ cd "$TOPDIR"
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" "$@"
     }
 else
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
     }
 fi
 

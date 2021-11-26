@@ -1,11 +1,4 @@
-(rule
- (targets target_context.ml)
- (deps
-  (:discover config/discover.exe))
- (action
-  (run %{discover})))
-
 (executable
  (name with_dkml)
  ; No PPX! This should compile with the bare minimum Diskuv OCaml dependencies from the `system` switch
- (libraries bos logs logs.fmt fmt.tty sexplib sha))
+ (libraries dkml_apps_common bos logs logs.fmt fmt fmt.tty sexplib sha))

@@ -22,5 +22,6 @@
 ; If we ever package this up in Opam, we will have `dkml_compiler_probe.h` in <prefix>/share/<package>/
 ; available to other packages (perhaps in their Dune configurators)
 (install
+ (package dkml-apps)
  (files dkml_compiler_probe.h)
  (section share))

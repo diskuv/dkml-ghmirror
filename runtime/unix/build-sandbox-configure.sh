@@ -74,7 +74,7 @@ export OPAMROOTDIR_BUILDHOST
 if is_dev_platform; then
     # Query Opam for its packages. We could just `install` which is idempotent but that would
     # force the multi-second autodetection of compilation tools.
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" -p "$PLATFORM" list --short > "$WORK"/packages
+    "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" -p "$PLATFORM" list --short > "$WORK"/packages
     if ! grep -q '\bocamlformat\b' "$WORK"/packages || \
        ! grep -q '\bocamlformat-rpc\b' "$WORK"/packages || \
        ! grep -q '\bocaml-lsp-server\b' "$WORK"/packages || \
@@ -83,7 +83,7 @@ if is_dev_platform; then
     then
         # We are missing required packages. Let's install them.
         {
-            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
+            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec.sh -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
             if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
             echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server ocp-indent utop"
         } > "$WORK"/configure.sh
@@ -103,7 +103,7 @@ export OPAMSWITCHNAME_BUILDHOST
 
 {
     # [configure.sh JOBS]
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=\$1 --yes \\"
+    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=\$1 --yes \\"
     if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
     echo "  --deps-only --with-test \\"
     # shellcheck disable=SC2016

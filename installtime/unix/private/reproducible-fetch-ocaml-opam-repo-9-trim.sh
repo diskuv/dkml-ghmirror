@@ -70,6 +70,9 @@ export PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC=(
     "ocamlformat-rpc:0.19.0"
     "ocamlformat-rpc-lib:0.19.0"
     "utop:2.8.0"
+
+    "dose3:5.0.1-1"
+    "extlib:1.7.7-1"
 )
 
 # The first section is where we don't care what pkg version is used, but we know we don't want fdopen's version:
@@ -107,6 +110,7 @@ export PACKAGES_FDOPEN_TO_REMOVE="
     ctypes
     ctypes-foreign
     ocamlfind
+    ptime
 
     ppxlib
     jsonrpc

@@ -1,9 +1,9 @@
 #!/bin/sh
 # -------------------------------------------------------
-# install-dkmlplugin-withdkml.sh PLATFORM
+# install-opamplugin-opam-dkml.sh PLATFORM
 #
 # Purpose:
-# 1. Compile with-dkml into the plugins/diskuvocaml/ of the OPAMROOT.
+# 1. Opam install `opam-dkml` plugin.
 #
 # When invoked?
 # On Windows as part of `setup-userprofile.ps1`
@@ -22,12 +22,12 @@ set -euf
 
 usage() {
     printf "%s\n" "Usage:" >&2
-    printf "%s\n" "    install-dkmlplugin-withdkml.sh -h                   Display this help message" >&2
-    printf "%s\n" "    install-dkmlplugin-withdkml.sh -p PLATFORM          (Deprecated) Install the DKML plugin with-dkml" >&2
-    printf "%s\n" "    install-dkmlplugin-withdkml.sh [-d STATEDIR]        Install the DKML plugin with-dkml" >&2
+    printf "%s\n" "    install-opamplugin-opam-dkml.sh -h                   Display this help message" >&2
+    printf "%s\n" "    install-opamplugin-opam-dkml.sh -p PLATFORM          (Deprecated) Install the Opam plugin opam-dkml" >&2
+    printf "%s\n" "    install-opamplugin-opam-dkml.sh [-d STATEDIR]        Install the Opam plugin opam-dkml" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
     printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2
@@ -109,32 +109,25 @@ cd "$TOPDIR"
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and WITHDKMLEXE(DIR)_BUILDHOST
 set_opamrootdir
 
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
 # -----------------------
-# BEGIN install with-dkml (with-dkml)
+# BEGIN opam install opam-dkml
 
-if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
-    # Compile with Dune into temp build directory
-    WITHDKML_TMP_UNIX="$WORK"/with-dkml
-    if [ -x /usr/bin/cygpath ]; then
-        WITHDKML_TMP_BUILDHOST=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
-    else
-        WITHDKML_TMP_BUILDHOST="$WITHDKML_TMP_UNIX"
-    fi
-    install -d "$WITHDKML_TMP_UNIX"
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s \
-        -- exec -- dune build --root "$DKMLDIR" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
-    else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
-        -- exec -- dune build --root "$DKMLDIR" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
-    fi
-
-    # Place in plugins
-    install -d "$WITHDKMLEXEDIR_BUILDHOST"
-    install "$WITHDKML_TMP_UNIX/default/installtime/msys2/apps/with-dkml/with_dkml.exe" "$WITHDKMLEXE_BUILDHOST"
+OPAMFILE_BUILDHOST="$DKMLDIR"/installtime/msys2/apps/opam-dkml.opam
+if [ -x /usr/bin/cygpath ]; then
+    OPAMFILE_BUILDHOST=$(/usr/bin/cygpath -aw "$OPAMFILE_BUILDHOST")
+fi
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s \
+    install "$OPAMFILE_BUILDHOST" --yes
+else
+    "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
+    install "$OPAMFILE_BUILDHOST" --yes
 fi
 
-# END install with-dkml (with-dkml)
+# END opam install opam-dkml
 # -----------------------
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,43 @@
+(library
+ (name dkml_apps_common)
+ (libraries bos astring sexplib))
+
+(rule
+ (target scripts.ml)
+ (deps
+  "%{project_root}/installtime/unix/create-opam-switch.sh"
+  "%{project_root}/runtime/unix/platform-opam-exec.sh"
+  "%{project_root}/runtime/unix/within-dev.sh"
+  "%{project_root}/runtime/unix/_common_build.sh"
+  "%{project_root}/runtime/unix/_common_tool.sh"
+  "%{project_root}/etc/contexts/linux-build/crossplatform-functions.sh")
+ (action
+  (progn
+   (run
+    %{bin:ocaml-crunch}
+    "--mode=plain"
+    "--output=%{target}"
+    "--ext=sh"
+    "%{project_root}"))))
+
+; Because .dkmlroot is not recognized as an extension by ocaml-crunch, we need to separately
+; get this string embedded. We will use the {| ... |} OCaml multiline string format.
+
+(rule
+ (target dkml_root.ml)
+ (deps
+  (:dkmlroot "%{project_root}/.dkmlroot"))
+ (action
+  (with-stdout-to
+   %{target}
+   (progn
+    (echo "let dkmlroot_contents = {embeddingdkmlroot|")
+    (cat %{dkmlroot})
+    (echo "|embeddingdkmlroot}")))))
+
+(rule
+ (targets target_context.ml)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))

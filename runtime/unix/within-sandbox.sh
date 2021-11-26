@@ -1,8 +1,8 @@
 #!/bin/bash
 # --------------------------
-# within-sandbox [-b BUILDTYPE] -p PLATFORM command ...
+# within-sandbox.sh [-b BUILDTYPE] -p PLATFORM command ...
 #
-# Analog of within-dev. Most of the same environment variables should be set albeit with different values.
+# Analog of within-dev.sh. Most of the same environment variables should be set albeit with different values.
 #
 # Note about mounting volumes:
 #   We never mount a directory inside another critical directory where we place other files
@@ -18,9 +18,9 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    within-sandbox -h                            Display this help message." >&2
-    echo "    within-sandbox [-b] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
-    echo "    within-sandbox [-b] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
+    echo "    within-sandbox.sh -h                            Display this help message." >&2
+    echo "    within-sandbox.sh [-b] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
+    echo "    within-sandbox.sh [-b] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
     echo "Options:" >&2
     echo "       -p PLATFORM: The target platform (not 'dev') used. DKML_TOOLS_DIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the Build Sandbox" >&2

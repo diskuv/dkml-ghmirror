@@ -1,0 +1,15 @@
+(executable
+ (name opam_dkml)
+ (public_name opam-dkml)
+ (package opam-dkml)
+ (libraries
+  ; opam-client ... so sad that we don't have it (actually dose3.5.0.1-1) working yet for MSVC!
+  dkml_apps_common bos logs logs.fmt fmt fmt.tty cmdliner))
+
+(rule
+ (target opam_dkml_config.ml)
+ (action
+  (with-stdout-to
+   %{target}
+   (progn
+    (echo "let version = {|%{version:dkml-apps}|}\n")))))

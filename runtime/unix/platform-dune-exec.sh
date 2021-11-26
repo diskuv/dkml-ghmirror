@@ -1,8 +1,8 @@
 #!/bin/bash
 # -------------------------------------------------------
-# platform-dune-exec -b BUILDTYPE -p PLATFORM [--] build|clean|help|...
+# platform-dune-exec.sh -b BUILDTYPE -p PLATFORM [--] build|clean|help|...
 #
-# Q: Why delegate to `platform-opam-exec exec -- dune` when Dune does
+# Q: Why delegate to `platform-opam-exec.sh exec -- dune` when Dune does
 # not need Opam?
 # Ans: Yep. If you setup a
 # https://github.com/ocamllabs/opam-monorepo then you can build your
@@ -30,8 +30,8 @@ set -euf
 
 usage() {
     echo "Usage:" >&2
-    echo "    platform-dune-exec -h                                                  Display this help message." >&2
-    echo "    platform-dune-exec -b BUILDTYPE -p PLATFORM [--] build|clean|help|...  Run the dune command." >&2
+    echo "    platform-dune-exec.sh -h                                                  Display this help message." >&2
+    echo "    platform-dune-exec.sh -b BUILDTYPE -p PLATFORM [--] build|clean|help|...  Run the dune command." >&2
 }
 
 # no arguments should display usage
@@ -87,7 +87,7 @@ if [ -z "$PLATFORM" ] || [ -z "$BUILDTYPE" ]; then
     exit 1
 fi
 
-if [ "${1:-}" = "--" ]; then # support `platform-dune-exec ... -- --version`
+if [ "${1:-}" = "--" ]; then # support `platform-dune-exec.sh ... -- --version`
     shift
 fi
 
@@ -170,6 +170,6 @@ case "$subcommand" in
         else
             DUNE_OPTS+=(--build-dir "$DKML_DUNE_BUILD_DIR")
         fi
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
     ;;
 esac

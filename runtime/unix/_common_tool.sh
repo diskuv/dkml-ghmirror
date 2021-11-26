@@ -82,7 +82,7 @@ if [ -z "${TOPDIR:-}" ]; then
     if [ ! -e "$TOPDIR/dune-project" ]; then echo "FATAL: Not embedded in a Dune-based project with a 'dune-project' file" >&2 ; exit 1; fi
 fi
 
-# TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
+# TOPDIR is sticky, so that platform-opam-exec.sh and any other scripts can be called as children and behave correctly.
 export TOPDIR
 
 if [ -x /usr/bin/cygpath ]; then
@@ -287,9 +287,9 @@ exec_in_platform() {
             fi
         fi
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         else
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         fi
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
@@ -311,9 +311,9 @@ exec_in_platform() {
             fi
         fi
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         else
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox.sh -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         fi
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"

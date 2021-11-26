@@ -52,7 +52,15 @@ log_trace "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full
 # -----------------------
 
 # -----------------------
-# BEGIN install dkml plugins
+# BEGIN install opam plugins
+
+log_trace "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -p "$PLATFORM"
+
+# END install opam plugins
+# -----------------------
+
+# -----------------------
+# BEGIN install dkml plugins (except vcpkg which is done in build-sandbox-init-vcpkg.sh)
 
 log_trace "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -p "$PLATFORM"
 

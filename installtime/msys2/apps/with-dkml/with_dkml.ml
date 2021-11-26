@@ -10,17 +10,17 @@ To setup on Windows:
     eval $(opam env --switch "$DiskuvOCamlHome/host-tools" --set-switch)
 
 To test use x64-windows or arm64-osx for the DKML_VCPKG_HOST_TRIPLET (or leave that variable out):
-    dune build --root installtime/msys2/apps/ with-dkml/with_dkml.exe
-    DKML_VCPKG_HOST_TRIPLET=x64-windows DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
+    dune build installtime/msys2/apps/with-dkml/with_dkml.exe
+    DKML_VCPKG_HOST_TRIPLET=x64-windows DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 _build/default/installtime/msys2/apps/with-dkml/with_dkml.exe sleep 5
     DKML_3P_PROGRAM_PATH='H:/build/windows_x86/vcpkg_installed/x86-windows/debug;H:/build/windows_x86/vcpkg_installed/x86-windows' DKML_3P_PREFIX_PATH='H:/build/windows_x86/vcpkg_installed/x86-windows/debug;H:/build/windows_x86/vcpkg_installed/x86-windows' DKML_BUILD_TRACE=ON DKML_BUILD_TRACE_LEVEL=2 ./installtime/msys2/apps/_build/default/with-dkml/with_dkml.exe sleep 5
 *)
 open Bos
 open Rresult
 open Astring
 open Sexplib
-open Dkml_context
 open Opam_context
 open Vcpkg_context
+open Dkml_apps_common
 
 let usage_msg = "with-dkml.exe CMD [ARGS...]\n"
 
@@ -487,8 +487,6 @@ let set_vcpkg_entries cache_keys =
       Logs.debug (fun m -> m "vcpkg installed directory = %s" vcpkg_installed);
       prepend_entries ~tools:true vcpkg_installed_dir
       >>| fun () -> vcpkg_installed :: cache_keys
-
-let int_parser = OS.Env.(parser "int" String.to_int)
 
 let main_with_result () =
   (* Setup logging *)

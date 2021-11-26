@@ -188,11 +188,11 @@ set_opamrootdir
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" "$@"
     }
 else
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
     }
 fi
 
@@ -220,7 +220,7 @@ fi
 if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     WINDOWS_DOWNLOAD_COMMAND=wget
 
-    # MSYS curl does not work with Opam. After debugging with `platform-opam-exec ... reinstall ocaml-variants --debug` found it was calling:
+    # MSYS curl does not work with Opam. After debugging with `platform-opam-exec.sh ... reinstall ocaml-variants --debug` found it was calling:
     #   C:\source\...\build\_tools\common\MSYS2\usr\bin\curl.exe --write-out %{http_code}\n --retry 3 --retry-delay 2 --user-agent opam/2.1.0 -L -o C:\Users\...\.opam\4.12\.opam-switch\sources\ocaml-variants\4.12.0.tar.gz.part -- https://github.com/ocaml/ocaml/archive/4.12.0.tar.gz
     # yet erroring with:
     #   [ERROR] Failed to get sources of ocaml-variants.4.12.0+msvc64: curl error code %http_coden

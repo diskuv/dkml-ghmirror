@@ -15,7 +15,7 @@ export -n BUILDER_UID
 export -n BUILDER_USER
 export -n chroot_dir
 
-# docker run --env (from `within-sandbox`)
+# docker run --env (from `within-sandbox.sh`)
 export -n SANDBOX_PRE_HOOK_SINGLE
 export -n SANDBOX_PRE_HOOK_DOUBLE
 

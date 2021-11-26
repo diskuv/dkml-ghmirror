@@ -38,7 +38,7 @@ else
     fi
 fi
 
-# DKML_DUNE_BUILD_DIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
+# DKML_DUNE_BUILD_DIR is sticky, so that platform-opam-exec.sh and any other scripts can be called as children and behave correctly.
 export DKML_DUNE_BUILD_DIR
 
 # Opam Windows has a weird bug where it rsyncs very very slowly all pinned directories (recursive

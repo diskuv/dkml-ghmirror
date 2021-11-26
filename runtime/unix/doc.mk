@@ -13,7 +13,7 @@ docs-publish:
 
 	echo Building OCaml documentation
 	install -d _build/
-	$(DKML_DIR)/runtime/unix/platform-dune-exec -p dev -b Debug build @doc --release
+	$(DKML_DIR)/runtime/unix/platform-dune-exec.sh -p dev -b Debug build @doc --release
 
 	echo Building Sphinx html twice so that Sphinx cross-references work ...
 	$(MAKE) html

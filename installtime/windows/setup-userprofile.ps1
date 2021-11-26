@@ -48,6 +48,10 @@
 
     The `Full` flavor installs everything, including human-centric applications
     like `utop`.
+.Parameter OCamlLangVersion
+    Either 4.12.1 or 4.13.1.
+
+    Defaults to 4.12.1
 .Parameter ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
@@ -89,7 +93,7 @@
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 
 .Example
-    PS> $global:SkipMSYS2Setup = $true ; $global:SkipCygwinSetup = $true; $global:SkipMSYS2Update = $true ; $global:SkipMobyDownload = $true ; $global:SkipMobyFixup = $true ; $global:SkipOpamSetup = $true
+    PS> $global:SkipMSYS2Setup = $true ; $global:SkipCygwinSetup = $true; $global:SkipMSYS2Update = $true ; $global:SkipMobyDownload = $true ; $global:SkipMobyFixup = $true ; $global:SkipOpamSetup = $true; $global:SkipOcamlSetup = $true
     PS> $global:IncrementalDiskuvOcamlDeployment = $true; $global:RedeployIfExists = $true
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 #>
@@ -118,6 +122,9 @@ param (
     [ValidateSet("CI", "Full")]
     [string]
     $Flavor = 'Full',
+    [ValidateSet("4.12.1", "4.13.1")]
+    [string]
+    $OCamlLangVersion = "4.12.1",
     [int]
     $ParentProgressId = -1,
     [string]
@@ -197,12 +204,23 @@ $OcamlNonDKMLEnvKeys | ForEach-Object {
     }
 }
 
+# C. Make sure we know a git commit for the OCaml version
+$OCamlLangGitCommit = switch ($OCamlLangVersion)
+{
+    "4.12.1" {"46c947827ec2f6d6da7fe5e195ae5dda1d2ad0c5"; Break}
+    "4.13.1" {"ab626576eee205615a9d7c5a66c2cb2478f1169c"; Break}
+    default {
+        Write-Error -Category InvalidArgument `
+            -Message ("`n`nThe OCaml version $OCamlLangVersion is not supported")
+        # exit 1
+    }
+}
+
 # ----------------------------------------------------------------
 # Calculate deployment id, and exit if -OnlyOutputCacheKey switch
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git
-$OCamlLangVersion = "4.12.1"
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
 $JqVersion = "1.6"
@@ -383,7 +401,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 19
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -576,6 +594,11 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
     -DeploymentId $DeploymentId `
     -KeepOldDeploymentWhenSameDeploymentId:$EnableIncrementalDeployment `
     -LogFunction ${function:\Write-ProgressCurrentOperation}
+
+$ProgramRelGeneralBinDir = "usr\bin"
+$ProgramGeneralBinDir = "$ProgramPath\$ProgramRelGeneralBinDir"
+$ProgramRelEssentialBinDir = "bin"
+$ProgramEssentialBinDir = "$ProgramPath\$ProgramRelEssentialBinDir"
 
 # END Start deployment
 # ----------------------------------------------------------------
@@ -1123,18 +1146,99 @@ try {
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
+    # BEGIN Compile/install system ocaml.exe
+
+    $global:ProgressActivity = "Install Native Windows OCAML.EXE and related binaries"
+    Write-ProgressStep
+
+    $ProgramGeneralBinMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramGeneralBinDir"
+
+    $OcamlBinaries = @(
+        "ocaml"
+        "ocamlc"
+        "ocamlc.byte"
+        "ocamlc.opt"
+        "ocamlcmt"
+        "ocamlcp"
+        "ocamlcp.byte"
+        "ocamlcp.opt"
+        "ocamldebug"
+        "ocamldep"
+        "ocamldep.byte"
+        "ocamldep.opt"
+        "ocamldoc"
+        "ocamldoc.opt"
+        "ocamllex"
+        "ocamllex.byte"
+        "ocamllex.opt"
+        "ocamlmklib"
+        "ocamlmklib.byte"
+        "ocamlmklib.opt"
+        "ocamlmktop"
+        "ocamlmktop.byte"
+        "ocamlmktop.opt"
+        "ocamlobjinfo"
+        "ocamlobjinfo.byte"
+        "ocamlobjinfo.opt"
+        "ocamlopt"
+        "ocamlopt.byte"
+        "ocamlopt.opt"
+        "ocamloptp"
+        "ocamloptp.byte"
+        "ocamloptp.opt"
+        "ocamlprof"
+        "ocamlprof.byte"
+        "ocamlprof.opt"
+        "ocamlrun"
+        "ocamlrund"
+        "ocamlruni"
+        "ocamlyacc"
+        "flexlink"
+    )
+
+    # Skip with ... $global:SkipOcamlSetup = $true ... remove it with ... Remove-Variable SkipOcamlSetup
+    if (!$global:SkipOcamlSetup) {
+        $OcamlInstalled = $true
+        foreach ($OcamlBinary in $OcamlBinaries) {
+            if (!(Test-Path -Path "$ProgramGeneralBinDir\$OcamlBinary.exe")) {
+                $OcamlInstalled = $false
+                break
+            }
+        }
+        if ($OcamlInstalled) {
+            # okay. already installed
+        } else {
+            # build into bin/
+            Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+                -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml.sh '$DkmlMSYS2AbsPath' $OCamlLangGitCommit '$ProgramMSYS2AbsPath'"
+            # and move into usr/bin/
+            if ("$ProgramRelGeneralBinDir" -ne "bin") {
+                Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+                    -Command (
+                        "install -d '$ProgramGeneralBinMSYS2AbsPath' && " +
+                        "for b in $OcamlBinaries; do mv -v '$ProgramMSYS2AbsPath'/bin/`$b.exe '$ProgramGeneralBinMSYS2AbsPath'/; done"
+                    )
+            }
+        }
+    }
+
+    # END Compile/install system ocaml.exe
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
     # BEGIN Compile/install opam.exe
+    #
+    # When compiling from scratch, opam.exe requires ocamlc.exe, so
+    # ocamlc.exe must have been built previously into $ProgramPath.
 
     $global:ProgressActivity = "Install Native Windows OPAM.EXE"
     Write-ProgressStep
 
-    $ProgramRelEssentialBinDir = "bin"
-    $ProgramEssentialBinDir = "$ProgramPath\$ProgramRelEssentialBinDir"
     $ProgramEssentialBinMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramEssentialBinDir"
 
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
-        # The following go into sbin/ because they are required by _all_ with-dkml.exe and compiler invocations:
+        # The following go into bin/ because they are required by _all_ with-dkml.exe and compiler invocations:
         #   opam.exe
         #   opam-putenv.exe
         #   opam-installer.exe
@@ -1209,7 +1313,7 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON " +
-                "'$DkmlPath\installtime\unix\private\create-tools-switch.sh' -v '$OCamlLangVersion' -p '$DkmlPlatform' -f '$Flavor' -o '$ProgramMSYS2AbsPath'")
+                "'$DkmlPath\installtime\unix\private\create-tools-switch.sh' -v '$ProgramMSYS2AbsPath' -p '$DkmlPlatform' -f '$Flavor' -o '$ProgramMSYS2AbsPath'")
         }
 
     # END opam switch create <system>
@@ -1228,6 +1332,24 @@ try {
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN opam install opam-dkml
+    #
+    # The system switch will have already been created earlier by "opam init" section. Just with
+    # the CI flavor packages which is all that is necessary to compile the plugins.
+
+    $global:ProgressActivity = "Install Opam plugin opam-dkml"
+    Write-ProgressStep
+
+    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
+    if (!$global:SkipOpamSetup) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\installtime\unix\private\install-opamplugin-opam-dkml.sh' -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath'"
+    }
+
+    # END opam install opam-dkml
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
@@ -1287,7 +1409,7 @@ try {
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
             "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
@@ -1295,7 +1417,7 @@ try {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
             "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
@@ -1311,8 +1433,6 @@ try {
     $global:ProgressActivity = "Install host-tools binaries"
     Write-ProgressStep
 
-    $ProgramRelGeneralBinDir = "usr\bin"
-    $ProgramGeneralBinDir = "$ProgramPath\$ProgramRelGeneralBinDir"
     $DiskuvHostToolsDir = "$ProgramPath\host-tools\_opam"
 
     if (!(Test-Path -Path $ProgramGeneralBinDir)) { New-Item -Path $ProgramGeneralBinDir -ItemType Directory | Out-Null }
@@ -1320,7 +1440,9 @@ try {
         # Don't copy unless the target file doesn't exist -or- the target file is different from the source file.
         # This helps IncrementalDiskuvOcamlDeployment installations, especially when a file is in use
         # but hasn't changed (especially `dune.exe`, `ocamllsp.exe` which may be open in an IDE)
-        if (!(Test-Path -Path "$ProgramGeneralBinDir\$binary")) {
+        if (!(Test-Path "$DiskuvHostToolsDir\bin\$binary")) {
+            # no-op since the binary is not part of Opam switch (we may have been installed manually like OCaml system compiler)
+        } elseif (!(Test-Path -Path "$ProgramGeneralBinDir\$binary")) {
             Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir
         } elseif ((Get-FileHash "$ProgramGeneralBinDir\$binary").hash -ne (Get-FileHash $DiskuvHostToolsDir\bin\$binary).hash) {
             Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir

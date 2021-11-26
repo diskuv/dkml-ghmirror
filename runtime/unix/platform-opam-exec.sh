@@ -1,6 +1,6 @@
 #!/bin/bash
 # -------------------------------------------------------
-# platform-opam-exec [-b BUILDTYPE] [-s | -p PLATFORM] [--] install|clean|help|...
+# platform-opam-exec.sh [-b BUILDTYPE] [-s | -p PLATFORM] [--] install|clean|help|...
 #
 # PLATFORM=dev|linux_arm32v6|linux_arm32v7|windows_x86|...
 #
@@ -27,22 +27,22 @@ DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 usage() {
     printf "%s\n" "Usage:" >&2
-    printf "%s\n" "    platform-opam-exec -h                                                    Display this help message" >&2
-    printf "%s\n" "    platform-opam-exec -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
+    printf "%s\n" "    platform-opam-exec.sh -h                                                    Display this help message" >&2
+    printf "%s\n" "    platform-opam-exec.sh -p PLATFORM [--] init|help|switch remove|...          (Deprecated) Run the opam command" >&2
     printf "%s\n" "                                                                             in the PLATFORM's active switch" >&2
-    printf "%s\n" "    platform-opam-exec -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
+    printf "%s\n" "    platform-opam-exec.sh -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  (Deprecated) Run the opam command" >&2
     printf "%s\n" "                                                                             in the PLATFORM's BUILDTYPE switch" >&2
-    printf "%s\n" "    platform-opam-exec -p PLATFORM                                           (Deprecated) Run the opam command" >&2
+    printf "%s\n" "    platform-opam-exec.sh -p PLATFORM                                           (Deprecated) Run the opam command" >&2
     printf "%s\n" "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
-    printf "%s\n" "    platform-opam-exec -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
+    printf "%s\n" "    platform-opam-exec.sh -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
     printf "%s\n" "                                                                             in the 'diskuv-host-tools' local switch" >&2
-    printf "%s\n" "    platform-opam-exec -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
+    printf "%s\n" "    platform-opam-exec.sh -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
     printf "%s\n" "                                                                             globally active switch" >&2
-    printf "%s\n" "    platform-opam-exec -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
+    printf "%s\n" "    platform-opam-exec.sh -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
     printf "%s\n" "                                                                             'diskuv-host-tools' switch" >&2
-    printf "%s\n" "    platform-opam-exec -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
+    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
     printf "%s\n" "                                                                             switch prefix of STATEDIR/_opam" >&2
-    printf "%s\n" "    platform-opam-exec -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
+    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
     printf "%s\n" "                                                                             switch prefix of STATEDIR/host-tools/_opam" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "       -p PLATFORM: The target platform or 'dev'" >&2
@@ -171,7 +171,7 @@ else
     fi
 fi
 
-if [ "${1:-}" = "--" ]; then # supports `platform-opam-exec ... -- --version`
+if [ "${1:-}" = "--" ]; then # supports `platform-opam-exec.sh ... -- --version`
     shift
 fi
 
@@ -328,9 +328,9 @@ if [ -n "$OPAMHOME" ]; then
             cat "$PLATFORM_EXEC_PRE_SINGLE"
             printf "\n"
         fi
-    } > "$WORK"/platform-opam-exec.opamhome.prehook.source.sh
+    } > "$WORK"/platform-opam-exec.sh.opamhome.prehook.source.sh
     # shellcheck disable=SC2034
-    PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.opamhome.prehook.source.sh
+    PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.sh.opamhome.prehook.source.sh
 fi
 # Ditto for `ocaml`
 if [ -n "$OCAMLVERSION_OR_HOME" ]; then
@@ -350,9 +350,9 @@ if [ -n "$OCAMLVERSION_OR_HOME" ]; then
                     cat "$PLATFORM_EXEC_PRE_SINGLE"
                     printf "\n"
                 fi
-            } > "$WORK"/platform-opam-exec.ocamlhome.prehook.source.sh
+            } > "$WORK"/platform-opam-exec.sh.ocamlhome.prehook.source.sh
             # shellcheck disable=SC2034
-            PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.ocamlhome.prehook.source.sh
+            PLATFORM_EXEC_PRE_SINGLE="$WORK"/platform-opam-exec.sh.ocamlhome.prehook.source.sh
         ;;
     esac
 fi

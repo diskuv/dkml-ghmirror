@@ -1,0 +1,34 @@
+opam-version: "2.0"
+name: "ptime"
+version: "0.8.6-msvcsupport"
+maintainer: "Daniel Bünzli <daniel.buenzl i@erratique.ch>"
+authors: "The ptime programmers"
+license: "ISC"
+tags: ["time" "posix" "system" "org:erratique"]
+homepage: "https://erratique.ch/software/ptime"
+doc: "https://erratique.ch/software/ptime/doc"
+bug-reports: "https://github.com/dbuenzli/ptime/issues"
+depends: [
+  "ocaml" {>= "4.03.0"}
+  "ocamlfind" {build}
+  "ocamlbuild" {build}
+  "topkg" {build}
+]
+depopts: ["js_of_ocaml"]
+conflicts: [
+  "js_of_ocaml" {< "3.3.0"}
+]
+build: [
+  "ocaml"
+  "pkg/pkg.ml"
+  "build"
+  "--pinned"
+  "%{pinned}%"
+  "--with-js_of_ocaml"
+  "%{js_of_ocaml:installed}%"
+]
+dev-repo: "git+http://erratique.ch/repos/ptime.git"
+url {
+  src: "https://github.com/jonahbeckford/ptime/archive/refs/tags/v0.8.6-msvcsupport.tar.gz"
+  checksum: "sha512=abd7269c5e42a5a372e790101d4850e68b6fe149b53bf31590dc6605f9cd4fdd94ce2c5e797dcdc81c25f49a5a997f96edd44ecb61811570148fd1640d4f04ec"
+}
