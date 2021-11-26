@@ -21,6 +21,7 @@ open Sexplib
 open Opam_context
 open Vcpkg_context
 open Dkml_apps_common
+open Dkml_environment
 
 let usage_msg = "with-dkml.exe CMD [ARGS...]\n"
 
@@ -68,29 +69,14 @@ let autodetect_compiler_as_is_vars =
     "CMAKE_GENERATOR_INSTANCE_RECOMMENDED"
   ]
 
-let platform_path_norm s = match (Lazy.force Target_context.V1.get_os) with
-| Ok IOS | Ok OSX | Ok Windows -> String.Ascii.lowercase s
-| Ok Android | Ok Linux -> s
-| Error e -> failwith e
-
-let contains entry s =
-  String.find_sub ~sub:(platform_path_norm s) (platform_path_norm entry)
-  |> Option.is_some
-
-let starts_with entry s =
-  String.is_prefix ~affix:(platform_path_norm s) (platform_path_norm entry)
-
-let ends_with entry s =
-  String.is_suffix ~affix:(platform_path_norm s) (platform_path_norm entry)
-
 (** [prune_path_of_microsoft_visual_studio ()] removes all Microsoft Visual Studio entries from the environment
     variable PATH *)
 let prune_path_of_microsoft_visual_studio () =
   OS.Env.req_var "PATH" >>= fun path ->
   String.cuts ~empty:false ~sep:";" path
   |> List.filter (fun entry ->
-         let contains = contains entry in
-         let ends_with = ends_with entry in
+         let contains = path_contains entry in
+         let ends_with = path_ends_with entry in
          not
            (ends_with "\\Common7\\IDE"
            || ends_with "\\Common7\\Tools"
@@ -99,15 +85,6 @@ let prune_path_of_microsoft_visual_studio () =
            || contains "\\Windows Kits\\10\\bin\\"
            || contains "\\Microsoft.NET\\Framework64\\"
            || contains "\\MSBuild\\Current\\bin\\"))
-  |> fun paths -> Some (String.concat ~sep:";" paths) |> OS.Env.set_var "PATH"
-
-(** prune_path_of_msys2 ()] removes .../MSYS2/usr/bin from the PATH environment variable *)
-let prune_path_of_msys2 () =
-  OS.Env.req_var "PATH" >>= fun path ->
-  String.cuts ~empty:false ~sep:";" path
-  |> List.filter (fun entry ->
-         let ends_with = ends_with entry in
-         not (ends_with "\\MSYS2\\usr\\bin"))
   |> fun paths -> Some (String.concat ~sep:";" paths) |> OS.Env.set_var "PATH"
 
 (** [prune_envvar ~f ~path_sep varname] sets the environment variables named [varname] to
@@ -275,35 +252,6 @@ let set_msvc_entries cache_keys =
         | Ok (Error _ as err) -> err
         | Error _ as err -> err)
 
-(** Set the MSYSTEM environment variable to MSYS and place MSYS2 binaries at the front of the PATH.
-    Any existing MSYS2 binaries in the PATH will be removed.
-  *)
-let set_msys2_entries target_platform_name =
-  Lazy.force get_msys2_dir_opt >>= function
-  | None -> R.ok ()
-  | Some msys2_dir ->
-      (* 1. MSYSTEM = MSYS *)
-      OS.Env.set_var "MSYSTEM" (Some "MSYS") >>= fun () ->
-      (* 2. MSYSTEM_CARCH, MSYSTEM_CHOST, MSYSTEM_PREFIX for 64-bit MSYS.
-         There is no 32-bit MSYS2 tooling (well, 32-bit was deprecated), but you don't need 32-bit
-         MSYS2 binaries; just a 32-bit (cross-)compiler.
-
-         See "MSYS" entry for https://www.msys2.org/docs/environments/ for the magic values.
-       *)
-      (match target_platform_name with
-      | "windows_x86" | "windows_x86_64" -> R.ok ("x86_64", "x86_64-pc-msys", "/usr")
-      | _ -> R.error_msg @@ "The target platform name '" ^ target_platform_name ^ "' is not a recognized Windows platform")
-      >>= fun (carch, chost, prefix) ->
-      OS.Env.set_var "MSYSTEM_CARCH" (Some carch) >>= fun () ->
-      OS.Env.set_var "MSYSTEM_CHOST" (Some chost) >>= fun () ->
-      OS.Env.set_var "MSYSTEM_PREFIX" (Some prefix) >>= fun () ->
-      (* 3. Remove MSYS2 entries, if any, from PATH *)
-      prune_path_of_msys2 () >>= fun () ->
-      (* 4. Add MSYS2 back to front of PATH *)
-      OS.Env.req_var "PATH" >>= fun path ->
-      OS.Env.set_var "PATH"
-        (Some (Fpath.(msys2_dir / "usr" / "bin" |> to_string) ^ ";" ^ path))
-
 (** [probe_os_path_sep] is a lazy function that looks at the PATH and determines what the PATH
     separator should be.
     We don't use [Sys.win32] except in an edge case, because [Sys.win32] will be true
@@ -467,7 +415,7 @@ let set_vcpkg_entries cache_keys =
   *)
   let dir_sep = Fpath.dir_sep in
   let f = (fun entry ->
-    let contains = contains entry in
+    let contains = path_contains entry in
     not
       (contains (dir_sep ^ "vcpkg_installed" ^ dir_sep)
       || contains (dir_sep ^ "vcpkg" ^ dir_sep)

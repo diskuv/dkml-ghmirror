@@ -4,6 +4,7 @@ include Dkml_context
 include Dkml_root
 module Dkml_scripts = Scripts
 module Target_context = Target_context
+module Dkml_environment = Dkml_environment
 
 module Monadic_operators = struct
   (* Result monad operators *)

@@ -34,6 +34,10 @@ let setup () =
   else if dbt = "ON" then Logs.set_level (Some Logs.Info)
   else Logs.set_level (Some Logs.Warning);
 
+  (* Setup MSYS2 *)
+  Lazy.force Target_context.V1.get_platform_name >>= fun target_platform_name ->
+  Dkml_environment.set_msys2_entries target_platform_name >>= fun () ->
+
   (* Diagnostics *)
   OS.Env.current () >>= fun current_env ->
   OS.Dir.current () >>= fun current_dir ->
