@@ -115,7 +115,7 @@ autodetect_posix_shell
 # -----------------------
 # BEGIN opam install opam-dkml
 
-OPAMFILE_BUILDHOST="$DKMLDIR"/installtime/msys2/apps/opam-dkml.opam
+OPAMFILE_BUILDHOST="$DKMLDIR"/opam-dkml.opam
 if [ -x /usr/bin/cygpath ]; then
     OPAMFILE_BUILDHOST=$(/usr/bin/cygpath -aw "$OPAMFILE_BUILDHOST")
 fi
