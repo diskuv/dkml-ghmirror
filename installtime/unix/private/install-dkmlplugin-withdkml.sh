@@ -117,16 +117,18 @@ if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
     WITHDKML_TMP_UNIX="$WORK"/with-dkml
     if [ -x /usr/bin/cygpath ]; then
         WITHDKML_TMP_BUILDHOST=$(/usr/bin/cygpath -aw "$WITHDKML_TMP_UNIX")
+        DKMLDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$DKMLDIR")
     else
         WITHDKML_TMP_BUILDHOST="$WITHDKML_TMP_UNIX"
+        DKMLDIR_BUILDHOST="$DKMLDIR"
     fi
     install -d "$WITHDKML_TMP_UNIX"
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s \
-        -- exec -- dune build --root "$DKMLDIR" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
+        -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
     else
         "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
-        -- exec -- dune build --root "$DKMLDIR" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
+        -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
     fi
 
     # Place in plugins
