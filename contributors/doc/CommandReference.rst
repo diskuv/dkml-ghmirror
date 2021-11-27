@@ -38,20 +38,20 @@ Examples
       # Run Opam
       with-dkml opam
 
-Configuration File ``dkmlvars.sexp``
+Configuration File ``dkmlvars-v2.sexp``
    This file must exist in one of the following directories:
 
    1. ``$LOCALAPPDATA/Programs/DiskuvOCaml/``
    2. ``$XDG_DATA_HOME/diskuv-ocaml/``
    3. ``$HOME/.local/share/diskuv-ocaml/``
 
-   The directories are checked in order, and the first directory that contains ``dkmlvars.sexp`` is used.
+   The directories are checked in order, and the first directory that contains ``dkmlvars-v2.sexp`` is used.
 
    The value will have been set automatically by the Windows Diskuv OCaml installer or by ``makeit init-dev``
    of :ref:`SDKProjects` for non-Windows OSes.
 
 Configuration File ``vsstudio.dir.txt``
-   This file is located using the same directory search as ``dkmlvars.sexp``.
+   This file is located using the same directory search as ``dkmlvars-v2.sexp``.
    It only needs to be present when Visual Studio has been detected, and is set automatically by
    the Windows Diskuv OCaml installer.
 
@@ -59,7 +59,7 @@ Configuration File ``vsstudio.dir.txt``
    Example: ``C:\DiskuvOCaml\BuildTools``
 
 Configuration File ``vsstudio.msvs_preference.txt``
-   This file is located using the same directory search as ``dkmlvars.sexp``.
+   This file is located using the same directory search as ``dkmlvars-v2.sexp``.
    It only needs to be present when Visual Studio has been detected, and is set automatically by
    the Windows Diskuv OCaml installer.
 
@@ -68,7 +68,7 @@ Configuration File ``vsstudio.msvs_preference.txt``
    Opam's ``msvs-detect`` is invoked. Example: ``VS16.6``
 
 Configuration File ``vsstudio.cmake_generator.txt``
-   This file is located using the same directory search as ``dkmlvars.sexp``.
+   This file is located using the same directory search as ``dkmlvars-v2.sexp``.
    It only needs to be present when Visual Studio has been detected, and is set automatically by
    the Windows Diskuv OCaml installer.
 
@@ -137,7 +137,7 @@ Sequence of operations
       - (MSVC) Stripped of all path entries that end with ``\Common7\IDE`` or ``\Common7\Tools`` or ``\MSBuild\Current\Bin``
       - (MSVC) Stripped of all path entries that contain ``\VC\Tools\MSVC\``, ``\Windows Kits\10\bin\``, ``\Microsoft.NET\Framework64\`` or ``\MSBuild\Current\bin\``
 
-   #. If and only if there is a ``DiskuvOCamlMSYS2Dir`` configuration value in ``dkmlvars.sexp``, the ``VsDevCmd.bat``
+   #. If and only if there is a ``DiskuvOCamlMSYS2Dir`` configuration value in ``dkmlvars-v2.sexp``, the ``VsDevCmd.bat``
       Microsoft batch script is run. The following environment variables are
       captured and passed to the ``CMD ARGS``:
 

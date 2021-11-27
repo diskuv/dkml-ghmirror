@@ -27,24 +27,24 @@ let get_dkmlparenthomedir =
                 Fpath.(fp / ".local" / "share" / "diskuv-ocaml")
             | Error _ as err -> err)))
 
-(* [get_dkmlvars_opt] gets an association list of dkmlvars.sexp *)
+(* [get_dkmlvars_opt] gets an association list of dkmlvars-v2.sexp *)
 let get_dkmlvars_opt =
   lazy
     ( Lazy.force get_dkmlparenthomedir >>= fun fp ->
-      OS.File.exists Fpath.(fp / "dkmlvars.sexp") >>| fun exists ->
+      OS.File.exists Fpath.(fp / "dkmlvars-v2.sexp") >>| fun exists ->
       if exists then
         Some
           (Sexp.load_sexp_conv_exn
-             Fpath.(fp / "dkmlvars.sexp" |> to_string)
+             Fpath.(fp / "dkmlvars-v2.sexp" |> to_string)
              association_list_of_sexp_lists)
       else None )
 
-(* [get_dkmlvars] gets an association list of dkmlvars.sexp *)
+(* [get_dkmlvars] gets an association list of dkmlvars-v2.sexp *)
 let get_dkmlvars =
   lazy
     ( Lazy.force get_dkmlparenthomedir >>| fun fp ->
       Sexp.load_sexp_conv_exn
-        Fpath.(fp / "dkmlvars.sexp" |> to_string)
+        Fpath.(fp / "dkmlvars-v2.sexp" |> to_string)
         association_list_of_sexp_lists )
 
 (* Get DKML version *)
@@ -53,8 +53,8 @@ let get_dkmlversion =
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlVersion" assocl with
       | Some (v :: []) -> R.ok v
-      | Some _ -> R.error_msg "More or less than one DiskuvOCamlVersion in dkmlvars.sexp"
-      | None -> R.error_msg "No DiskuvOCamlVersion in dkmlvars.sexp")
+      | Some _ -> R.error_msg "More or less than one DiskuvOCamlVersion in dkmlvars-v2.sexp"
+      | None -> R.error_msg "No DiskuvOCamlVersion in dkmlvars-v2.sexp")
 
 (* Get MSYS2 directory *)
 let get_msys2_dir_opt =
@@ -72,8 +72,8 @@ let get_msys2_dir =
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlMSYS2Dir" assocl with
       | Some (v :: []) -> Fpath.of_string v >>= fun fp -> R.ok fp
-      | Some _ -> R.error_msg "More or less than one DiskuvOCamlMSYS2Dir in dkmlvars.sexp"
-      | None -> R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars.sexp")
+      | Some _ -> R.error_msg "More or less than one DiskuvOCamlMSYS2Dir in dkmlvars-v2.sexp"
+      | None -> R.error_msg "No DiskuvOCamlMSYS2Dir in dkmlvars-v2.sexp")
 
 (* Get Diskuv OCaml home directory *)
 let get_dkmlhome_dir_opt =
@@ -91,5 +91,5 @@ let get_dkmlhome_dir =
     ( Lazy.force get_dkmlvars >>= fun assocl ->
       match List.assoc_opt "DiskuvOCamlHome" assocl with
       | Some (v :: []) -> Fpath.of_string v >>= fun fp -> R.ok fp
-      | Some _  -> R.error_msg "More or less than one DiskuvOCamlHome in dkmlvars.sexp"
-      | None -> R.error_msg "No DiskuvOCamlHome in dkmlvars.sexp")
+      | Some _  -> R.error_msg "More or less than one DiskuvOCamlHome in dkmlvars-v2.sexp"
+      | None -> R.error_msg "No DiskuvOCamlHome in dkmlvars-v2.sexp")

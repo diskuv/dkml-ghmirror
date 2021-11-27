@@ -1142,7 +1142,7 @@ try {
 "@
 
     # Inside this script we environment variables that recognize that we have an uncompleted installation:
-    # 1. dkmlvars.sexp is non existent or old, so can't use with-dkml.exe. WITHDKML_ENABLE=OFF
+    # 1. dkmlvars-v2.sexp is non existent or old, so can't use with-dkml.exe. WITHDKML_ENABLE=OFF
     $UnixPlusPrecompleteVarsOnOneLine = ($UnixVarsArray -join " ") + " WITHDKML_ENABLE=OFF"
 
     # END Define dkmlvars
@@ -1493,7 +1493,7 @@ try {
             "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh'   '$ProgramParentMSYS2AbsPath/dkmlvars.sh' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd'  '$ProgramParentMSYS2AbsPath/dkmlvars.cmd' && " +
-            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars.sexp'"
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars-v2.sexp'"
         )
 
 

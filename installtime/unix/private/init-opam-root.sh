@@ -112,7 +112,7 @@ set_dkmlparenthomedir
 # set dkmlvars.sexp for non-Windows.
 # Some don't make sense for Unix (MSYS2Dir, Home) and some we don't have (DeploymentId).
 
-if ! is_unixy_windows_build_machine && [ ! -e "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp ] ; then
+if ! is_unixy_windows_build_machine && [ ! -e "$DKMLPARENTHOME_BUILDHOST"/dkmlvars-v2.sexp ] ; then
     install -d "$DKMLPARENTHOME_BUILDHOST"
     # shellcheck disable=SC2154
     cat > "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp <<EOF
@@ -121,7 +121,7 @@ if ! is_unixy_windows_build_machine && [ ! -e "$DKMLPARENTHOME_BUILDHOST"/dkmlva
 ("DiskuvOCamlVersion" "$dkml_root_version")
 )
 EOF
-    mv "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp
+    mv "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp "$DKMLPARENTHOME_BUILDHOST"/dkmlvars-v2.sexp
 fi
 
 # END dkmlvars.sexp
