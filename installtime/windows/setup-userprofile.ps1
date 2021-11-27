@@ -264,6 +264,12 @@ $CiFlavorPackages = Get-Content -Path $DkmlPath\installtime\none\ci-flavor-packa
 $CiFlavorBinaries = @(
     "dune.exe"
 )
+$CiFlavorStubs = @(
+    # Stubs are important if the binaries need them.
+    #   C:\Users\you>utop
+    #   Fatal error: cannot load shared library dlllambda_term_stubs
+    #   Reason: The specified module could not be found.
+)
 $FullFlavorPackagesExtra = Get-Content -Path $DkmlPath\installtime\none\full-flavor-minus-ci-flavor-packages.txt | Where-Object {
     # Remove blank lines and comments
     "" -ne $_.Trim() -and -not $_.StartsWith("#")
@@ -317,12 +323,24 @@ $FullFlavorBinaries = $CiFlavorBinaries + @(
     "ocp-indent.exe",
     "utop.exe",
     "utop-full.exe")
+$FullFlavorStubs = $CiFlavorStubs + @(
+    # Stubs are important if the binaries need them.
+    #   C:\Users\you>utop
+    #   Fatal error: cannot load shared library dlllambda_term_stubs
+    #   Reason: The specified module could not be found.
+
+    # `utop` stubs
+    "dlllambda_term_stubs.dll"
+    "dlllwt_unix_stubs.dll"
+)
 if ($Flavor -eq "Full") {
     $FlavorPackages = $FullFlavorPackages
     $FlavorBinaries = $FullFlavorBinaries
+    $FlavorStubs = $FullFlavorStubs
 } elseif ($Flavor -eq "CI") {
     $FlavorPackages = $CiFlavorPackages
     $FlavorBinaries = $CiFlavorBinaries
+    $FlavorStubs = $CiFlavorStubs
 }
 
 # Consolidate the magic constants into a single deployment id
@@ -331,7 +349,8 @@ $MSYS2Hash = Get-Sha256Hex16OfText -Text ($DV_MSYS2PackagesArch -join ',')
 $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
 $BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
-$DeploymentId = "v-$dkml_root_version;ocaml-$OCamlLangVersion;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash"
+$StubHash = Get-Sha256Hex16OfText -Text ($FlavorStubs -join ',')
+$DeploymentId = "v-$dkml_root_version;ocaml-$OCamlLangVersion;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash;stubs-$StubHash"
 
 if ($OnlyOutputCacheKey) {
     Write-Output $DeploymentId
@@ -1437,7 +1456,9 @@ try {
     Write-ProgressStep
 
     $DiskuvHostToolsDir = "$ProgramPath\host-tools\_opam"
+    $ProgramStubsDir = "$ProgramPath\lib\ocaml\stublibs"
 
+    # Binaries
     if (!(Test-Path -Path $ProgramGeneralBinDir)) { New-Item -Path $ProgramGeneralBinDir -ItemType Directory | Out-Null }
     foreach ($binary in $FlavorBinaries) {
         # Don't copy unless the target file doesn't exist -or- the target file is different from the source file.
@@ -1449,6 +1470,18 @@ try {
             Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir
         } elseif ((Get-FileHash "$ProgramGeneralBinDir\$binary").hash -ne (Get-FileHash $DiskuvHostToolsDir\bin\$binary).hash) {
             Copy-Item -Path "$DiskuvHostToolsDir\bin\$binary" -Destination $ProgramGeneralBinDir
+        }
+    }
+
+    # Stubs for ocamlrun bytecode
+    if (!(Test-Path -Path $ProgramStubsDir)) { New-Item -Path $ProgramStubsDir -ItemType Directory | Out-Null }
+    foreach ($stub in $FlavorStubs) {
+        if (!(Test-Path "$DiskuvHostToolsDir\lib\stublibs\$stub")) {
+            # no-op since the stub is not part of Opam switch (we may have been installed manually like OCaml system compiler)
+        } elseif (!(Test-Path -Path "$ProgramStubsDir\$stub")) {
+            Copy-Item -Path "$DiskuvHostToolsDir\lib\stublibs\$stub" -Destination $ProgramStubsDir
+        } elseif ((Get-FileHash "$ProgramStubsDir\$stub").hash -ne (Get-FileHash $DiskuvHostToolsDir\lib\stublibs\$stub).hash) {
+            Copy-Item -Path "$DiskuvHostToolsDir\lib\stublibs\$stub" -Destination $ProgramStubsDir
         }
     }
 

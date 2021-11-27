@@ -166,7 +166,7 @@ with ``opam list -a``:
 
    .. code-block:: doscon
 
-      C:\Users\beckf\DiskuvOCamlProjects\playground>opam list
+      C:\Users\you\DiskuvOCamlProjects\playground>opam list
       # Packages matching: installed
       # Name        # Installed # Synopsis
       base-bigarray base        pinned to version base
@@ -176,7 +176,7 @@ with ``opam list -a``:
       ocaml-config  2           pinned to version 2
       ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
 
-      C:\Users\beckf\DiskuvOCamlProjects\playground>opam list -a
+      C:\Users\you\DiskuvOCamlProjects\playground>opam list -a
       # Packages matching: available
       # Name                                          # Installed                # Synopsis
       0install                                        --                         pinned to version 2.17
