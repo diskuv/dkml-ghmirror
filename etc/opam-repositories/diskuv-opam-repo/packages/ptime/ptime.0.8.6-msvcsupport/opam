@@ -30,5 +30,5 @@ build: [
 dev-repo: "git+http://erratique.ch/repos/ptime.git"
 url {
   src: "https://github.com/jonahbeckford/ptime/archive/refs/tags/v0.8.6-msvcsupport.tar.gz"
-  checksum: "sha512=abd7269c5e42a5a372e790101d4850e68b6fe149b53bf31590dc6605f9cd4fdd94ce2c5e797dcdc81c25f49a5a997f96edd44ecb61811570148fd1640d4f04ec"
+  checksum: "sha512=9e2e29e5a4f3defbd00076de49bf02269f44053f45d8e4180952655fdaaf03068ce2db99e7b7b7cbe474c99e91e53cae44e4b9f1c282d889cdd0b79cbf706ed1"
 }
