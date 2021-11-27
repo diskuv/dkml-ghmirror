@@ -38,12 +38,11 @@ that OCaml provides (the sales pitch!), and a good summary of OCaml:
     where `a single mistake can cost millions and speed matters <https://ocaml.org/learn/companies.html>`_, is
     supported by an active community, and has a rich set of libraries and development tools.
 
-Then we recommend looking at *Part 1* of the free online book
+Then we recommend reading *Part 1* of the free online book
 `Real World OCaml <https://dev.realworldocaml.org/index.html>`_. It will guide you through the language and
-explore each of OCaml's major features. You will need a distribution of OCaml to follow along. Windows users
-will need to use the *Diskuv OCaml* distribution (there are other ways to install OCaml on Windows, but they
-are difficult or deprecated), while Linux and macOS users have choices explained in the book. We will
-discuss *Diskuv OCaml* in the next section.
+explore each of OCaml's major features. However Windows users will not be able to run the book's code. Instead
+we suggest you install *Diskuv OCaml* (discussed next section) and then follow along in our :ref:`BeyondBasics`
+section.
 
 Once you start writing your own code you will need to know where to look to find libraries (called **packages** in
 OCaml). We recommend just browsing the packages at
