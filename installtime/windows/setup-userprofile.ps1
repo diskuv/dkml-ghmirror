@@ -1111,7 +1111,7 @@ try {
 
     # Create /opt/diskuv-ocaml/*.opam (so dkml-apps can be compiled from /opt/diskuv-ocaml/)
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("/usr/bin/install -d /opt/diskuv-ocaml && /usr/bin/install -v '$DkmlMSYS2AbsPath'/*.opam /opt/diskuv-ocaml/")
+        -Command ("/usr/bin/install -d /opt/diskuv-ocaml && /usr/bin/install -v '$DkmlMSYS2AbsPath'/opam-dkml.opam '$DkmlMSYS2AbsPath'/dkml-apps.opam /opt/diskuv-ocaml/")
 
     # END MSYS2
     # ----------------------------------------------------------------
