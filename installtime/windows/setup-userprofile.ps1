@@ -1090,6 +1090,9 @@ try {
         "/usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/dos2unix --quiet && " +
         "/usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/chmod +x")
 
+    # Create /opt/diskuv-ocaml/*.opam (so dkml-apps can be compiled from /opt/diskuv-ocaml/)
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("/usr/bin/install -d /opt/diskuv-ocaml && /usr/bin/install -v '$DkmlMSYS2AbsPath'/*.opam /opt/diskuv-ocaml/")
 
     # END MSYS2
     # ----------------------------------------------------------------
@@ -1408,20 +1411,20 @@ try {
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
-            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' findup/findup.exe")
+            "cd /opt/diskuv-ocaml/ && " +
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/ DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' installtime/apps/findup/findup.exe")
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && "+
-            "install '$AppsCachePath\default\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
+            "install '$AppsCachePath\default\installtime\apps\findup\findup.exe' '$AppsBinDir\dkml-findup.exe'")
     if ($Flavor -eq "Full") {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
-            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
-            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' fswatch_on_inotifywin/fswatch.exe dkml-templatizer/dkml_templatizer.exe")
+            "cd /opt/diskuv-ocaml/ && " +
+            "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/ DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\runtime\unix\platform-opam-exec.sh' -s -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath' exec -- dune build --build-dir '$AppsCachePath' installtime/apps/fswatch_on_inotifywin/fswatch.exe installtime/apps/dkml-templatizer/dkml_templatizer.exe")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("set -x && " +
-            "install '$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
-            "install '$AppsCachePath\default\dkml-templatizer\dkml_templatizer.exe' '$AppsBinDir\dkml-templatizer.exe'")
+            "install '$AppsCachePath\default\installtime\apps\fswatch_on_inotifywin\fswatch.exe'     '$AppsBinDir\fswatch.exe' && " +
+            "install '$AppsCachePath\default\installtime\apps\dkml-templatizer\dkml_templatizer.exe' '$AppsBinDir\dkml-templatizer.exe'")
     }
 
     # END compile apps
