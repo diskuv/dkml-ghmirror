@@ -202,6 +202,13 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 Press **Y** when asked if you want to continue, then sit back while it compiles and
 installs the ``graphics`` package.
 
+   .. warning::
+
+      When you want to use the packages from your project, always use ``with-dkml`` in front of
+      the commands ``opam``, ``ocaml``, ``ocamlc`` and ``utop``.
+
+      So ``with-dkml opam install graphics`` rather than ``opam install graphics``. Et cetera.
+
 Learn OCaml - A First Hour with OCaml
 -------------------------------------
 
