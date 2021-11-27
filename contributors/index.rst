@@ -38,7 +38,7 @@ that OCaml provides (the sales pitch!), and a good summary of OCaml:
     where `a single mistake can cost millions and speed matters <https://ocaml.org/learn/companies.html>`_, is
     supported by an active community, and has a rich set of libraries and development tools.
 
-Then we recommend looking at the free online book
+Then we recommend looking at *Part 1* of the free online book
 `Real World OCaml <https://dev.realworldocaml.org/index.html>`_. It will guide you through the language and
 explore each of OCaml's major features. You will need a distribution of OCaml to follow along. Windows users
 will need to use the *Diskuv OCaml* distribution (there are other ways to install OCaml on Windows, but they
@@ -85,7 +85,7 @@ For example the `Unison File Sychronizer <https://github.com/bcpierce00/unison#u
 synchronize folders between different operating systems (pretty cool!) was developed in OCaml and has been available on
 macOS, Linux and Windows for decades. Yet the
 `defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
-was deprecated in 2021! The online book
+was deprecated in 2021. The online book
 `Real World OCaml <https://dev.realworldocaml.org/index.html>`_ solved much of the tribal knowledge problem but you will
 likely run into some roadblocks. Several companies and groups have filled the void
 (Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
