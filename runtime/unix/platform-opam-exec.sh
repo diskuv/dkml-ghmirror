@@ -236,7 +236,7 @@ OPAM_ROOT_OPT=() # we have a separate array for --root since --root is mandatory
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     OPAM_ROOT_OPT+=( --root "$OPAMROOTDIR_EXPAND" )
     # `--set-switch` will output the globally selected switch, if any.
-    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --set-root --set-switch'
+    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --set-root --set-switch || true'
 fi
 
 # END --root
@@ -277,13 +277,13 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
         OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
     fi
 else
     if [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
         OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
     fi
 fi
 
