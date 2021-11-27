@@ -80,16 +80,14 @@ When we want to add components to your project, such as third-party libraries, w
 Installing packages
 ~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-    This section is much more complicated than it needs to be.
-
 Opam is the OCaml package manager. It gives you access to thousands of third-party packages that you can use in your
 own projects.
 
-Each project should have its own set of OCaml packages. We say that each project gets its own Opam "switch".
+Each project is a local directory with source code and its own set of OCaml packages.
+Opam will manage the OCaml packages in a local subdirectory named ``_opam``. The technical
+term for ``_opam`` is a local **switch**. In this section we will create a project
+called ``playground``.
 
-But we'll cheat a bit for now ... our first few projects will share the same switch.
 Let's start by finding which switches are available:
 
 1. Open the Visual Studio Command Prompt (press the Windows key ⊞, type "x64 Native Tools" and then Open ``x64 Native Tools Command Prompt for VS 2019``).
@@ -100,48 +98,85 @@ Let's start by finding which switches are available:
       C:\DiskuvOCaml\BuildTools>opam switch
       #  switch                                                      compiler
                 description
-         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\system
-                ocaml-option-flambda.1,ocaml-variants.4.12.0+options+dkml+msvc64
-                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\system
+         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
+                ocaml-system.4.12.1
+                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
       →  diskuv-boot-DO-NOT-DELETE
                 diskuv-boot-DO-NOT-DELETE
 
       [WARNING] The environment is not in sync with the current switch.
                 You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-You just found that you have two switches. The first switch is a "system" switch which we will use.
-The other that says *DO NOT DELETE*; we won't touch that one!
+You just found that you have two switches. The first switch is the directory "host-tools".
+The other switch says *DO NOT DELETE*. We will avoid those two switches.
 
-You also get a little hint about what you need to type to select your switch. Let's select the system switch; the
-second command is more portable and correct but otherwise equivalent to the first command:
-
-   .. code-block:: doscon
-
-      C:\DiskuvOCaml\BuildTools>for /f "tokens=*" %i in ('opam env --switch C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\system --set-switch') do @%i
-
-      C:\DiskuvOCaml\BuildTools>for /f "tokens=*" %i in ('opam env --switch %DiskuvOCamlHome%\system --set-switch') do @%i
-
-We should verify that we did it right by seeing the arrow (→) move:
+Let's now create our own ``playground`` switch. All we need to do is create a directory
+and run ``opam dkml init`` inside our new (or existing) directory:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>opam switch
-      #  switch                                                      compiler
-                description
-      →  C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\system
-                ocaml-option-flambda.1,ocaml-variants.4.12.0+options+dkml+msvc64
-                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\system
+      C:\DiskuvOCaml\BuildTools>cd %USERPROFILE%\DiskuvOCamlProjects
+
+      C:\Users\you\DiskuvOCamlProjects>mkdir playground
+      C:\Users\you\DiskuvOCamlProjects>cd playground
+      C:\Users\you\DiskuvOCamlProjects\playground>opam dkml init
+
+      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
+      #  switch                                                                           compiler
+               description
+      ...
+      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
+               C:\Users\you\DiskuvOCamlProjects\playground
          diskuv-boot-DO-NOT-DELETE
-                diskuv-boot-DO-NOT-DELETE
+               diskuv-boot-DO-NOT-DELETE
+
+      [NOTE] Current switch has been selected based on the current directory.
+            The current global system switch is diskuv-boot-DO-NOT-DELETE.
+      [WARNING] The environment is not in sync with the current switch.
+               You should run: for /f "tokens=*" %i in ('opam env') do @%i
+
+Notice how the switch was created with ``opam dkml init``, and also notice
+how ``opam switch`` tells you in its ``[NOTE]`` that it knows which switch
+should be used based **on the current directory**.
+
+If we want our playground to be remembered regardless what the directory
+currently is, we can follow the ``[WARNING]`` and add the option ``--set-switch``.
+
+Let's do that now so we learn how to do it:
+
+   .. code-block:: doscon
+
+      C:\Users\you\DiskuvOCamlProjects\playground>for /f "tokens=*" %i in ('opam env --set-switch') do @%i
+
+      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
+      #  switch                                                                           compiler
+               description
+      ...
+      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
+               C:\Users\you\DiskuvOCamlProjects\playground
+         diskuv-boot-DO-NOT-DELETE
+               diskuv-boot-DO-NOT-DELETE
 
       [NOTE] Current switch is set locally through the OPAMSWITCH variable.
-          The current global system switch is diskuv-boot-DO-NOT-DELETE.
+            The current global system switch is diskuv-boot-DO-NOT-DELETE.
 
-Great! You are now ready to install some packages in the switch. Let's see what packages are available:
+**Great!** You are now ready to install some packages for the playground project.
+Let's see what packages are installed with ``opam list`` and available
+with ``opam list -a``:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>opam list -a
+      C:\Users\beckf\DiskuvOCamlProjects\playground>opam list
+      # Packages matching: installed
+      # Name        # Installed # Synopsis
+      base-bigarray base        pinned to version base
+      base-threads  base        pinned to version base
+      base-unix     base        pinned to version base
+      ocaml         4.12.1      pinned to version 4.12.1
+      ocaml-config  2           pinned to version 2
+      ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
+
+      C:\Users\beckf\DiskuvOCamlProjects\playground>opam list -a
       # Packages matching: available
       # Name                                          # Installed                # Synopsis
       0install                                        --                         pinned to version 2.17
@@ -162,9 +197,10 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects>with-dkml opam install graphics
+      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml opam install graphics
 
-Sit back while it compiles your new package.
+Press **Y** when asked if you want to continue, then sit back while it compiles and
+installs the ``graphics`` package.
 
 Learn OCaml - A First Hour with OCaml
 -------------------------------------

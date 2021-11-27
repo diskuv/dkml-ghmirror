@@ -2,5 +2,6 @@
     "restructuredtext.confPath": "${workspaceFolder}\\contributors",
     "files.exclude": {
         "**/release-zip": true
-    }
+    },
+    "python.pythonPath": "${workspaceFolder}/contributors/envs"
 }
