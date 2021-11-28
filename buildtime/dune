@@ -8,13 +8,13 @@
 (rule
  (target executable.link_flags.sexp)
  (deps
-  (glob_files %{project_root}/buildconfig/dune/executable/*.sexp))
+  (glob_files %{workspace_root}/buildconfig/dune/executable/*.sexp))
  (action
   (with-stdout-to
    %{target}
    (run
     %{exe:sexp_merge_configurator.exe}
-    "%{project_root}/buildconfig/dune/executable/"
+    "%{workspace_root}/buildconfig/dune/executable/"
     link_flags
     %{profile}))))
 

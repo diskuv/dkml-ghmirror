@@ -524,10 +524,10 @@ buildconfig/dune/dune.env.workspace.inc: $(DKML_DIR)/etc/dune/dune.env.workspace
 			if [ ! -e buildconfig/dune/workspace/3-all-$(buildtype).$(option).sexp ]; then echo '(); Used in dune.env.workspace.inc. See https://dune.readthedocs.io/en/stable/concepts.html#ordered-set-language'         > buildconfig/dune/workspace/3-all-$(buildtype).$(option).sexp; fi; \
 			if [ ! -e buildconfig/dune/workspace/4-$(platform)-$(buildtype).$(option).sexp ]; then echo '(); Used in dune.env.workspace.inc. See https://dune.readthedocs.io/en/stable/concepts.html#ordered-set-language' > buildconfig/dune/workspace/4-$(platform)-$(buildtype).$(option).sexp; fi; \
 			echo '    ($(option) \
-						(:include "%{project_root}/buildconfig/dune/workspace/1-base.$(option).sexp") \
-						(:include "%{project_root}/buildconfig/dune/workspace/2-$(platform)-all.$(option).sexp") \
-						(:include "%{project_root}/buildconfig/dune/workspace/3-all-$(buildtype).$(option).sexp") \
-						(:include "%{project_root}/buildconfig/dune/workspace/4-$(platform)-$(buildtype).$(option).sexp") \
+						(:include "%{workspace_root}/buildconfig/dune/workspace/1-base.$(option).sexp") \
+						(:include "%{workspace_root}/buildconfig/dune/workspace/2-$(platform)-all.$(option).sexp") \
+						(:include "%{workspace_root}/buildconfig/dune/workspace/3-all-$(buildtype).$(option).sexp") \
+						(:include "%{workspace_root}/buildconfig/dune/workspace/4-$(platform)-$(buildtype).$(option).sexp") \
 						)' >> $@.tmp; \
 		) \
 		echo '  )' >> $@.tmp; \
