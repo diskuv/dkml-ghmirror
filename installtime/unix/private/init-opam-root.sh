@@ -117,8 +117,8 @@ if ! is_unixy_windows_build_machine && [ ! -e "$DKMLPARENTHOME_BUILDHOST"/dkmlva
     # shellcheck disable=SC2154
     cat > "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp <<EOF
 (
-("DiskuvOCamlVarsVersion" "2")
-("DiskuvOCamlVersion" "$dkml_root_version")
+("DiskuvOCamlVarsVersion" ("2"))
+("DiskuvOCamlVersion" ("$dkml_root_version"))
 )
 EOF
     mv "$DKMLPARENTHOME_BUILDHOST"/dkmlvars.sexp.tmp "$DKMLPARENTHOME_BUILDHOST"/dkmlvars-v2.sexp
