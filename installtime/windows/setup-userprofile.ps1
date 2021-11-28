@@ -1110,6 +1110,7 @@ try {
         "/usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/chmod +x")
 
     # Create /opt/diskuv-ocaml/*.opam (so dkml-apps can be compiled from /opt/diskuv-ocaml/)
+    # - (P1) Explicit *.opam files must be in sync with contributors/release.sh
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command ("/usr/bin/install -d /opt/diskuv-ocaml && /usr/bin/install -v '$DkmlMSYS2AbsPath'/opam-dkml.opam '$DkmlMSYS2AbsPath'/dkml-apps.opam /opt/diskuv-ocaml/")
 

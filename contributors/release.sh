@@ -124,8 +124,11 @@ if [ "$PRERELEASE" = OFF ]; then
     NEW_VERSION="$TARGET_VERSION"
 fi
 
+# Define which files and directories go into distribution archive
+# - The *.opam should be in sync with (P1) in installtime/windows/setup-userprofile.ps1
+ARCHIVE_MEMBERS=(LICENSE.txt README.md opam-dkml.opam dkml-apps.opam etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore)
+
 # Make _build/distribution-portable.zip
-ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore)
 FILE="$DKMLDIR/contributors/_build/distribution-portable.zip"
 rm -f "$FILE"
 install -d contributors/_build/release-zip
