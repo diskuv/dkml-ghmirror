@@ -110,7 +110,8 @@ REM Find dune-project in an ancestor of DKMLDIR so we know where the Makefile is
 REM We do _not_ set TOPDIR which is used by most Diskuv OCaml scripts through _common_tool.sh, etc.
 REM because the same scripts will autodetect TOPDIR if it is not set. And the developer
 REM should be able to set their own TOPDIR to create their own switches, etc.
-FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%DKMLDIR%\..,dune-project`) DO (
+FOR %%I in ("%DKMLDIR%\..") do set "DKMLPARENTDIR=%%~fI"
+FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%DKMLPARENTDIR%,dune-project`) DO (
 SET "DKMAKE_TOPDIR=%%F"
 )
 if not exist "%DKMAKE_TOPDIR%\dune-project" (
