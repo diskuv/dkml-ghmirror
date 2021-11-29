@@ -8,7 +8,7 @@ PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 
 .PHONY: docs-publish
 docs-publish:
-	if test -n "$$(git status --porcelain)"; then echo "FATAL: The working directory must be clean! All changes have to be commited to git or removed." >&2; git status --porcelain >&2; exit 1; fi
+	@if test -n "$$(git status --porcelain)"; then echo "FATAL: The working directory must be clean! All changes have to be commited to git or removed." >&2; git status --porcelain >&2; exit 1; fi
 	$(MAKE) clean
 
 	echo Building OCaml documentation
