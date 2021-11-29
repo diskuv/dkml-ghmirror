@@ -140,8 +140,6 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-install -d "$DKML_DUNE_BUILD_DIR"
-
 # no subcommand should display help
 if [ $# -eq 0 ]; then
     usage
@@ -149,6 +147,12 @@ if [ $# -eq 0 ]; then
 else
     subcommand=$1; shift
 fi
+
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
+# Set DKMLHOME_UNIX if available
+autodetect_dkmlvars || true
 
 # Set TARGET_OPAMSWITCH (only used when USERMODE=ON)
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -198,6 +202,15 @@ esac
 # END DUNE_OPTS
 # ------------
 
+# We want tools/apps/fswatch in the PATH, especially on Windows so we can do `dune build --watch``
+{
+    printf "%s\n" "#!$DKML_POSIX_SHELL"
+    if [ -n "$DKMLHOME_UNIX" ]; then
+        printf "PATH='%s':\"\$PATH\"\n" "$DKMLHOME_UNIX/tools/apps"
+    fi
+} > "$WORK"/add-tools-to-path.sh
+chmod +x "$WORK"/add-tools-to-path.sh
+
 # -----------------------
 # Inject our options first, immediately after the subcommand
 
@@ -207,6 +220,7 @@ case "$subcommand" in
     ;;
     *)
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            install -d "$DKML_DUNE_BUILD_DIR"
             if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
                 DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
             elif [ -z "$BUILD_BASEPATH" ]; then
@@ -214,7 +228,7 @@ case "$subcommand" in
             else
                 DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR/_dune")
             fi
-            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
         else
             if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
                 DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
@@ -226,7 +240,7 @@ case "$subcommand" in
                 fi
                 DUNE_OPTS+=(--build-dir "$DUNEDIR_BUILDHOST")
             fi
-            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
         fi
     ;;
 esac
