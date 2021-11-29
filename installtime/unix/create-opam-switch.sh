@@ -99,13 +99,15 @@ usage() {
     printf "%s\n" "    -d STATEDIR: Create <STATEDIR>/_opam as an Opam switch prefix, unless [-s] is also" >&2
     printf "%s\n" "        selected which creates <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "        selected which creates <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
-    printf "%s\n" "        <OPAMROOT>/diskuv-host-tools/_opam on non-Windows." >&2
+    printf "%s\n" "        <OPAMROOT>/diskuv-host-tools/_opam on non-Windows. See also -t option" >&2
     printf "%s\n" "    -s: Create the diskuv-host-tools or host-tools switch. See the -d option for the rules" >&2
     printf "%s\n" "    -b BUILDTYPE: The build type which is one of:" >&2
     printf "%s\n" "        Debug" >&2
     printf "%s\n" "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
     printf "%s\n" "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
     printf "%s\n" "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
+    printf "%s\n" "    -t OPAMSWITCH: Optional. Create <OPAMSWITCH>/_opam as an Opam switch prefix when -u ON but not -s." >&2
+    printf "%s\n" "       Defaults to <STATEDIR>/_opam" >&2
     printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
     printf "%s\n" "       If ON, uses Opam 2.2+ default root" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
@@ -142,7 +144,8 @@ fi
 OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
-while getopts ":h:b:p:sd:u:o:v:y" opt; do
+TARGET_OPAMSWITCH=
+while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
     case ${opt} in
         h )
             usage
@@ -164,6 +167,9 @@ while getopts ":h:b:p:sd:u:o:v:y" opt; do
         d)
             STATEDIR=$OPTARG
         ;;
+        t)
+            TARGET_OPAMSWITCH=$OPTARG
+        ;;
         u )
             USERMODE=$OPTARG
         ;;
@@ -182,6 +188,10 @@ while getopts ":h:b:p:sd:u:o:v:y" opt; do
     esac
 done
 shift $((OPTIND -1))
+
+if [ -z "$TARGET_OPAMSWITCH" ] && [ -n "$STATEDIR" ]; then
+    TARGET_OPAMSWITCH="$STATEDIR"
+fi
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
@@ -203,10 +213,11 @@ else
         usage
         exit 1
     fi
-    if [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+    if [ "$USERMODE" = OFF ] && [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
         usage
         exit 1
-    elif [ -n "$STATEDIR" ] && [ -z "$BUILDTYPE" ]; then
+    fi
+    if [ -z "$BUILDTYPE" ]; then
         usage
         exit 1
     fi
@@ -246,13 +257,8 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         . "$DKMLDIR"/runtime/unix/_common_tool.sh
     fi
 else
-    if [ -n "${STATEDIR:-}" ]; then
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_build.sh
-    else
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_tool.sh
-    fi
+    # shellcheck disable=SC1091
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
 fi
 
 # To be portable whether we build scripts in the container or not, we
@@ -522,7 +528,7 @@ else
             OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -b $BUILDTYPE"
         fi
     else
-        OPAM_EXEC_OPTS=" -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
+        OPAM_EXEC_OPTS=" -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 fi
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchexec.sh
@@ -670,6 +676,7 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV += "yes"'
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 
@@ -685,16 +692,19 @@ if [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-build-commands='[\"%s\"]' " "$DOW_PATH"
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-install-commands='[\"%s\"]' " "$DOW_PATH"
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-remove-commands='[\"%s\"]' " "$DOW_PATH"
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
 

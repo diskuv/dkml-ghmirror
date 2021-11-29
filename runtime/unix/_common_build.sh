@@ -95,14 +95,19 @@ set_opamrootandswitchdir() {
             if cmake_flag_off "$USERMODE"; then
                 set_opamrootandswitchdir_EXPAND="$STATEDIR"
             else
-                set_opamrootandswitchdir_EXPAND="$TOPDIR"
+                set_opamrootandswitchdir_EXPAND="$TARGET_OPAMSWITCH"
+            fi
+            if [ -x /usr/bin/cygpath ]; then
+                set_opamrootandswitchdir_BUILDHOST=$(/usr/bin/cygpath -aw "$set_opamrootandswitchdir_EXPAND")
+            else
+                set_opamrootandswitchdir_BUILDHOST="$set_opamrootandswitchdir_EXPAND"
             fi
             # shellcheck disable=SC2034
-            OPAMSWITCHFINALDIR_BUILDHOST="$set_opamrootandswitchdir_EXPAND${OS_DIR_SEP}_opam"
+            OPAMSWITCHFINALDIR_BUILDHOST="$set_opamrootandswitchdir_BUILDHOST${OS_DIR_SEP}_opam"
             # shellcheck disable=SC2034
-            OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_EXPAND"
+            OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_BUILDHOST"
             # shellcheck disable=SC2034
-            OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_EXPAND"
+            OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_BUILDHOST"
         fi
     fi
 }

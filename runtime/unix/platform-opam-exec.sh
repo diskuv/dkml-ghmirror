@@ -266,8 +266,13 @@ elif [ -n "${STATEDIR:-}" ]; then
     set_opamrootandswitchdir
 elif [ -n "$TARGET_OPAMSWITCH" ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
-    OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH/_opam"
-    OPAMSWITCHDIR_EXPAND="$TARGET_OPAMSWITCH" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
+    if [ -x /usr/bin/cygpath ]; then
+        TARGET_OPAMSWITCH_BUILDHOST=$(/usr/bin/cygpath -aw "$TARGET_OPAMSWITCH")
+    else
+        TARGET_OPAMSWITCH_BUILDHOST="$TARGET_OPAMSWITCH"
+    fi
+    OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH_BUILDHOST/_opam"
+    OPAMSWITCHDIR_EXPAND="$TARGET_OPAMSWITCH_BUILDHOST" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
 fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:

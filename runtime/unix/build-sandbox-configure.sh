@@ -1,14 +1,16 @@
 #!/bin/sh
 # -------------------------------------------------------
-# build-sandbox-configure.sh PLATFORM BUILDTYPE OPAMS
+# build-sandbox-configure.sh IS_DEV_MODE DKMLPLATFORM BUILDTYPE OPAMS
 #
 # Purpose: Download and install dependencies needed by the source code.
 #
-# PLATFORM=dev|linux_arm32v6|linux_arm32v7|windows_x86|...
+# IS_DEV_MODE=ON|OFF
 #
-#   The PLATFORM can be `dev` which means the dev platform using the native CPU architecture
-#   and system binaries for Opam from your development machine.
-#   Otherwise it is one of the "PLATFORMS" canonically defined in TOPDIR/Makefile.
+#   ON means the dev platform using the native CPU architecture
+#   and system binaries for Opam from your development machine. Installs IDE
+#   and CLI tooling if ON.
+#
+# DKMLPLATFORM=windows_x86_64|darwin_arm64|...
 #
 # BUILDTYPE=Debug|Release|...
 #
@@ -23,7 +25,9 @@
 # -------------------------------------------------------
 set -euf
 
-PLATFORM=$1
+IS_DEV_MODE=$1
+shift
+DKMLPLATFORM=$1
 shift
 # shellcheck disable=SC2034
 BUILDTYPE=$1
@@ -33,6 +37,16 @@ shift
 
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
+
+# Get cmake_flag_on
+# shellcheck disable=SC1091
+. "$DKMLDIR"/etc/contexts/linux-build/crossplatform-functions.sh
+
+# Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
+# shellcheck disable=SC2034
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON
+USERMODE=ON
+STATEDIR=
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_build.sh
@@ -57,10 +71,15 @@ autodetect_posix_shell
 set_opamrootdir
 export OPAMROOTDIR_BUILDHOST
 
+# Set OCAMLHOME and OPAMHOME, if part of DKML system installation
+autodetect_ocaml_and_opam_home
+
+TARGET_OPAMSWITCH=$TOPDIR/build/$DKMLPLATFORM/$BUILDTYPE
+
 # -----------------------
 # BEGIN opam switch create
 
-"$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -b "$BUILDTYPE" -p "$PLATFORM"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -d "$STATEDIR" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -b "$BUILDTYPE" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam switch create
 # -----------------------
@@ -71,10 +90,10 @@ export OPAMROOTDIR_BUILDHOST
 # dev dependencies get installed _before_ code dependencies so IDE support
 # is available even if not all code dependencies are available after a build
 # failure
-if is_dev_platform; then
+if cmake_flag_on "$IS_DEV_MODE"; then
     # Query Opam for its packages. We could just `install` which is idempotent but that would
     # force the multi-second autodetection of compilation tools.
-    "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -b "$BUILDTYPE" -p "$PLATFORM" list --short > "$WORK"/packages
+    DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -d "$STATEDIR" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -b "$BUILDTYPE" -o "$OPAMHOME" -v "$OCAMLHOME" list --short > "$WORK"/packages
     if ! grep -q '\bocamlformat\b' "$WORK"/packages || \
        ! grep -q '\bocamlformat-rpc\b' "$WORK"/packages || \
        ! grep -q '\bocaml-lsp-server\b' "$WORK"/packages || \
@@ -83,9 +102,9 @@ if is_dev_platform; then
     then
         # We are missing required packages. Let's install them.
         {
-            echo "'$DKMLDIR'/runtime/unix/platform-opam-exec.sh -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=$NUMCPUS --yes \\"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
-            echo "  ocamlformat ocamlformat-rpc ocaml-lsp-server ocp-indent utop"
+            printf '%s\n' "DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -d '$STATEDIR' -u '$USERMODE' -t '$TARGET_OPAMSWITCH' -b '$BUILDTYPE' -o '$OPAMHOME' -v '$OCAMLHOME' install --jobs=$NUMCPUS --yes \\"
+            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
+            printf '%s\n' "  ocamlformat ocamlformat-rpc ocaml-lsp-server ocp-indent utop"
         } > "$WORK"/configure.sh
         print_opam_logs_on_error "$DKML_POSIX_SHELL" "$WORK"/configure.sh
     fi
@@ -103,12 +122,12 @@ export OPAMSWITCHNAME_BUILDHOST
 
 {
     # [configure.sh JOBS]
-    echo "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -b '$BUILDTYPE' -p '$PLATFORM' install --jobs=\$1 --yes \\"
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "  --debug-level 2 \\"; fi
-    echo "  --deps-only --with-test \\"
+    printf '%s\n' "exec env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -d '$STATEDIR' -u '$USERMODE' -t '$TARGET_OPAMSWITCH' -b '$BUILDTYPE' -o '$OPAMHOME' -v '$OCAMLHOME' install --jobs=\$1 --yes \\"
+    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
+    printf '%s\n' "  --deps-only --with-test \\"
     # shellcheck disable=SC2016
     printf ' '
-    echo "$OPAMS" | sed 's/,/ /g'
+    printf '%s\n' "$OPAMS" | sed 's/,/ /g'
 } > "$WORK"/configure.sh
 {
     if [ "${CI:-}" = true ]; then
