@@ -583,10 +583,11 @@ dkml-report: buildconfig/dune
 	@echo PATH = $$PATH
 	@echo
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
-	autodetect_ocaml_and_opam_home && \
+	autodetect_ocaml_and_opam_home && build_machine_arch && \
 	BUILD_ROOT_UNIX="$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$(/usr/bin/cygpath -u "$$BUILD_ROOT_UNIX"); fi && \
 	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
-			if [ -e "$$BUILD_ROOT_UNIX"/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
+			if [ "$(platform)" = dev ]; then DKMLPLATFORM=$$BUILDHOST_ARCH; else DKMLPLATFORM=$(platform); fi && \
+			if [ -e "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype)/_opam/bin/dune ]; then \
 				echo; \
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
@@ -597,9 +598,9 @@ dkml-report: buildconfig/dune
 				else \
 				  within='$(DKML_DIR)/runtime/unix/within-dev.sh'; \
 				fi; \
-				DKML_BUILD_TRACE=OFF $$within -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" uname -a || true; \
+				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON $$within -p $(platform) -b $(buildtype) uname -a || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-opam-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
+				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-opam-exec.sh' -b $(buildtype) -t "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
 				echo; \
 				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" printenv --display=quiet || true; \
 			fi; \
