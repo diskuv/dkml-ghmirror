@@ -160,12 +160,17 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 elif cmake_flag_off "$USERMODE"; then
     TARGET_OPAMSWITCH=
 else
+    if [ -n "${DKML_BUILD_ROOT:-}" ]; then
+        RESOLVED_BUILDDIR=$DKML_BUILD_ROOT
+    else
+        RESOLVED_BUILDDIR=$TOPDIR/build
+    fi
     if [ "$PLATFORM" = "dev" ]; then
         # Set BUILDHOST_ARCH
         build_machine_arch
-        TARGET_OPAMSWITCH=$TOPDIR/build/$BUILDHOST_ARCH/$BUILDTYPE
+        TARGET_OPAMSWITCH=$RESOLVED_BUILDDIR/$BUILDHOST_ARCH/$BUILDTYPE
     else
-        TARGET_OPAMSWITCH=$TOPDIR/build/$PLATFORM/$BUILDTYPE
+        TARGET_OPAMSWITCH=$RESOLVED_BUILDDIR/$PLATFORM/$BUILDTYPE
     fi
 fi
 
