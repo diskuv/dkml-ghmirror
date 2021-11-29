@@ -27,7 +27,7 @@ usage() {
     printf "%s\n" "    install-dkmlplugin-withdkml.sh [-d STATEDIR]        Install the DKML plugin with-dkml" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
     printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2

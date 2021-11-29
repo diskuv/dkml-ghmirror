@@ -116,7 +116,15 @@ autodetect_dkmlvars() {
     autodetect_dkmlvars_DiskuvOCamlDeploymentId_Override=${DiskuvOCamlDeploymentId:-}
     autodetect_dkmlvars_DiskuvOCamlVersion_Override=${DiskuvOCamlVersion:-}
     autodetect_dkmlvars_DiskuvOCamlMSYS2Dir_Override=${DiskuvOCamlMSYS2Dir:-}
+
     set_dkmlparenthomedir
+
+    # Init output vars
+    DKMLHOME_UNIX=
+    DKMLHOME_BUILDHOST=
+    DKMLBINPATHS_UNIX=
+    DKMLBINPATHS_BUILDHOST=
+
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
             if [ -x /usr/bin/cygpath ]; then
@@ -178,6 +186,30 @@ autodetect_dkmlvars() {
     fi
 
     return 0
+}
+
+# Set OCAMLHOME and OPAMHOME if part of DKML system installation.
+autodetect_ocaml_and_opam_home() {
+    # Set DKMLHOME_UNIX
+    autodetect_dkmlvars
+
+    # Set OCAMLHOME and OPAMHOME from DKMLHOME
+    OCAMLHOME=
+    OPAMHOME=
+    if [ -n "$DKMLHOME_UNIX" ]; then
+        if [ -x "$DKMLHOME_UNIX/usr/bin/ocaml" ] || [ -x "$DKMLHOME_UNIX/usr/bin/ocaml.exe" ]; then
+            OCAMLHOME=$DKMLHOME_UNIX
+        elif [ -x "$DKMLHOME_UNIX/bin/ocaml" ] || [ -x "$DKMLHOME_UNIX/bin/ocaml.exe" ]; then
+            # shellcheck disable=SC2034
+            OCAMLHOME=$DKMLHOME_UNIX
+        fi
+        if [ -x "$DKMLHOME_UNIX/usr/bin/opam" ] || [ -x "$DKMLHOME_UNIX/usr/bin/opam.exe" ]; then
+            OPAMHOME=$DKMLHOME_UNIX
+        elif [ -x "$DKMLHOME_UNIX/bin/opam" ] || [ -x "$DKMLHOME_UNIX/bin/opam.exe" ]; then
+            # shellcheck disable=SC2034
+            OPAMHOME=$DKMLHOME_UNIX
+        fi
+    fi
 }
 
 # Get a path that has system binaries, and nothing else.

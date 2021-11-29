@@ -35,10 +35,16 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
+# Set OCAMLHOME and OPAMHOME, if part of DKML system installation
+autodetect_ocaml_and_opam_home
+
+# Set BUILDHOST_ARCH
+build_machine_arch
+
 # -----------------------
 # BEGIN opam init
 
-log_trace "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -p "$PLATFORM"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam init
 # -----------------------
@@ -46,7 +52,7 @@ log_trace "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -p "$PLATFORM"
 # -----------------------
 # BEGIN opam create system switch
 
-log_trace "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam create system switch
 # -----------------------
@@ -54,7 +60,7 @@ log_trace "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full
 # -----------------------
 # BEGIN install opam plugins
 
-log_trace "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -p "$PLATFORM"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install opam plugins
 # -----------------------
@@ -62,7 +68,7 @@ log_trace "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -p
 # -----------------------
 # BEGIN install dkml plugins (except vcpkg which is done in build-sandbox-init-vcpkg.sh)
 
-log_trace "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -p "$PLATFORM"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install dkml plugins
 # -----------------------

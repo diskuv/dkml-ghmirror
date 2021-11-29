@@ -1315,7 +1315,7 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON " +
-                "'$DkmlPath\installtime\unix\private\init-opam-root.sh' -o '$ProgramMSYS2AbsPath'")
+                "'$DkmlPath\installtime\unix\private\init-opam-root.sh' -o '$ProgramMSYS2AbsPath' -v '$ProgramMSYS2AbsPath'")
     }
 
     # END opam init

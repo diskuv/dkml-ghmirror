@@ -26,9 +26,13 @@ usage() {
     printf "%s\n" "    init-opam-root.sh [-d STATEDIR]        Initialize the Opam root" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
+    printf "%s\n" "       to use." >&2
+    printf "%s\n" "       The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
+    printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
 }
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -41,7 +45,8 @@ else
     USERMODE=ON
 fi
 OPAMHOME=
-while getopts ":h:p:d:o:" opt; do
+OCAMLVERSION_OR_HOME=
+while getopts ":h:p:d:o:v:" opt; do
     case ${opt} in
         h )
             usage
@@ -55,6 +60,9 @@ while getopts ":h:p:d:o:" opt; do
             USERMODE=OFF
         ;;
         o ) OPAMHOME=$OPTARG ;;
+        v )
+            OCAMLVERSION_OR_HOME=$OPTARG
+        ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -192,7 +200,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     }
 else
     run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" "$@"
     }
 fi
 
