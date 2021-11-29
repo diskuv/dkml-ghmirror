@@ -1838,7 +1838,8 @@ buildhost_pathize() {
     buildhost_pathize_PATH="$1"
     shift
     if [ -x /usr/bin/cygpath ]; then
-        buildhost_pathize_RETVAL=$(/usr/bin/cygpath -aw "$buildhost_pathize_PATH")
+        # Trim any trailing backslash because `cygpath -aw .` gives us trailing slash
+        buildhost_pathize_RETVAL=$(/usr/bin/cygpath -aw "$buildhost_pathize_PATH" | sed 's#\\$##')
     else
         case "$buildhost_pathize_PATH" in
             /*)

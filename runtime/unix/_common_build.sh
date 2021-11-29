@@ -17,23 +17,35 @@
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
 
+# The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
+# directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.
+# For Windows you want to use it so that you do not run into 260 character absolute path limits!
+# Here is an example of a 260 character limit violation ... it is VERY HARD to see what the problem is!
+#   $ (cd _build/default && D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\bin\ocamlc.opt.exe -w -40 -g -bin-annot -I expander/.ppx_sexp_conv_expander.objs/byte -I D:/a/diskuv-ocaml-starter-ghmirror/diskuv-ocaml-starter-ghmirror/build/windows_x86_64/Release/_opam/lib/ocaml\compiler-libs -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\base_internalhash_types -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\caml -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\base\shadow_stdlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\common -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-compiler-libs\shadow -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ocaml-migrate-parsetree -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppx_derivers -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\ast -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\metaquot_lifters -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\print_diff -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\stdppx -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\ppxlib\traverse_builtins -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\sexplib0 -I D:\a\diskuv-ocaml-starter-ghmirror\diskuv-ocaml-starter-ghmirror\build\windows_x86_64\Release\_opam\lib\stdlib-shims -no-alias-deps -open Ppx_sexp_conv_expander__ -o expander/.ppx_sexp_conv_expander.objs/byte/ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi -c -intf expander/str_generate_sexp_grammar.pp.mli)
+#   File "expander/str_generate_sexp_grammar.mli", line 1:
+#   Error: I/O error: expander/.ppx_sexp_conv_expander.objs/byte\ppx_sexp_conv_expander__Str_generate_sexp_grammar.cmi9d73bb.tmp: No such file or directory
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     if [ -z "${DKML_DUNE_BUILD_DIR:-}" ]; then
         DKML_DUNE_BUILD_DIR="$BUILD_ROOT_UNIX/$PLATFORM/$BUILDTYPE"
     fi
 else
-    if cmake_flag_off "$USERMODE"; then
+    if [ -n "${DKML_BUILD_ROOT:-}" ]; then
+        buildhost_pathize "$DKML_BUILD_ROOT"
+        # shellcheck disable=SC2154
+        DKML_DUNE_BUILD_DIR="$buildhost_pathize_RETVAL"
+    elif cmake_flag_off "$USERMODE"; then
         DKML_DUNE_BUILD_DIR="$STATEDIR/_build"
     else
         DKML_DUNE_BUILD_DIR="$TOPDIR/_build"
     fi
 fi
-if [ -x /usr/bin/cygpath ]; then
-    # Trim any trailing slash because `cygpath -aw .` has trailing slash
-    BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$DKML_DUNE_BUILD_DIR" | sed 's#\\$##')
-else
-    # Make into absolute path if not already
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+
+# Make into absolute path if not already
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -x /usr/bin/cygpath ]; then
+        # Trim any trailing slash because `cygpath -aw .` has trailing slash
+        BUILDDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$DKML_DUNE_BUILD_DIR" | sed 's#\\$##')
+    else
         BUILDDIR_BUILDHOST="$BUILD_BASEPATH$DKML_DUNE_BUILD_DIR"
     fi
 fi

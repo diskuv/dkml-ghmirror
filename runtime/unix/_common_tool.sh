@@ -100,6 +100,7 @@ else
     __USERMODE="$USERMODE" # fails if USERMODE not set
 fi
 
+# (Deprecated; modern version in _common_build.sh)
 # The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
 # directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.
 # For Windows you want to use it so that you do not run into 260 character absolute path limits!
