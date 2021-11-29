@@ -75,7 +75,11 @@ export OPAMROOTDIR_BUILDHOST
 autodetect_ocaml_and_opam_home
 
 # Set TARGET_OPAMSWITCH
-TARGET_OPAMSWITCH=$TOPDIR/build/$DKMLPLATFORM/$BUILDTYPE
+if [ -n "${DKML_BUILD_ROOT:-}" ]; then
+    TARGET_OPAMSWITCH=$DKML_BUILD_ROOT/$DKMLPLATFORM/$BUILDTYPE
+else
+    TARGET_OPAMSWITCH=$TOPDIR/build/$DKMLPLATFORM/$BUILDTYPE
+fi
 
 # -----------------------
 # BEGIN opam switch create
