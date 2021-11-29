@@ -80,7 +80,7 @@ TARGET_OPAMSWITCH=$TOPDIR/build/$DKMLPLATFORM/$BUILDTYPE
 # -----------------------
 # BEGIN opam switch create
 
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -d "$STATEDIR" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -b "$BUILDTYPE" -o "$OPAMHOME" -v "$OCAMLHOME"
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -p "$DKMLPLATFORM" -d "$STATEDIR" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -b "$BUILDTYPE" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam switch create
 # -----------------------

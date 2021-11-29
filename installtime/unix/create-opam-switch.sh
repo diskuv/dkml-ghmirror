@@ -95,7 +95,7 @@ usage() {
     printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s           (Deprecated) Expert. Create the diskuv-host-tools switch" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
-    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Ignored unless a version number is specified using -v option" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Ignored if an OCaml home rather than version number is specified using -v option" >&2
     printf "%s\n" "    -d STATEDIR: Create <STATEDIR>/_opam as an Opam switch prefix, unless [-s] is also" >&2
     printf "%s\n" "        selected which creates <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "        selected which creates <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
