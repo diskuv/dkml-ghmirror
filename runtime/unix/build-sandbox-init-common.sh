@@ -44,7 +44,7 @@ build_machine_arch
 # -----------------------
 # BEGIN opam init
 
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam init
 # -----------------------
@@ -52,7 +52,7 @@ DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private
 # -----------------------
 # BEGIN opam create system switch
 
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/create-tools-switch.sh -f Full -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam create system switch
 # -----------------------
@@ -60,7 +60,7 @@ DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private
 # -----------------------
 # BEGIN install opam plugins
 
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install opam plugins
 # -----------------------
@@ -68,7 +68,7 @@ DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private
 # -----------------------
 # BEGIN install dkml plugins (except vcpkg which is done in build-sandbox-init-vcpkg.sh)
 
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install dkml plugins
 # -----------------------
