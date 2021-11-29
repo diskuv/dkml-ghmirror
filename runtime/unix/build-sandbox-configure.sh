@@ -74,6 +74,7 @@ export OPAMROOTDIR_BUILDHOST
 # Set OCAMLHOME and OPAMHOME, if part of DKML system installation
 autodetect_ocaml_and_opam_home
 
+# Set TARGET_OPAMSWITCH
 TARGET_OPAMSWITCH=$TOPDIR/build/$DKMLPLATFORM/$BUILDTYPE
 
 # -----------------------

@@ -45,7 +45,7 @@ usage() {
     printf "%s\n" "    platform-opam-exec.sh -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
     printf "%s\n" "                                                                             switch prefix of STATEDIR/host-tools/_opam" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "       -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "       -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "       -s: Select the 'diskuv-host-tools' switch. If specified adds --switch to opam" >&2
     printf "%s\n" "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
     printf "%s\n" "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2

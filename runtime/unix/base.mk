@@ -428,10 +428,10 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call BUILD_platform_template,$(pla
 define BUILD_platform_buildtype_template
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_ocaml_and_opam_home && if is_arg_windows_platform $(1); then \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
+		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" build $(DUNETARGET_BUILD_LINUX); \
 	fi
   build-$(1)-$(2): configure-$(1)-$(2) buildconfig/dune quickbuild-$(1)-$(2)
   test-$(1)-$(2):
@@ -440,12 +440,12 @@ define BUILD_platform_buildtype_template
 		printf "\n\n$(HORIZONTAL_RULE_80COLS)\n"; \
 		printf "= %-38s%-38s =\n" $(1) $(2); \
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
-		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && if is_arg_windows_platform $(1); then \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
+		. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_ocaml_and_opam_home && if is_arg_windows_platform $(1); then \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" build $(DUNETARGET_TEST_WINDOWS); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
-			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" build $(DUNETARGET_TEST_LINUX); \
+			DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_3P_PREFIX_PATH="3p_installed/default/$(1)-$(2)" DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_trace '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(1) -b $(2) -o "$$$$OPAMHOME" -v "$$$$OCAMLHOME" runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
 		fi; \
 	fi
 endef
@@ -583,6 +583,7 @@ dkml-report: buildconfig/dune
 	@echo PATH = $$PATH
 	@echo
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
+	autodetect_ocaml_and_opam_home && \
 	BUILD_ROOT_UNIX="$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$(/usr/bin/cygpath -u "$$BUILD_ROOT_UNIX"); fi && \
 	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 			if [ -e "$$BUILD_ROOT_UNIX"/$(platform)/$(buildtype)/_opam/bin/dune ]; then \
@@ -596,19 +597,19 @@ dkml-report: buildconfig/dune
 				else \
 				  within='$(DKML_DIR)/runtime/unix/within-dev.sh'; \
 				fi; \
-				DKML_BUILD_TRACE=OFF $$within -p $(platform) -b $(buildtype) uname -a || true; \
+				DKML_BUILD_TRACE=OFF $$within -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" uname -a || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-opam-exec.sh' -p $(platform) -b $(buildtype) config report || true; \
+				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-opam-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(platform) -b $(buildtype) printenv --display=quiet || true; \
+				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" printenv --display=quiet || true; \
 			fi; \
 	))
 
 # Sleep for 5 seconds on Dune crash so that developer has plenty of time to press Ctrl-C to kill the while loop
 .PHONY: dkml-devmode
 dkml-devmode: quickbuild-dev-Debug
-	while true; do \
-		DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p dev -b Debug \
+	. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_ocaml_and_opam_home && while true; do \
+		DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p dev -b Debug -o "$$OPAMHOME" -v "$$OCAMLHOME" \
 			build --watch --terminal-persistence=clear-on-rebuild \
 			$(if $(DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS),$(DUNETARGET_TEST_WINDOWS),$(DUNETARGET_TEST_LINUX)); \
 		sleep 5 || exit 0; \
