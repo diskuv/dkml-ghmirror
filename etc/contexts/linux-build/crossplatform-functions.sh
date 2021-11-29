@@ -191,7 +191,7 @@ autodetect_dkmlvars() {
 # Set OCAMLHOME and OPAMHOME if part of DKML system installation.
 autodetect_ocaml_and_opam_home() {
     # Set DKMLHOME_UNIX
-    autodetect_dkmlvars
+    autodetect_dkmlvars || true
 
     # Set OCAMLHOME and OPAMHOME from DKMLHOME
     OCAMLHOME=
