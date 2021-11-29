@@ -36,14 +36,14 @@ usage() {
     printf "%s\n" "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
     printf "%s\n" "    platform-opam-exec.sh -s [--] install|clean|help|...                        (Deprecated) Run the opam command" >&2
     printf "%s\n" "                                                                             in the 'diskuv-host-tools' local switch" >&2
-    printf "%s\n" "    platform-opam-exec.sh -u ON [--] install|clean|help|...                     Run the opam command in the user's" >&2
-    printf "%s\n" "                                                                             globally active switch" >&2
-    printf "%s\n" "    platform-opam-exec.sh -s -u ON [--] install|clean|help|...                  Run the opam command in the global" >&2
-    printf "%s\n" "                                                                             'diskuv-host-tools' switch" >&2
-    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR [-u OFF] [--] install|clean|help|...      Run the opam command in the local" >&2
-    printf "%s\n" "                                                                             switch prefix of STATEDIR/_opam" >&2
-    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR -s [-u OFF] [--] install|clean|help|...   Run the opam command in the local" >&2
-    printf "%s\n" "                                                                             switch prefix of STATEDIR/host-tools/_opam" >&2
+    printf "%s\n" "    platform-opam-exec.sh -u ON -t OPAMSWITCH [--] install|clean|help|...      Run the opam command in the specified" >&2
+    printf "%s\n" "                                                                               switch" >&2
+    printf "%s\n" "    platform-opam-exec.sh -s -u ON [--] install|clean|help|...                 Run the opam command in the global" >&2
+    printf "%s\n" "                                                                               'diskuv-host-tools' switch" >&2
+    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR [-u OFF] [--] install|clean|help|...     Run the opam command in the local" >&2
+    printf "%s\n" "                                                                               switch prefix of STATEDIR/_opam" >&2
+    printf "%s\n" "    platform-opam-exec.sh -d STATEDIR -s [-u OFF] [--] install|clean|help|...  Run the opam command in the local" >&2
+    printf "%s\n" "                                                                               switch prefix of STATEDIR/host-tools/_opam" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "       -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "       -s: Select the 'diskuv-host-tools' switch. If specified adds --switch to opam" >&2
@@ -166,6 +166,10 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     fi
 else
     if [ -z "$STATEDIR" ] && cmake_flag_off "$USERMODE"; then
+        usage
+        exit 1
+    fi
+    if [ "$DISKUV_HOST_TOOLS" = OFF ] && [ -z "$TARGET_OPAMSWITCH" ] && ! cmake_flag_off "$USERMODE"; then
         usage
         exit 1
     fi
@@ -299,18 +303,19 @@ fi
 WITHDKMLENV=(env)
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     if [ -n "$PLATFORM" ] && [ -n "${BUILDTYPE:-}" ]; then
-        THREEP="$TOPDIR/3p_installed/default/$PLATFORM-$BUILDTYPE"
-        if [ -x /usr/bin/cygpath ]; then
-            THREEP=$(/usr/bin/cygpath -aw "$THREEP")
-        fi
+        buildhost_pathize "$TOPDIR/build/$PLATFORM/$BUILDTYPE/_3p_installed"
+        # shellcheck disable=SC2154
+        THREEP=$buildhost_pathize_RETVAL
         WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
     fi
 else
-    THREEP="$STATEDIR/3p_installed"
-    if [ -x /usr/bin/cygpath ]; then
-        THREEP=$(/usr/bin/cygpath -aw "$THREEP")
+    if [ -n "$STATEDIR" ]; then
+        buildhost_pathize "$STATEDIR/3p_installed"
+        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$buildhost_pathize_RETVAL" )
+    elif [ -n "$TARGET_OPAMSWITCH" ]; then
+        buildhost_pathize "$TARGET_OPAMSWITCH/_3p_installed"
+        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$buildhost_pathize_RETVAL" )
     fi
-    WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
 fi
 
 # We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
@@ -346,7 +351,7 @@ if [ -n "$OCAMLVERSION_OR_HOME" ]; then
         OCAMLVERSION_OR_HOME_UNIX="$OCAMLVERSION_OR_HOME"
     fi
     case "$OCAMLVERSION_OR_HOME_UNIX" in
-        /*)
+        /* | ?:*) # /a/b/c or C:\Windows
             validate_and_explore_ocamlhome "$OCAMLVERSION_OR_HOME"
             {
                 printf "PATH='%s':\"\$PATH\"\n" "$DKML_OCAMLHOME_UNIX/$DKML_OCAMLHOME_BINDIR_UNIX"

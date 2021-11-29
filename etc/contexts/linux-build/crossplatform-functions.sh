@@ -1828,3 +1828,27 @@ escape_args_for_shell() {
 escape_stdin_for_single_quote() {
     "$DKMLSYS_SED" "s#'#'\"'\"'#g"
 }
+
+# Convert a path into an absolute path appropriate for the build host machine. That is, Windows
+# paths for a Windows host machine and Unix paths for Unix host machines.
+#
+# Output:
+#  env:buildhost_pathize_RETVAL - The absolute path
+buildhost_pathize() {
+    buildhost_pathize_PATH="$1"
+    shift
+    if [ -x /usr/bin/cygpath ]; then
+        buildhost_pathize_RETVAL=$(/usr/bin/cygpath -aw "$buildhost_pathize_PATH")
+    else
+        case "$buildhost_pathize_PATH" in
+            /*)
+                buildhost_pathize_RETVAL="$buildhost_pathize_PATH" ;;
+            ?:*)
+                # ex. C:\Windows
+                buildhost_pathize_RETVAL="$buildhost_pathize_PATH" ;;
+            *)
+                # shellcheck disable=SC2034
+                buildhost_pathize_RETVAL="$PWD/$buildhost_pathize_PATH" ;;
+        esac
+    fi
+}

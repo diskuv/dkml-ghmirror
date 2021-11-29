@@ -195,12 +195,12 @@ fi
 set_opamrootdir
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" "$@"
+    run_opamsys() {
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s "$@"
     }
 else
-    run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" "$@"
+    run_opamsys() {
+        log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" "$@"
     }
 fi
 
@@ -214,12 +214,12 @@ if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     if is_unixy_windows_build_machine; then
         # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository.
         # --disable-sandboxing: Sandboxing does not work on Windows
-        run_opam init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
+        run_opamsys init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
     elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_reproducible_platform; then
         # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
-        run_opam init --yes --disable-sandboxing --no-setup --bare
+        run_opamsys init --yes --disable-sandboxing --no-setup --bare
     else
-        run_opam init --yes --no-setup --bare
+        run_opamsys init --yes --no-setup --bare
     fi
 fi
 
@@ -236,7 +236,7 @@ if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_
     # Goes away with wget!! With wget has no funny symbols ... it is like:
     #   C:\source\...\build\_tools\common\MSYS2\usr\bin\wget.exe --content-disposition -t 3 -O C:\Users\...\AppData\Local\Temp\opam-29232-cc6ec1\inline-flexdll.patch.part -U opam/2.1.0 -- https://gist.githubusercontent.com/fdopen/fdc645a61a208552ebac76a67eafd3ee/raw/9f521e91c8f0e9490652651ccdbfae88da701919/inline-flexdll.patch
     if ! grep -q '^download-command: wget' "$OPAMROOTDIR_BUILDHOST/config"; then
-        run_opam option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
+        run_opamsys option --yes --global download-command=$WINDOWS_DOWNLOAD_COMMAND
     fi
 fi
 
@@ -246,12 +246,12 @@ fi
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]; then
     OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
-    run_opam repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+    run_opamsys repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.
 if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
-    run_opam repository list --all > "$WORK"/list
+    run_opamsys repository list --all > "$WORK"/list
     awk '$1=="default" {print $2}' "$WORK"/list > "$WORK"/default
     _NUMLINES=$(awk 'END{print NR}' "$WORK"/default)
     if [ "$_NUMLINES" -ne 1 ]; then
@@ -266,12 +266,12 @@ if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/
     fi
     if grep -q "/$REPONAME_PENDINGREMOVAL"$ "$WORK"/default; then
         # ok. is like file://C:/source/xxx/etc/opam-repositories/pendingremoval-opam-repo
-        run_opam repository remove default --yes --all --dont-select
+        run_opamsys repository remove default --yes --all --dont-select
     fi
 fi
 # add back the default we want if a default is not there
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/default.tar.gz" ]; then
-    run_opam repository add default https://opam.ocaml.org --yes --dont-select --rank=3
+    run_opamsys repository add default https://opam.ocaml.org --yes --dont-select --rank=3
 fi
 
 # END opam init

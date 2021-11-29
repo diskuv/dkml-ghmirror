@@ -113,7 +113,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         BUILD_ROOT_UNIX=$(/usr/bin/cygpath -u "$BUILD_ROOT_UNIX")
     fi
     case "$BUILD_ROOT_UNIX" in
-    /*)
+    /* | ?:*) # /a/b/c or C:\Windows
         BUILD_BASEPATH=
         ;;
     *)
