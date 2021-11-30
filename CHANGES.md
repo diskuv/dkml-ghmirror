@@ -1,3 +1,84 @@
+## 0.3.0 (2021-11-29)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Breaking Changes:
+* [ocamlformat](https://github.com/ocaml-ppx/ocamlformat#should-i-use-ocamlformat) has been upgraded from
+  0.18.0 to 0.19.0. Your code formatting will change, and you will need to change your versioned `.ocamlformat`
+  configuration. See Upgrading instructions below for how to change `.ocamlformat`.
+
+Changes:
+* There is a new Opam plugin you run with `opam dkml`.  Run it alone to get help. You can use `opam dkml init` to
+  initialize/upgrade a `_opam` subdirectory from zero or more `*.opam` files (also known as creating a local Opam
+  switch). Other commands may be added which should closely follow the command naming of [Yarn](https://yarnpkg.com/cli/init)
+* There is now a single "system" OCaml compiler rather than the per-switch "base" OCaml compiler of earlier versions.
+  That means creating a new `_opam` subdirectory (Opam switch) is significantly quicker.
+* The following "CI" packages (available to both CI and Full flavor installations) have been upgraded and are now
+  available with the version numbers below:
+  `bos.0.2.1`, `cmdliner.1.0.4`, `crunch.3.2.0`, `dune.2.9.1`, `dune-configurator.2.9.1`, `fmt.0.8.10`,
+  `ptime.0.8.6-msvcsupport`, `rresult.0.7.0`, `sha.1.15.1`
+* The following packages and their dependencies are new to "CI":
+  `opam-client.2.1.0`
+* The following "Full" packages have been upgraded and are now available with the version numbers below:
+  `lsp.1.9.0`, `ocaml-lsp-server.1.9.0`, `jsonrpc.1.9.0`,
+  `ocaml-format.0.19.0`, `ocaml-format-rpc.0.19.0`, `ocaml-format-rpc-lib.0.19.0`
+
+Known issues:
+* Installing from mainline China frequently errors out. A short term fix is available at
+  https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601
+
+### Upgrading from v0.2.0/.../v0.2.6 to v0.3.0
+
+FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
+
+```powershell
+(Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+
+iwr `
+  "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.0/distribution-portable.zip" `
+  -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+
+Expand-Archive `
+  -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+  -DestinationPath ~\DiskuvOCamlProjects `
+  -Force;
+
+~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat;
+```
+
+SECOND, any `.ocamlformat` files in your projects that have:
+
+```
+version=0.18.0
+```
+
+will need to be changed to:
+
+```
+version=0.19.0
+```
+
+THIRD, (optional) if you have been exploring the `diskuv-ocaml-starter` project, do the following:
+
+```bash
+git pull --ff-only
+git submodule update --init
+./makeit prepare-dev
+```
+
+FOURTH, (optional) in each of your SDK Project directories (both Windows + Linux/macOS), do the following:
+
+```bash
+git -C vendor/diskuv-ocaml fetch
+git -C vendor/diskuv-ocaml reset --hard v0.3.0
+git commit -m "Upgrade diskuv-ocaml to 0.3.0" vendor/diskuv-ocaml
+./makeit prepare-dev
+```
+
 ## 0.2.6 (2021-11-22)
 
 > The *Diskuv OCaml* distribution is available under the
