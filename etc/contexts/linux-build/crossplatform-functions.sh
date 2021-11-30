@@ -433,7 +433,7 @@ is_arg_windows_platform() {
 # Outputs:
 # - BUILDHOST_ARCH
 is_arg_linux_based_platform() {
-    build_machine_arch
+    autodetect_buildhost_arch
     case "$1" in
         linux_*)    return 0;;
         android_*)  return 0;;
@@ -454,7 +454,7 @@ is_arg_linux_based_platform() {
 # Outputs:
 # - BUILDHOST_ARCH
 is_arg_darwin_based_platform() {
-    build_machine_arch
+    autodetect_buildhost_arch
     case "$1" in
         darwin_*)  return 0;;
         dev)
@@ -644,7 +644,7 @@ install_reproducible_system_packages() {
     # Set DKMLSYS_*
     autodetect_system_binaries
     # Set BUILDHOST_ARCH
-    build_machine_arch
+    autodetect_buildhost_arch
 
     install_reproducible_system_packages_SCRIPTFILE="$1"
     shift
@@ -749,14 +749,14 @@ install_reproducible_script_with_args() {
 #
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
-build_machine_arch() {
+autodetect_buildhost_arch() {
     # Set DKMLSYS_*
     autodetect_system_binaries
 
-    build_machine_arch_MACHINE=$("$DKMLSYS_UNAME" -m)
-    build_machine_arch_SYSTEM=$("$DKMLSYS_UNAME" -s)
+    autodetect_buildhost_arch_MACHINE=$("$DKMLSYS_UNAME" -m)
+    autodetect_buildhost_arch_SYSTEM=$("$DKMLSYS_UNAME" -s)
     # list from https://en.wikipedia.org/wiki/Uname and https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
-    case "${build_machine_arch_SYSTEM}-${build_machine_arch_MACHINE}" in
+    case "${autodetect_buildhost_arch_SYSTEM}-${autodetect_buildhost_arch_MACHINE}" in
         Linux-armv7*)
             BUILDHOST_ARCH=linux_arm32v7;;
         Linux-armv6* | Linux-arm)
@@ -775,7 +775,7 @@ build_machine_arch() {
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86
             else
-                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $autodetect_buildhost_arch_SYSTEM and $autodetect_buildhost_arch_MACHINE" >&2
                 exit 1
             fi
             ;;
@@ -783,7 +783,7 @@ build_machine_arch() {
             if is_unixy_windows_build_machine; then
                 BUILDHOST_ARCH=windows_x86_64
             else
-                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+                printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $autodetect_buildhost_arch_SYSTEM and $autodetect_buildhost_arch_MACHINE" >&2
                 exit 1
             fi
             ;;
@@ -792,7 +792,7 @@ build_machine_arch() {
             # 1) MSYS2 does not run on ARM/ARM64 (https://www.msys2.org/docs/environments/)
             # 2) MSVC does not use ARM/ARM64 as host machine (https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160)
             # we do not support Windows ARM/ARM64 as a build machine
-            printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $build_machine_arch_SYSTEM and $build_machine_arch_MACHINE" >&2
+            printf "%s\n" "FATAL: Unsupported build machine type obtained from 'uname -s' and 'uname -m': $autodetect_buildhost_arch_SYSTEM and $autodetect_buildhost_arch_MACHINE" >&2
             exit 1
             ;;
     esac
@@ -807,7 +807,7 @@ build_machine_arch() {
 # - env:DKML_VCPKG_HOST_TRIPLET will contain the correct vcpkg triplet
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 platform_vcpkg_triplet() {
-    build_machine_arch
+    autodetect_buildhost_arch
     export DKML_VCPKG_HOST_TRIPLET
     # TODO: This static list is brittle. Should parse the Makefile or better yet
     # place in a different file that can be used by this script and the Makefile.
@@ -1098,7 +1098,7 @@ create_system_launcher() {
 #   path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
 autodetect_compiler() {
     # Set BUILDHOST_ARCH (needed before we process arguments)
-    build_machine_arch
+    autodetect_buildhost_arch
 
     # Process arguments
     autodetect_compiler_OUTPUTMODE=LAUNCHER

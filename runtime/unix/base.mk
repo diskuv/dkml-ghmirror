@@ -74,7 +74,7 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 # - this Makefile's ALPINE_ARCH_<platform>
 # - this Makefile's VCPKG_TRIPLET_<platform>
 # - runtime/unix/build-sandbox-configure.sh :: (BEGIN opam switch create ... END opam switch create)
-# - runtime/unix/_common_tool.sh :: build_machine_arch
+# - runtime/unix/_common_tool.sh :: autodetect_buildhost_arch
 # - installtime/msys2/apps/with-dkml/config/dkml_compiler_probe.h
 # - DKSDK's cmake/DKMLConfigureFromCompiler.cmake
 #
@@ -270,7 +270,7 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 define CONFIGURE_buildtype_template
   .PHONY: configure-dev-$(1)
   configure-dev-$(1): init-dev
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && build_machine_arch && if is_arg_windows_platform dev; then \
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && autodetect_buildhost_arch && if is_arg_windows_platform dev; then \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' ON "$$$$BUILDHOST_ARCH" $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
 		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' ON "$$$$BUILDHOST_ARCH" $(1) $(OPAMS_CSV_LINUX); \
@@ -583,7 +583,7 @@ dkml-report: buildconfig/dune
 	@echo PATH = $$PATH
 	@echo
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
-	autodetect_ocaml_and_opam_home && build_machine_arch && \
+	autodetect_ocaml_and_opam_home && autodetect_buildhost_arch && \
 	BUILD_ROOT_UNIX="$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$(/usr/bin/cygpath -u "$$BUILD_ROOT_UNIX"); fi && \
 	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 			if [ "$(platform)" = dev ]; then DKMLPLATFORM=$$BUILDHOST_ARCH; else DKMLPLATFORM=$(platform); fi && \

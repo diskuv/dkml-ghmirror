@@ -38,7 +38,7 @@ cd "$DKMLDIR"
 # >>>>>>>>>
 
 # Set BUILDHOST_ARCH
-build_machine_arch
+autodetect_buildhost_arch
 
 # Install the source code
 log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.sh \

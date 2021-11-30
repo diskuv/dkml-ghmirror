@@ -283,7 +283,7 @@ set_dkmlparenthomedir
 
 # Set BUILDHOST_ARCH
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    build_machine_arch
+    autodetect_buildhost_arch
     if [ "$PLATFORM" = dev ]; then
         TARGET_ARCH=$BUILDHOST_ARCH
     else

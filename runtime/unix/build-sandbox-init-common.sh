@@ -39,7 +39,7 @@ cd "$TOPDIR"
 autodetect_ocaml_and_opam_home
 
 # Set BUILDHOST_ARCH
-build_machine_arch
+autodetect_buildhost_arch
 
 # -----------------------
 # BEGIN opam init

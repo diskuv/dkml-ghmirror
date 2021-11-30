@@ -329,7 +329,7 @@ apply_ocaml_crosscompile_patch() {
 # Get OCaml source code
 
 # Set BUILDHOST_ARCH
-build_machine_arch
+autodetect_buildhost_arch
 
 get_ocaml_source() {
     get_ocaml_source_SRCUNIX="$1"

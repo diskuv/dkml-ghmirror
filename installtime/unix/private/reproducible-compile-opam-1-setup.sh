@@ -180,7 +180,7 @@ if [ ! -e "$OPAMSRC_UNIX"/shell/msvs-detect ] || [ ! -e "$OPAMSRC_UNIX"/shell/ms
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         if is_dev_platform; then
             # Set BUILDHOST_ARCH
-            build_machine_arch
+            autodetect_buildhost_arch
             DKML_TARGET_PLATFORM=$BUILDHOST_ARCH autodetect_compiler --msvs-detect "$WORK"/msvs-detect
         else
             DKML_TARGET_PLATFORM=$DKMLPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect

@@ -167,7 +167,7 @@ else
     fi
     if [ "$PLATFORM" = "dev" ]; then
         # Set BUILDHOST_ARCH
-        build_machine_arch
+        autodetect_buildhost_arch
         TARGET_OPAMSWITCH=$RESOLVED_BUILDDIR/$BUILDHOST_ARCH/$BUILDTYPE
     else
         TARGET_OPAMSWITCH=$RESOLVED_BUILDDIR/$PLATFORM/$BUILDTYPE
