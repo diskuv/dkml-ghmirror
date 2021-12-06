@@ -1,7 +1,14 @@
-# All packages listed in this file must go into either:
+# All packages listed in this file are installed as part of
+# the "tools" system switch.
+
+# Each package must go into either:
 # 1. PINNED_PACKAGES_OPAM and PACKAGES_FDOPEN_TO_REMOVE or
 # 2. PINNED_PACKAGES_DKML_PATCHES or
 # 3. PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC
+
+# ocamlfind has hardcoded paths in lib/ocaml/topfind so make sure that it is
+# installed once in the system switch
+ocamlfind.1.9.1
 
 # Dune is needed to compile dkml-findup.exe
 dune.2.9.1

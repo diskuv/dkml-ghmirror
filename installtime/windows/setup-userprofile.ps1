@@ -270,6 +270,13 @@ $CiFlavorStubs = @(
     #   Fatal error: cannot load shared library dlllambda_term_stubs
     #   Reason: The specified module could not be found.
 )
+$CiFlavorToplevels = @(
+    # Special libs are important if the binaries need them.
+    # For example, lib/ocaml/topfind has hardcoded paths and will be auto-installed if not present (so auto-install
+    # can happen from a local project switch which hardcodes the system lib/ocaml/topfind to a local project
+    # switch that may be deleted later).
+    "topfind"
+)
 $FullFlavorPackagesExtra = Get-Content -Path $DkmlPath\installtime\none\full-flavor-minus-ci-flavor-packages.txt | Where-Object {
     # Remove blank lines and comments
     "" -ne $_.Trim() -and -not $_.StartsWith("#")
@@ -333,14 +340,19 @@ $FullFlavorStubs = $CiFlavorStubs + @(
     "dlllambda_term_stubs.dll"
     "dlllwt_unix_stubs.dll"
 )
+$FullFlavorToplevels = $CiFlavorToplevels + @(
+    # Toplevels are important if the binaries need them.
+)
 if ($Flavor -eq "Full") {
     $FlavorPackages = $FullFlavorPackages
     $FlavorBinaries = $FullFlavorBinaries
     $FlavorStubs = $FullFlavorStubs
+    $FlavorToplevels = $FullFlavorToplevels
 } elseif ($Flavor -eq "CI") {
     $FlavorPackages = $CiFlavorPackages
     $FlavorBinaries = $CiFlavorBinaries
     $FlavorStubs = $CiFlavorStubs
+    $FlavorToplevels = $CiFlavorToplevels
 }
 
 # Consolidate the magic constants into a single deployment id
@@ -350,7 +362,8 @@ $DockerHash = Get-Sha256Hex16OfText -Text "$DV_WindowsMsvcDockerImage"
 $PkgHash = Get-Sha256Hex16OfText -Text ($FlavorPackages -join ',')
 $BinHash = Get-Sha256Hex16OfText -Text ($FlavorBinaries -join ',')
 $StubHash = Get-Sha256Hex16OfText -Text ($FlavorStubs -join ',')
-$DeploymentId = "v-$dkml_root_version;ocaml-$OCamlLangVersion;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash;stubs-$StubHash"
+$ToplevelsHash = Get-Sha256Hex16OfText -Text ($FlavorToplevels -join ',')
+$DeploymentId = "v-$dkml_root_version;ocaml-$OCamlLangVersion;opam-$DV_AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;jq-$JqVersion;inotify-$InotifyTag;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PkgHash;bins-$BinHash;stubs-$StubHash;toplevels-$ToplevelsHash"
 
 if ($OnlyOutputCacheKey) {
     Write-Output $DeploymentId
@@ -1457,6 +1470,7 @@ try {
     Write-ProgressStep
 
     $DiskuvHostToolsDir = "$ProgramPath\host-tools\_opam"
+    $ProgramLibOcamlDir = "$ProgramPath\lib\ocaml"
     $ProgramStubsDir = "$ProgramPath\lib\ocaml\stublibs"
 
     # Binaries
@@ -1483,6 +1497,21 @@ try {
             Copy-Item -Path "$DiskuvHostToolsDir\lib\stublibs\$stub" -Destination $ProgramStubsDir
         } elseif ((Get-FileHash "$ProgramStubsDir\$stub").hash -ne (Get-FileHash $DiskuvHostToolsDir\lib\stublibs\$stub).hash) {
             Copy-Item -Path "$DiskuvHostToolsDir\lib\stublibs\$stub" -Destination $ProgramStubsDir
+        }
+    }
+
+    # Toplevel files. Opam sets OCAML_TOPLEVEL_PATH=lib/toplevel, but we should place them in lib/ocaml so we don't
+    # have to define our own system OCAML_TOPLEVEL_PATH which would interfere with Opam. Besides, installing a toplevel
+    # containing package like "ocamlfind" in a local switch can autopopulate lib/ocaml anyway if we are using the
+    # OCaml system compiler (host-tools switch, ocaml.exe binary). So place in lib/ocaml anyway.
+    if (!(Test-Path -Path $ProgramLibOcamlDir)) { New-Item -Path $ProgramLibOcamlDir -ItemType Directory | Out-Null }
+    foreach ($toplevel in $FlavorToplevels) {
+        if (!(Test-Path "$DiskuvHostToolsDir\lib\toplevel\$toplevel")) {
+            # no-op since the speciallib is not part of Opam switch (we may have been installed manually like OCaml system compiler)
+        } elseif (!(Test-Path -Path "$ProgramLibOcamlDir\$toplevel")) {
+            Copy-Item -Path "$DiskuvHostToolsDir\lib\toplevel\$toplevel" -Destination $ProgramLibOcamlDir
+        } elseif ((Get-FileHash "$ProgramLibOcamlDir\$toplevel").hash -ne (Get-FileHash $DiskuvHostToolsDir\lib\toplevel\$toplevel).hash) {
+            Copy-Item -Path "$DiskuvHostToolsDir\lib\toplevel\$toplevel" -Destination $ProgramLibOcamlDir
         }
     }
 
