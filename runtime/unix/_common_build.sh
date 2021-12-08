@@ -63,7 +63,7 @@ USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS=OFF
 #
 # Inputs:
 # - env:PLATFORM
-# - env:BUILDTYPE
+# - env:BUILDTYPE. Deprecated. Used when DKML_FEATUREFLAG_CMAKE_PLATFORM=OFF.
 # - env:DKML_DUNE_BUILD_DIR. Automatically set by this script if not already set.
 # Outputs:
 # - env:OPAMROOTDIR_BUILDHOST - [As per set_opamrootdir] The path to the Opam root directory that is usable only on the

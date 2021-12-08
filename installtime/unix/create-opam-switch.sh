@@ -81,7 +81,7 @@ usage() {
     printf "%s\n" "  Will set switch options pin package versions needed to compile on Windows." >&2
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    create-opam-switch.sh -h                          Display this help message" >&2
-    printf "%s\n" "    create-opam-switch.sh -u OFF|ON -b BUILDTYPE      Create the Opam switch." >&2
+    printf "%s\n" "    create-opam-switch.sh -u OFF|ON [-b BUILDTYPE]    Create the Opam switch." >&2
     printf "%s\n" "                                                      If an OCaml home is specified with the -v option, then the" >&2
     printf "%s\n" "                                                      switch will have a 'system' OCaml compiler that uses OCaml from the" >&2
     printf "%s\n" "                                                      PATH. If an OCaml version is specified with the -v option, and the" >&2
@@ -90,7 +90,8 @@ usage() {
     printf "%s\n" "                                                      the -v option not specified) the switch must be created by the DKSDK product;" >&2
     printf "%s\n" "                                                      DKSDK will supply environment variables so that the switch can build a" >&2
     printf "%s\n" "                                                      'base' OCaml compiler, although this path is rare since DKSDK will typically" >&2
-    printf "%s\n" "                                                      create and use an OCaml home." >&2
+    printf "%s\n" "                                                      create and use an OCaml home. DKSDK will also supply variables so that the" >&2
+    printf "%s\n" "                                                      -b option is not needed; otherwise -b option is required." >&2
     printf "%s\n" "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    (Deprecated) Create the Opam switch" >&2
     printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s           (Deprecated) Expert. Create the diskuv-host-tools switch" >&2
     printf "%s\n" "Options:" >&2
@@ -106,8 +107,8 @@ usage() {
     printf "%s\n" "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
     printf "%s\n" "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
     printf "%s\n" "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
-    printf "%s\n" "    -t OPAMSWITCH: Optional. Create <OPAMSWITCH>/_opam as an Opam switch prefix when -u ON but not -s." >&2
-    printf "%s\n" "       Defaults to <STATEDIR>/_opam" >&2
+    printf "%s\n" "    -t OPAMSWITCH: Create <OPAMSWITCH>/_opam as an Opam switch prefix when -u ON but not -s." >&2
+    printf "%s\n" "       Optional when -d option supplied; defaults to <STATEDIR>/_opam" >&2
     printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
     printf "%s\n" "       If ON, uses Opam 2.2+ default root" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
@@ -144,7 +145,6 @@ fi
 OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
-TARGET_OPAMSWITCH=
 while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
     case ${opt} in
         h )
@@ -189,10 +189,6 @@ while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$TARGET_OPAMSWITCH" ] && [ -n "$STATEDIR" ]; then
-    TARGET_OPAMSWITCH="$STATEDIR"
-fi
-
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
         usage
@@ -217,9 +213,12 @@ else
         usage
         exit 1
     fi
-    if [ -z "$BUILDTYPE" ]; then
+    if [ -z "$BUILDTYPE" ] && [ -z "${DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P:-}" ]; then
         usage
         exit 1
+    fi
+    if [ -z "${TARGET_OPAMSWITCH:-}" ] && [ -n "$STATEDIR" ]; then
+        TARGET_OPAMSWITCH="$STATEDIR"
     fi
 fi
 
@@ -516,11 +515,11 @@ if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
         OPAM_EXEC_OPTS="-s -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 else
-    if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootandswitchdir
 
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "check_state nonempty BUILDTYPE" >&2; exit 1; fi
         OPAM_EXEC_OPTS="-p $PLATFORM"
         if [ -n "$STATEDIR" ]; then
             OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -t $STATEDIR"
