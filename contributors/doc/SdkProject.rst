@@ -208,7 +208,7 @@ Directory Layout
     ├── make.cmd
     ├── Makefile
     ├── README.md
-    ├── starter.opam
+    ├── opam
     ├── test
     │   ├── dune
     │   └── starter.ml
