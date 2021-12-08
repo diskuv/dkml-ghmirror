@@ -477,6 +477,8 @@ is_minimal_opam_switch_present() {
     is_minimal_opam_switch_present_switchdir_buildhost=$1
     shift
     if
+    [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/.opam-switch/switch-config" ] ||
+    [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/.opam-switch/switch-state" ] ||
     # gen_ocaml_config.ml is evidence that a system compiler was configured;
     # see https://github.com/ocaml/opam-repository/blob/master/packages/ocaml-system/ocaml-system.4.12.1/files/gen_ocaml_config.ml.in
     [ -e "$is_minimal_opam_switch_present_switchdir_buildhost/share/ocaml-config/gen_ocaml_config.ml" ] ||
