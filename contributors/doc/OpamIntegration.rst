@@ -62,7 +62,7 @@ This switch is reserved for future use so do not delete it.
     With a global switch that problem goes away.
 
 ``diskuv-host-tools`` Local Switch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OCaml package directories, C header "include" directories and other
 critical locations are hardcoded into essential OCaml executables like

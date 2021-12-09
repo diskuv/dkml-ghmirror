@@ -15,6 +15,9 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_rtd_theme
+from pathlib import Path
+import shutil
+import subprocess
 
 # -- Project information -----------------------------------------------------
 
@@ -30,6 +33,7 @@ author = 'Diskuv, Inc.'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
+    "sphinx.ext.graphviz"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -56,3 +60,22 @@ html_static_path = ['_static']
 html_theme_options = {
     'style_nav_header_background': '#3347A9'
 }
+
+# -- Optional for graphviz ---------------------------------------------------
+
+graphviz_output_format = 'svg'
+
+# Set graphviz_dot
+graphviz_dot_candidates = ["/mingw64/bin/dot.exe"]
+graphviz_dot_final = None
+cygpath_exe = shutil.which("cygpath")
+for _c in graphviz_dot_candidates:
+    if cygpath_exe is not None:
+        _c = subprocess.check_output([cygpath_exe, '-aw', _c], universal_newlines=True).strip()
+    if Path(_c).exists():
+        graphviz_dot_final = _c
+        break
+if graphviz_dot_final is None:
+    graphviz_dot = "dot"
+else:
+    graphviz_dot = graphviz_dot_final

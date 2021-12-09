@@ -14,3 +14,6 @@ install-gitlab-release-cli:
 		chmod +x /tmp/release-cli && \
 		sudo mv /tmp/release-cli /usr/local/bin; \
 	fi
+
+install-graphviz:
+	brew ls --versions graphviz || brew install graphviz

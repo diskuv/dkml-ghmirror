@@ -261,8 +261,8 @@ Sequence of operations
          * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment variable
          * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment variable
          * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment variable
-         * ``<vcpkg_installed>/lib`` is added to the ``LIBRARY_PATH`` environment variable
-           and by `Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
+         * ``<vcpkg_installed>/lib`` is added to the
+           `LIBRARY_PATH variable of Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
          * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment variable
          * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment variable
          * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment variable, for any ``<subdir>``

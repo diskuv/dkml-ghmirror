@@ -176,6 +176,82 @@ Finished?
     The remainder of the SDK Projects documentation is not ready for consumption.
     And we are missing a tool to make your own SDK Project. **Stop here!**
 
+Build Process
+-------------
+
+There are a hierarchy of build tools that are used to build an SDK project:
+
+.. graphviz::
+
+   digraph G {
+      compound=true;
+      make_gen [shape=Mdiamond,label="./makeit generate"];
+      make_gen -> select_buildtool;
+
+      subgraph cluster_make {
+         label = "GNU Make";
+         select_buildtool [shape=diamond,label="Decide Primary build tool"];
+         cmake_gen [label="cmake -G"];
+
+         subgraph cluster_buildtool {
+            label = "Primary Build Tool\n(Visual Studio, Xcode, Android Studio, ninja, etc.)";
+            color=blue;
+
+            build_project [shape=Mdiamond,label="build project"];
+            dune_build [label="dune build"];
+            target_build [label="ninja/make/msbuild"];
+            c_build [label="clang/gcc/cl"];
+            ocaml_build [label="ocamlc"];
+
+            build_project -> target_build [label=" **/CMakeLists.txt"]
+            build_project -> dune_build [label=" *.opam\n dune-project"];
+            target_build -> c_build [label=" *.c"];
+            dune_build -> c_build [label=" *_stubs.c"];
+            dune_build -> ocaml_build [label=" *.ml"];
+
+            target_exe [shape=Msquare,label=" *.exe"];
+            target_lib [shape=Msquare,label=" *.so,*.dll\n *.a,*.lib"];
+            ocaml_build -> target_lib [dir=both];
+            c_build -> target_lib [dir=both];
+            /*target_lib -> ocaml_build;
+            target_lib -> c_build;*/
+            ocaml_build -> target_exe;
+            c_build -> target_exe;
+         }
+
+         select_buildtool -> cmake_gen;
+         cmake_gen -> build_project [minlen=1,label=" «create»",lhead="cluster_buildtool"];
+      }
+   }
+
+CMake controls almost all of the build process.
+
+First the script ``./makeit generate-XX-on-YY`` runs a GNU Makefile script that
+selects the build tool (Ninja, Visual Studio, xcode, etc.) and then invokes
+the *generation* phase of CMake. During this phase CMake will:
+
+* create the build directory
+* copy the source code into the build directory
+* create configuration files for the chosen build tool
+
+The chosen build tool can then be invoked. For example on Windows the Visual Studio build tool
+is used and you can open the "solution" in Visual Studio and then build the project from within
+Visual Studio.
+
+Anytime after when you edit the source code one of two things can happen:
+
+1. You edit the project metadata in the ``CMakeLists.txt`` files: CMake will have
+   written intelligence into the build tool configuration files so that when any project
+   metadata has changed the CMake generation phase
+   will be rerun to update the build tool.
+2. You edit OCaml or C code, or edit ``dune`` files: The chosen build tool will notice your
+   changes and incrementally compile the code if you build the porject.
+
+You can go back and forth from OCaml to C because
+`OCaml packages <https://dune.readthedocs.io/en/latest/opam.html#generating-opam-files>`_
+are treated as CMake targets, and DKSDK has added logic to CMake to wire together C
+and OCaml targets.
+
 Directory Layout
 ----------------
 
@@ -205,7 +281,8 @@ Directory Layout
     │   ├── dune
     │   └── terminal_color.ml
     ├── LICENSE.txt
-    ├── make.cmd
+    ├── makeit
+    ├── makeit.cmd
     ├── Makefile
     ├── README.md
     ├── opam
@@ -213,7 +290,8 @@ Directory Layout
     │   ├── dune
     │   └── starter.ml
     └── vendor
-        └── diskuv-ocaml
+        ├── diskuv-ocaml
+        └── diskuv-sdk
 
 *TODO* Explanation of each directory and file.
 

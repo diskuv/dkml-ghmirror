@@ -42,3 +42,13 @@ install-powershell:
 	fi
 
 install-shellcheck: /usr/local/bin/shellcheck.exe
+
+.PHONY: install-graphviz
+install-graphviz:
+	@PATH="$$PATH:/usr/bin:/bin"; \
+	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then \
+		pacman --sync --needed --noconfirm mingw-w64-x86_64-graphviz; \
+	fi
+	@PATH="/usr/bin:/bin:/mingw64/bin:$$PATH"; if ! which dot >/dev/null 2>&1; then \
+		echo "FATAL: 'dot' was not installed, and the Makefile does not know how to install it." >&2; exit 1; \
+	fi
