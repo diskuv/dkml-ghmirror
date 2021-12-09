@@ -1574,6 +1574,10 @@ try {
         # DiskuvOCamlHome
         [Environment]::SetEnvironmentVariable("DiskuvOCamlHome", "$ProgramPath", 'User')
 
+        # DiskuvOCamlVersion
+        # - used for VSCode's CMake Tools to set VCPKG_ROOT in cmake-variants.yaml
+        [Environment]::SetEnvironmentVariable("DiskuvOCamlVersion", "$dkml_root_version", 'User')
+
         # ---------------------------------------------
         # Remove any non-DKML OCaml environment entries
         # ---------------------------------------------

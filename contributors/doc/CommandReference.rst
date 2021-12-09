@@ -327,7 +327,7 @@ Argument BUILDTYPE
     ReleaseCompatPerf
         Mostly optimized code. Slightly less optimized than ``Release`` but compatible
         with the Linux tool `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_.
-        On Windows this build type is the same as Release.
+        On non-Linux systems this build type is the same as Release.
 
         Expert: Enables the `frame pointer <https://dev.realworldocaml.org/compiler-backend.html#using-the-frame-pointer-to-get-more-accurate-traces>`_
         which gets more accurate traces.
