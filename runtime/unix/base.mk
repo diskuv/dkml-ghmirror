@@ -258,9 +258,6 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES),
 #
 # The many recipes are defined so that `make -j` recipe-based parallelization works well
 
-OPAMS_LINUX   ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PKGS_LINUX:=.opam)
-OPAMS_WINDOWS ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PKGS_WINDOWS:=.opam)
-
 OPAMS_CSV_LINUX   ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_LINUX))))
 OPAMS_CSV_WINDOWS ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_WINDOWS))))
 
@@ -270,11 +267,8 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 define CONFIGURE_buildtype_template
   .PHONY: configure-dev-$(1)
   configure-dev-$(1): init-dev
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && autodetect_buildhost_arch && if is_arg_windows_platform dev; then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' ON "$$$$BUILDHOST_ARCH" $(1) $(OPAMS_CSV_WINDOWS); \
-	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' ON "$$$$BUILDHOST_ARCH" $(1) $(OPAMS_CSV_LINUX); \
-	fi
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && autodetect_buildhost_arch && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' ON "$$$$BUILDHOST_ARCH" $(1) ./opam
 
   .PHONY: configure-all-$(1)
   configure-all-$(1): $(foreach platform,$(DKML_PLATFORMS),configure-$(platform)-$(1))
@@ -309,11 +303,8 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call CONFIGURE_platform_templa
 define CONFIGURE_platform_buildtype_template
   .PHONY: configure-$(1)-$(2)
   configure-$(1)-$(2): init-$(1)
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && if is_arg_windows_platform $(1); then \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' OFF $(1) $(2) $(OPAMS_CSV_WINDOWS); \
-	else \
-		DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' OFF $(1) $(2) $(OPAMS_CSV_LINUX); \
-	fi
+	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
+	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace "$$$$DKML_POSIX_SHELL" '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' OFF $(1) $(2) ./opam
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
     $(eval $(call CONFIGURE_platform_buildtype_template,$(platform),$(buildtype))) \

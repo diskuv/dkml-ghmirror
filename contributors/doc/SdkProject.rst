@@ -243,9 +243,6 @@ Here is an example from the ``diskuv-ocaml-starter`` local project:
     # Verbose tracing of each command. Either ON or OFF
     DKML_BUILD_TRACE = OFF
 
-    # The names of the Opam packages (without the .opam suffix). No platform-specific packages belongs here.
-    OPAM_PKGS_CROSSPLATFORM = starter
-
     # The source directories. No platform-specific source code belongs here.
     OCAML_SRC_CROSSPLATFORM = bin lib
 
