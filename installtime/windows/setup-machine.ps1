@@ -274,4 +274,4 @@ Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $MachineDeploymen
 # END Stop deployment
 # ----------------------------------------------------------------
 
-Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }

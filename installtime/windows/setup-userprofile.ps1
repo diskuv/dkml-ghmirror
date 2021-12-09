@@ -433,7 +433,7 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 19
+$ProgressTotalSteps = 20
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -565,7 +565,7 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
                 ('/COMPONENTS="{0}"' -f ($res -join ",")) )
         $exitCode = $proc.ExitCode
         if ($exitCode -ne 0) {
-            Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+            if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }
             $ErrorActionPreference = "Continue"
             Write-Error "Git installer failed"
             Remove-Item "$GitWindowsSetupAbsPath" -Recurse -Force
@@ -1642,7 +1642,7 @@ catch {
     exit 1
 }
 
-Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }
 
 Clear-Host
 Write-Host ""

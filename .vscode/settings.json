@@ -1,5 +1,5 @@
 {
-    "restructuredtext.confPath": "${workspaceFolder}\\contributors",
+    "restructuredtext.confPath": "${workspaceFolder}${pathSeparator}contributors",
     "files.exclude": {
         "**/release-zip": true
     },

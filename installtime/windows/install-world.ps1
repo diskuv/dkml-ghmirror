@@ -102,4 +102,4 @@ Invoke-Expression -Command "$HereDir\setup-userprofile.ps1 -ParentProgressId $Pr
 # END Setup $env:USERPROFILE
 # ----------------------------------------------------------------
 
-Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }
