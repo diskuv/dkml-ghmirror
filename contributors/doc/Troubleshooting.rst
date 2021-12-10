@@ -1,6 +1,25 @@
 Troubleshooting
 ===============
 
+Problem 32-bit executable - ...installer.exe: Permission denied
+---------------------------------------------------------------
+
+TLDR: 32-bit executables with "install", "setup" or "update" in their filename, when run from MSYS2 or Cygwin, will fail.
+
+These same executables when run from PowerShell or the Command Prompt will pop up the
+"Do you want to allow this app from an unknown publisher to make changes to your device?" User Account Control. However
+this logic does not seem to be available in MSYS2/Cygwin, so in MSYS2/Cygwin you get a Permission Denied.
+
+Reference:
+https://docs.microsoft.com/en-us/windows/security/identity-protection/user-account-control/how-user-account-control-works#installer-detection-technology
+
+Solutions:
+
+1. Change the executable filename if that is possible.
+2. Run as Administrator
+3. Disable the "User Account Control: Detect application installations and prompt for elevation" policy setting.
+   See https://docs.microsoft.com/en-us/windows/security/identity-protection/user-account-control/user-account-control-security-policy-settings#user-account-control-detect-application-installations-and-prompt-for-elevation
+
 Problem - Sys_error("...\\_opam\\lib\\...: Permission denied")
 --------------------------------------------------------------
 
