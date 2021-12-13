@@ -100,12 +100,17 @@
 .Parameter MSYS2Dir
     When specified the specified MSYS2 installation directory will be used.
     Useful in CI situations.
+.Parameter IncrementalDeployment
+    Advanced.
+    
+    Tries to continue from where the last deployment finished. Never continues
+    when the version number that was last deployed differs from the version
+    number of the current installation script.
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 
 .Example
     PS> $global:SkipMSYS2Setup = $true ; $global:SkipCygwinSetup = $true; $global:SkipMSYS2Update = $true ; $global:SkipMobyDownload = $true ; $global:SkipMobyFixup = $true ; $global:SkipOpamSetup = $true; $global:SkipOcamlSetup = $true
-    PS> $global:IncrementalDiskuvOcamlDeployment = $true; $global:RedeployIfExists = $true
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 #>
 
@@ -150,6 +155,8 @@ param (
     $OnlyOutputCacheKey,
     [switch]
     $ForceDeploymentSlot0,
+    [switch]
+    $IncrementalDeployment,
     [switch]
     $StopBeforeInitOpam,
     [switch]
@@ -390,8 +397,7 @@ if (!(Test-Path -Path $ProgramParentPath)) { New-Item -Path $ProgramParentPath -
 
 # Check if already deployed
 $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -DeploymentId $DeploymentId
-# Advanced. Skip check with ... $global:RedeployIfExists = $true ... remove it with ... Remove-Variable RedeployIfExists
-if (!$global:RedeployIfExists -and $finished) {
+if (!$IncrementalDeployment -and $finished) {
     Write-Host "$DeploymentId already deployed."
     Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.gitlab.io/diskuv-ocaml/"
     return
@@ -614,18 +620,12 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 # ----------------------------------------------------------------
 # BEGIN Start deployment
 
-# We do support incremental deployments but for user safety we don't enable it by default;
-# it is really here to help the maintainers of DiskuvOcaml rapidly develop new deployment ids.
-# Use `$global:IncrementalDiskuvOcamlDeployment = $true` to enable incremental deployments.
-# Use `Remove-Variable IncrementalDiskuvOcamlDeployment` to remove the override.
-$EnableIncrementalDeployment = $global:IncrementalDiskuvOcamlDeployment -and $true
-
 $global:ProgressStatus = "Starting Deployment"
 if ($ForceDeploymentSlot0) { $FixedSlotIdx = 0 } else { $FixedSlotIdx = $null }
 $ProgramPath = Start-BlueGreenDeploy -ParentPath $ProgramParentPath `
     -DeploymentId $DeploymentId `
     -FixedSlotIdx:$FixedSlotIdx `
-    -KeepOldDeploymentWhenSameDeploymentId:$EnableIncrementalDeployment `
+    -KeepOldDeploymentWhenSameDeploymentId:$IncrementalDeployment `
     -LogFunction ${function:\Write-ProgressCurrentOperation}
 $DeploymentMark = "[$DeploymentId]"
 
@@ -635,7 +635,7 @@ $DeploymentMark = "[$DeploymentId]"
 $TempParentPath = "$Env:temp\diskuvocaml\setupuserprofile"
 $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
     -DeploymentId $DeploymentId `
-    -KeepOldDeploymentWhenSameDeploymentId:$EnableIncrementalDeployment `
+    -KeepOldDeploymentWhenSameDeploymentId:$IncrementalDeployment `
     -LogFunction ${function:\Write-ProgressCurrentOperation}
 
 $ProgramRelGeneralBinDir = "usr\bin"
@@ -1488,7 +1488,7 @@ try {
     if (!(Test-Path -Path $ProgramGeneralBinDir)) { New-Item -Path $ProgramGeneralBinDir -ItemType Directory | Out-Null }
     foreach ($binary in $FlavorBinaries) {
         # Don't copy unless the target file doesn't exist -or- the target file is different from the source file.
-        # This helps IncrementalDiskuvOcamlDeployment installations, especially when a file is in use
+        # This helps IncrementalDeployment installations, especially when a file is in use
         # but hasn't changed (especially `dune.exe`, `ocamllsp.exe` which may be open in an IDE)
         if (!(Test-Path "$DiskuvHostToolsDir\bin\$binary")) {
             # no-op since the binary is not part of Opam switch (we may have been installed manually like OCaml system compiler)
@@ -1542,7 +1542,7 @@ try {
     Write-ProgressStep
 
     Stop-BlueGreenDeploy -ParentPath $ProgramParentPath -DeploymentId $DeploymentId -Success
-    if ($global:RedeployIfExists) {
+    if ($IncrementalDeployment) {
         Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId -Success # don't delete the temp directory
     } else {
         Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId # no -Success so always delete the temp directory
