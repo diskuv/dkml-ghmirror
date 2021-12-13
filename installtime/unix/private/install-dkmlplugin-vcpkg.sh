@@ -131,7 +131,11 @@ INSTALL_VCPKG=OFF
 # Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
 # We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
 # to x86-windows.
-platform_vcpkg_triplet
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    platform_vcpkg_triplet
+else
+    vcpkg_triplet_arg_platform "$PLATFORM"
+fi
 
 # Locate vcpkg and the vcpkg package installation directory
 # shellcheck disable=SC2154
