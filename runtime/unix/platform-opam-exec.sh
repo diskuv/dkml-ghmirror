@@ -98,9 +98,7 @@ fi
 #
 #   Any arguments that can go in 'opam --somearg somecommand' should be processed here
 #   and added to OPAM_OPTS. We'll parse 'somecommand ...' options in a second getopts loop.
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=
-fi
+PLATFORM=
 BUILDTYPE=
 DISKUV_TOOLS_SWITCH=OFF
 STATEDIR=
@@ -123,6 +121,10 @@ while getopts ":h0:1:b:sp:t:d:u:o:v:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         b )
             BUILDTYPE=$OPTARG

@@ -24,10 +24,11 @@ usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    install-dkmlplugin-withdkml.sh -h                   Display this help message" >&2
     printf "%s\n" "    install-dkmlplugin-withdkml.sh -p PLATFORM          (Deprecated) Install the DKML plugin with-dkml" >&2
-    printf "%s\n" "    install-dkmlplugin-withdkml.sh [-d STATEDIR]        Install the DKML plugin with-dkml" >&2
+    printf "%s\n" "    install-dkmlplugin-withdkml.sh [-d STATEDIR] -p DKMLPLATFORM  Install the DKML plugin with-dkml" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
     printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2
@@ -36,9 +37,7 @@ usage() {
     printf "%s\n" "       The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
 }
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=
-fi
+PLATFORM=
 STATEDIR=
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     USERMODE=OFF
@@ -55,6 +54,10 @@ while getopts ":h:p:d:o:v:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         d )
             # shellcheck disable=SC2034
@@ -73,11 +76,9 @@ while getopts ":h:p:d:o:v:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ]; then
-        usage
-        exit 1
-    fi
+if [ -z "$PLATFORM" ]; then
+    usage
+    exit 1
 fi
 
 # END Command line processing
@@ -127,7 +128,7 @@ if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
         "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s \
         -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
     else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
+        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -p "$PLATFORM" -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
         -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
     fi
 

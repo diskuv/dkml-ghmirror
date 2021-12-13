@@ -157,6 +157,10 @@ while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
                 PLATFORM=$OPTARG
             else
                 DKMLPLATFORM=$OPTARG
+                if [ "$DKMLPLATFORM" = dev ]; then
+                    usage
+                    exit 0
+                fi
             fi
         ;;
         b )

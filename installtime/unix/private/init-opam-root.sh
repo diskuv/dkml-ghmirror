@@ -53,6 +53,10 @@ while getopts ":h:p:d:o:v:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         d )
             STATEDIR=$OPTARG

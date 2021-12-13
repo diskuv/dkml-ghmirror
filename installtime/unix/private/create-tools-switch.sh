@@ -68,6 +68,10 @@ while getopts ":h:d:o:p:v:f:" opt; do
                 exit 107
             else
                 DKMLPLATFORM=$OPTARG
+                if [ "$DKMLPLATFORM" = dev ]; then
+                    usage
+                    exit 0
+                fi
             fi
             ;;
         f )
