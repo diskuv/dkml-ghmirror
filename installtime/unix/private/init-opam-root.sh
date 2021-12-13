@@ -23,10 +23,11 @@ usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    init-opam-root.sh -h                   Display this help message" >&2
     printf "%s\n" "    init-opam-root.sh -p PLATFORM          (Deprecated) Initialize the Opam root" >&2
-    printf "%s\n" "    init-opam-root.sh [-d STATEDIR]        Initialize the Opam root" >&2
+    printf "%s\n" "    init-opam-root.sh [-d STATEDIR] -p DKMLPLATFORM  Initialize the Opam root" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
@@ -35,9 +36,7 @@ usage() {
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
 }
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=
-fi
+PLATFORM=
 STATEDIR=
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     USERMODE=OFF
@@ -72,11 +71,9 @@ while getopts ":h:p:d:o:v:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ]; then
-        usage
-        exit 1
-    fi
+if [ -z "$PLATFORM" ]; then
+    usage
+    exit 1
 fi
 
 # END Command line processing
@@ -196,11 +193,11 @@ set_opamrootdir
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     run_opamsys() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s "$@"
+        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s "$@" -p "$PLATFORM"
     }
 else
     run_opamsys() {
-        log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" "$@"
+        log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s  -p "$PLATFORM" -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" "$@"
     }
 fi
 

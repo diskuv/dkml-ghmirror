@@ -3,7 +3,8 @@
 # create-tools-switch.sh
 #
 # Purpose:
-# 1. Make or upgrade an Opam switch tied to the current installation of Diskuv OCaml
+# 1. Make or upgrade an Opam switch tied to the current installation of Diskuv OCaml and the
+#    current DKMLPLATFORM.
 # 2. Not touch any existing installations of Diskuv OCaml (if blue-green deployments are enabled)
 #
 # When invoked?
@@ -22,11 +23,10 @@ usage() {
     printf "%s\n" "    create-tools-switch.sh              Create the Diskuv system switch" >&2
     printf "%s\n" "                                                    at <DiskuvOCamlHome>/host-tools on Windows or" >&2
     printf "%s\n" "                                                    <OPAMROOT>/host-tools/_opam on non-Windows" >&2
-    printf "%s\n" "    create-tools-switch.sh -d STATEDIR  Create the Diskuv system switch" >&2
-    printf "%s\n" "                                                    at <STATEDIR>/host-tools" >&2
+    printf "%s\n" "    create-tools-switch.sh -d STATEDIR -p DKMLPLATFORM  Create the Diskuv system switch" >&2
+    printf "%s\n" "                                                        at <STATEDIR>/host-tools" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p DKMLPLATFORM: Optional. The DKML target platform. If not specified then DKSDK_ environment" >&2
-    printf "%s\n" "       variables must be supplied by DKSDK which will be used to configure the switch" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform for the tools" >&2
     printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
     printf "%s\n" "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
@@ -95,6 +95,12 @@ shift $((OPTIND -1))
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC2034
     PLATFORM=dev
+else
+    if [ -z "$DKMLPLATFORM" ]; then
+        printf "Must specify -p DKMLPLATFORM option\n" >&2
+        usage
+        exit 1
+    fi
 fi
 
 DKMLDIR=$(dirname "$0")

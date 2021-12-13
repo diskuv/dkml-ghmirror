@@ -44,7 +44,7 @@ autodetect_buildhost_arch
 # -----------------------
 # BEGIN opam init
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/init-opam-root.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam init
 # -----------------------

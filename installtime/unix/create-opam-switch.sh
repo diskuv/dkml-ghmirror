@@ -96,7 +96,8 @@ usage() {
     printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s           (Deprecated) Expert. Create the diskuv-host-tools switch" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
-    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Ignored if an OCaml home rather than version number is specified using -v option" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Determines how to make an OCaml home if a version number is specified" >&2
+    printf "%s\n" "       (or nothing) using -v option. Also part of the name for the host-tools switch if -s option" >&2
     printf "%s\n" "    -d STATEDIR: Create <STATEDIR>/_opam as an Opam switch prefix, unless [-s] is also" >&2
     printf "%s\n" "        selected which creates <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "        selected which creates <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
@@ -134,7 +135,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     PLATFORM=
 fi
 BUILDTYPE=
-DISKUV_SYSTEM_SWITCH=OFF
+DISKUV_TOOLS_SWITCH=OFF
 STATEDIR=
 YES=OFF
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
@@ -162,7 +163,7 @@ while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
             BUILDTYPE=$OPTARG
         ;;
         s )
-            DISKUV_SYSTEM_SWITCH=ON
+            DISKUV_TOOLS_SWITCH=ON
         ;;
         d)
             STATEDIR=$OPTARG
@@ -190,7 +191,7 @@ done
 shift $((OPTIND -1))
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+    if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
         usage
         exit 1
     elif [ -n "$STATEDIR" ] && [ -z "$BUILDTYPE" ]; then
@@ -209,7 +210,7 @@ else
         usage
         exit 1
     fi
-    if [ "$USERMODE" = OFF ] && [ -z "$STATEDIR" ] && [ "$DISKUV_SYSTEM_SWITCH" = OFF ]; then
+    if [ "$USERMODE" = OFF ] && [ -z "$STATEDIR" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
         usage
         exit 1
     fi
@@ -232,7 +233,7 @@ fi
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then printf "%s\n" "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 # `diskuv-host-tools` is the host architecture, so use `dev` as its platform
-if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
+if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         PLATFORM=dev
     fi
@@ -504,15 +505,16 @@ fi
 
 
 # Make launchers for opam switch create <...> and for opam <...>
-if [ "$DISKUV_SYSTEM_SWITCH" = ON ]; then
+if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
-    set_opamswitchdir_of_system
 
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        set_opamswitchdir_of_system "$PLATFORM"
         OPAM_EXEC_OPTS="-s"
     else
-        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
+        set_opamswitchdir_of_system "$DKMLPLATFORM"
+        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -p '$DKMLPLATFORM' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 else
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
@@ -683,7 +685,7 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
-if [ "$DISKUV_SYSTEM_SWITCH" = OFF ] && \
+if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
         [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/wrap-commands.$dkml_root_version" ]; then
     # We can't put with-dkml.exe into Diskuv System switches because with-dkml.exe currently needs a system switch to compile itself.
     printf "%s" "$WITHDKMLEXE_BUILDHOST" | sed 's/\\/\\\\/g' > "$WORK"/dow.path

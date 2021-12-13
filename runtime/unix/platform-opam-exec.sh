@@ -45,33 +45,34 @@ usage() {
     printf "%s\n" "    platform-opam-exec.sh -d STATEDIR -s [-u OFF] [--] install|clean|help|...  Run the opam command in the local" >&2
     printf "%s\n" "                                                                               switch prefix of STATEDIR/host-tools/_opam" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "       -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
-    printf "%s\n" "       -s: Select the 'diskuv-host-tools' switch. If specified adds --switch to opam" >&2
-    printf "%s\n" "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
-    printf "%s\n" "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
-    printf "%s\n" "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
-    printf "%s\n" "          selected which uses <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
-    printf "%s\n" "          selected which uses <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
-    printf "%s\n" "          <OPAMROOT>/diskuv-host-tools/_opam on non-Windows." >&2
-    printf "%s\n" "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
-    printf "%s\n" "          the non-system switch will be found if you are in <STATEDIR>" >&2
-    printf "%s\n" "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    printf "%s\n" "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
-    printf "%s\n" "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
-    printf "%s\n" "       -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
-    printf "%s\n" "          The bin/ subdir of the Opam home is added to the PATH" >&2
-    printf "%s\n" "       -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
-    printf "%s\n" "          Examples: 4.13.1, /usr, /opt/homebrew" >&2
-    printf "%s\n" "          The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'); must be present if -s option since part of the switch name" >&2
+    printf "%s\n" "    -s: Select the 'diskuv-host-tools' switch. If specified adds --switch to opam" >&2
+    printf "%s\n" "    -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
+    printf "%s\n" "    -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
+    printf "%s\n" "    -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
+    printf "%s\n" "       selected which uses <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
+    printf "%s\n" "       selected which uses <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
+    printf "%s\n" "       <OPAMROOT>/diskuv-host-tools/_opam on non-Windows." >&2
+    printf "%s\n" "       Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
+    printf "%s\n" "       the non-system switch will be found if you are in <STATEDIR>" >&2
+    printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "       Defaults to ON; ie. using Opam 2.2+ default root." >&2
+    printf "%s\n" "       Also affects the Opam switches; see [-d STATEDIR] option" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
+    printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2
+    printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
+    printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "       The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
     printf "%s\n" "Advanced Options:" >&2
-    printf "%s\n" "       -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
-    printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
-    printf "%s\n" "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
-    printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
-    printf "%s\n" "             It behaves similar to:" >&2
-    printf "%s\n" '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
-    printf "%s\n" '               eval /tmp/eval.sh' >&2
-    printf "%s\n" '             Useful for setting environment variables (possibly from a script).' >&2
+    printf "%s\n" "    -0 PREHOOK: If specified, the script will be 'eval'-d upon" >&2
+    printf "%s\n" "          entering the Build Sandbox _before_ any the opam command is run." >&2
+    printf "%s\n" "    -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
+    printf "%s\n" "          entering the Build Sandbox _before_ any the opam command is run." >&2
+    printf "%s\n" "          It behaves similar to:" >&2
+    printf "%s\n" '            eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    printf "%s\n" '            eval /tmp/eval.sh' >&2
+    printf "%s\n" '          Useful for setting environment variables (possibly from a script).' >&2
 }
 
 # no arguments should display usage
@@ -101,7 +102,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     PLATFORM=
 fi
 BUILDTYPE=
-DISKUV_HOST_TOOLS=OFF
+DISKUV_TOOLS_SWITCH=OFF
 STATEDIR=
 PREHOOK_SINGLE_EVAL=
 PREHOOK_DOUBLE_EVAL=
@@ -128,7 +129,7 @@ while getopts ":h0:1:b:sp:t:d:u:o:v:" opt; do
             ADD_SWITCH_OPTS=ON
         ;;
         s )
-            DISKUV_HOST_TOOLS=ON
+            DISKUV_TOOLS_SWITCH=ON
             ADD_SWITCH_OPTS=ON
         ;;
         d )
@@ -160,7 +161,7 @@ done
 shift $((OPTIND -1))
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ] && [ "$DISKUV_HOST_TOOLS" = OFF ]; then
+    if [ -z "$PLATFORM" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
         usage
         exit 1
     fi
@@ -169,7 +170,12 @@ else
         usage
         exit 1
     fi
-    if [ "$DISKUV_HOST_TOOLS" = OFF ] && [ -z "$TARGET_OPAMSWITCH" ] && ! cmake_flag_off "$USERMODE"; then
+    if [ "$DISKUV_TOOLS_SWITCH" = ON ] && [ -z "${PLATFORM:-}" ]; then
+        printf "Missing -p DKMLPLATFORM option when -s chosen\n" >&2
+        usage
+        exit 1
+    fi
+    if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -z "$TARGET_OPAMSWITCH" ] && ! cmake_flag_off "$USERMODE"; then
         usage
         exit 1
     fi
@@ -183,7 +189,7 @@ fi
 # ------------------
 
 # `diskuv-host-tools` is the host architecture, so use `dev` as its platform
-if [ "$DISKUV_HOST_TOOLS" = ON ]; then
+if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         PLATFORM=dev
     fi
@@ -256,9 +262,9 @@ autodetect_dkmlvars || true
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
 
 # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
-if [ "$DISKUV_HOST_TOOLS" = ON ]; then
+if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
-    set_opamswitchdir_of_system
+    set_opamswitchdir_of_system "$PLATFORM"
 elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     # set --switch only if BUILDTYPE (translated into DKML_DUNE_BUILD_DIR) has been set
     install -d "$DKML_DUNE_BUILD_DIR"
@@ -391,7 +397,7 @@ case "$subcommand" in
     ;;
     install | upgrade | pin)
         # FYI: `pin add` and probably other pin commands can (re-)install packages, so compiler is needed
-        if [ "$DISKUV_HOST_TOOLS" = ON ]; then
+        if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
             # When we are upgrading / installing a package in the host tools switch, we must have a compiler so we can compile
             # with-dkml.exe
             exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
