@@ -1653,7 +1653,9 @@ catch {
     $ErrorActionPreference = 'Continue'
     Write-Error (
         "Setup did not complete because an error occurred.`n$_`n`n$($_.ScriptStackTrace)`n`n" +
-        "$global:AdditionalDiagnostics`n`nLog files available at`n  $AuditLog")
+        "$global:AdditionalDiagnostics`n`n" +
+        "Bug Reports can be filed at https://gitlab.com/diskuv/diskuv-ocaml/-/issues.`n" +
+        "Please copy the error message and attach the log file available at`n  $AuditLog`n")
     exit 1
 }
 
