@@ -1294,11 +1294,11 @@ try {
             (Test-Path -Path "$ProgramEssentialBinDir\opam-putenv.exe") -and `
             (Test-Path -Path "$ProgramEssentialBinDir\opam-installer.exe")) {
             # okay. already installed
-        } elseif (Import-DiskuvOCamlAsset `
+        } elseif (!$global:SkipOpamImport -and (Import-DiskuvOCamlAsset `
                 -PackageName "opam-reproducible" `
                 -ZipFile "opam-$DkmlPlatform.zip" `
                 -TmpPath "$TempPath" `
-                -DestinationPath "$ProgramPath") {
+                -DestinationPath "$ProgramPath")) {
             # okay. just imported into bin/
             $MoveIntoEssentialBin = $true
         } else {
