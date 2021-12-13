@@ -3,8 +3,16 @@
     Set up all programs and data folders that are shared across
     all users on the machine.
 .Description
-    Installs Git for Windows 2.33.0.
     Installs the MSBuild component of Visual Studio.
+
+    Interactive Terminals
+    ---------------------
+
+    If you are running from within a continuous integration (CI) scenario you may
+    encounter `Exception setting "CursorPosition"`. That means a command designed
+    for user interaction was run in this script; use -SkipProgress to disable
+    the need for an interactive terminal.
+
 .Parameter ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
@@ -245,7 +253,9 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     if (($CompatibleVisualStudios | Measure-Object).Count -eq 0) {
         $ErrorActionPreference = "Continue"
         & $VsInstallTempPath\collect.exe "-zip:$VsInstallTempPath\vslogs.zip"
-        Clear-Host
+        if (-not $SkipProgress) {
+            Clear-Host
+        }
         Write-Error (
             "`n`nNo compatible Visual Studio installation detected after the Visual Studio installation!`n" +
             "Often this is because a reboot is required or your system has a component that needs upgrading.`n`n" +

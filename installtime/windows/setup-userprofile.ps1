@@ -2,6 +2,17 @@
 .Synopsis
     Set up all programs and data folders in $env:USERPROFILE.
 .Description
+    Installs Git for Windows 2.33.0, compiles OCaml and install several useful
+    OCaml programs.
+
+    Interactive Terminals
+    ---------------------
+
+    If you are running from within a continuous integration (CI) scenario you may
+    encounter `Exception setting "CursorPosition"`. That means a command designed
+    for user interaction was run in this script; use -SkipProgress to disable
+    the need for an interactive terminal.
+
     Blue Green Deployments
     ----------------------
 
@@ -1646,9 +1657,11 @@ catch {
     exit 1
 }
 
-if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }
+if (-not $SkipProgress) {
+    Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+    Clear-Host
+}
 
-Clear-Host
 Write-Host ""
 Write-Host ""
 Write-Host ""
