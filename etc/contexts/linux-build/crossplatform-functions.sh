@@ -847,12 +847,12 @@ vcpkg_triplet_arg_platform() {
         # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
         # Caution: arm64-osx and arm64-ios triplets are Community supported. https://github.com/microsoft/vcpkg/tree/master/triplets/community
         # and https://github.com/microsoft/vcpkg/issues/12258 .
-        windows_x86-*)        DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
-        windows_x86_64-*)     DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
-        windows_arm-*)        DKML_VCPKG_HOST_TRIPLET=arm-windows ;;
-        windows_arm64-*)      DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
-        darwin_arm64-*)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
-        darwin_x86_64-*)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
+        windows_x86)        DKML_VCPKG_HOST_TRIPLET=x86-windows ;;
+        windows_x86_64)     DKML_VCPKG_HOST_TRIPLET=x64-windows ;;
+        windows_arm)        DKML_VCPKG_HOST_TRIPLET=arm-windows ;;
+        windows_arm64)      DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
+        darwin_arm64)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
+        darwin_x86_64)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
         *)
             printf "%s\n" "FATAL: Unsupported vcpkg triplet for DKMLPLATFORM: $vcpkg_triplet_arg_platform_PLATFORM" >&2
             exit 1
