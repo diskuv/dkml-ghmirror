@@ -124,7 +124,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     install "$OPAMFILE_BUILDHOST" --yes
 else
     "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
-    install "$OPAMFILE_BUILDHOST" --yes
+    install "$OPAMFILE_BUILDHOST" --yes --verbose --debug-level 2
 fi
 
 # END opam install opam-dkml
