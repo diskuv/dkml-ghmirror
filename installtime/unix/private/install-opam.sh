@@ -46,7 +46,6 @@ log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-opam-1-setup.
     -t "$INSTALLDIR" \
     -a "$BUILDHOST_ARCH" \
     -c "$INSTALLDIR" \
-    -f ON \
     -u https://github.com/diskuv/opam \
     -v "$GIT_TAG"
 
