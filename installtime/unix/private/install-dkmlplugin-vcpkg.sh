@@ -33,19 +33,18 @@ run_with_vcpkg_pkgs() {
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    install-dkmlplugin-vcpkg.sh -h                   Display this help message" >&2
-    echo "    install-dkmlplugin-vcpkg.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
-    echo "    install-dkmlplugin-vcpkg.sh [-d STATEDIR]        Configure the Diskuv Opam plugins" >&2
-    echo "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
-    echo "Options:" >&2
-    echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    install-dkmlplugin-vcpkg.sh -h                   Display this help message" >&2
+    printf "%s\n" "    install-dkmlplugin-vcpkg.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
+    printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] -p DKMLPLATFORM  Configure the Diskuv Opam plugins" >&2
+    printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
+    printf "%s\n" "Options:" >&2
+    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
+    printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
 }
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=
-fi
+PLATFORM=
 STATEDIR=
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     USERMODE=OFF
@@ -60,6 +59,10 @@ while getopts ":h:p:d:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         d )
             # shellcheck disable=SC2034
@@ -68,7 +71,7 @@ while getopts ":h:p:d:" opt; do
             USERMODE=OFF
         ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -76,11 +79,9 @@ while getopts ":h:p:d:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ]; then
-        usage
-        exit 1
-    fi
+if [ -z "$PLATFORM" ]; then
+    usage
+    exit 1
 fi
 
 # END Command line processing
@@ -161,10 +162,7 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
             # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
             #             for command line arguments. Only -disableMetrics is recognized.
             log_trace "$VCPKG_UNIX/bootstrap-vcpkg.bat" -disableMetrics
-        elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$PLATFORM"; then
-            # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
-            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
-        elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_darwin_based_platform "$DKML_TARGET_PLATFORM"; then
+        elif is_arg_darwin_based_platform "$PLATFORM"; then
             # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
         elif is_reproducible_platform; then
@@ -249,9 +247,9 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         if [ -s "$WORK"/vcpkg.missing ]; then
             ERRFILE=$TOPDIR/vcpkg.json
             if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
-            echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
+            printf "%s\n" "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
             cat "$WORK"/vcpkg.missing >&2
-            echo ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"
+            printf "%s\n" ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"
             exit 1
         fi
     else
