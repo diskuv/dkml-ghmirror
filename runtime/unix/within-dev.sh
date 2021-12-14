@@ -10,24 +10,25 @@ set -euf
 # BEGIN Command line processing
 
 usage() {
-    echo "Usage:" >&2
-    echo "    within-dev.sh -h                          Display this help message." >&2
-    echo "    within-dev.sh -h                          Display this help message." >&2
-    echo "    within-dev.sh [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
-    echo "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
-    echo "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
-    echo "    within-dev.sh -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
-    echo "       -u ON|OFF: User mode. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
-    echo "       -d STATEDIR: State directory. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
-    echo "Advanced Options:" >&2
-    echo "       -c: If specified, compilation flags like CC are added to the environment." >&2
-    echo "             This can take several seconds on Windows since vcdevcmd.bat needs to run" >&2
-    echo "       -0 PREHOOK_SINGLE: If specified, the script will be 'eval'-d upon" >&2
-    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
-    echo "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
-    echo "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
-    echo "             _after_ the PATH has been established." >&2
-    echo "             It behaves similar to:" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    within-dev.sh -h                          Display this help message." >&2
+    printf "%s\n" "    within-dev.sh -h                          Display this help message." >&2
+    printf "%s\n" "    within-dev.sh [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
+    printf "%s\n" "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
+    printf "%s\n" "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
+    printf "%s\n" "    within-dev.sh -d STATEDIR [-u OFF] command ...  Run the command and any arguments in the environment of STATEDIR." >&2
+    printf "%s\n" "       -u ON|OFF: User mode. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
+    printf "%s\n" "       -d STATEDIR: State directory. Currently unused except to influence the temporary directory, but passthrough the user mode of the calling script" >&2
+    printf "%s\n" "Advanced Options:" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform for the tools" >&2
+    printf "%s\n" "       -c: If specified, compilation flags like CC are added to the environment." >&2
+    printf "%s\n" "             This can take several seconds on Windows since vcdevcmd.bat needs to run" >&2
+    printf "%s\n" "       -0 PREHOOK_SINGLE: If specified, the script will be 'eval'-d upon" >&2
+    printf "%s\n" "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    printf "%s\n" "       -1 PREHOOK_DOUBLE: If specified, the Bash statements will be 'eval'-d, 'dos2unix'-d and 'eval'-d" >&2
+    printf "%s\n" "             upon entering the Build Sandbox _before_ any other commands are run but" >&2
+    printf "%s\n" "             _after_ the PATH has been established." >&2
+    printf "%s\n" "             It behaves similar to:" >&2
     echo '               eval "the PREHOOK_DOUBLE you gave" > /tmp/eval.sh' >&2
     echo '               eval /tmp/eval.sh' >&2
     echo '             Useful for setting environment variables (possibly from a script).' >&2
@@ -42,6 +43,8 @@ fi
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC2034
     export PLATFORM=dev
+else
+    PLATFORM=
 fi
 BUILDTYPE=
 PREHOOK_SINGLE=
@@ -61,6 +64,10 @@ while getopts ":hb:p:0:1:cu:d:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         b )
             # shellcheck disable=SC2034
@@ -83,7 +90,7 @@ while getopts ":hb:p:0:1:cu:d:" opt; do
             USERMODE=$OPTARG
         ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -258,11 +265,15 @@ if [ "$COMPILATION" = ON ]; then
     # shellcheck disable=SC2154
     if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX/$OPAM_CACHE_SUBDIR/$WRAP_COMMANDS_CACHE_KEY" ]; then
         set +e
-        autodetect_compiler "$LAUNCHER"
+        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            autodetect_compiler "$LAUNCHER"
+        else
+            DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler "$LAUNCHER"
+        fi
         EXITCODE=$?
         set -e
         if [ $EXITCODE -ne 0 ]; then
-            echo "FATAL: Your system is missing a compiler, which should be installed if you have completed the Diskuv OCaml installation"
+            printf "%s\n" "FATAL: Your system is missing a compiler, which should be installed if you have completed the Diskuv OCaml installation"
             exit 1
         fi
     fi
@@ -286,7 +297,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 fi
 
 # print PATH for troubleshooting
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
+if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [PATH] $PATH" >&2; fi
 
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)

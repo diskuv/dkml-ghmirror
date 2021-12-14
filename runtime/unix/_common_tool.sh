@@ -259,6 +259,13 @@ exec_in_platform() {
         _exec_dev_or_arch_helper_COMPILATION=OFF
     fi
     _exec_dev_or_arch_helper_PLATFORM=${PLATFORM:-}
+    if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$_exec_dev_or_arch_helper_PLATFORM" = dev ]; then
+        printf "FATAL: exec_in_platform() must not have PLATFORM=dev\n" >&2
+        exit 107
+    elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -z "$_exec_dev_or_arch_helper_PLATFORM" ]; then
+        printf "FATAL: exec_in_platform() must not have empty/unset PLATFORM\n" >&2
+        exit 107
+    fi
 
     _exec_dev_or_arch_helper_CMDFILE="$WORK"/_exec_dev_or_arch_helper-cmdfile.sh
     _exec_dev_or_arch_helper_CMDARGS="$WORK"/_exec_dev_or_arch_helper-cmdfile.args
@@ -296,7 +303,7 @@ exec_in_platform() {
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
             printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         else
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         fi
     else
         for _exec_dev_or_arch_helper_ARG in "$@"; do
@@ -320,7 +327,7 @@ exec_in_platform() {
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
             printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         else
-            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox.sh -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
+            printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-sandbox.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         fi
     fi
     cat "$_exec_dev_or_arch_helper_CMDARGS" >> "$_exec_dev_or_arch_helper_CMDFILE"
