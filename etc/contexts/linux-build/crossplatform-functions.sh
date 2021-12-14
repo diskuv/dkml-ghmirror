@@ -964,9 +964,6 @@ autodetect_cpus() {
 # - 0: Success or a non-Windows machine. A non-Windows machine will have all outputs set to blank
 # - 1: Windows machine without proper Diskuv OCaml installation (typically you should exit fatally)
 autodetect_vsdev() {
-    # Set DKMLPARENTHOME_BUILDHOST
-    set_dkmlparenthomedir
-
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_BUILDHOST=
     export VSDEV_VCVARSVER=
@@ -976,6 +973,12 @@ autodetect_vsdev() {
     if ! is_unixy_windows_build_machine; then
         return 0
     fi
+
+    # Set DKMLPARENTHOME_BUILDHOST
+    set_dkmlparenthomedir
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ] && [ -n "${DKML_VSSTUDIO_CMAKEGENERATOR:-}" ]; then
         autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
         autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
