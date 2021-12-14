@@ -1,3 +1,15 @@
+## 0.3.1 (2021-12-13)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+* Fix [Toplevel file for ocamlfind is not installed in tools system switch, causing hardcoded paths to local switches](https://gitlab.com/diskuv/diskuv-ocaml/-/issues/8)
+* Fix [Opam symbolic links on Windows failing without Run as Administrator](https://github.com/ocaml/opam/pull/4962)
+
 ## 0.3.0 (2021-11-29)
 
 > The *Diskuv OCaml* distribution is available under the
