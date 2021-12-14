@@ -100,6 +100,12 @@ else
     __USERMODE="$USERMODE" # fails if USERMODE not set
 fi
 
+# Set OPAM_CACHE_SUBDIR and cache keys like WRAP_COMMANDS_KEY
+# shellcheck disable=SC2034
+OPAM_CACHE_SUBDIR=.dkml/opam-cache
+# shellcheck disable=SC2034
+WRAP_COMMANDS_CACHE_KEY=wrap-commands."$dkml_root_version"
+
 # (Deprecated; modern version in _common_build.sh)
 # The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
 # directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.

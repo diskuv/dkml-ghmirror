@@ -255,7 +255,8 @@ EOF
 LAUNCHER="$WORK"/launch-dev-compiler.sh
 if [ "$COMPILATION" = ON ]; then
     # If we have an Opam switch with a Opam command wrapper, we don't need to waste a few seconds detecting the compiler.
-    if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX"/.dkml/wrap-commands.exist ]; then
+    # shellcheck disable=SC2154
+    if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX/$OPAM_CACHE_SUBDIR/$WRAP_COMMANDS_CACHE_KEY" ]; then
         set +e
         autodetect_compiler "$LAUNCHER"
         EXITCODE=$?
