@@ -1855,6 +1855,17 @@ escape_stdin_for_single_quote() {
     "$DKMLSYS_SED" "s#'#'\"'\"'#g"
 }
 
+# Make the standard input work as an OCaml string.
+#
+# TODO: This so far only escapes backslashes.
+#
+# Prereq: autodetect_system_binaries
+escape_arg_as_ocaml_string() {
+    escape_arg_as_ocaml_string_ARG=$1
+    shift
+    printf "%s" "$escape_arg_as_ocaml_string_ARG" | "$DKMLSYS_SED" 's#\\#\\\\#g'
+}
+
 # Convert a path into an absolute path appropriate for the build host machine. That is, Windows
 # paths for a Windows host machine and Unix paths for Unix host machines.
 #

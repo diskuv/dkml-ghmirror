@@ -393,7 +393,7 @@ set_opamrootdir() {
 # Inputs:
 # - env:DiskuvOCamlHome - Typically you get this from `autodetect_dkmlvars || true`. It will not set
 #   the variable on non-Windows system, which is supported.
-# - env:DKSDK_INVOCATION - Optional. Defaults to OFF. If ON the name of the switch will end in dksdk-tools
+# - env:DKSDK_INVOCATION - Optional. Defaults to OFF. If ON the name of the switch will end in dksdk-${DKML_HOST_ABI}
 #   rather than host-tools. The DKSDK system switch uses a system compiler rather than a base compiler, so
 #   the switches must be segregated.
 # - env:USERMODE
@@ -668,11 +668,14 @@ validate_and_explore_ocamlhome() {
         printf "FATAL: The OCAMLHOME='%s' does not have a usr/bin/ocaml, bin/ocaml, usr/bin/ocaml.exe or bin/ocaml.exe\n" "$validate_and_explore_ocamlhome_HOME" >&2
         exit 107
     fi
-    # Set DKML_OCAMLHOME_UNIX
+    # Set DKML_OCAMLHOME_UNIX and DKML_OCAMLHOME_ABSBINDIR_BUILDHOST
     if [ -x /usr/bin/cygpath ]; then
         DKML_OCAMLHOME_UNIX=$(/usr/bin/cygpath -au "$validate_and_explore_ocamlhome_HOME")
+        DKML_OCAMLHOME_ABSBINDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$validate_and_explore_ocamlhome_HOME/$DKML_OCAMLHOME_BINDIR_UNIX")
     else
         # shellcheck disable=SC2034
         DKML_OCAMLHOME_UNIX="$validate_and_explore_ocamlhome_HOME"
+        # shellcheck disable=SC2034
+        DKML_OCAMLHOME_ABSBINDIR_BUILDHOST="$validate_and_explore_ocamlhome_HOME/$DKML_OCAMLHOME_BINDIR_UNIX"
     fi
 }

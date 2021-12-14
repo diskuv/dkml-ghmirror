@@ -285,6 +285,9 @@ autodetect_cpus
 # Set DKMLPARENTHOME_BUILDHOST
 set_dkmlparenthomedir
 
+# Set DKMLSYS_*
+autodetect_system_binaries
+
 # Set BUILDHOST_ARCH
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     autodetect_buildhost_arch
@@ -671,16 +674,31 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST"/.dkml/opam-cache
 # OP2
 # ---
 #   http://opam.ocaml.org/doc/Manual.html#Environment-updates
+#   `=` overrides the environment variable
 #   `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
 #
 # NAME
 # ----
-# 1. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
+# 1. Add PATH=<system ocaml>:$PATH if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
+# 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
+
+if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-PATH.once" ]; then    
+    DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
+        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+    } > "$WORK"/setenv.sh
+    log_shell "$WORK"/setenv.sh
+
+    # Done. Don't repeat anymore
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-PATH.once"
+fi
 
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/.dkml/opam-cache/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV += "yes"'
+        printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV = "yes"'
         if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
