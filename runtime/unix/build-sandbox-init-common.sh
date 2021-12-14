@@ -60,7 +60,7 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/pri
 # -----------------------
 # BEGIN install opam plugins
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-opamplugin-opam-dkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install opam plugins
 # -----------------------
@@ -68,7 +68,7 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/pri
 # -----------------------
 # BEGIN install dkml plugins (except vcpkg which is done in build-sandbox-init-vcpkg.sh)
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/installtime/unix/private/install-dkmlplugin-withdkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install dkml plugins
 # -----------------------
