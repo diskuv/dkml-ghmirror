@@ -2,15 +2,13 @@ variables:
   OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: '_ci\OOR'
   OCAML_SYS_DEPLOY_FOLDER_WINDOWS: 'C:\DiskuvOCaml\OcamlSys'
 
-workflow:
-  rules:
-    # - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
-
 win32:build-ocaml:
   extends:
     - .windows:before-script-shared-msys2-setupmachine
   stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   parallel:
     matrix:
       - HOSTABI: windows_x86
@@ -74,6 +72,9 @@ win32:oorepo-fetch-1:
   extends:
     - .windows:before-script-shared-cygwin
   stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   needs: []
   variables:
     # We have to specify an arbitrary but real OCAMLVERSION in this step because the reproducible setup scripts require it
@@ -128,6 +129,9 @@ win32:oorepo-matrix-2:
   extends:
     - .windows:before-script-shared-cygwin
   stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+    # - if: '$CI_COMMIT_BRANCH == "next"'
   needs: ["win32:oorepo-fetch-1", "win32:build-ocaml"]
   dependencies:
     - win32:build-ocaml
