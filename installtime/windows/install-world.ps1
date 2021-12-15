@@ -61,6 +61,10 @@ if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
     }
 }
 
+# Older versions of PowerShell and Windows Server use SSL 3 / TLS 1.0 while our sites
+# (especially gitlab assets) may require the use of TLS 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 # ----------------------------------------------------------------
 # Progress Reporting
 
