@@ -195,6 +195,8 @@ Installation Instructions
 
    .. code-block:: ps1con
 
+      PS> [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+
       PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
 
       PS> iwr `
