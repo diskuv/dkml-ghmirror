@@ -536,7 +536,7 @@ else
             OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -b $BUILDTYPE"
         fi
     else
-        OPAM_EXEC_OPTS=" -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
+        OPAM_EXEC_OPTS=" -p '$DKMLPLATFORM' -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
 fi
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchexec.sh
