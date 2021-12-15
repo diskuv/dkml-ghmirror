@@ -135,7 +135,7 @@ installtime/unix/private/download-moby-downloader.sh "$WORK"
 export BOOTSTRAPNAME=200-fetch-oorepo-$OCAML_LANG_VERSION
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 # shellcheck disable=SC2016
-COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
+COMMON_ARGS=(-d "$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME")
 install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-fetch-ocaml-opam-repo-README.md
 install_reproducible_system_packages  installtime/unix/private/reproducible-fetch-ocaml-opam-repo-0-system.sh

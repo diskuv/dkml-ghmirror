@@ -437,7 +437,7 @@ fi
 export BOOTSTRAPNAME=100-compile-ocaml
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 # shellcheck disable=SC2016
-COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
+COMMON_ARGS=(-d "$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME")
 install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-ocaml-README.md
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
