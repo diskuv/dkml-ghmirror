@@ -151,7 +151,7 @@ SINGLEPACKAGE=
 OCAML_LANG_VERSION=
 OCAMLHOME=/
 export DRYRUN=OFF
-while getopts ":d:t:np:a:b:h" opt; do
+while getopts ":d:t:np:a:b:c:h" opt; do
     case ${opt} in
         h )
             usage
@@ -179,6 +179,9 @@ while getopts ":d:t:np:a:b:h" opt; do
         ;;
         b )
             OCAML_LANG_VERSION="$OPTARG"
+        ;;
+        c )
+            OCAMLHOME="$OPTARG"
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
