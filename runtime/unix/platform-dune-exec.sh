@@ -33,7 +33,8 @@ usage() {
     printf "%s\n" "    platform-dune-exec.sh -h                                                     Display this help message." >&2
     printf "%s\n" "    platform-dune-exec.sh -b BUILDTYPE -p PLATFORM [--] build|clean|help|...     Run the dune command." >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "       -p PLATFORM: The target platform or 'dev'. 'dev' and -b Debug will use standard Dune _build subdirectory" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'. 'dev' and -b Debug will use standard Dune _build subdirectory" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
     printf "%s\n" "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
     printf "%s\n" "          selected which uses <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "          selected which uses <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
@@ -245,7 +246,7 @@ case "$subcommand" in
                 fi
                 DUNE_OPTS+=(--build-dir "$DUNEDIR_BUILDHOST")
             fi
-            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -p "$PLATFORM" -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
         fi
     ;;
 esac
