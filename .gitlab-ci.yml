@@ -1,6 +1,5 @@
 variables:
   OPAM_SYS_DEPLOY_FOLDER_WINDOWS:  'C:\DiskuvOCaml\OpamSys'
-  OCAML_SYS_DEPLOY_FOLDER_WINDOWS: 'C:\DiskuvOCaml\OcamlSys'
 
 default:
   image: python:3.9-alpine
@@ -21,5 +20,4 @@ include:
   - local: .gitlab/ci/windows.gitlab-ci.yml
   - local: .gitlab/ci/windows-package-ocaml.gitlab-ci.yml
   - local: .gitlab/ci/windows-package-opam.gitlab-ci.yml
-  - local: .gitlab/ci/windows-package-ocaml-opam-repo.gitlab-ci.yml
   - local: .gitlab/ci/windows-test-setupuserprofile.gitlab-ci.yml

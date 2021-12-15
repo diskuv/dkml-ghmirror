@@ -35,16 +35,19 @@ BUILD_ARGS=()
 TRIM_ARGS=()
 
 usage() {
-    echo "Usage:" >&2
-    echo "    reproducible-fetch-ocaml-opam-repo-1-setup.sh" >&2
-    echo "        -h                                              Display this help message." >&2
-    echo "        -d DIR -t DIR -v IMAGE -a ARCH -b OCAMLVERSION  Setup fetching of ocaml/opam repository." >&2
-    echo "Options" >&2
-    echo "   -d DIR: DKML directory containing a .dkmlroot file" >&2
-    echo "   -t DIR: Target directory" >&2
-    echo "   -v IMAGE: Docker image" >&2
-    echo "   -a ARCH: Docker architecture. Ex. amd64" >&2
-    echo "   -b OCAMLVERSION: OCaml language version. Ex. 4.12.1" >&2
+    printf "%s\n" "Usage:" >&2
+    printf "%s\n" "    reproducible-fetch-ocaml-opam-repo-1-setup.sh" >&2
+    printf "%s\n" "        -h                                              Display this help message." >&2
+    printf "%s\n" "        -d DIR -t DIR -v IMAGE -a ARCH -b OCAMLVERSION  Setup fetching of ocaml/opam repository." >&2
+    printf "%s\n" "Options" >&2
+    printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file" >&2
+    printf "%s\n" "   -t DIR: Target directory" >&2
+    printf "%s\n" "   -v IMAGE: Docker image" >&2
+    printf "%s\n" "   -a ARCH: Docker architecture. Ex. amd64" >&2
+    printf "%s\n" "   -b OCAMLVERSION: OCaml language version to setup. Ex. 4.12.1" >&2
+    printf "%s\n" "   -c OCAMLHOME: Optional. The home directory for OCaml containing usr/bin/ocamlc or bin/ocamlc," >&2
+    printf "%s\n" "      and other OCaml binaries and libraries. If not specified expects ocaml to be in the system PATH." >&2
+    printf "%s\n" "      OCaml 4.08 and higher should work, and only the OCaml interpreter and Unix and Str modules are needed" >&2
 }
 
 DKMLDIR=
@@ -52,7 +55,7 @@ DOCKER_IMAGE=
 DOCKER_ARCH=
 TARGETDIR=
 OCAML_LANG_VERSION=
-while getopts ":d:v:t:a:b:h" opt; do
+while getopts ":d:v:t:a:b:c:h" opt; do
     case ${opt} in
         h )
             usage
@@ -61,7 +64,7 @@ while getopts ":d:v:t:a:b:h" opt; do
         d )
             DKMLDIR="$OPTARG"
             if [ ! -e "$DKMLDIR/.dkmlroot" ]; then
-                echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
+                printf "%s\n" "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2;
                 usage
                 exit 1
             fi
@@ -88,8 +91,12 @@ while getopts ":d:v:t:a:b:h" opt; do
             SETUP_ARGS+=( -b "$OCAML_LANG_VERSION" )
             TRIM_ARGS+=( -b "$OCAML_LANG_VERSION" )
         ;;
+        c )
+            SETUP_ARGS+=( -c "$OPTARG" )
+            TRIM_ARGS+=( -c "$OPTARG" )
+        ;;
         \? )
-            echo "This is not an option: -$OPTARG" >&2
+            printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
             exit 1
         ;;
@@ -98,7 +105,7 @@ done
 shift $((OPTIND -1))
 
 if [ -z "$DKMLDIR" ] || [ -z "$DOCKER_IMAGE" ] || [ -z "$TARGETDIR" ] || [ -z "$DOCKER_ARCH" ] || [ -z "$OCAML_LANG_VERSION" ]; then
-    echo "Missing required options" >&2
+    printf "%s\n" "Missing required options" >&2
     usage
     exit 1
 fi
@@ -135,6 +142,7 @@ install_reproducible_system_packages  installtime/unix/private/reproducible-fetc
 install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh "${COMMON_ARGS[@]}" "${SETUP_ARGS[@]}"
 install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build.sh "${COMMON_ARGS[@]}" "${BUILD_ARGS[@]}"
 install_reproducible_script_with_args installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim.sh  "${COMMON_ARGS[@]}" "${TRIM_ARGS[@]}"
+install_reproducible_file             installtime/unix/private/ml/ocaml_opam_repo_trim.ml
 install_reproducible_file             installtime/unix/private/download-moby-downloader.sh
 install_reproducible_file             installtime/unix/private/moby-download-docker-image.sh
 install_reproducible_file             installtime/unix/private/moby-extract-opam-root.sh

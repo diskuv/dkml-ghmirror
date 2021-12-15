@@ -20,7 +20,7 @@ set -euf
 #
 # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
+# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's PACKAGES_FDOPEN_TO_REMOVE.
 # Summary: DKML provides patches for these
 PINNED_PACKAGES_DKML_PATCHES="
     dune-configurator,2.9.1
@@ -44,7 +44,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     ptime,0.8.6-msvcsupport
     "
 
-# These MUST BE IN SYNC with installtime\unix\private\reproducible-fetch-ocaml-opam-repo-9-trim.sh's PACKAGES_FDOPEN_TO_REMOVE.
+# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's PACKAGES_FDOPEN_TO_REMOVE.
 # Summary: Packages which MUST be pinned and come from the central Opam repository.
 # Reasons:
 # a) pkg used a major version bump and caused major breaking changes to downstream packages

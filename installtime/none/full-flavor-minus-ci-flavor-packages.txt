@@ -1,7 +1,7 @@
 # All packages listed in this file must go into either:
-# 1. PINNED_PACKAGES_OPAM and PACKAGES_FDOPEN_TO_REMOVE or
+# 1. PINNED_PACKAGES_OPAM and [packages_fdopen_to_remove] or
 # 2. PINNED_PACKAGES_DKML_PATCHES or
-# 3. PINNED_PACKAGES_FDOPEN_COMPILER_AGNOSTIC
+# 3. [pkgvers_fdopen_compiler_agnostic]
 
 # For dkml_templatizer; may be used for creating local projects as well.
 jingoo.1.4.3
