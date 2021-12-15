@@ -733,10 +733,13 @@ install_reproducible_script_with_args() {
 
     install_reproducible_file "$install_reproducible_script_with_args_SCRIPTFILE"
     "$DKMLSYS_INSTALL" -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
-    printf "#!/bin/sh\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s %s\n" \
-        "$install_reproducible_script_with_args_BOOTSTRAPRELDIR" \
-        "$install_reproducible_script_with_args_BOOTSTRAPRELDIR/$install_reproducible_script_with_args_SCRIPTFILE" \
-        "$*" > "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
+    {
+        printf "#!/bin/sh\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s " \
+            "$install_reproducible_script_with_args_BOOTSTRAPRELDIR" \
+            "$install_reproducible_script_with_args_BOOTSTRAPRELDIR/$install_reproducible_script_with_args_SCRIPTFILE"
+        escape_args_for_shell "$@"
+        printf "\n"
+    } > "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
     "$DKMLSYS_CHMOD" 755 "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEFILE"
 }
 
