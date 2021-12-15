@@ -59,6 +59,7 @@ while getopts ":d:v:t:a:h" opt; do
                 usage
                 exit 1
             fi
+            DKMLDIR=$(cd "$DKMLDIR" && pwd) # absolute path
         ;;
         v )
             DOCKER_IMAGE="$OPTARG"

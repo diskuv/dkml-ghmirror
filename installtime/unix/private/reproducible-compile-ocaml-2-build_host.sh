@@ -85,6 +85,7 @@ while getopts ":d:t:b:c:e:g:h" opt; do
                 usage
                 exit 1
             fi
+            DKMLDIR=$(cd "$DKMLDIR" && pwd) # absolute path
         ;;
         t )
             TARGETDIR="$OPTARG"

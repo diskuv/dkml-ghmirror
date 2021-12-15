@@ -71,6 +71,7 @@ while getopts ":d:t:n:a:b:c:e:h" opt; do
                 usage
                 exit 1
             fi
+            DKMLDIR=$(cd "$DKMLDIR" && pwd) # absolute path
         ;;
         t ) TARGETDIR="$OPTARG";;
         n ) NUMCPUS="$OPTARG";;

@@ -89,6 +89,7 @@ while getopts ":d:t:a:c:g:h" opt; do
                 usage
                 exit 1
             fi
+            DKMLDIR=$(cd "$DKMLDIR" && pwd) # absolute path
         ;;
         t )
             TARGETDIR="$OPTARG"
@@ -323,6 +324,14 @@ while IFS= read -r _abientry
 do
   _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
   _abiscript=$(printf "%s" "$_abientry" | sed 's/^[^=]*=//')
+
+  case "$_abiscript" in
+  /* | ?:*) # /a/b/c or C:\Windows
+    ;;
+  *) # relative path; need absolute path since we will soon change dir to $_CROSS_SRCDIR
+    _abiscript="$DKMLDIR/$_abiscript"
+    ;;
+  esac
 
   _CROSS_TARGETDIR=$TARGETDIR_UNIX/opt/mlcross/$_targetabi
   _CROSS_SRCDIR=$_CROSS_TARGETDIR/src/ocaml

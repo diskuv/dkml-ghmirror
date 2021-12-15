@@ -113,7 +113,7 @@ usage() {
         printf "%s\n" "   -a TARGETABIS: Optional. A named list of self-contained Posix shell script that can be sourced to set the"
         printf "%s\n" "      compiler environment variables for the target ABI. If not specified then the OCaml environment"
         printf "%s\n" "      will be purely for the host ABI. All path should use the native host platform's path"
-        printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows."
+        printf "%s\n" "      conventions like '/usr' on Unix and 'C:\VS2019' on Windows, although relative paths from DKML dir are accepted"
         printf "%s\n" "      The format of TARGETABIS is: <DKML_TARGET_ABI1>=/path/to/script1;<DKML_TARGET_ABI2>=/path/to/script2;..."
         printf "%s\n" "      where:"
         printf "%s\n" "        DKML_TARGET_ABI - The target ABI"
@@ -437,7 +437,7 @@ fi
 export BOOTSTRAPNAME=100-compile-ocaml
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
 # shellcheck disable=SC2016
-COMMON_ARGS=(-d '"$PWD/'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
+COMMON_ARGS=(-d '"'"$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME"'"')
 install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-ocaml-README.md
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
@@ -454,7 +454,7 @@ if [ -n "$TARGETABIS" ]; then
 
         # Since we want the ABI scripts to be reproducible, we install them in a reproducible place and set
         # the reproducible arguments (-a) to point to that reproducible place.
-        _script="\"\$PWD\"/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
+        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
         if [ -n "$_accumulator" ]; then
             _accumulator="$_accumulator;$_targetabi=$_script"
         else
