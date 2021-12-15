@@ -213,8 +213,10 @@ disambiguate_filesystem_paths
 TARGETDIR_UNIX=$(install -d "$TARGETDIR" && cd "$TARGETDIR" && pwd) # better than cygpath: handles TARGETDIR=. without trailing slash, and works on Unix/Windows
 if [ -x /usr/bin/cygpath ]; then
     OOREPO_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH/$OCAML_LANG_VERSION")
+    TARGETDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$TARGETDIR_UNIX")
 else
     OOREPO_UNIX="$TARGETDIR_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH/$OCAML_LANG_VERSION"
+    TARGETDIR_BUILDHOST="$TARGETDIR_UNIX"
 fi
 export OOREPO_UNIX
 REPODIR_UNIX=${TARGETDIR_UNIX}/full-opam-root
@@ -241,7 +243,7 @@ else
 fi
 
 # Do bulk of trimming in OCaml interpreter for speed (much faster than shell script!)
-PATH="$OCAML_INTERPRETER_PATH" ocaml "$DKMLDIR"/installtime/unix/private/ml/ocaml_opam_repo_trim.ml -t "$TARGETDIR" -b "$OCAML_LANG_VERSION" -a "$DOCKER_ARCH" -p "$SINGLEPACKAGE"
+log_trace env PATH="$OCAML_INTERPRETER_PATH" OCAMLRUNPARAM=b ocaml installtime/unix/private/ml/ocaml_opam_repo_trim.ml -t "$TARGETDIR_BUILDHOST" -b "$OCAML_LANG_VERSION" -a "$DOCKER_ARCH" -p "$SINGLEPACKAGE"
 
 # Install files and directories into $OOREPO_UNIX:
 # - /repo
