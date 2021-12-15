@@ -102,7 +102,7 @@
     Useful in CI situations.
 .Parameter IncrementalDeployment
     Advanced.
-    
+
     Tries to continue from where the last deployment finished. Never continues
     when the version number that was last deployed differs from the version
     number of the current installation script.
@@ -432,16 +432,36 @@ function Import-DiskuvOCamlAsset {
     try {
         $uri = "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile"
         Write-ProgressCurrentOperation -CurrentOperation "Downloading asset $uri"
-        Invoke-WebRequest `
-            -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/$PackageName/v$dkml_root_version/$ZipFile" `
-            -OutFile "$TmpPath\$ZipFile"
+        Invoke-WebRequest -Uri "$uri" -OutFile "$TmpPath\$ZipFile"
     }
     catch {
         $StatusCode = $_.Exception.Response.StatusCode.value__
         Write-ProgressCurrentOperation -CurrentOperation "HTTP ${StatusCode}: $uri"
         if ($StatusCode -eq 404) {
-            # 404 Not Found
-            return $false
+            # 404 Not Found. The asset may not have been uploaded / built yet so this is not a fatal error.
+            # HOWEVER ... there is a nasty bug for older PowerShell + .NET versions with incorrect escape encoding.
+            # Confer: https://github.com/googleapis/google-api-dotnet-client/issues/643 and
+            # https://stackoverflow.com/questions/25596564/percent-encoded-slash-is-decoded-before-the-request-dispatch
+            function UrlFix([Uri]$url) {
+                $url.PathAndQuery | Out-Null
+                $m_Flags = [Uri].GetField("m_Flags", $([Reflection.BindingFlags]::Instance -bor [Reflection.BindingFlags]::NonPublic))
+                [uint64]$flags = $m_Flags.GetValue($url)
+                $m_Flags.SetValue($url, $($flags -bxor 0x30))
+            } ;
+            $fixedUri = New-Object System.Uri -ArgumentList ($uri)
+            UrlFix $fixedUri
+            try {
+                Write-ProgressCurrentOperation -CurrentOperation "Downloading asset $fixedUri"
+                Invoke-WebRequest -Uri "$fixedUri" -OutFile "$TmpPath\$ZipFile"
+            }
+            catch {
+                $StatusCode = $_.Exception.Response.StatusCode.value__
+                Write-ProgressCurrentOperation -CurrentOperation "HTTP ${StatusCode}: $fixedUri"
+                if ($StatusCode -eq 404) {
+                    return $false
+                }
+                throw
+            }
         }
         throw
     }
