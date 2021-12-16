@@ -128,7 +128,7 @@ autodetect_dkmlvars() {
     if is_unixy_windows_build_machine; then
         if [ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]; then
             if [ -x /usr/bin/cygpath ]; then
-                autodetect_dkmlvars_VARSSCRIPT=$(cygpath -a "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh")
+                autodetect_dkmlvars_VARSSCRIPT=$(/usr/bin/cygpath -a "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh")
                 # shellcheck disable=SC1090
                 . "$autodetect_dkmlvars_VARSSCRIPT"
             else
@@ -284,6 +284,7 @@ autodetect_system_path() {
 # - env:DKMLSYS_STAT - Location of `stat`
 # - env:DKMLSYS_GREP - Location of `grep`
 # - env:DKMLSYS_TAR - Location of `tar`
+# - env:DKMLSYS_CURL - Location of `curl`
 autodetect_system_binaries() {
     if [ -z "${DKMLSYS_MV:-}" ]; then
         if [ -x /usr/bin/mv ]; then
@@ -383,8 +384,15 @@ autodetect_system_binaries() {
             DKMLSYS_TAR=/bin/tar
         fi
     fi
+    if [ -z "${DKMLSYS_CURL:-}" ]; then
+        if [ -x /usr/bin/curl ]; then
+            DKMLSYS_CURL=/usr/bin/curl
+        else
+            DKMLSYS_CURL=/bin/curl
+        fi
+    fi
     export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL
-    export DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP DKMLSYS_TAR
+    export DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP DKMLSYS_TAR DKMLSYS_CURL
 }
 
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
@@ -1776,7 +1784,7 @@ sha256check() {
         printf "%s  %s" "$sha256check_SUM" "$sha256check_FILE" | /usr/bin/sha256sum -c
     else
         printf "FATAL: %s\n" "No sha256 checksum utility found" >&2
-        exit 1
+        exit 107
     fi
 }
 
@@ -1790,28 +1798,27 @@ downloadfile() {
     shift
     downloadfile_SUM="$1"
     shift
-    if [ -x /usr/bin/curl ]; then
-        downloadfile_CURL=/usr/bin/curl
-    else
-        printf "%s\n" "Found no /usr/bin/curl to download files" >&2
-    fi
+
+    # Set DKMLSYS_*
+    autodetect_system_binaries
+
     if [ -e "$downloadfile_FILE" ]; then
         if sha256check "$downloadfile_FILE" "$downloadfile_SUM"; then
             return 0
         else
-            rm -f "$downloadfile_FILE"
+            $DKMLSYS_RM -f "$downloadfile_FILE"
         fi
     fi
     if [ "${CI:-}" = true ]; then
-        log_trace "$downloadfile_CURL" -L -s "$downloadfile_URL" -o "$downloadfile_FILE".tmp
+        log_trace "$DKMLSYS_CURL" -L -s "$downloadfile_URL" -o "$downloadfile_FILE".tmp
     else
-        log_trace "$downloadfile_CURL" -L "$downloadfile_URL" -o "$downloadfile_FILE".tmp
+        log_trace "$DKMLSYS_CURL" -L "$downloadfile_URL" -o "$downloadfile_FILE".tmp
     fi
     if ! sha256check "$downloadfile_FILE".tmp "$downloadfile_SUM"; then
         printf "%s\n" "FATAL: Encountered a corrupted or compromised download from $downloadfile_URL" >&2
         exit 1
     fi
-    mv "$downloadfile_FILE".tmp "$downloadfile_FILE"
+    $DKMLSYS_MV "$downloadfile_FILE".tmp "$downloadfile_FILE"
 }
 
 cmake_flag_on() {
