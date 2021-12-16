@@ -60,25 +60,25 @@ if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launc
 # set $dkml_root_version
 # shellcheck disable=SC1091
 . "$DKMLDIR"/.dkmlroot
-dkml_root_version=$(echo "$dkml_root_version" | tr -d '\r')
+dkml_root_version=$(echo "$dkml_root_version" | PATH=/usr/bin:/bin tr -d '\r')
 
 if [ -z "${TOPDIR:-}" ]; then
     # Check at most 10 ancestors
     if [ -n "${TOPDIR_CANDIDATE:-}" ]; then
-        TOPDIR=$(cd "$TOPDIR_CANDIDATE" && pwd)
+        TOPDIR=$(cd "$TOPDIR_CANDIDATE" && PATH=/usr/bin:/bin pwd)
     else
-        TOPDIR=$(cd "$DKMLDIR" && cd .. && pwd) # `cd ..` works if DKMLDIR is a Windows path
+        TOPDIR=$(cd "$DKMLDIR" && cd .. && PATH=/usr/bin:/bin pwd) # `cd ..` works if DKMLDIR is a Windows path
     fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
+    if [ ! -e "$TOPDIR/dune-project" ] && [ "$TOPDIR" != "/" ]; then TOPDIR=$(cd "$TOPDIR"/.. && PATH=/usr/bin:/bin pwd); fi
     if [ ! -e "$TOPDIR/dune-project" ]; then echo "FATAL: Not embedded in a Dune-based project with a 'dune-project' file" >&2 ; exit 1; fi
 fi
 
@@ -157,7 +157,7 @@ else
     elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
         TMPPARENTDIR_ABS_OR_RELTOP="$_CS_DARWIN_USER_TEMP_DIR"
     elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
-        TMPPARENTDIR_ABS_OR_RELTOP=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
+        TMPPARENTDIR_ABS_OR_RELTOP=$(printf "%s" "$TMPDIR" | PATH=/usr/bin:/bin sed 's#/$##') # remove trailing slash on macOS
     elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
         TMPPARENTDIR_ABS_OR_RELTOP="$TMP"
     else
@@ -166,8 +166,8 @@ else
     TMPPARENTDIR_BUILDHOST="${TMPPARENTDIR_BUILDHOST:-$TMPPARENTDIR_ABS_OR_RELTOP}"
 fi
 [ ! -e "$TMPPARENTDIR_BUILDHOST" ] && install -d "$TMPPARENTDIR_BUILDHOST"
-WORK=$(mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
-trap 'rm -rf "$WORK"' EXIT
+WORK=$(PATH=/usr/bin:/bin mktemp -d "$TMPPARENTDIR_BUILDHOST"/dkmlw.XXXXX)
+trap 'PATH=/usr/bin:/bin rm -rf "$WORK"' EXIT
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
