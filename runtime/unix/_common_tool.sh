@@ -335,6 +335,17 @@ exec_in_platform() {
     log_shell "$_exec_dev_or_arch_helper_CMDFILE"
 }
 
+# Outputs:
+# - env:DKSDKCACHEDIR_BUILDHOST - The dksdk cache directory
+set_dksdkcachedir() {
+    if is_unixy_windows_build_machine; then
+        DKSDKCACHEDIR_BUILDHOST="${LOCALAPPDATA}\\dksdk\\cache"
+    else
+        # shellcheck disable=SC2034
+        DKSDKCACHEDIR_BUILDHOST="${XDG_CACHE_HOME:-$HOME/.cache}/dksdk"
+    fi
+}
+
 # Inputs:
 # - env:USERMODE - If 'OFF' uses STATEDIR. Otherwise uses default Opam 2.2 root
 # - env:STATEDIR - If specified, uses <STATEDIR>/opam as the Opam root

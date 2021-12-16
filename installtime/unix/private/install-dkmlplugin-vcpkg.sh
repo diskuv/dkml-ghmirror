@@ -37,9 +37,11 @@ usage() {
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] -p DKMLPLATFORM  Configure the Diskuv Opam plugins" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: The target platform or 'dev'" >&2
+    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -t TARGETDIR: If specified, place vcpkg in the target directory" >&2
+    printf "%s\n" "    -o OUTPUTFILE: If specified, write vcpkg root dir into OUTPUTFILE" >&2
 }
 
 PLATFORM=
@@ -49,7 +51,9 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 else
     USERMODE=ON
 fi
-while getopts ":h:p:d:" opt; do
+TARGETDIR=
+OUTPUTFILE=
+while getopts ":h:p:d:t:o:" opt; do
     case ${opt} in
         h )
             usage
@@ -67,6 +71,12 @@ while getopts ":h:p:d:" opt; do
             STATEDIR=$OPTARG
             # shellcheck disable=SC2034
             USERMODE=OFF
+        ;;
+        t )
+            TARGETDIR=$OPTARG
+        ;;
+        o )
+            OUTPUTFILE=$OPTARG
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -136,8 +146,13 @@ else
 fi
 
 # Locate vcpkg and the vcpkg package installation directory
-# shellcheck disable=SC2154
-VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
+if [ -n "$TARGETDIR" ]; then
+    VCPKG_UNIX="$TARGETDIR"
+else
+    # shellcheck disable=SC2154
+    VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
+fi
+
 if [ -x /usr/bin/cygpath ]; then VCPKG_UNIX=$(/usr/bin/cygpath -au "$VCPKG_UNIX"); fi
 if [ -x /usr/bin/cygpath ]; then VCPKG_BUILDHOST=$(/usr/bin/cygpath -aw "$VCPKG_UNIX"); fi
 if [ -e vcpkg.json ]; then
@@ -286,6 +301,10 @@ fi
 
 # END install vcpkg packages
 # -----------------------
+
+if [ -n "$OUTPUTFILE" ]; then
+    printf "%s" "$VCPKG_BUILDHOST" > "$OUTPUTFILE"
+fi
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # END           ON-DEMAND OPAM ROOT INSTALLATIONS
