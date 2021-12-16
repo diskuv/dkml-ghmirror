@@ -283,7 +283,6 @@ autodetect_system_path() {
 # - env:DKMLSYS_CAT - Location of `cat`
 # - env:DKMLSYS_STAT - Location of `stat`
 # - env:DKMLSYS_GREP - Location of `grep`
-# - env:DKMLSYS_TAR - Location of `tar`
 # - env:DKMLSYS_CURL - Location of `curl`
 autodetect_system_binaries() {
     if [ -z "${DKMLSYS_MV:-}" ]; then
@@ -377,13 +376,6 @@ autodetect_system_binaries() {
             DKMLSYS_GREP=/bin/grep
         fi
     fi
-    if [ -z "${DKMLSYS_TAR:-}" ]; then
-        if [ -x /usr/bin/tar ]; then
-            DKMLSYS_TAR=/usr/bin/tar
-        else
-            DKMLSYS_TAR=/bin/tar
-        fi
-    fi
     if [ -z "${DKMLSYS_CURL:-}" ]; then
         if [ -x /usr/bin/curl ]; then
             DKMLSYS_CURL=/usr/bin/curl
@@ -392,7 +384,7 @@ autodetect_system_binaries() {
         fi
     fi
     export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL
-    export DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP DKMLSYS_TAR DKMLSYS_CURL
+    export DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP DKMLSYS_CURL
 }
 
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.
@@ -1908,4 +1900,9 @@ buildhost_pathize() {
                 buildhost_pathize_RETVAL="$PWD/$buildhost_pathize_PATH" ;;
         esac
     fi
+}
+
+# [system_tar ARGS] runs the `tar` command with a system PATH and logging
+system_tar() {
+    PATH=/usr/bin:/bin log_trace tar "$@"
 }
