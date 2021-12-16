@@ -42,7 +42,7 @@ usage() {
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Defaults to the host native platform" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -t TARGETDIR: If specified, place vcpkg in the target directory" >&2
-    printf "%s\n" "    -o OUTPUTFILE: If specified, write vcpkg root dir into OUTPUTFILE" >&2
+    printf "%s\n" "    -x: If specified, no packages are installed; vcpkg is only bootstrapped" >&2
 }
 
 PLATFORM=
@@ -54,7 +54,8 @@ else
 fi
 TARGETDIR=
 OUTPUTFILE=
-while getopts ":h:p:d:t:o:" opt; do
+BOOTSTRAP_ONLY=OFF
+while getopts ":h:p:d:t:o:x" opt; do
     case ${opt} in
         h )
             usage
@@ -78,6 +79,9 @@ while getopts ":h:p:d:t:o:" opt; do
         ;;
         o )
             OUTPUTFILE=$OPTARG
+        ;;
+        x )
+            BOOTSTRAP_ONLY=ON
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -148,7 +152,7 @@ fi
 # https://github.com/microsoft/vcpkg/blob/3bcdecedb57dc66ab1d7b1b3ce6028c5143318b1/docs/specifications/scripts-extraction.md#naming-variables
 # `VCPKG_TOOLCHAIN` is a public global variable so we can rely on it being there.
 
-INSTALL_VCPKG=OFF
+INSTALL_VCPKG_PACKAGES=OFF
 
 # Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
 # We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
@@ -203,7 +207,7 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi
     fi
-    INSTALL_VCPKG=ON
+    INSTALL_VCPKG_PACKAGES=ON
 fi
 
 # END install vcpkg
@@ -212,7 +216,7 @@ fi
 # -----------------------
 # BEGIN install vcpkg packages
 
-if [ "$INSTALL_VCPKG" = ON ]; then
+if [ "$BOOTSTRAP_ONLY" = OFF ] && [ "$INSTALL_VCPKG_PACKAGES" = ON ]; then
     # For some reason vcpkg stalls during installation in a Windows Server VM (Paris Locale).
     # There are older bug reports of vcpkg hanging because of non-English installs (probably "Y" [Yes/No] versus
     # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
