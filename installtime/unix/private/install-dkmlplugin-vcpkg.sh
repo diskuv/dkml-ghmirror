@@ -34,11 +34,11 @@ usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh -h                   Display this help message" >&2
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
-    printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] -p DKMLPLATFORM  Configure the Diskuv Opam plugins" >&2
+    printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] [-p DKMLPLATFORM]  Configure the Diskuv Opam plugins" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
-    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Defaults to the host native platform" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -t TARGETDIR: If specified, place vcpkg in the target directory" >&2
     printf "%s\n" "    -o OUTPUTFILE: If specified, write vcpkg root dir into OUTPUTFILE" >&2
@@ -120,6 +120,14 @@ cd "$TOPDIR"
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and WITHDKMLEXE(DIR)_BUILDHOST
 set_opamrootdir
+
+# Set default for PLATFORM
+if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -z "$PLATFORM" ]; then
+    # Set BUILDHOST_ARCH
+    autodetect_buildhost_arch
+
+    PLATFORM=$BUILDHOST_ARCH
+fi
 
 # -----------------------
 # BEGIN install vcpkg
