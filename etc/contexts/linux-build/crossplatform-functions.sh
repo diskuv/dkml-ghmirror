@@ -283,6 +283,7 @@ autodetect_system_path() {
 # - env:DKMLSYS_CAT - Location of `cat`
 # - env:DKMLSYS_STAT - Location of `stat`
 # - env:DKMLSYS_GREP - Location of `grep`
+# - env:DKMLSYS_TAR - Location of `tar`
 autodetect_system_binaries() {
     if [ -z "${DKMLSYS_MV:-}" ]; then
         if [ -x /usr/bin/mv ]; then
@@ -375,7 +376,15 @@ autodetect_system_binaries() {
             DKMLSYS_GREP=/bin/grep
         fi
     fi
-    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP
+    if [ -z "${DKMLSYS_TAR:-}" ]; then
+        if [ -x /usr/bin/tar ]; then
+            DKMLSYS_TAR=/usr/bin/tar
+        else
+            DKMLSYS_TAR=/bin/tar
+        fi
+    fi
+    export DKMLSYS_MV DKMLSYS_CHMOD DKMLSYS_UNAME DKMLSYS_ENV DKMLSYS_AWK DKMLSYS_SED DKMLSYS_COMM DKMLSYS_INSTALL
+    export DKMLSYS_RM DKMLSYS_SORT DKMLSYS_CAT DKMLSYS_STAT DKMLSYS_GREP DKMLSYS_TAR
 }
 
 # Is a Windows build machine if we are in a MSYS2 or Cygwin environment.

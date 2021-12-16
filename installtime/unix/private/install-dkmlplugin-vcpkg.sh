@@ -98,8 +98,8 @@ fi
 # END Command line processing
 # ------------------
 
-DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR/../../.." && pwd)
+DKMLDIR=$(PATH=/usr/bin:/bin dirname "$0")
+DKMLDIR=$(cd "$DKMLDIR/../../.." && PATH=/usr/bin:/bin pwd)
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
@@ -120,6 +120,9 @@ cd "$TOPDIR"
 # http://opam.ocaml.org/doc/Manual.html#opam-root
 #
 # In Diskuv OCaml each architecture gets its own Opam root.
+
+# Set DKMLSYS_*
+autodetect_system_binaries
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and WITHDKMLEXE(DIR)_BUILDHOST
 set_opamrootdir
@@ -181,8 +184,8 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
         downloadfile "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" "$VCPKG_UNIX"/src.tar.gz "$VCPKG_CHECKSUM"
 
         # Expand archive
-        log_trace tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
-        rm -f "$VCPKG_UNIX"/src.tar.gz
+        log_trace "$DKMLSYS_TAR" xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
+        $DKMLSYS_RM -f "$VCPKG_UNIX"/src.tar.gz
     fi
 
     if [ ! -e "$VCPKG_UNIX"/vcpkg ] && [ ! -e "$VCPKG_UNIX"/vcpkg.exe ]; then
@@ -215,8 +218,8 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # "O" [Oui/Non] prompting); not sure what it is. Use undocumented vcpkg hack to stop stalling on user input.
     # https://github.com/Microsoft/vcpkg/issues/645 .
     # Note: This doesn't fix the stalling but keeping it!
-    install -d "$VCPKG_UNIX"/downloads
-    touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
+    $DKMLSYS_INSTALL -d "$VCPKG_UNIX"/downloads
+    PATH=/usr/bin:/bin touch "$VCPKG_UNIX"/downloads/AlwaysAllowEverything
 
     # Set DKMLPARENTHOME_BUILDHOST and autodetect VSDEV_HOME_BUILDHOST
     autodetect_vsdev
@@ -269,9 +272,10 @@ if [ "$INSTALL_VCPKG" = ON ]; then
 
         # 2. Validate we have all necessary dependencies
         # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
-        "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$DKML_VCPKG_HOST_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
-        run_with_vcpkg_pkgs echo | xargs -n1 | sort -u > "$WORK"/vcpkg.need
-        comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
+        # shellcheck disable=SC2016
+        "$VCPKG_UNIX"/vcpkg list | $DKMLSYS_AWK '{print $1}' | $DKMLSYS_GREP ":$DKML_VCPKG_HOST_TRIPLET$" | $DKMLSYS_SED 's,:[^:]*,,' | $DKMLSYS_SORT -u > "$WORK"/vcpkg.have
+        run_with_vcpkg_pkgs echo | PATH=/usr/bin:/bin xargs -n1 | $DKMLSYS_SORT -u > "$WORK"/vcpkg.need
+        $DKMLSYS_COMM -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
         if [ -s "$WORK"/vcpkg.missing ]; then
             ERRFILE=$TOPDIR/vcpkg.json
             if is_unixy_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
@@ -292,7 +296,7 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
 
     if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe ]; then
-        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe \
+        $DKMLSYS_INSTALL "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkgconf.exe \
             "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/tools/pkgconf/pkg-config.exe
     fi
 
@@ -301,11 +305,11 @@ if [ "$INSTALL_VCPKG" = ON ]; then
     # If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
 
     if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib ]; then
-        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib \
+        $DKMLSYS_INSTALL "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.lib \
             "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/uv.lib
     fi
     if [ -e "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/liblibuv.a ]; then
-        install "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/liblibuv.a \
+        $DKMLSYS_INSTALL "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/liblibuv.a \
             "$VCPKG_INSTALLED_UNIX"/"$DKML_VCPKG_HOST_TRIPLET"/lib/libuv.a
     fi
 fi
