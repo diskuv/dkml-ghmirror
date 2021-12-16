@@ -217,8 +217,8 @@ autodetect_ocaml_and_opam_home() {
 # Purpose: Use whenever you have something meant to be reproducible.
 #
 # On Windows this includes the Cygwin/MSYS2 paths, the  but also Windows directories
-# like C:\Windows\System32 and C:\Windows\System32\OpenSSH and also the essential binaries in
-# $env:DiskuvOCamlHome\bin. The general binaries in $env:DiskuvOCamlHome\usr\bin are not
+# like C:\Windows\System32 and C:\Windows\System32\OpenSSH and Powershell directories and
+# also the essential binaries in $env:DiskuvOCamlHome\bin. The general binaries in $env:DiskuvOCamlHome\usr\bin are not
 # included.
 #
 # Output:
@@ -229,13 +229,15 @@ autodetect_system_path() {
     if [ -x /usr/bin/cygpath ]; then
         autodetect_system_path_SYSDIR=$(/usr/bin/cygpath --sysdir)
         autodetect_system_path_WINDIR=$(/usr/bin/cygpath --windir)
+        # folder 38 = C:\Program Files typically
+        autodetect_system_path_PROGRAMFILES=$(/usr/bin/cygpath --folder 38)
     fi
 
     if is_cygwin_build_machine; then
-        DKML_SYSTEM_PATH=/usr/bin:/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
+        DKML_SYSTEM_PATH=/usr/bin:/bin:$autodetect_system_path_PROGRAMFILES/PowerShell/7:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
     elif is_msys2_msys_build_machine; then
         # /bin is a mount (essentially a symlink) to /usr/bin on MSYS2
-        DKML_SYSTEM_PATH=/usr/bin:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
+        DKML_SYSTEM_PATH=/usr/bin:$autodetect_system_path_PROGRAMFILES/PowerShell/7:$autodetect_system_path_SYSDIR:$autodetect_system_path_WINDIR:$autodetect_system_path_SYSDIR/Wbem:$autodetect_system_path_SYSDIR/WindowsPowerShell/v1.0:$autodetect_system_path_SYSDIR/OpenSSH
     else
         DKML_SYSTEM_PATH=/usr/bin:/bin
     fi
@@ -1904,5 +1906,48 @@ buildhost_pathize() {
 
 # [system_tar ARGS] runs the `tar` command with a system PATH and logging
 system_tar() {
-    PATH=/usr/bin:/bin log_trace tar "$@"
+    # Set DKML_SYSTEM_PATH
+    autodetect_system_path
+
+    PATH=$DKML_SYSTEM_PATH log_trace tar "$@"
+}
+
+# [autodetect_system_powershell]
+# Outputs:
+# - env:DKML_SYSTEM_POWERSHELL
+# Return Code: 0 if found, 1 if not found
+autodetect_system_powershell() {
+    # Set DKML_SYSTEM_PATH (which will include legacy `powershell.exe` if it exists)
+    autodetect_system_path
+
+    # Try pwsh first
+    system_powershell_PWSH=$(PATH="$DKML_SYSTEM_PATH" command -v pwsh || true)
+    if [ -n "$system_powershell_PWSH" ]; then
+        DKML_SYSTEM_POWERSHELL="$system_powershell_PWSH"
+        return 0
+    fi
+
+    # Then powershell first
+    system_powershell_POWERSHELL=$(PATH="$DKML_SYSTEM_PATH" command -v powershell || true)
+    if [ -n "$system_powershell_POWERSHELL" ]; then
+        # shellcheck disable=SC2034
+        DKML_SYSTEM_POWERSHELL="$system_powershell_POWERSHELL"
+        return 0
+    fi
+
+    return 1
+}
+
+# [system_powershell ARGS] runs `pwsh` or `powershell` with a system PATH and logging
+system_powershell() {
+    # Set DKML_SYSTEM_PATH (which will include legacy `powershell.exe` if it exists)
+    autodetect_system_path
+
+    # Set DKML_SYSTEM_POWERSHELL
+    if ! autodetect_system_powershell; then
+        printf "FATAL: No pwsh or powershell available in the system PATH %s\n" "$DKML_SYSTEM_PATH" >&2
+        exit 107
+    fi
+
+    PATH="$DKML_SYSTEM_PATH" log_trace "$DKML_SYSTEM_POWERSHELL" "$@"
 }

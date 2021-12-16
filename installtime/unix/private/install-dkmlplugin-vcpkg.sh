@@ -248,6 +248,9 @@ if [ "$INSTALL_VCPKG" = ON ]; then
         # Reference: Visual Studio detection logic for vcpkg is at https://github.com/microsoft/vcpkg/blob/2020.11/toolsrc/src/vcpkg/visualstudio.cpp#L191-L345
 
         if is_unixy_windows_build_machine; then
+            # Set DKML_SYSTEM_POWERSHELL or fail
+            autodetect_system_powershell
+
             # Use Windows PowerShell to create a completely detached process (not a child process). This will work around
             # stalls when running vcpkg directly in MSYS2.
             # Also, vcpkg uses an environment variable 'ProgramFiles(x86)' which is not present in dash.exe because of
@@ -255,9 +258,9 @@ if [ "$INSTALL_VCPKG" = ON ]; then
             # unable to locate vswhere.exe, and hence unable to locate most VS Studio installations. So we recreate the
             # variable in PowerShell using CSIDL_PROGRAM_FILESX86 (https://docs.microsoft.com/en-us/windows/win32/shell/csidl).
             install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_BUILDHOST\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$DKML_VCPKG_HOST_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
-            log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
+            log_trace "$DKMLSYS_ENV" --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$DKML_SYSTEM_POWERSHELL" -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
-            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET" --debug
+            log_trace "$DKMLSYS_ENV" VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET" --debug
         fi
     }
 
