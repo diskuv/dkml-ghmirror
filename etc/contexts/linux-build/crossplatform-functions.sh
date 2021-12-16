@@ -248,7 +248,7 @@ autodetect_system_path() {
     # Add Git at beginning of PATH
     autodetect_system_path_GITEXE=$(command -v git || true)
     if [ -n "$autodetect_system_path_GITEXE" ]; then
-        autodetect_system_path_GITDIR=$(dirname "$autodetect_system_path_GITEXE")
+        autodetect_system_path_GITDIR=$(PATH=/usr/bin:/bin dirname "$autodetect_system_path_GITEXE")
         case "$autodetect_system_path_GITDIR" in
             /usr/bin|/bin) ;;
             *) DKML_SYSTEM_PATH="$autodetect_system_path_GITDIR:$DKML_SYSTEM_PATH"
