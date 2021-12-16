@@ -176,7 +176,7 @@ else
     VCPKG_INSTALLED_UNIX="$VCPKG_UNIX"/installed
 fi
 
-install -d "$VCPKG_UNIX"
+$DKMLSYS_INSTALL -d "$VCPKG_UNIX"
 
 if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
     if [ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ] || [ ! -e "$VCPKG_UNIX"/scripts/bootstrap.ps1 ]; then
