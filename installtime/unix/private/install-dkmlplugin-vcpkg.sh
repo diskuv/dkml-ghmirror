@@ -4,9 +4,10 @@
 #
 # Purpose:
 # 1. Install vcpkg into the plugins/diskuvocaml/ of the OPAMROOT.
+# 2. For bootstrapping CMake, can install vcpkg into any target directory.
 #
 # When invoked?
-# As part of ./makeit initvcpkg or as part of Gradle for DKSDK
+# As part of ./makeit initvcpkg or as part of Gradle to bootstrap CMake + DKSDK
 #
 # Prerequisites:
 # - init-opam-root.sh
@@ -87,9 +88,11 @@ while getopts ":h:p:d:t:o:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$PLATFORM" ]; then
-    usage
-    exit 1
+if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+    if [ -z "$PLATFORM" ]; then
+        usage
+        exit 1
+    fi
 fi
 
 # END Command line processing
