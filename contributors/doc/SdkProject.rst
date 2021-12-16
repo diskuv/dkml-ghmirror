@@ -1160,23 +1160,3 @@ arguments):
 .. code:: bash
 
     scripts/unix/within-sandbox.sh -p linux_arm64 -b Debug
-
-Visual Studio Code
-~~~~~~~~~~~~~~~~~~
-
-CMake should work out of the box after you install the Workspace
-Recommended Extensions.
-
-Build Execution Flow
---------------------
-
-1. Docker container built using ``contexts/linux-build/Dockerfile`` from
-   ``scripts/unix/prepare-docker-alpine-arch.sh``. Everything that needs
-   to be installed using the build host architecture should be done
-   here.
-
-2. Build tools executed in the reproducible target architecture is done
-   at ``scripts/unix/build-sandbox-init-common.sh`` and ``scripts/unix/build-sandbox-init-vcpkg.sh``.
-
-3. The source code build process is done at
-   ``scripts/unix/build-in-sandbox.sh``.

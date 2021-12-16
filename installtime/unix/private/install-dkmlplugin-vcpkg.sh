@@ -6,9 +6,7 @@
 # 1. Install vcpkg into the plugins/diskuvocaml/ of the OPAMROOT.
 #
 # When invoked?
-# On Windows as part of `setup-userprofile.ps1`
-# which is itself invoked by `install-world.ps1`. On both
-# Windows and Unix it is also invoked as part of `build-sandbox-init-vcpkg.sh`.
+# As part of ./makeit initvcpkg or as part of Gradle for DKSDK
 #
 # Prerequisites:
 # - init-opam-root.sh
@@ -230,7 +228,7 @@ if [ "$INSTALL_VCPKG" = ON ]; then
             install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_BUILDHOST\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$DKML_VCPKG_HOST_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
             log_trace env --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" powershell -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
-            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET"
+            log_trace env VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET" --debug
         fi
     }
 
