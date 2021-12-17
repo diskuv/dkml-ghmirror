@@ -177,8 +177,7 @@ if ((-not $SkipAutoInstallVsBuildTools) -and ($CompatibleVisualStudios | Measure
     $VsInstallTempPath = "$TempPath\vsinstall"
 
     # wipe installation directory so previous installs don't leak into the current install
-    if (Test-Path -Path $VsInstallTempPath) { Remove-Item -Path $VsInstallTempPath -Recurse -Force }
-    New-Item -Path $VsInstallTempPath -ItemType Directory | Out-Null
+    New-CleanDirectory -Path $VsInstallTempPath
 
     Invoke-WebRequest -Uri https://aka.ms/vscollect.exe   -OutFile $VsInstallTempPath\collect.exe
     Invoke-WebRequest -Uri "$VsBuildToolsInstallChannel"  -OutFile $VsInstallTempPath\VisualStudio.chman

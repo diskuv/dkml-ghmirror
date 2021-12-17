@@ -470,10 +470,12 @@ function Step-BlueGreenDeploySlot {
     Write-Output $next.chosenSlotIdx
 }
 
-# New-CleanDirectory
+# Remove-DirectoryFully
 #
-# Clean the directory of all of its content. Make it if it doesn't already exist.
-function New-CleanDirectory {
+# Remove a directory and all of its contents. Unlike Remove-Item -Recurse this will work in
+# all versions of Windows.
+# Will not fail if the path does not already exist.
+function Remove-DirectoryFully {
     param( [Parameter(Mandatory = $true)] $Path )
 
     if (Test-Path -Path $Path) {
@@ -484,10 +486,29 @@ function New-CleanDirectory {
         Get-ChildItem $Path -Recurse -Force | Where-Object { $_.Attributes -band [io.fileattributes]::ReadOnly } | ForEach-Object {
             Set-ItemProperty -Path $_.FullName -Name Attributes -Value ($_.Attributes -band (-bnot [io.fileattributes]::ReadOnly))
         }
-        Remove-Item -Path $Path -Recurse -Force
+
+        # We want to do `Remove-Item -Path $Path -Recurse -Force`. However the docs for Remove-Item
+        # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/remove-item?view=powershell-7.2#parameters
+        # say:
+        # > The Recurse parameter might not delete all subfolders or all child items. This is a known issue.
+        # > ! Note
+        # > This behavior was fixed in Windows versions 1909 and newer.
+        # So we use the Command Prompt instead.
+        cmd /c "rd /s /q `"$Path`""
     }
+}
+Export-ModuleMember -Function Remove-DirectoryFully
+
+# New-CleanDirectory
+#
+# Clean the directory of all of its content. Make it if it doesn't already exist.
+function New-CleanDirectory {
+    param( [Parameter(Mandatory = $true)] $Path )
+
+    Remove-DirectoryFully -Path $Path
     New-Item -Path $Path -ItemType Directory | Out-Null
 }
+Export-ModuleMember -Function New-CleanDirectory
 
 function Get-CurrentEpochMillis {
     [long]$timestamp = [math]::Round((([datetime]::UtcNow) - (Get-Date -Date '1/1/1970')).TotalMilliseconds)

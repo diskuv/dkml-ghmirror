@@ -610,7 +610,7 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
             if (-not $SkipProgress) { Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed }
             $ErrorActionPreference = "Continue"
             Write-Error "Git installer failed"
-            Remove-Item "$GitWindowsSetupAbsPath" -Recurse -Force
+            Remove-DirectoryFully -Path "$GitWindowsSetupAbsPath"
             Start-Sleep 5
             Write-Host ''
             Write-Host 'One reason why the Git installer will fail is because you did not'
@@ -633,9 +633,7 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
         $env:PATH = $OldPath
     }
 }
-if (Test-Path -Path "$GitWindowsSetupAbsPath") {
-    Remove-Item -Path "$GitWindowsSetupAbsPath" -Recurse -Force
-}
+Remove-DirectoryFully -Path "$GitWindowsSetupAbsPath"
 
 $GitPath = (get-item "$GitExe").Directory.FullName
 
@@ -844,7 +842,7 @@ try {
     $InotifyExe = "$InotifyToolDir\$InotifyExeBasename"
     if (!(Test-Path -Path $InotifyExe)) {
         if (!(Test-Path -Path $InotifyToolDir)) { New-Item -Path $InotifyToolDir -ItemType Directory | Out-Null }
-        if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
+        Remove-DirectoryFully -Path $InotifyCachePath
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCacheParentPath", "clone", "https://github.com/thekid/inotify-win.git")
         Invoke-Win32CommandWithProgress -FilePath "$GitExe" -ArgumentList @("-C", "$InotifyCachePath", "-c", "advice.detachedHead=false", "checkout", "$InotifyTag")
         Set-Content -Path "$InotifyCachePath\compile.bat" -Value "`"$Vcvars`" -no_logo -vcvars_ver=$($VisualStudioProps.VcVarsVer) -winsdk=$($VisualStudioProps.WinSdkVer) && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
@@ -1040,12 +1038,12 @@ try {
             }
 
             # remove directory, especially important so possible subsequent Rename-Item to work
-            if (Test-Path -Path $MSYS2Dir) { Remove-Item -Path $MSYS2Dir -Recurse -Force }
+            Remove-DirectoryFully -Path $MSYS2Dir
 
             if ($MSYS2IsBase) {
                 # extract
                 if ($null -eq $MSYS2BaseSubdir) { throw "check_state MSYS2BaseSubdir is not null"}
-                if (Test-Path -Path "$MSYS2ParentDir\$MSYS2BaseSubdir") { Remove-Item -Path "$MSYS2ParentDir\$MSYS2BaseSubdir" -Recurse -Force }
+                Remove-DirectoryFully -Path "$MSYS2ParentDir\$MSYS2BaseSubdir"
                 Invoke-Win32CommandWithProgress -FilePath $MSYS2SetupExe -ArgumentList "-y", "-o$MSYS2ParentDir"
 
                 # rename to MSYS2
