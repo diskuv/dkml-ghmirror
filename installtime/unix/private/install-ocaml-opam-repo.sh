@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------
-# install-ocaml-opam-repo.sh DKMLDIR DOCKER_IMAGE OCAML_VERSION INSTALLDIR
+# install-ocaml-opam-repo.sh DKMLDIR DOCKER_IMAGE OCAML_HOME INSTALLDIR
 
 set -euf
 
@@ -11,7 +11,7 @@ if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "Expected a DKMLDIR at $DKMLDIR but 
 DOCKER_IMAGE=$1
 shift
 
-OCAML_VERSION=$1
+OCAMLHOME=$1
 shift
 
 INSTALLDIR=$1
@@ -47,13 +47,23 @@ if [ -e "$INSTALLDIR"/"$SHARE_OCAML_OPAM_REPO_RELPATH"/repo ] && [ -e "$INSTALLD
     exit 0
 fi
 
+# Get DKML_OCAMLHOME_UNIX, DKML_OCAMLHOME_BINDIR_UNIX and OCAMLVERSION
+validate_and_explore_ocamlhome "$OCAMLHOME"
+OCAMLEXE="$DKML_OCAMLHOME_UNIX/$DKML_OCAMLHOME_BINDIR_UNIX/ocamlc"
+OCAML_VERSION=$("$OCAMLEXE" -config | awk '$1=="version:"{print $2}' | tr -d '\r')
+if [ -z "$OCAML_VERSION" ]; then
+    printf "FATAL: %s -config failed to give the OCaml version\n" "$OCAMLEXE" >&2
+    exit 107
+fi
+
 # Install the source code
 log_trace "$DKMLDIR"/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$DOCKER_IMAGE" \
     -a "amd64" \
-    -b "$OCAML_VERSION"
+    -b "$OCAML_VERSION" \
+    -c "$OCAMLHOME"
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"

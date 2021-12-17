@@ -994,60 +994,6 @@ try {
     # END Cygwin
     # ----------------------------------------------------------------
 
-    $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
-    Write-ProgressStep
-
-    if ((Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\pins.txt")) {
-        # Already installed
-    } elseif (Import-DiskuvOCamlAsset `
-            -PackageName "ocaml_opam_repo-reproducible" `
-            -ZipFile "ocaml-opam-repo-$OCamlLangVersion.zip" `
-            -TmpPath "$TempPath" `
-            -DestinationPath "$ProgramPath\share\dkml\repro\$OCamlLangVersion") {
-        # Successfully downloaded from asset
-    } else {
-        Install-Cygwin
-
-        # ----------------------------------------------------------------
-        # BEGIN Define temporary dkmlvars for Cygwin only
-
-        # dkmlvars.* (DiskuvOCaml variables) are scripts that set variables about the deployment.
-        $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
-        $CygwinVarsArray = @(
-            # Every dkml variable is defined except DiskuvOCamlMSYS2Dir
-            "DiskuvOCamlVarsVersion=2",
-            "DiskuvOCamlHome='$ProgramCygwinAbsPath'",
-            "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'",
-            "DiskuvOCamlDeploymentId='$DeploymentId'",
-            "DiskuvOCamlVersion='$dkml_root_version'"
-        )
-        $CygwinVarsContents = $CygwinVarsArray -join [environment]::NewLine
-        $CygwinVarsContentsOnOneLine = $CygwinVarsArray -join " "
-
-        # END Define temporary dkmlvars for Cygwin only
-        # ----------------------------------------------------------------
-
-        # ----------------------------------------------------------------
-        # BEGIN Fetch/install fdopen-based ocaml/opam repository
-
-        $DkmlCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$DkmlPath"
-
-        $OcamlOpamRootPath = "$ProgramPath\tools\ocaml-opam"
-        $MobyPath = "$TempPath\moby"
-        $OcamlOpamRootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$OcamlOpamRootPath"
-        $MobyCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$MobyPath"
-
-        # Q: Why download with Cygwin rather than MSYS? Ans: The Moby script uses `jq` which has shell quoting failures when run with MSYS `jq`.
-        #
-        if (!$global:SkipMobyDownload) {
-            Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath `
-                -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$OCamlLangVersion' '$ProgramCygwinAbsPath'"
-        }
-
-        # END Fetch/install fdopen-based ocaml/opam repository
-        # ----------------------------------------------------------------
-    }
-
     # ----------------------------------------------------------------
     # BEGIN MSYS2
 
@@ -1295,6 +1241,61 @@ try {
     }
 
     # END Compile/install system ocaml.exe
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN Fetch/install fdopen-based ocaml/opam repository
+
+    $global:ProgressActivity = "Install fdopen-based ocaml/opam repository"
+    Write-ProgressStep
+
+    if ((Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\repo") -and (Test-Path -Path "$ProgramPath\share\dkml\repro\$OCamlLangVersion\pins.txt")) {
+        # Already installed
+    } elseif (Import-DiskuvOCamlAsset `
+            -PackageName "ocaml_opam_repo-reproducible" `
+            -ZipFile "ocaml-opam-repo-$OCamlLangVersion.zip" `
+            -TmpPath "$TempPath" `
+            -DestinationPath "$ProgramPath\share\dkml\repro\$OCamlLangVersion") {
+        # Successfully downloaded from asset
+    } else {
+        Install-Cygwin
+
+        # ----------------------------------------------------------------
+        # BEGIN Define temporary dkmlvars for Cygwin only
+
+        # dkmlvars.* (DiskuvOCaml variables) are scripts that set variables about the deployment.
+        $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
+        $CygwinVarsArray = @(
+            # Every dkml variable is defined except DiskuvOCamlMSYS2Dir
+            "DiskuvOCamlVarsVersion=2",
+            "DiskuvOCamlHome='$ProgramCygwinAbsPath'",
+            "DiskuvOCamlBinaryPaths='$ProgramCygwinAbsPath/bin'",
+            "DiskuvOCamlDeploymentId='$DeploymentId'",
+            "DiskuvOCamlVersion='$dkml_root_version'"
+        )
+        $CygwinVarsContents = $CygwinVarsArray -join [environment]::NewLine
+        $CygwinVarsContentsOnOneLine = $CygwinVarsArray -join " "
+
+        # END Define temporary dkmlvars for Cygwin only
+        # ----------------------------------------------------------------
+
+        $DkmlCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$DkmlPath"
+
+        $OcamlOpamRootPath = "$ProgramPath\tools\ocaml-opam"
+        $MobyPath = "$TempPath\moby"
+        $OcamlOpamRootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$OcamlOpamRootPath"
+        $MobyCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$MobyPath"
+
+        # Q: Why download with Cygwin rather than MSYS? Ans: The Moby script uses `jq` which has shell quoting failures when run with MSYS `jq`.
+        #
+        if (!$global:SkipMobyDownload) {
+            Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath `
+                -Command "env $CygwinVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/private/install-ocaml-opam-repo.sh '$DkmlCygwinAbsPath' '$DV_WindowsMsvcDockerImage' '$ProgramCygwinAbsPath' '$ProgramCygwinAbsPath'"
+        }
+
+    }
+
+    # END Fetch/install fdopen-based ocaml/opam repository
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
