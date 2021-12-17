@@ -16,8 +16,8 @@
 # -------------------------------------------------------
 set -euf
 
-VCPKG_VER="2021.05.12"
-VCPKG_CHECKSUM="907f26a5357c30e255fda9427f1388a39804f607a11fa4c083cc740cb268f5dc"
+VCPKG_VER="2021.12.01"
+VCPKG_CHECKSUM="2794f9b1f4d7f3d7a4948c7c0585315b45303cfc19fbd4c02c03e412654cf217"
 run_with_vcpkg_pkgs() {
     run_with_vcpkg_pkgs_CMD="$1"
     shift
