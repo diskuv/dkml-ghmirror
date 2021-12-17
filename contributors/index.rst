@@ -201,7 +201,10 @@ Installation Instructions
 
       PS> iwr `
         "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.2/distribution-portable.zip" `
-        -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip";
+        -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"; `
+        if ($LastExitCode -ne 0) { bitsadmin /transfer downloadDiskuvOCamlJob /download /priority normal `
+        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.2/distribution-portable.zip" `
+        "$env:TEMP\diskuv-ocaml-distribution.zip" };
 
       PS> Expand-Archive `
         -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
