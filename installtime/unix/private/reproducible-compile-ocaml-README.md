@@ -1,4 +1,4 @@
-# Reproducible: Compile Opam
+# Reproducible: Compile OCaml
 
 Cautions:
 * Windows 10 ARM (64-bit Snapdragon) does not work as a cross-compiling target. Most of the patches are done for it except `flexdll` has not yet been patched
