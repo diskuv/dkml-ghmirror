@@ -38,11 +38,6 @@
 # -------------------------------------------------------
 set -euf
 
-# Location of this script
-SCRIPTDIR=$(dirname "$0")
-SCRIPTDIR=$(cd "$SCRIPTDIR" && pwd)
-SCRIPTFILE="$SCRIPTDIR"/$(basename "$0")
-
 # ------------------
 # BEGIN Command line processing
 

@@ -1119,10 +1119,23 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_VS_MSVSPREFERENCE - Must be a MSVS_PREFERENCE environment variable
 #       value that can locate the Visual Studio installation in DKML_COMPILE_VS_DIR when
 #       https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
-#   - env:DKML_COMPILE_TYPE - "CM" for CMake. All CMAKE_* CMake variables should be defined. For example:
-#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER - The CMake variable CMAKE_C_COMPILER
+#   - env:DKML_COMPILE_TYPE - "CM" for CMake. The following CMake variables should be defined if they exist:
+#     - env:DKML_COMPILE_CM_CONFIG - The value of the CMake generator expression $<CONFIG>
 #     - env:DKML_COMPILE_CM_CMAKE_SYSROOT - The CMake variable CMAKE_SYSROOT
-#     - env:DKML_COMPILE_CM_CMAKE_* - et cetera
+#     - env:DKML_COMPILE_CM_CMAKE_SYSTEM_NAME - The CMake variable CMAKE_SYSTEM_NAME
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_ID
+#     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
+#       4 variables below are the standard $<CONFIG> that come with DKSDK.
+#     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG
+#     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASE
+#     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASECOMPATFUZZ
+#     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASECOMPATPERF
+#     - env:DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P
+#     - env:DKML_COMPILE_CM_MSVC
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:BUILDHOST_ARCH will contain the correct ARCH
@@ -1134,13 +1147,19 @@ create_system_launcher() {
 # - env:VSDEV_HOME_BUILDHOST is the Visual Studio installation directory containing VC and Common7 subfolders,
 #   if and only if Visual Studio was detected. Will be Windows path if Windows. Empty if Visual Studio not detected.
 # Launcher/s-exp Environment:
-# - MSVS_PREFERENCE will be set for https://github.com/metastack/msvs-tools or Opam's `msvs-detect` to detect
-#   which Visual Studio installation to use. Example: `VS16.6`
-# - CMAKE_GENERATOR_RECOMMENDED will be set for build scripts to use a sensible generator in `cmake -G <generator>` if there
-#   is not a more appropriate value. Example: `Visual Studio 16 2019`
-# - CMAKE_GENERATOR_INSTANCE_RECOMMENDED will be set for build scripts to use a sensible generator instance in
-#   `cmake -G ... -D CMAKE_GENERATOR_INSTANCE=<generator instance>`. Only set for Visual Studio where it is the absolute
-#   path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
+# - (When DKML_COMPILE_TYPE=VS) MSVS_PREFERENCE will be set for https://github.com/metastack/msvs-tools or
+#   Opam's `msvs-detect` to detect which Visual Studio installation to use. Example: `VS16.6`
+# - (When DKML_COMPILE_TYPE=VS) CMAKE_GENERATOR_RECOMMENDED will be set for build scripts to use a sensible generator
+#   in `cmake -G <generator>` if there is not a more appropriate value. Example: `Visual Studio 16 2019`
+# - (When DKML_COMPILE_TYPE=VS) CMAKE_GENERATOR_INSTANCE_RECOMMENDED will be set for build scripts to use a sensible
+#   generator instance in `cmake -G ... -D CMAKE_GENERATOR_INSTANCE=<generator instance>`. Only set for Visual Studio where
+#   it is the absolute path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
+# - (When DKML_COMPILE_TYPE=CM) CC - C compiler
+# - (When DKML_COMPILE_TYPE=CM) CFLAGS - C compiler flags
+# - (When DKML_COMPILE_TYPE=CM) AS - Assembler (assembly language compiler)
+# - (When DKML_COMPILE_TYPE=CM) DKML_COMPILE_CM_* - All these variables will be passed-through if CMake so
+#   downstream OCaml/Opam/etc. can fine-tune what flags / environment variables get passed into
+#   their `./configure` scripts
 autodetect_compiler() {
     # Set BUILDHOST_ARCH (needed before we process arguments)
     autodetect_buildhost_arch
@@ -1237,13 +1256,15 @@ autodetect_compiler() {
     if [ "${DKML_COMPILE_SPEC:-}" = 1 ] && [ "${DKML_COMPILE_TYPE:-}" = VS ]; then
         autodetect_vsdev # set DKMLPARENTHOME_BUILDHOST and VSDEV_*
         autodetect_compiler_vsdev
+    elif [ "${DKML_COMPILE_SPEC:-}" = 1 ] && [ "${DKML_COMPILE_TYPE:-}" = CM ]; then
+        autodetect_compiler_cmake
     elif autodetect_vsdev && [ -n "$VSDEV_HOME_UNIX" ]; then
         # `autodetect_vsdev` will have set DKMLPARENTHOME_BUILDHOST and VSDEV_*
         autodetect_compiler_vsdev
     elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] || [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
         autodetect_compiler_darwin
     else
-        autodetect_compiler_other
+        autodetect_compiler_system
     fi
 
     # When $WORK is not defined, we have a unique directory that needs cleaning
@@ -1252,7 +1273,96 @@ autodetect_compiler() {
     fi
 }
 
-autodetect_compiler_other() {
+# Each s-exp string must follow OCaml syntax (escape double-quotes and backslashes)
+# Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`.
+# So if the input is: NAME=VALUE
+# then the output is: NAME" "VALUE
+autodetect_compiler_escape_sexp() {
+    "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
+}
+
+# Since we will embed each name/value pair in single quotes
+# (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
+# as a single `env` argument like `env 'Z=hi '"'"' there' ...`
+# we need to replace single quotes (') with ('"'"').
+autodetect_compiler_escape_envarg() {
+    "$DKMLSYS_CAT" "$@" | escape_stdin_for_single_quote
+}
+
+# Sets _CMAKE_C_FLAGS_FOR_CONFIG environment variable to the value of config-specific
+# cflag variable like `DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG` when `DKML_COMPILE_CM_CONFIG` is
+# `Debug`.
+autodetect_compiler_cmake_get_config_c_flags() {
+    # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG"
+    _DKML_COMPILE_CM_CONFIG_UPPER=$(printf "%s" "$DKML_COMPILE_CM_CONFIG" | tr '[:lower:]' '[:upper:]')
+    printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKML_COMPILE_CM_CMAKE_C_FLAGS_%s\"" "$_DKML_COMPILE_CM_CONFIG_UPPER" > "$WORK"/cflags.source
+    # shellcheck disable=SC1091
+    . "$WORK"/cflags.source
+}
+
+autodetect_compiler_cmake() {
+    {
+        # Choose which assembler should be used
+        autodetect_compiler_cmake_THE_AS=
+        if [ -n "${DKML_COMPILE_CM_CMAKE_ASM_COMPILER:-}" ]; then
+            autodetect_compiler_cmake_THE_AS=$DKML_COMPILE_CM_CMAKE_ASM_COMPILER
+        elif [ -n "${DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER:-}" ]; then
+            autodetect_compiler_cmake_THE_AS=$DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER
+        elif [ -n "${DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER:-}" ]; then
+            autodetect_compiler_cmake_THE_AS=$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
+        fi
+
+        # Set _CMAKE_C_FLAGS_FOR_CONFIG to $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
+        autodetect_compiler_cmake_get_config_c_flags
+
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+            printf "(\n"
+
+            # Universal ./configure flags
+            autodetect_compiler_cmake_CC=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
+            printf "  (\"CC\" \"%s\")\n" "$autodetect_compiler_cmake_CC"
+            autodetect_compiler_cmake_CFLAGS=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
+            printf "  (\"CFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_CFLAGS"
+            autodetect_compiler_cmake_AS=$(escape_arg_as_ocaml_string "$autodetect_compiler_cmake_THE_AS")
+            printf "  (\"AS\" \"%s\")\n" "$autodetect_compiler_cmake_AS"
+
+            # Passthrough all DKML_COMPILE_CM_* variables.
+            # The first `sed` command removes any surrounding single quotes from any values.
+            # The second `sed` command adds a surrounding parenthesis and double quote ("...") to each value.
+            # shellcheck disable=SC2016
+            set | "$DKMLSYS_AWK" 'BEGIN{FS="="} $1 ~ /^DKML_COMPILE_CM_/ {print}' \
+                | "$DKMLSYS_SED" "s/^\([^=]*\)='\(.*\)'$/\1=\2/" \
+                | autodetect_compiler_escape_sexp \
+                | "$DKMLSYS_SED" 's/^/  ("/; s/$/")/'
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+            printf "%s\n" "#!$DKML_POSIX_SHELL"
+            printf "%s\n" "exec $DKMLSYS_ENV \\"
+
+            # Universal ./configure flags
+            autodetect_compiler_cmake_CC=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
+            printf "  CC=%s \\\n" "$autodetect_compiler_cmake_CC"
+            autodetect_compiler_cmake_CFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
+            printf "  CFLAGS=%s \\\n" "$autodetect_compiler_cmake_CFLAGS"
+            autodetect_compiler_cmake_AS=$(escape_args_for_shell "$autodetect_compiler_cmake_THE_AS")
+            printf "  AS=%s \\\n" "$autodetect_compiler_cmake_AS"
+
+            # Passthrough all DKML_COMPILE_CM_* variables
+            # shellcheck disable=SC2016
+            set | "$DKMLSYS_AWK" -v bslash="\\" 'BEGIN{FS="="} $1 ~ /^DKML_COMPILE_CM_/ {name=$1; value=$0; sub(/^[^=]*=/,"",value); print "  " name "=" value " " bslash}'
+        fi
+
+        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+            printf ")"
+        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+            # Add arguments
+            printf "%s\n" '  "$@"'
+        fi
+    } > "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
+    "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
+}
+
+autodetect_compiler_system() {
     {
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf "(\n"
@@ -1566,17 +1676,11 @@ autodetect_compiler_vsdev() {
     # SEVENTH, make the launcher script or s-exp
     if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
         autodetect_compiler_escape() {
-            # Each s-exp string must follow OCaml syntax (escape double-quotes and backslashes)
-            # Since each name/value pair is an assocation list, we replace the first `=` in each line with `" "`
-            "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g; s#=#" "#; ' "$@"
+            autodetect_compiler_escape_sexp "$@"
         }
     elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ] || [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
         autodetect_compiler_escape() {
-            # Since we will embed each name/value pair in single quotes
-            # (ie. Z=hi ' there ==> 'Z=hi '"'"' there') so it can be placed
-            # as a single `env` argument like `env 'Z=hi '"'"' there' ...`
-            # we need to replace single quotes (') with ('"'"').
-            "$DKMLSYS_CAT" "$@" | escape_stdin_for_single_quote
+            autodetect_compiler_escape_envarg "$@"
         }
     fi
     {
@@ -1608,7 +1712,7 @@ autodetect_compiler_vsdev() {
 
         # Add CMAKE_GENERATOR_RECOMMENDED and CMAKE_GENERATOR_INSTANCE_RECOMMENDED
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
-            autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED=$(printf "%s" "$VSDEV_HOME_BUILDHOST" | autodetect_compiler_escape)
+            autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED=$(printf "%s" "$VSDEV_HOME_BUILDHOST" | autodetect_compiler_escape_sexp)
             printf "%s\n" "  (\"CMAKE_GENERATOR_RECOMMENDED\" \"$VSDEV_CMAKEGENERATOR\")"
             printf "%s\n" "  (\"CMAKE_GENERATOR_INSTANCE_RECOMMENDED\" \"$autodetect_compiler_VSDEV_HOME_BUILDHOST_QUOTED\")"
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
@@ -1618,12 +1722,12 @@ autodetect_compiler_vsdev() {
 
         # Add PATH
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
-            autodetect_compiler_COMPILER_PATH_WIN_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_PATH_WIN" | autodetect_compiler_escape)
-            autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH" | autodetect_compiler_escape)
+            autodetect_compiler_COMPILER_PATH_WIN_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_PATH_WIN" | autodetect_compiler_escape_sexp)
+            autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH_QUOTED=$(printf "%s" "$autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH" | autodetect_compiler_escape_sexp)
             printf "%s\n" "  (\"PATH\" \"$autodetect_compiler_COMPILER_PATH_WIN_QUOTED\")"
             printf "%s\n" "  (\"PATH_COMPILER\" \"$autodetect_compiler_COMPILER_WINDOWS_UNIQ_PATH_QUOTED\")"
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
-            autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH" | autodetect_compiler_escape)
+            autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH=$(printf "%s\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH" | autodetect_compiler_escape_envarg)
             printf "%s\n" "  PATH='$autodetect_compiler_COMPILER_ESCAPED_UNIX_UNIQ_PATH':\"\$PATH\" \\"
         fi
 
@@ -1880,13 +1984,13 @@ escape_stdin_for_single_quote() {
 
 # Make the standard input work as an OCaml string.
 #
-# TODO: This so far only escapes backslashes.
+# This currently only escapes backslashes and double quotes.
 #
 # Prereq: autodetect_system_binaries
 escape_arg_as_ocaml_string() {
     escape_arg_as_ocaml_string_ARG=$1
     shift
-    printf "%s" "$escape_arg_as_ocaml_string_ARG" | "$DKMLSYS_SED" 's#\\#\\\\#g'
+    printf "%s" "$escape_arg_as_ocaml_string_ARG" | "$DKMLSYS_SED" 's#\\#\\\\#g; s#"#\\"#g;'
 }
 
 # Convert a path into an absolute path appropriate for the build host machine. That is, Windows

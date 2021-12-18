@@ -415,11 +415,8 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
             TARGET_32BIT=OFF
         fi
 
-        # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG"
-        _DKSDK_CONFIG_UPPER=$(printf "%s" "$DKSDK_CONFIG" | tr '[:lower:]' '[:upper:]')
-        printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKML_COMPILE_CM_CMAKE_C_FLAGS_%s\"" "$_DKSDK_CONFIG_UPPER" > "$WORK"/cflags.source
-        # shellcheck disable=SC1091
-        . "$WORK"/cflags.source
+        # Set _CMAKE_C_FLAGS_FOR_CONFIG to $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
+        autodetect_compiler_cmake_get_config_c_flags
 
         # Assembler details can be found at https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14563-L14595
         # Pay attention to the order of precedence for the operating systems

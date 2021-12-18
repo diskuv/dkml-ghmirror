@@ -42,11 +42,6 @@
 # -------------------------------------------------------
 set -euf
 
-# Location of this script
-SCRIPTDIR=$(dirname "$0")
-SCRIPTDIR=$(cd "$SCRIPTDIR" && pwd)
-SCRIPTFILE="$SCRIPTDIR"/$(basename "$0")
-
 # ------------------
 # BEGIN Command line processing
 
@@ -241,21 +236,6 @@ make_target () {
   CAMLOPT="$make_target_BUILD_ROOT/bin/ocamloptTarget.wrapper"
 
   make_caml BUILD_ROOT="$make_target_BUILD_ROOT" "$@"
-}
-
-checksum_crosscompile_inputs() {
-  checksum_host_OUT="$1"
-  shift
-  {
-    # this script
-    sha256compute "$SCRIPTFILE"
-
-    # only do bytecode since native code is indeterministic (randomization during optimization;
-    # address space layout randomization; etc.)
-    find "$OCAML_HOST"/bin -name 'ocaml*.byte'"$EXE_EXT" | while IFS= read -r checksum_host_LINE; do
-      sha256compute "$checksum_host_LINE"
-    done | LC_ALL=C sort # we sort since bin/ocaml* may come in any order
-  } > "$checksum_host_OUT"
 }
 
 build_world() {
