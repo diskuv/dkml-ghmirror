@@ -420,6 +420,8 @@ let () =
     Format.printf "Would have added to %s@\n" pin_loc;
     Queue.iter (fun s -> Format.printf "  @[%s@]@\n" s) pin_commands)
   else
+    (* WARNING: Cannot change the format of pins.txt without also changing diskuv-ocaml's
+       installtime/unix/create-opam-switch.sh *)
     let oc = open_out_bin pin_loc in
     Queue.iter
       (fun s ->
