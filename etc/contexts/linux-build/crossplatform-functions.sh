@@ -955,18 +955,18 @@ autodetect_cpus() {
 #   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
 #   a native compilation.
 # - env:WORK - Optional. If provided will be used as temporary directory
-# - env:DKML_VSSTUDIO_DIR - Optional. If provided with all three (3) DKML_VSSTUDIO_* variables the
+# - env:DKML_COMPILE_VS_DIR - Optional. If provided with all three (3) DKML_COMPILE_VS_* variables the
 #   specified installation directory of Visual Studio will be used.
 #   The directory should contain VC and Common7 subfolders.
-# - env:DKML_VSSTUDIO_VCVARSVER - Optional. If provided it must be a version that can locate the Visual Studio
-#   installation in DKML_VSSTUDIO_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
-# - env:DKML_VSSTUDIO_WINSDKVER - Optional. If provided it must be a version that can locate the Windows SDK
+# - env:DKML_COMPILE_VS_VCVARSVER - Optional. If provided it must be a version that can locate the Visual Studio
+#   installation in DKML_COMPILE_VS_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
+# - env:DKML_COMPILE_VS_WINSDKVER - Optional. If provided it must be a version that can locate the Windows SDK
 #   kit when `vsdevcmd.bat -winsdk=VERSION` is invoked. Example: `10.0.18362.0`
-# - env:DKML_VSSTUDIO_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
-#   value that can locate the Visual Studio installation in DKML_VSSTUDIO_DIR when
+# - env:DKML_COMPILE_VS_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
+#   value that can locate the Visual Studio installation in DKML_COMPILE_VS_DIR when
 #   https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
-# - env:DKML_VSSTUDIO_CMAKEGENERATOR - Optional. If provided it must be a CMake Generator that makes use of
-#   the Visual Studio installation in DKML_VSSTUDIO_DIR. Example: `Visual Studio 16 2019`.
+# - env:DKML_COMPILE_VS_CMAKEGENERATOR - Optional. If provided it must be a CMake Generator that makes use of
+#   the Visual Studio installation in DKML_COMPILE_VS_DIR. Example: `Visual Studio 16 2019`.
 #   Full list at https://cmake.org/cmake/help/v3.22/manual/cmake-generators.7.html#visual-studio-generators
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
@@ -993,12 +993,12 @@ autodetect_vsdev() {
     # Set DKMLSYS_*
     autodetect_system_binaries
 
-    if [ -n "${DKML_VSSTUDIO_DIR:-}" ] && [ -n "${DKML_VSSTUDIO_VCVARSVER:-}" ] && [ -n "${DKML_VSSTUDIO_WINSDKVER:-}" ] && [ -n "${DKML_VSSTUDIO_MSVSPREFERENCE:-}" ] && [ -n "${DKML_VSSTUDIO_CMAKEGENERATOR:-}" ]; then
-        autodetect_vsdev_VSSTUDIODIR=$DKML_VSSTUDIO_DIR
-        autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_VSSTUDIO_VCVARSVER
-        autodetect_vsdev_VSSTUDIOWINSDKVER=$DKML_VSSTUDIO_WINSDKVER
-        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_VSSTUDIO_MSVSPREFERENCE
-        autodetect_vsdev_VSSTUDIOCMAKEGENERATOR=$DKML_VSSTUDIO_CMAKEGENERATOR
+    if [ "${DKML_COMPILE_SPEC:-}" = 1 ] && [ "${DKML_COMPILE_TYPE:-}" = VS ]; then
+        autodetect_vsdev_VSSTUDIODIR=$DKML_COMPILE_VS_DIR
+        autodetect_vsdev_VSSTUDIOVCVARSVER=$DKML_COMPILE_VS_VCVARSVER
+        autodetect_vsdev_VSSTUDIOWINSDKVER=$DKML_COMPILE_VS_WINSDKVER
+        autodetect_vsdev_VSSTUDIOMSVSPREFERENCE=$DKML_COMPILE_VS_MSVSPREFERENCE
+        autodetect_vsdev_VSSTUDIOCMAKEGENERATOR=$DKML_COMPILE_VS_CMAKEGENERATOR
     else
         autodetect_vsdev_VSSTUDIO_DIRFILE="$DKMLPARENTHOME_BUILDHOST/vsstudio.dir.txt"
         if [ ! -e "$autodetect_vsdev_VSSTUDIO_DIRFILE" ]; then return 1; fi
@@ -1060,11 +1060,8 @@ create_system_launcher() {
 #
 # autodetect_compiler [--sexp] OUTPUT_SCRIPT_OR_SEXP [EXTRA_PREFIX]
 #
-# (Deprecated functionality) Includes EXTRA_PREFIX as a prefix for /include and and /lib library subpaths.
-#
 # Example:
 #  autodetect_compiler /tmp/launcher.sh && /tmp/launcher.sh cl.exe /help
-#  autodetect_compiler /tmp/launcher.sh /usr/local && /tmp/launcher.sh DEBUG=1 cl.exe /help
 #
 # The generated launcher.sh behaves like a `env` command. You may place environment variable
 # definitions before your target executable. Also you may use `-u name` to unset an environment
@@ -1108,16 +1105,24 @@ create_system_launcher() {
 #   options necessary to cross-compile (or native compile) to the target PLATFORM. 'dev' is always
 #   a native compilation.
 # - env:WORK - Optional. If provided will be used as temporary directory
-# - env:DKML_VSSTUDIO_DIR - Optional. If provided with all three (3) DKML_VSSTUDIO_* variables the
-#   specified installation directory of Visual Studio will be used.
-#   The directory should contain VC and Common7 subfolders.
-# - env:DKML_VSSTUDIO_VCVARSVER - Optional. If provided it must be a version that can locate the Visual Studio
-#   installation in DKML_VSSTUDIO_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
-# - env:DKML_VSSTUDIO_WINSDKVER - Optional. If provided it must be a version that can locate the Windows SDK
-#   kit when `vsdevcmd.bat -winsdk=VERSION` is invoked. Example: `10.0.18362.0`
-# - env:DKML_VSSTUDIO_MSVSPREFERENCE - Optional. If provided it must be a MSVS_PREFERENCE environment variable
-#   value that can locate the Visual Studio installation in DKML_VSSTUDIO_DIR when
-#   https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
+# - env:DKML_COMPILE_SPEC - Optional. If specified will be a specification number, which determines which
+#   other environment variables have to be supplied and the format of each variable.
+#   Only spec 1 is supported today:
+#   - env:DKML_COMPILE_TYPE - "VS" for Visual Studio. The following vars must be defined:
+#     - env:DKML_COMPILE_VS_DIR - The
+#       specified installation directory of Visual Studio will be used.
+#       The directory should contain VC and Common7 subfolders.
+#     - env:DKML_COMPILE_VS_VCVARSVER - Must be a version that can locate the Visual Studio
+#       installation in DKML_COMPILE_VS_DIR when `vsdevcmd.bat -vcvars_ver=VERSION` is invoked. Example: `14.26`
+#     - env:DKML_COMPILE_VS_WINSDKVER - Must be a version that can locate the Windows SDK
+#       kit when `vsdevcmd.bat -winsdk=VERSION` is invoked. Example: `10.0.18362.0`
+#     - env:DKML_COMPILE_VS_MSVSPREFERENCE - Must be a MSVS_PREFERENCE environment variable
+#       value that can locate the Visual Studio installation in DKML_COMPILE_VS_DIR when
+#       https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
+#   - env:DKML_COMPILE_TYPE - "CM" for CMake. All CMAKE_* CMake variables should be defined. For example:
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER - The CMake variable CMAKE_C_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_SYSROOT - The CMake variable CMAKE_SYSROOT
+#     - env:DKML_COMPILE_CM_CMAKE_* - et cetera
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:BUILDHOST_ARCH will contain the correct ARCH
@@ -1174,6 +1179,35 @@ autodetect_compiler() {
         fi
     fi
 
+    # Validate compile spec
+    autodetect_compiler_SPECBITS=""
+    [ -n "${DKML_COMPILE_TYPE:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}1"
+    [ -n "${DKML_COMPILE_VS_DIR:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}2"
+    [ -n "${DKML_COMPILE_VS_VCVARSVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}3"
+    [ -n "${DKML_COMPILE_VS_WINSDKVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}4"
+    [ -n "${DKML_COMPILE_VS_MSVSPREFERENCE:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}5"
+    if [ -z "${DKML_COMPILE_SPEC:-}" ]; then
+        if [ ! "$autodetect_compiler_SPECBITS" = "" ]; then
+            printf "No DKML compile environment variables should be passed without a DKML compile spec. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
+            exit 107
+        fi
+    elif [ "${DKML_COMPILE_SPEC:-}" = 1 ]; then
+        if [ ! "$autodetect_compiler_SPECBITS" = "12345" ]; then
+            printf "DKML compile spec 1 was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
+            exit 107
+        fi
+        case "$DKML_COMPILE_TYPE" in
+            VS) ;;
+            *)
+                printf "DKML compile spec 1 was not followed. DKML_COMPILE_TYPE must be VS" >&2
+                exit 107
+            ;;
+        esac
+    else
+        printf "Only DKML compile spec 1 is supported\n" >&2
+        exit 107
+    fi
+
     # Set DKML_POSIX_SHELL if not already set
     autodetect_posix_shell
     # Set DKML_SYSTEM_PATH
@@ -1200,26 +1234,11 @@ autodetect_compiler() {
     #   https://gitlab.com/diskuv/diskuv-ocaml/-/blob/aabf3171af67a0a0ff4779c336867a7a43e3670f/etc/opam-repositories/diskuv-opam-repo/packages/ocaml-variants/ocaml-variants.4.12.0+options+dkml+msvc64/opam#L52-62
     export OCAML_HOST_TRIPLET=
 
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        # Get the extra prefix with backslashes escaped for Awk, if specified
-        if [ "$#" -ge 1 ]; then
-            autodetect_compiler_EXTRA_PREFIX_ESCAPED="$1"
-            if [ -x /usr/bin/cygpath ]; then autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(/usr/bin/cygpath -aw "$autodetect_compiler_EXTRA_PREFIX_ESCAPED"); fi
-            autodetect_compiler_EXTRA_PREFIX_ESCAPED=$(printf "%s\n" "${autodetect_compiler_EXTRA_PREFIX_ESCAPED}" | "$DKMLSYS_SED" 's#\\#\\\\#g')
-            shift
-        else
-            autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
-        fi
-    else
-        if [ "$#" -ge 1 ]; then
-            echo "FATAL: Excess arguments passed to autodetect_compiler()" >&2
-            exit 107
-        fi
-        autodetect_compiler_EXTRA_PREFIX_ESCAPED=""
-    fi
-
-    if autodetect_vsdev && [ -n "$VSDEV_HOME_UNIX" ]; then
-        # DKMLPARENTHOME_BUILDHOST and VSDEV_* will have been set
+    if [ "${DKML_COMPILE_SPEC:-}" = 1 ] && [ "${DKML_COMPILE_TYPE:-}" = VS ]; then
+        autodetect_vsdev # set DKMLPARENTHOME_BUILDHOST and VSDEV_*
+        autodetect_compiler_vsdev
+    elif autodetect_vsdev && [ -n "$VSDEV_HOME_UNIX" ]; then
+        # `autodetect_vsdev` will have set DKMLPARENTHOME_BUILDHOST and VSDEV_*
         autodetect_compiler_vsdev
     elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] || [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
         autodetect_compiler_darwin
@@ -1469,17 +1488,8 @@ autodetect_compiler_vsdev() {
     # - PG* (PGUSER, PGPASSWORD) on GitHub Actions
     # - HOME* (HOME, HOMEDRIVE, HOMEPATH)
     # - USER* (USERNAME, USERPROFILE, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE)
-    if [ -n "${autodetect_compiler_EXTRA_PREFIX_ESCAPED:-}" ]; then
-        autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED="$autodetect_compiler_EXTRA_PREFIX_ESCAPED\\\\include;"
-        autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED="$autodetect_compiler_EXTRA_PREFIX_ESCAPED\\\\lib;"
-    else
-        autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED=""
-        autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED=""
-    fi
     # shellcheck disable=SC2016
-    "$DKMLSYS_AWK" \
-        -v VCPKG_PREFIX_INCLUDE="$autodetect_compiler_VCPKG_PREFIX_INCLUDE_ESCAPED" \
-        -v VCPKG_PREFIX_LIB="$autodetect_compiler_VCPKG_PREFIX_LIB_ESCAPED" '
+    "$DKMLSYS_AWK" '
     BEGIN{FS="="}
 
     $1 != "PATH" &&
@@ -1494,8 +1504,8 @@ autodetect_compiler_vsdev() {
     $1 !~ /^HOME/ &&
     $1 !~ /^USER/ {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" value}
 
-    $1 == "INCLUDE" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_INCLUDE value}
-    $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" VCPKG_PREFIX_LIB value}
+    $1 == "INCLUDE" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" value}
+    $1 == "LIB" {name=$1; value=$0; sub(/^[^=]*=/,"",value); print name "=" value}
     ' "$autodetect_compiler_TEMPDIR"/vcvars.txt > "$autodetect_compiler_TEMPDIR"/mostvars.eval.sh
 
     # FIFTH, set autodetect_compiler_COMPILER_PATH to the provided PATH

@@ -263,8 +263,6 @@ build_world() {
   shift
   build_world_PREFIX=$1
   shift
-  build_world_CHKSUM=$1
-  shift
   build_world_TARGET_ABI=$1
   shift
   build_world_PRECONFIGURE=$1
@@ -335,7 +333,6 @@ do
 
   _CROSS_TARGETDIR=$TARGETDIR_UNIX/opt/mlcross/$_targetabi
   _CROSS_SRCDIR=$_CROSS_TARGETDIR/src/ocaml
-  _CROSS_CHKSUM=$TARGETDIR_UNIX/opt/mlcross/$_targetabi.chksum.txt
   cd "$_CROSS_SRCDIR"
-  build_world "$_CROSS_SRCDIR" "$_CROSS_TARGETDIR" "$_CROSS_CHKSUM" "$_targetabi" "$_abiscript"
+  build_world "$_CROSS_SRCDIR" "$_CROSS_TARGETDIR" "$_targetabi" "$_abiscript"
 done < "$WORK"/tabi
