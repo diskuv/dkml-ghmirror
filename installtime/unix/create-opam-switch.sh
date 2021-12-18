@@ -218,7 +218,7 @@ else
         usage
         exit 1
     fi
-    if [ -z "$BUILDTYPE" ] && [ -z "${DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P:-}" ]; then
+    if [ -z "$BUILDTYPE" ] && [ -z "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ]; then
         usage
         exit 1
     fi
@@ -401,51 +401,51 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
             OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
         fi
     else
-        if [ "$DKSDK_CMAKEVAL_CMAKE_SYSTEM_NAME" = Linux ] && [ "$DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P" = 8 ]; then
-            case "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" in
+        if [ "$DKML_COMPILE_CM_CMAKE_SYSTEM_NAME" = Linux ] && [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" = 8 ]; then
+            case "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" in
                 Clang | GNU) TARGET_CANENABLEFRAMEPOINTER=ON ;; # _not_ AppleClang
                 *) TARGET_CANENABLEFRAMEPOINTER=OFF ;;
             esac
         else
             TARGET_CANENABLEFRAMEPOINTER=OFF
         fi
-        if [ "$DKSDK_CMAKEVAL_CMAKE_SIZEOF_VOID_P" = 4 ]; then
+        if [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" = 4 ]; then
             TARGET_32BIT=ON
         else
             TARGET_32BIT=OFF
         fi
 
-        # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKSDK_CMAKEVAL_CMAKE_C_FLAGS_DEBUG"
+        # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG"
         _DKSDK_CONFIG_UPPER=$(printf "%s" "$DKSDK_CONFIG" | tr '[:lower:]' '[:upper:]')
-        printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKSDK_CMAKEVAL_CMAKE_C_FLAGS_%s\"" "$_DKSDK_CONFIG_UPPER" > "$WORK"/cflags.source
+        printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKML_COMPILE_CM_CMAKE_C_FLAGS_%s\"" "$_DKSDK_CONFIG_UPPER" > "$WORK"/cflags.source
         # shellcheck disable=SC1091
         . "$WORK"/cflags.source
 
         # Assembler details can be found at https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14563-L14595
         # Pay attention to the order of precedence for the operating systems
-        if [ -n "$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER" ]; then
-            OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_COMPILER"
+        if [ -n "$DKML_COMPILE_CM_CMAKE_ASM_COMPILER" ]; then
+            OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_COMPILER"
             OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
         fi
-        if cmake_flag_on "$DKSDK_CMAKEVAL_MSVC"; then
+        if cmake_flag_on "$DKML_COMPILE_CM_MSVC"; then
             # Use the MASM compiler (ml/ml64) which is required for OCaml with MSVC.
             # See https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14585-L14588 for options
             if [ "$TARGET_32BIT" = ON ]; then
-                OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER -nologo -coff -Cp -c -Fo"
+                OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER -nologo -coff -Cp -c -Fo"
             else
-                OPAM_SWITCH_AS="$DKSDK_CMAKEVAL_CMAKE_ASM_MASM_COMPILER -nologo -Cp -c -Fo"
+                OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER -nologo -Cp -c -Fo"
             fi
             OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
-        elif [ "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" = "AppleClang" ] || [ "$DKSDK_CMAKEVAL_CMAKE_C_COMPILER_ID" = "Clang" ]; then
+        elif [ "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" = "AppleClang" ] || [ "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" = "Clang" ]; then
             [ -n "$OPAM_SWITCH_AS" ] && OPAM_SWITCH_AS="$OPAM_SWITCH_AS -Wno-trigraphs" && OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
         fi
 
         # C details
-        OPAM_SWITCH_CC="$DKSDK_CMAKEVAL_CMAKE_C_COMPILER"
-        OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
+        OPAM_SWITCH_CC="$DKML_COMPILE_CM_CMAKE_C_COMPILER"
+        OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKML_COMPILE_CM_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
 
         # Platform fixups which haven't been done yet
-        if cmake_flag_on "$DKSDK_CMAKEVAL_MSVC"; then
+        if cmake_flag_on "$DKML_COMPILE_CM_MSVC"; then
             # To avoid the following when /Zi or /ZI is enabled:
             #   2># major_gc.c : fatal error C1041: cannot open program database 'Z:\build\windows_x86\Debug\dksdk\system\_opam\.opam-switch\build\ocaml-variants.4.12.0+options+dkml+msvc32\runtime\vc140.pdb'; if multiple CL.EXE write to the same .PDB file, please use /FS
             # we use /FS. This slows things down, so we should only do it
@@ -455,7 +455,7 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
                 OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS /FS"
             fi
 
-            # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKSDK_CMAKEVAL_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
+            # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKML_COMPILE_CM_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
             #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/host-tools/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
             #   cl : Command line error D8016 : '/RTC1' and '/O2' command-line options are incompatible
             # we remove any /RTC1 from the flags
