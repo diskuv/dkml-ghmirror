@@ -384,8 +384,12 @@ get_ocaml_source() {
 
     # Install a synthetic msvs-detect
     if [ ! -e "$get_ocaml_source_SRCUNIX"/msvs-detect ]; then
-        DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM=$get_ocaml_source_TARGETPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
-        install "$WORK"/msvs-detect "$get_ocaml_source_SRCUNIX"/msvs-detect
+        case "$get_ocaml_source_TARGETPLATFORM" in
+          windows_*)
+            DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM=$get_ocaml_source_TARGETPLATFORM autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+            install "$WORK"/msvs-detect "$get_ocaml_source_SRCUNIX"/msvs-detect
+            ;;
+        esac
     fi
 
     # Windows needs flexdll, although 4.13.x+ has a "--with-flexdll" option which relies on the `flexdll` git submodule
