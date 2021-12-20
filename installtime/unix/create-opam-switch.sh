@@ -481,7 +481,7 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-flambda
         printf ",'%s'" ocaml-option-flambda >> "$WORK"/invariant_for_base.formula.tail.txt
     fi
-    if cmake_flag_on "${DKSDK_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
+    if cmake_flag_on "${DKML_COMPILE_CM_HAVE_AFL:-OFF}" || [ "$BUILDTYPE" = ReleaseCompatFuzz ]; then
         # If we need fuzzing we must add AFL. If we have a fuzzing compiler, use AFL in OCaml.
         OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
         printf ",'%s'" ocaml-option-afl >> "$WORK"/invariant_for_base.formula.tail.txt

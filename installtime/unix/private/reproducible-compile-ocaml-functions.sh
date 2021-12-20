@@ -246,8 +246,8 @@ ocaml_configure() {
     bash "$WORK"/msvs-detect > "$WORK"/msvs-detect.out
     # shellcheck disable=SC1091
     . "$WORK"/msvs-detect.out
-    if [ -z "${MSVS_NAME}" ] ; then
-      printf "%s\n" "No appropriate C compiler was found -- unable to build OCaml"
+    if [ -z "${MSVS_NAME:-}" ] ; then
+      printf "%s\n" "No appropriate Visual Studio C compiler was found -- unable to build OCaml"
       exit 1
     fi
 

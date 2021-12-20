@@ -1121,6 +1121,7 @@ create_system_launcher() {
 #       https://github.com/metastack/msvs-tools's or Opam's `msvs-detect` is invoked. Example: `VS16.6`
 #   - env:DKML_COMPILE_TYPE - "CM" for CMake. The following CMake variables should be defined if they exist:
 #     - env:DKML_COMPILE_CM_CONFIG - The value of the CMake generator expression $<CONFIG>
+#     - env:DKML_COMPILE_CM_HAVE_AFL - Whether the CMake compiler is an AFL fuzzy compiler
 #     - env:DKML_COMPILE_CM_CMAKE_SYSROOT - The CMake variable CMAKE_SYSROOT
 #     - env:DKML_COMPILE_CM_CMAKE_SYSTEM_NAME - The CMake variable CMAKE_SYSTEM_NAME
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER
@@ -1200,25 +1201,39 @@ autodetect_compiler() {
 
     # Validate compile spec
     autodetect_compiler_SPECBITS=""
-    [ -n "${DKML_COMPILE_TYPE:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}1"
-    [ -n "${DKML_COMPILE_VS_DIR:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}2"
-    [ -n "${DKML_COMPILE_VS_VCVARSVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}3"
-    [ -n "${DKML_COMPILE_VS_WINSDKVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}4"
-    [ -n "${DKML_COMPILE_VS_MSVSPREFERENCE:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}5"
+
+    [ -n "${DKML_COMPILE_VS_DIR:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}1"
+    [ -n "${DKML_COMPILE_VS_VCVARSVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}2"
+    [ -n "${DKML_COMPILE_VS_WINSDKVER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}3"
+    [ -n "${DKML_COMPILE_VS_MSVSPREFERENCE:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}4"
+
+    [ -n "${DKML_COMPILE_CM_CONFIG:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}a"
+    [ -n "${DKML_COMPILE_CM_CMAKE_SYSTEM_NAME:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}b"
+    [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}c"
+    [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}d"
+    [ -n "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}e"
+
     if [ -z "${DKML_COMPILE_SPEC:-}" ]; then
         if [ ! "$autodetect_compiler_SPECBITS" = "" ]; then
             printf "No DKML compile environment variables should be passed without a DKML compile spec. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
             exit 107
         fi
     elif [ "${DKML_COMPILE_SPEC:-}" = 1 ]; then
-        if [ ! "$autodetect_compiler_SPECBITS" = "12345" ]; then
-            printf "DKML compile spec 1 was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
-            exit 107
-        fi
-        case "$DKML_COMPILE_TYPE" in
-            VS) ;;
+        case "${DKML_COMPILE_TYPE:-}" in
+            VS)
+                if [ ! "$autodetect_compiler_SPECBITS" = "1234" ]; then
+                    printf "DKML compile spec 1 for Visual Studio (VS) was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
+                    exit 107
+                fi
+                ;;
+            CM)
+                if [ ! "$autodetect_compiler_SPECBITS" = "abcde" ]; then
+                    printf "DKML compile spec 1 for CMake (CM) was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
+                    exit 107
+                fi
+                ;;
             *)
-                printf "DKML compile spec 1 was not followed. DKML_COMPILE_TYPE must be VS" >&2
+                printf "DKML compile spec 1 was not followed. DKML_COMPILE_TYPE must be VS or CM" >&2
                 exit 107
             ;;
         esac
