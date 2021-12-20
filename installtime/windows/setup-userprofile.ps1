@@ -447,9 +447,11 @@ function Import-DiskuvOCamlAsset {
         function UrlFix([Uri]$url) {
             $url.PathAndQuery | Out-Null
             $m_Flags = [Uri].GetField("m_Flags", $([Reflection.BindingFlags]::Instance -bor [Reflection.BindingFlags]::NonPublic))
-            [uint64]$flags = $m_Flags.GetValue($url)
-            $m_Flags.SetValue($url, $($flags -bxor 0x30))
-        } ;
+            if ($null -ne $m_Flags) {
+                [uint64]$flags = $m_Flags.GetValue($url)
+                $m_Flags.SetValue($url, $($flags -bxor 0x30))
+            }
+        }
         $fixedUri = New-Object System.Uri -ArgumentList ($uri)
         UrlFix $fixedUri
         try {
