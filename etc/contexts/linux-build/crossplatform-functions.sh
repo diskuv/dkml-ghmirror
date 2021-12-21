@@ -1127,15 +1127,30 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
+#       _DEBUG/_RELEASE/_RELEASECOMPATFUZZ/_RELEASECOMPATPERF variables below are the standard $<CONFIG> that
+#       come with DKSDK. Other $<CONFIG> may be defined as well on a per-project basis.
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_DEBUG
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_RELEASE
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_RELEASECOMPATFUZZ
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_RELEASECOMPATPERF
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_ID
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
-#       4 variables below are the standard $<CONFIG> that come with DKSDK.
+#       _DEBUG/_RELEASE/_RELEASECOMPATFUZZ/_RELEASECOMPATPERF variables below are the standard $<CONFIG> that
+#       come with DKSDK. Other $<CONFIG> may be defined as well on a per-project basis.
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASE
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASECOMPATFUZZ
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASECOMPATPERF
+#     - env:DKML_COMPILE_CM_CMAKE_C_STANDARD_INCLUDE_DIRECTORIES
+#     - env:DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES
 #     - env:DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P
+#     - env:DKML_COMPILE_CM_CMAKE_LINKER
+#     - env:DKML_COMPILE_CM_CMAKE_SHARED_LINKER_FLAGS
+#     - env:DKML_COMPILE_CM_CMAKE_STATIC_LINKER_FLAGS
+#     - env:DKML_COMPILE_CM_CMAKE_EXE_LINKER_FLAGS
+#     - env:DKML_COMPILE_CM_CMAKE_MODULE_LINKER_FLAGS
 #     - env:DKML_COMPILE_CM_MSVC
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
@@ -1158,6 +1173,18 @@ create_system_launcher() {
 # - (When DKML_COMPILE_TYPE=CM) CC - C compiler
 # - (When DKML_COMPILE_TYPE=CM) CFLAGS - C compiler flags
 # - (When DKML_COMPILE_TYPE=CM) AS - Assembler (assembly language compiler)
+# - (When DKML_COMPILE_TYPE=CM) ASFLAGS - Assembler flags
+# - (When DKML_COMPILE_TYPE=CM) LDFLAGS - Extra flags to give to compilers when they are supposed to invoke the linker,
+#   `ld`, such as -L. Libraries (-lfoo) should be added to the LDLIBS variable instead. IMPORTANT: this will almost
+#   always be blank. Instead use DKML_COMPILE_CM_CMAKE_(EXE|STATIC|SHARED|MODULE)_LINKER_FLAGS to get appropriate
+#   executable / shared lib / static lib / plugin flags
+# - (When DKML_COMPILE_TYPE=CM) LDLIBS - Library flags or names given to compilers
+#   when they are supposed to invoke the linker, `ld`. Non-library linker flags, such as -L, should go in the LDFLAGS
+#   variable.
+# - (When DKML_COMPILE_TYPE=CM) ... in general, follows the universal ./configure conventions
+#   described at https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html _not_
+#   github.com/ocaml/ocaml/configure non-standard behavior (which has ASPP, and doesn't separate AS
+#   from ASFLAGS, etc.)
 # - (When DKML_COMPILE_TYPE=CM) DKML_COMPILE_CM_* - All these variables will be passed-through if CMake so
 #   downstream OCaml/Opam/etc. can fine-tune what flags / environment variables get passed into
 #   their `./configure` scripts
@@ -1304,15 +1331,27 @@ autodetect_compiler_escape_envarg() {
     "$DKMLSYS_CAT" "$@" | escape_stdin_for_single_quote
 }
 
-# Sets _CMAKE_C_FLAGS_FOR_CONFIG environment variable to the value of config-specific
-# cflag variable like `DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG` when `DKML_COMPILE_CM_CONFIG` is
-# `Debug`.
-autodetect_compiler_cmake_get_config_c_flags() {
+# Print a script snippet that will dump MSVS_NAME, MSVS64_PATH, etc. variables to standard output
+# with proper quoting
+autodetect_compiler_msvs_detect_footer() {
+  # `set` does proper quoting
+  printf "set | awk '%s'\n" '/^MS(VS|VS64)_(NAME|PATH|INC|LIB|ML)=/{print}'
+}
+
+# Sets _CMAKE_C_FLAGS_FOR_CONFIG and _CMAKE_ASM_FLAGS_FOR_CONFIG environment variable to the value
+# of config-specific c_flags and asm_flags variable like
+# `DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG` and `DKML_COMPILE_CM_CMAKE_ASM_FLAGS_DEBUG` when
+# `DKML_COMPILE_CM_CONFIG` is `Debug`.
+autodetect_compiler_cmake_get_config_flags() {
     # example command: _CMAKE_C_FLAGS_FOR_CONFIG="$DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG"
-    _DKML_COMPILE_CM_CONFIG_UPPER=$(printf "%s" "$DKML_COMPILE_CM_CONFIG" | tr '[:lower:]' '[:upper:]')
-    printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\$DKML_COMPILE_CM_CMAKE_C_FLAGS_%s\"" "$_DKML_COMPILE_CM_CONFIG_UPPER" > "$WORK"/cflags.source
+    autodetect_compiler_cmake_get_config_flags_CONFIGUPPER=$(printf "%s" "$DKML_COMPILE_CM_CONFIG" | tr '[:lower:]' '[:upper:]')
+    {
+      printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_C_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
+      printf "_CMAKE_ASM_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_ASM_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
+    } > "$autodetect_compiler_OUTPUTFILE".flags.source
     # shellcheck disable=SC1091
-    . "$WORK"/cflags.source
+    . "$autodetect_compiler_OUTPUTFILE".flags.source
+    rm -f "$autodetect_compiler_OUTPUTFILE".flags.source
 }
 
 autodetect_compiler_cmake() {
@@ -1327,19 +1366,25 @@ autodetect_compiler_cmake() {
             autodetect_compiler_cmake_THE_AS=$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
         fi
 
-        # Set _CMAKE_C_FLAGS_FOR_CONFIG to $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
-        autodetect_compiler_cmake_get_config_c_flags
+        # Set _CMAKE_C_FLAGS_FOR_CONFIG and _CMAKE_ASM_FLAGS_FOR_CONFIG to
+        # $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
+        autodetect_compiler_cmake_get_config_flags
 
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf "(\n"
 
             # Universal ./configure flags
+            # Reference: https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
             autodetect_compiler_cmake_CC=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
             printf "  (\"CC\" \"%s\")\n" "$autodetect_compiler_cmake_CC"
             autodetect_compiler_cmake_CFLAGS=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
             printf "  (\"CFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_CFLAGS"
             autodetect_compiler_cmake_AS=$(escape_arg_as_ocaml_string "$autodetect_compiler_cmake_THE_AS")
             printf "  (\"AS\" \"%s\")\n" "$autodetect_compiler_cmake_AS"
+            autodetect_compiler_cmake_ASFLAGS=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_ASM_FLAGS:-} $_CMAKE_ASM_FLAGS_FOR_CONFIG")
+            printf "  (\"ASFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_ASFLAGS"
+            printf "  (\"LDFLAGS\" \"\")\n"
+            printf "  (\"LDLIBS\" \"%s\")\n" "${DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES:-}"
 
             # Passthrough all DKML_COMPILE_CM_* variables.
             # The first `sed` command removes any surrounding single quotes from any values.
@@ -1349,29 +1394,54 @@ autodetect_compiler_cmake() {
                 | "$DKMLSYS_SED" "s/^\([^=]*\)='\(.*\)'$/\1=\2/" \
                 | autodetect_compiler_escape_sexp \
                 | "$DKMLSYS_SED" 's/^/  ("/; s/$/")/'
+
+            printf ")"
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             printf "%s\n" "#!$DKML_POSIX_SHELL"
             printf "%s\n" "exec $DKMLSYS_ENV \\"
 
             # Universal ./configure flags
             autodetect_compiler_cmake_CC=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
-            printf "  CC=%s \\\n" "$autodetect_compiler_cmake_CC"
+            printf "  CC=%s %s\n" "$autodetect_compiler_cmake_CC" "\\"
             autodetect_compiler_cmake_CFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
-            printf "  CFLAGS=%s \\\n" "$autodetect_compiler_cmake_CFLAGS"
+            printf "  CFLAGS=%s %s\n" "$autodetect_compiler_cmake_CFLAGS" "\\"
             autodetect_compiler_cmake_AS=$(escape_args_for_shell "$autodetect_compiler_cmake_THE_AS")
-            printf "  AS=%s \\\n" "$autodetect_compiler_cmake_AS"
+            printf "  AS=%s %s\n" "$autodetect_compiler_cmake_AS" "\\"
+            autodetect_compiler_cmake_ASFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_ASM_FLAGS:-} $_CMAKE_ASM_FLAGS_FOR_CONFIG")
+            printf "  ASFLAGS=%s %s\n" "$autodetect_compiler_cmake_ASFLAGS" "\\"
 
             # Passthrough all DKML_COMPILE_CM_* variables
             # shellcheck disable=SC2016
-            set | "$DKMLSYS_AWK" -v bslash="\\" 'BEGIN{FS="="} $1 ~ /^DKML_COMPILE_CM_/ {name=$1; value=$0; sub(/^[^=]*=/,"",value); print "  " name "=" value " " bslash}'
-        fi
+            set | "$DKMLSYS_AWK" -v bslash="\\\\" 'BEGIN{FS="="} $1 ~ /^DKML_COMPILE_CM_/ {name=$1; value=$0; sub(/^[^=]*=/,"",value); print "  " name "=" value " " bslash}'
 
-        if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
-            printf ")"
-        elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             # Add arguments
             printf "%s\n" '  "$@"'
+        elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
+            # MSVS_NAME
+            printf "MSVS_NAME='CMake C %s compiler at %s'\n" "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" \
+                "$DKML_COMPILE_CM_CMAKE_C_COMPILER"
+
+            # MSVS_PATH which must be in Unix PATH format with a trailing colon
+            autodetect_compiler_cmake_COMPILERUNIXDIR="$DKML_COMPILE_CM_CMAKE_C_COMPILER"
+            if [ -x /usr/bin/cygpath ]; then
+              autodetect_compiler_cmake_COMPILERUNIXDIR=$(/usr/bin/cygpath -au "$autodetect_compiler_cmake_COMPILERUNIXDIR")
+            fi
+            autodetect_compiler_cmake_COMPILERUNIXDIR=$(PATH=/usr/bin:/bin dirname "$autodetect_compiler_cmake_COMPILERUNIXDIR")
+            printf "MSVS_PATH='%s:'\n" "$autodetect_compiler_cmake_COMPILERUNIXDIR"
+
+            # MSVS_INC which must have a trailing semicolon
+            printf "MSVS_INC='%s;'\n" "${DKML_COMPILE_CM_CMAKE_C_STANDARD_INCLUDE_DIRECTORIES:-}"
+
+            # MSVS_LIB which must have a trailing semicolon (CMake has no variables to populate this)
+            printf "MSVS_LIB=';'\n"
+
+            # MSVS_ML
+            printf "MSVS_ML='%s'\n" "$autodetect_compiler_cmake_THE_AS"
+
+            # Footer prints the MSVS* variables correctly to standard output
+            autodetect_compiler_msvs_detect_footer
         fi
+
     } > "$autodetect_compiler_OUTPUTFILE".tmp
     "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
     "$DKMLSYS_MV" "$autodetect_compiler_OUTPUTFILE".tmp "$autodetect_compiler_OUTPUTFILE"
@@ -1407,14 +1477,14 @@ autodetect_compiler_darwin() {
 
         if [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             if [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] ; then
-                printf "exec %s AS='%s' ASPP='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
+                printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
                         "clang -arch x86_64 -Wno-trigraphs -c" \
                         "clang -arch x86_64 -Wno-trigraphs -c" \
                         "clang -arch x86_64" \
                         "ld -r -arch x86_64"
             elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
                 if [ "$BUILDHOST_ARCH" = "darwin_arm64" ]; then
-                    printf "exec %s AS='%s' ASPP='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
+                    printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
                         "clang -arch arm64 -Wno-trigraphs -c" \
                         "clang -arch arm64 -Wno-trigraphs -c" \
                         "clang -arch arm64" \
@@ -1781,10 +1851,6 @@ autodetect_compiler_vsdev() {
                 "$autodetect_compiler_MSVS2" "$autodetect_compiler_MSVS3" "$VSDEV_HOME_BUILDHOST"
 
             # MSVS_PATH which must be in Unix PATH format with a trailing colon
-            if [ ! -x /usr/bin/cygpath ]; then
-                echo "FATAL: No /usr/bin/cygpath which is needed for MSVS_PATH variable" >&2
-                exit 107
-            fi
             printf "MSVS_PATH='%s:'\n" "$autodetect_compiler_COMPILER_UNIX_UNIQ_PATH"
 
             # MSVS_INC which must have a trailing semicolon
@@ -1809,8 +1875,7 @@ autodetect_compiler_vsdev() {
             # Add arguments
             printf "%s\n" '  "$@"'
         elif [ "$autodetect_compiler_OUTPUTMODE" = MSVS_DETECT ]; then
-            # Dump variables to standard output with proper quoting (which `set` does for us)
-            printf "set | awk '%s'\n" '/^MS(VS|VS64)_(NAME|PATH|INC|LIB|ML)=/{print}'
+            autodetect_compiler_msvs_detect_footer
         fi
     } > "$autodetect_compiler_OUTPUTFILE".tmp
     "$DKMLSYS_CHMOD" +x "$autodetect_compiler_OUTPUTFILE".tmp
