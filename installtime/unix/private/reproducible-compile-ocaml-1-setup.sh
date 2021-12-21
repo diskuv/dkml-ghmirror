@@ -22,7 +22,7 @@
 #
 ######################################
 # reproducible-compile-ocaml-1-setup.sh -d DKMLDIR -t TARGETDIR \
-#      -v COMMIT [-a TARGETABIS] [-c OPT_WIN32_ARCH]
+#      -v COMMIT [-a TARGETABIS]
 #
 # Sets up the source code for a reproducible compilation of OCaml
 
@@ -147,7 +147,6 @@ usage() {
         printf "%s\n" "      Defaults to '$OPT_MSVS_PREFERENCE' which, because it does not include '@',"
         printf "%s\n" "      will not choose a compiler based on environment variables that would disrupt reproducibility."
         printf "%s\n" "      Confer with https://github.com/metastack/msvs-tools#msvs-detect"
-        printf "%s\n" "   -c ARCH: Useful only for Windows. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
         printf "%s\n" "   -e DKMLHOSTABI: Optional. Use the Diskuv OCaml compiler detector find a host ABI compiler."
         printf "%s\n" "      Especially useful to find a 32-bit Windows host compiler that can use 64-bits of memory for the compiler."
         printf "%s\n" "      Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
@@ -164,10 +163,9 @@ BUILD_CROSS_ARGS=()
 DKMLDIR=
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
-OPT_WIN32_ARCH=auto
 TARGETABIS=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:c:e:g:h" opt; do
+while getopts ":d:v:t:a:b:e:g:h" opt; do
     case ${opt} in
         h )
             usage
@@ -198,10 +196,6 @@ while getopts ":d:v:t:a:b:c:e:g:h" opt; do
             MSVS_PREFERENCE="$OPTARG"
             SETUP_ARGS+=( -b "$OPTARG" )
         ;;
-        c )
-            OPT_WIN32_ARCH="$OPTARG"
-            SETUP_ARGS+=( -c "$OPTARG" )
-        ;;
         e )
             SETUP_ARGS+=( -e "$OPTARG" )
             BUILD_HOST_ARGS+=( -e "$OPTARG" )
@@ -228,8 +222,7 @@ fi
 
 # Add options that have defaults
 SETUP_ARGS+=( -b "'$MSVS_PREFERENCE'" )
-BUILD_HOST_ARGS+=( -b "'$MSVS_PREFERENCE'" -c "$OPT_WIN32_ARCH" )
-BUILD_CROSS_ARGS+=( -c "$OPT_WIN32_ARCH" )
+BUILD_HOST_ARGS+=( -b "'$MSVS_PREFERENCE'" )
 
 # END Command line processing
 # ------------------
@@ -350,8 +343,6 @@ get_ocaml_source() {
         if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
         log_trace git -C "$get_ocaml_source_SRCMIXED" fetch --tags
         log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
-        # need patches to apply cleanly, so blow away any modified files tracked by Git (nit: redundant because we added `git clean` below, but let's be safe anyway)
-        log_trace git -C "$get_ocaml_source_SRCMIXED" reset --hard "$GIT_COMMITID_OR_TAG"
     fi
     log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
 
@@ -458,7 +449,7 @@ if [ -n "$TARGETABIS" ]; then
 
         # Since we want the ABI scripts to be reproducible, we install them in a reproducible place and set
         # the reproducible arguments (-a) to point to that reproducible place.
-        _script="$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
+        _script="installtime/unix/private/reproducible-compile-ocaml-targetabi-$_targetabi.sh"
         if [ -n "$_accumulator" ]; then
             _accumulator="$_accumulator;$_targetabi=$_script"
         else

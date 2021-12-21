@@ -45,7 +45,6 @@ set -euf
 # ------------------
 # BEGIN Command line processing
 
-OPT_WIN32_ARCH=auto
 usage() {
     {
         printf "%s\n" "Usage:"
@@ -61,7 +60,6 @@ usage() {
         printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file"
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -a TARGETABIS: Optional. See reproducible-compile-ocaml-1-setup.sh"
-        printf "%s\n" "   -c ARCH: Useful only for Windows. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
     } >&2
 }
@@ -69,9 +67,8 @@ usage() {
 DKMLDIR=
 TARGETDIR=
 TARGETABIS=
-OPT_WIN32_ARCH=auto
 CONFIGUREARGS=
-while getopts ":d:t:a:c:g:h" opt; do
+while getopts ":d:t:a:g:h" opt; do
     case ${opt} in
         h )
             usage
@@ -91,9 +88,6 @@ while getopts ":d:t:a:c:g:h" opt; do
         ;;
         a )
             TARGETABIS="$OPTARG"
-        ;;
-        c )
-            OPT_WIN32_ARCH="$OPTARG"
         ;;
         g )
             CONFIGUREARGS="$OPTARG"
@@ -259,7 +253,7 @@ build_world() {
   make clean
 
   # ./configure
-  ocaml_configure "$build_world_PREFIX" "$OPT_WIN32_ARCH" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS --disable-ocamldoc"
+  log_trace ocaml_configure "$build_world_PREFIX" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS --disable-ocamldoc"
 
   # Build
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then

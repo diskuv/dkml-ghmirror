@@ -79,8 +79,8 @@ windows_configure_and_define_make() {
   # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
   # is probably fine in Cygwin.
   # shellcheck disable=SC2086
-  with_environment_for_ocaml_configure --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
-    PATH="${windows_configure_and_define_make_PATH_PREPEND}${windows_configure_and_define_make_PREFIX}/bin:$DKML_SYSTEM_PATH" \
+  configure_environment_for_ocaml --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
+    PATH="${windows_configure_and_define_make_PATH_PREPEND}$DKML_SYSTEM_PATH" \
     LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
     INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
     $ocaml_configure_no_ocaml_leak_environment \
@@ -157,8 +157,6 @@ ocaml_configure_options_for_abi() {
 ocaml_configure() {
   ocaml_configure_PREFIX="$1"
   shift
-  ocaml_configure_ARCH="$1"
-  shift
   ocaml_configure_ABI="$1"
   shift
   ocaml_configure_PRECONFIGURE="$1"
@@ -183,6 +181,11 @@ ocaml_configure() {
     $DKMLSYS_MV "$make_preconfigured_env_script_DEST".tmp "$make_preconfigured_env_script_DEST"
   }
 
+  ocaml_configure_ABI_IS_WINDOWS=OFF
+  case "$ocaml_configure_ABI" in
+  windows_*) ocaml_configure_ABI_IS_WINDOWS=ON ;;
+  esac
+
   # Configure options
   # -----------------
 
@@ -190,43 +193,10 @@ ocaml_configure() {
   ocaml_configure_EXTRA_ABI_OPTS=$(ocaml_configure_options_for_abi "$ocaml_configure_ABI")
   ocaml_configure_EXTRA_OPTS=$(printf "%s %s" "$ocaml_configure_EXTRA_OPTS" "$ocaml_configure_EXTRA_ABI_OPTS")
 
-  # Compiler
-  # --------
-
-  printf "%s\n" 'exec env "$@"' > "$WORK"/basic-env.sh
-  make_preconfigured_env_script "$WORK"/basic-env.sh "$WORK"/preconfigured-env.sh
-
-  if [ -x /usr/bin/cygpath ]; then
-    # We will use MSVS to detect Visual Studio
-    with_environment_for_ocaml_configure() {
-      log_shell "$WORK"/preconfigured-env.sh "$@"
-    }
-    # There is a nasty bug (?) with MSYS2's dash.exe (probably _all_ dash) which will not accept the 'ProgramFiles(x86)' environment,
-    # presumably because of the parentheses in it may or may not violate the POSIX standard. Typically that means that dash cannot
-    # propagate that variable to a subprocess like bash or another dash.
-    # So we use `cygpath -w --folder 42` which gets the value of CSIDL_PROGRAM_FILESX86.
-    msvs_detect() {
-      msvs_detect_PF86=$(/usr/bin/cygpath -w --folder 42)
-      if [ -n "${msvs_detect_PF86}" ]; then
-        log_trace env 'ProgramFiles(x86)'="$msvs_detect_PF86" ./msvs-detect "$@"
-      else
-        log_trace ./msvs-detect "$@"
-      fi
-    }
-  else
-    # We will be using the operating system C compiler
-    with_environment_for_ocaml_configure() {
-      log_shell "$WORK"/preconfigured-env.sh "$@"
-    }
-    msvs_detect() {
-      log_trace ./msvs-detect "$@"
-    }
-  fi
-
   # ./configure and define make functions
   # -------------------------------------
 
-  if [ -n "$ocaml_configure_ABI" ] && [ -n "${COMSPEC:-}" ] && [ -x "${COMSPEC:-}" ] ; then
+  if [ -n "$ocaml_configure_ABI" ] && [ "$ocaml_configure_ABI_IS_WINDOWS" = ON ] ; then
     # Detect the compiler matching the host ABI
     ocaml_configure_SAVE_DTP="${DKML_TARGET_PLATFORM:-}"
     DKML_TARGET_PLATFORM="$ocaml_configure_ABI"
@@ -238,7 +208,7 @@ ocaml_configure() {
 
     # When we run OCaml's ./configure, the DKML compiler must be available
     make_preconfigured_env_script "$WORK"/env-with-compiler.sh "$WORK"/preconfigured-env-with-compiler.sh
-    with_environment_for_ocaml_configure() {
+    configure_environment_for_ocaml() {
       log_shell "$WORK"/preconfigured-env-with-compiler.sh "$@"
     }
 
@@ -255,94 +225,8 @@ ocaml_configure() {
     windows_configure_and_define_make "$OCAML_HOST_TRIPLET" "$ocaml_configure_PREFIX" \
       "$MSVS_PATH" "$MSVS_LIB;" "$MSVS_INC;" \
       "$ocaml_configure_EXTRA_OPTS"
-  elif [ -n "$ocaml_configure_ARCH" ] && [ -n "${COMSPEC:-}" ] && [ -x "${COMSPEC:-}" ] ; then
-    ocaml_configure_PATH_PREPEND=
-    ocaml_configure_LIB_PREPEND=
-    ocaml_configure_INC_PREPEND=
-
-    case "$ocaml_configure_ARCH" in
-      "mingw")
-        ocaml_configure_HOST=i686-w64-mingw32
-      ;;
-      "mingw64")
-        ocaml_configure_HOST=x86_64-w64-mingw32
-      ;;
-      "msvc")
-        ocaml_configure_HOST=i686-pc-windows
-        if ! command -v ml > /dev/null ; then
-          msvs_detect --arch=x86 > "$WORK"/msvs.source
-          # shellcheck disable=SC1091
-          . "$WORK"/msvs.source
-          if [ -n "${MSVS_NAME}" ] ; then
-            ocaml_configure_PATH_PREPEND="${MSVS_PATH}"
-            ocaml_configure_LIB_PREPEND="${MSVS_LIB};"
-            ocaml_configure_INC_PREPEND="${MSVS_INC};"
-          fi
-        fi
-      ;;
-      "msvc64")
-        ocaml_configure_HOST=x86_64-pc-windows
-        if ! command -v ml64 > /dev/null ; then
-          msvs_detect --arch=x64 > "$WORK"/msvs.source
-          # shellcheck disable=SC1091
-          . "$WORK"/msvs.source
-          if [ -n "${MSVS_NAME}" ] ; then
-            ocaml_configure_PATH_PREPEND="${MSVS_PATH}"
-            ocaml_configure_LIB_PREPEND="${MSVS_LIB};"
-            ocaml_configure_INC_PREPEND="${MSVS_INC};"
-          fi
-        fi
-      ;;
-      *)
-        if [ "$ocaml_configure_ARCH" != "auto" ] ; then
-          printf "%s\n" "Compiler architecture $ocaml_configure_ARCH not recognised -- mingw64, mingw, msvc64, msvc (or auto)"
-        fi
-        if [ -n "${PROCESSOR_ARCHITEW6432:-}" ] || [ "${PROCESSOR_ARCHITECTURE:-}" = "AMD64" ] ; then
-          TRY64=1
-        else
-          TRY64=0
-        fi
-
-        if [ ${TRY64} -eq 1 ] && command -v x86_64-w64-mingw32-gcc > /dev/null ; then
-          ocaml_configure_HOST=x86_64-w64-mingw32
-        elif command -v i686-w64-mingw32-gcc > /dev/null ; then
-          ocaml_configure_HOST=i686-w64-mingw32
-        elif [ ${TRY64} -eq 1 ] && command -v ml64 > /dev/null ; then
-          ocaml_configure_HOST=x86_64-pc-windows
-          ocaml_configure_PATH_PREPEND=$(bash "$DKMLDIR"/installtime/unix/private/reproducible-compile-ocaml-check_linker.sh)
-        elif command -v ml > /dev/null ; then
-          ocaml_configure_HOST=i686-pc-windows
-          ocaml_configure_PATH_PREPEND=$(bash "$DKMLDIR"/installtime/unix/private/reproducible-compile-ocaml-check_linker.sh)
-        else
-          if [ ${TRY64} -eq 1 ] ; then
-            ocaml_configure_HOST=x86_64-pc-windows
-            ocaml_configure_HOST_ARCH=x64
-          else
-            ocaml_configure_HOST=i686-pc-windows
-            ocaml_configure_HOST_ARCH=x86
-          fi
-          msvs_detect --arch=${ocaml_configure_HOST_ARCH} > "$WORK"/msvs.source
-          # shellcheck disable=SC1091
-          . "$WORK"/msvs.source
-          if [ -z "${MSVS_NAME}" ] ; then
-            printf "%s\n" "No appropriate C compiler was found -- unable to build OCaml"
-            exit 1
-          else
-            ocaml_configure_PATH_PREPEND="${MSVS_PATH}"
-            ocaml_configure_LIB_PREPEND="${MSVS_LIB};"
-            ocaml_configure_INC_PREPEND="${MSVS_INC};"
-          fi
-        fi
-      ;;
-    esac
-    if [ -n "${ocaml_configure_PATH_PREPEND}" ] ; then
-      ocaml_configure_PATH_PREPEND="${ocaml_configure_PATH_PREPEND}:"
-    fi
-    # do ./configure; define make function
-    windows_configure_and_define_make $ocaml_configure_HOST "$ocaml_configure_PREFIX" \
-      "$ocaml_configure_PATH_PREPEND" "$ocaml_configure_LIB_PREPEND" "$ocaml_configure_INC_PREPEND" \
-      "$ocaml_configure_EXTRA_OPTS"
   else
+    # Detect compiler
     DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/with-compiler.sh
 
     if [ "${DKML_BUILD_TRACE:-}" = ON ]; then
@@ -350,12 +234,24 @@ ocaml_configure() {
       "$DKMLSYS_SED" 's/^/@+| /' "$WORK"/with-compiler.sh | "$DKMLSYS_AWK" '{print}' >&2
     fi
 
+    # When we run OCaml's ./configure, the with-compiler.sh must be available
+    printf "exec %s %s\n" "$DKMLSYS_ENV" '"$@"' > "$WORK"/basic-env.sh
+    make_preconfigured_env_script "$WORK"/basic-env.sh "$WORK"/preconfigured-env.sh
+    configure_environment_for_ocaml() {
+      log_shell "$WORK"/preconfigured-env.sh "$@"
+    }
+    run_script_and_then_configure_environment_for_ocaml() {
+      run_script_and_then_configure_environment_for_ocaml_SCRIPT=$1
+      shift
+      log_shell "$run_script_and_then_configure_environment_for_ocaml_SCRIPT" "$WORK"/preconfigured-env.sh "$@"
+    }
+
     # do ./configure
     # shellcheck disable=SC2086
-    with_environment_for_ocaml_configure \
-      PATH="$DKML_SYSTEM_PATH" \
-      $ocaml_configure_no_ocaml_leak_environment \
-      "$WORK"/with-compiler.sh ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
+    run_script_and_then_configure_environment_for_ocaml \
+      "$WORK"/with-compiler.sh \
+      "$DKMLSYS_ENV" $ocaml_configure_no_ocaml_leak_environment \
+      ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
     # define make function
     ocaml_make() {
       log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"

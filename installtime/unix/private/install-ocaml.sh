@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------
-# install-ocaml.sh DKMLDIR GIT_TAG_OR_COMMIT INSTALLDIR
+# install-ocaml.sh DKMLDIR GIT_TAG_OR_COMMIT DKMLHOSTABI INSTALLDIR
 
 set -euf
 
@@ -9,6 +9,9 @@ shift
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "Expected a DKMLDIR at $DKMLDIR but no .dkmlroot found" >&2; fi
 
 GIT_TAG_OR_COMMIT=$1
+shift
+
+DKMLHOSTABI=$1
 shift
 
 INSTALLDIR=$1
@@ -41,7 +44,8 @@ cd "$DKMLDIR"
 log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
-    -v "$GIT_TAG_OR_COMMIT"
+    -v "$GIT_TAG_OR_COMMIT" \
+    -e "$DKMLHOSTABI"
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"

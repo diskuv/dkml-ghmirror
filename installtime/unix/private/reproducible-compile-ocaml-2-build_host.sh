@@ -41,7 +41,6 @@ set -euf
 # ------------------
 # BEGIN Command line processing
 
-OPT_WIN32_ARCH=auto
 usage() {
     {
         printf "%s\n" "Usage:"
@@ -55,19 +54,17 @@ usage() {
         printf "%s\n" "   -d DIR: DKML directory containing a .dkmlroot file"
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -b PREF: Required and used only for the MSVC compiler. See reproducible-compile-ocaml-1-setup.sh"
-        printf "%s\n" "   -c ARCH: Useful only for Windows. Defaults to auto. mingw64, mingw, msvc64, msvc or auto"
-        printf "%s\n" "   -e DKMLHOSTABI: Optional. Use the Diskuv OCaml compiler detector find a host ABI compiler"
+        printf "%s\n" "   -e DKMLHOSTABI: Uses the Diskuv OCaml compiler detector find a host ABI compiler"
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
     } >&2
 }
 
 DKMLDIR=
 TARGETDIR=
-OPT_WIN32_ARCH=auto
 DKMLHOSTABI=
 CONFIGUREARGS=
 export MSVS_PREFERENCE=
-while getopts ":d:t:b:c:e:g:h" opt; do
+while getopts ":d:t:b:e:g:h" opt; do
     case ${opt} in
         h )
             usage
@@ -88,9 +85,6 @@ while getopts ":d:t:b:c:e:g:h" opt; do
         b )
             MSVS_PREFERENCE="$OPTARG"
         ;;
-        c )
-            OPT_WIN32_ARCH="$OPTARG"
-        ;;
         e )
             DKMLHOSTABI="$OPTARG"
         ;;
@@ -106,7 +100,7 @@ while getopts ":d:t:b:c:e:g:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGETDIR" ] || [ -z "$DKMLHOSTABI" ]; then
     printf "%s\n" "Missing required options" >&2
     usage
     exit 1
@@ -148,7 +142,7 @@ autodetect_system_path
 cd "$OCAMLSRC_UNIX"
 
 # ./configure
-ocaml_configure "$TARGETDIR_UNIX" "$OPT_WIN32_ARCH" "${DKMLHOSTABI:-}" "" "$CONFIGUREARGS"
+ocaml_configure "$TARGETDIR_UNIX" "$DKMLHOSTABI" "" "$CONFIGUREARGS"
 
 # make
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
