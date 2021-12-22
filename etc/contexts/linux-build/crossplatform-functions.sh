@@ -1124,6 +1124,7 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_HAVE_AFL - Whether the CMake compiler is an AFL fuzzy compiler
 #     - env:DKML_COMPILE_CM_CMAKE_SYSROOT - The CMake variable CMAKE_SYSROOT
 #     - env:DKML_COMPILE_CM_CMAKE_SYSTEM_NAME - The CMake variable CMAKE_SYSTEM_NAME
+#     - env:DKML_COMPILE_CM_CMAKE_AR
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER
@@ -1136,6 +1137,8 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_RELEASECOMPATPERF
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_ID
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
 #       _DEBUG/_RELEASE/_RELEASECOMPATFUZZ/_RELEASECOMPATPERF variables below are the standard $<CONFIG> that
 #       come with DKSDK. Other $<CONFIG> may be defined as well on a per-project basis.
@@ -1151,13 +1154,19 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_STATIC_LINKER_FLAGS
 #     - env:DKML_COMPILE_CM_CMAKE_EXE_LINKER_FLAGS
 #     - env:DKML_COMPILE_CM_CMAKE_MODULE_LINKER_FLAGS
-#     - env:DKML_COMPILE_CM_MSVC
+#     - env:DKML_COMPILE_CM_CMAKE_NM
+#     - env:DKML_COMPILE_CM_CMAKE_OBJDUMP
+#     - env:DKML_COMPILE_CM_CMAKE_RANLIB
+#     - env:DKML_COMPILE_CM_CMAKE_STRIP
+#     - env:DKML_COMPILE_CM_MSVC - The CMake variable MSVC
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 # - env:DKML_SYSTEM_PATH
 # - env:OCAML_HOST_TRIPLET is non-empty if `--host OCAML_HOST_TRIPLET` should be passed to OCaml's ./configure script when
 #   compiling OCaml. Aligns with the PLATFORM variable that was specified, especially for cross-compilation.
+# - env:DKML_TARGET_SYSROOT is the target's sysroot when cross-compiling (only available when DKML_COMPILE_TYPE=CM);
+#   empty otherwise.
 # - env:VSDEV_HOME_UNIX is the Visual Studio installation directory containing VC and Common7 subfolders,
 #   if and only if Visual Studio was detected. Empty otherwise
 # - env:VSDEV_HOME_BUILDHOST is the Visual Studio installation directory containing VC and Common7 subfolders,
@@ -1170,6 +1179,10 @@ create_system_launcher() {
 # - (When DKML_COMPILE_TYPE=VS) CMAKE_GENERATOR_INSTANCE_RECOMMENDED will be set for build scripts to use a sensible
 #   generator instance in `cmake -G ... -D CMAKE_GENERATOR_INSTANCE=<generator instance>`. Only set for Visual Studio where
 #   it is the absolute path to a Visual Studio instance. Example: `C:\DiskuvOCaml\BuildTools`
+# - (When DKML_COMPILE_TYPE=CM) ... In general, most variables follow the universal ./configure conventions
+#   described at https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html _not_
+#   github.com/ocaml/ocaml/configure non-standard behavior (which has ASPP, and doesn't separate AS
+#   from ASFLAGS, etc.)
 # - (When DKML_COMPILE_TYPE=CM) CC - C compiler
 # - (When DKML_COMPILE_TYPE=CM) CFLAGS - C compiler flags
 # - (When DKML_COMPILE_TYPE=CM) AS - Assembler (assembly language compiler)
@@ -1181,10 +1194,7 @@ create_system_launcher() {
 # - (When DKML_COMPILE_TYPE=CM) LDLIBS - Library flags or names given to compilers
 #   when they are supposed to invoke the linker, `ld`. Non-library linker flags, such as -L, should go in the LDFLAGS
 #   variable.
-# - (When DKML_COMPILE_TYPE=CM) ... in general, follows the universal ./configure conventions
-#   described at https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html _not_
-#   github.com/ocaml/ocaml/configure non-standard behavior (which has ASPP, and doesn't separate AS
-#   from ASFLAGS, etc.)
+# - (When DKML_COMPILE_TYPE=CM) AR - Archive-maintaining program
 # - (When DKML_COMPILE_TYPE=CM) DKML_COMPILE_CM_* - All these variables will be passed-through if CMake so
 #   downstream OCaml/Opam/etc. can fine-tune what flags / environment variables get passed into
 #   their `./configure` scripts
@@ -1289,6 +1299,7 @@ autodetect_compiler() {
     fi
     export VSDEV_HOME_UNIX=
     export VSDEV_HOME_BUILDHOST=
+    export DKML_TARGET_SYSROOT=
 
     # Host triplet:
     #   (TODO: Better link)
@@ -1356,6 +1367,9 @@ autodetect_compiler_cmake_get_config_flags() {
 
 autodetect_compiler_cmake() {
     {
+        # DKML_TARGET_SYSROOT
+        DKML_TARGET_SYSROOT=${DKML_COMPILE_CM_CMAKE_SYSROOT:-}
+
         # Choose which assembler should be used
         autodetect_compiler_cmake_THE_AS=
         if [ -n "${DKML_COMPILE_CM_CMAKE_ASM_COMPILER:-}" ]; then
@@ -1385,6 +1399,7 @@ autodetect_compiler_cmake() {
             printf "  (\"ASFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_ASFLAGS"
             printf "  (\"LDFLAGS\" \"\")\n"
             printf "  (\"LDLIBS\" \"%s\")\n" "${DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES:-}"
+            printf "  (\"AR\" \"%s\")\n" "${DKML_COMPILE_CM_CMAKE_AR:-}"
 
             # Passthrough all DKML_COMPILE_CM_* variables.
             # The first `sed` command removes any surrounding single quotes from any values.
@@ -1409,6 +1424,11 @@ autodetect_compiler_cmake() {
             printf "  AS=%s %s\n" "$autodetect_compiler_cmake_AS" "\\"
             autodetect_compiler_cmake_ASFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_ASM_FLAGS:-} $_CMAKE_ASM_FLAGS_FOR_CONFIG")
             printf "  ASFLAGS=%s %s\n" "$autodetect_compiler_cmake_ASFLAGS" "\\"
+            printf "  LDFLAGS= %s\n" "\\"
+            autodetect_compiler_cmake_LDLIBS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES:-}")
+            printf "  LDLIBS=%s %s\n" "$autodetect_compiler_cmake_LDLIBS" "\\"
+            autodetect_compiler_cmake_AR=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_AR:-}")
+            printf "  AR=%s %s\n" "$autodetect_compiler_cmake_AR" "\\"
 
             # Passthrough all DKML_COMPILE_CM_* variables
             # shellcheck disable=SC2016

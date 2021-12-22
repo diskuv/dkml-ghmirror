@@ -252,8 +252,21 @@ build_world() {
   # clean (otherwise you will 'make inconsistent assumptions' errors with a mix of host + target binaries)
   make clean
 
+  # provide ./configure with --host or else ./configure will fail during its
+  # `checking whether we are cross compiling` step.
+  build_world_HOST_TRIPLET=$("$build_world_BUILD_ROOT"/build-aux/config.guess)
+  case "$build_world_HOST_TRIPLET" in
+    # If the host is x86_64-pc-windows (etc.) then ./configure will do custom logic to get a compiler;
+    # let us use the CMake compiler if we are building in CMake by simply changing the triplet name
+    # to _anything else_ to skip the Windows cl.exe logic.
+    i686-pc-windows)    if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then build_world_HOST_TRIPLET=i686-pc-cmake; fi ;;
+    x86_64-pc-windows)  if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then build_world_HOST_TRIPLET=x86_64-pc-cmake; fi ;;
+    armv7-pc-windows)   if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then build_world_HOST_TRIPLET=armv7-pc-cmake; fi ;;
+    aarch64-pc-windows) if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then build_world_HOST_TRIPLET=aarch64-pc-cmake; fi ;;
+  esac
+
   # ./configure
-  log_trace ocaml_configure "$build_world_PREFIX" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "$CONFIGUREARGS --disable-ocamldoc"
+  log_trace ocaml_configure "$build_world_PREFIX" "$build_world_TARGET_ABI" "$build_world_PRECONFIGURE" "--host=$build_world_HOST_TRIPLET $CONFIGUREARGS --disable-ocamldoc"
 
   # Build
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then

@@ -14,34 +14,20 @@ set -euf
 # shellcheck disable=SC1091
 . "$DKMLDIR"/etc/contexts/linux-build/crossplatform-functions.sh
 
-# Detect the compiler based on DKML_TARGET_ABI environment value (or guess if not set); set BUILDHOST_ARCH
-tmpl="$(mktemp)"
-DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKML_TARGET_ABI" autodetect_compiler "$tmpl"
-
 # Microsoft cl.exe and link.exe use forward slash (/) options; do not ever let MSYS2 interpret
 # the forward slash and try to convert it to a Windows path.
 disambiguate_filesystem_paths
-
-# Troubleshooting
-if [ "${DKML_BUILD_TRACE:-}" = ON ]; then
-  autodetect_system_binaries # Set DKMLSYS_*
-  printf "@+ autodetect_compiler launcher for DKML_TARGET_ABI=%s\n" "$DKML_TARGET_ABI" >&2
-  "$DKMLSYS_SED" 's/^/@+| /' "$tmpl" | "$DKMLSYS_AWK" '{print}' >&2
-fi
-
-# Output:
-#   PATH=
-#   AS=
-#   ...
-$tmpl sh -c set | grep -E "^(PATH|AS|ASFLAGS|CC|CFLAGS|LDFLAGS|DKML_COMPILE_CM_CMAKE_LINKER)=" > "$tmpl".vars
-. "$tmpl".vars
-rm -f "$tmpl""$tmpl".vars
 
 # ---------------------------------------
 # github.com/ocaml/ocaml/configure output
 # ---------------------------------------
 
-export PATH CC CFLAGS LDFLAGS
+export PATH CC CFLAGS LDFLAGS AR
+
+# CFLAGS
+# clang and perhaps other compilers need --target=armv7-none-linux-androideabi21 for example
+CFLAGS="${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-} ${CFLAGS:-}"
+export CFLAGS
 
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1213-L1240
 _TMP_AS="${AS:-}"
@@ -59,3 +45,10 @@ if [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
 fi
 export LD DIRECT_LD
+
+# STRIP, RANLIB, NM, OBJDUMP
+RANLIB="${DKML_COMPILE_CM_CMAKE_RANLIB:-}"
+STRIP="${DKML_COMPILE_CM_CMAKE_STRIP:-}"
+NM="${DKML_COMPILE_CM_CMAKE_NM:-}"
+OBJDUMP="${DKML_COMPILE_CM_CMAKE_OBJDUMP:-}"
+export STRIP RANLIB NM OBJDUMP
