@@ -18,6 +18,10 @@ set -euf
 tmpl="$(mktemp)"
 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKML_TARGET_ABI" autodetect_compiler "$tmpl"
 
+# Microsoft cl.exe and link.exe use forward slash (/) options; do not ever let MSYS2 interpret
+# the forward slash and try to convert it to a Windows path.
+disambiguate_filesystem_paths
+
 # Troubleshooting
 if [ "${DKML_BUILD_TRACE:-}" = ON ]; then
   autodetect_system_binaries # Set DKMLSYS_*
