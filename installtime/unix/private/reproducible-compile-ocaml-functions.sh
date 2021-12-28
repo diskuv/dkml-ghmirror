@@ -40,81 +40,125 @@
 # autodetect_system_path() of crossplatform-functions.sh.
 ocaml_configure_no_ocaml_leak_environment="OCAML_TOPLEVEL_PATH= OCAMLLIB="
 
-windows_configure_and_define_make() {
-  windows_configure_and_define_make_HOST="$1"
+is_abi_windows() {
+  is_abi_windows_ABI=$1
   shift
-  windows_configure_and_define_make_PREFIX="$1"
+
+  case "$is_abi_windows_ABI" in
+    windows_*)  return 0 ;;
+    *)          return 1 ;;
+  esac
+}
+
+# Set MSVS_PATH, MSVS_LIB and MSVS_INC and ABI_IS_WINDOWS
+detect_msvs() {
+  detect_msvs_ABI=$1
   shift
-  windows_configure_and_define_make_PATH_PREPEND="$1"
+
+  if is_abi_windows "$detect_msvs_ABI" ; then
+    # Get MSVS_* aligned to the DKML compiler
+    if [ ! -e "$WORK"/msvs-detect.out ]; then
+      DKML_TARGET_PLATFORM="$detect_msvs_ABI" autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+      bash "$WORK"/msvs-detect > "$WORK"/msvs-detect.out
+    fi
+
+    # shellcheck disable=SC1091
+    . "$WORK"/msvs-detect.out
+    if [ -z "${MSVS_NAME:-}" ] ; then
+      printf "%s\n" "No appropriate Visual Studio C compiler was found -- unable to build OCaml"
+      exit 1
+    fi
+  else
+    MSVS_PATH=
+    MSVS_LIB=
+    MSVS_INC=
+  fi
+}
+
+ocaml_make() {
+  ocaml_make_ABI=$1
   shift
-  windows_configure_and_define_make_LIB_PREPEND="$1"
+
+  if is_abi_windows "$ocaml_make_ABI" ; then
+      # Set MSVS_*
+      detect_msvs "$ocaml_make_ABI"
+
+      # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
+      # is probably fine in Cygwin.
+      # Also, Windows needs IFLEXDIR=-I../flexdll makefile variable or else a prior system OCaml (or a prior OCaml in the PATH) can
+      # cause IFLEXDIR=..../ocaml/bin which will can hard-to-reproduce failures (missing flexdll.h, etc.).
+      log_trace env --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
+        PATH="$MSVS_PATH$DKML_SYSTEM_PATH" \
+        LIB="$MSVS_LIB;${LIB:-}" \
+        INCLUDE="$MSVS_INC;${INCLUDE:-}" \
+        MSYS2_ARG_CONV_EXCL='*' \
+        "${MAKE:-make}" "$@" IFLEXDIR=-I../flexdll
+  else
+    log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"
+  fi
+}
+
+ocaml_configure_windows() {
+  ocaml_configure_windows_ABI="$1"
   shift
-  windows_configure_and_define_make_INC_PREPEND="$1"
+  ocaml_configure_windows_HOST="$1"
   shift
-  windows_configure_and_define_make_EXTRA_OPTS="$1"
+  ocaml_configure_windows_PREFIX="$1"
   shift
+  ocaml_configure_windows_EXTRA_OPTS="$1"
+  shift
+
+  # Set MSVS_*
+  detect_msvs "$ocaml_configure_windows_ABI"
 
   case "$(uname -m)" in
     'i686')
-      windows_configure_and_define_make_BUILD=i686-pc-cygwin
+      ocaml_configure_windows_BUILD=i686-pc-cygwin
     ;;
     'x86_64')
-      windows_configure_and_define_make_BUILD=x86_64-pc-cygwin
+      ocaml_configure_windows_BUILD=x86_64-pc-cygwin
     ;;
   esac
 
   # 4.13+ have --with-flexdll ./configure option. Autoselect it.
-  windows_configure_and_define_make_OCAMLVER=$(awk 'NR==1{print}' VERSION)
-  windows_configure_and_define_make_MAKEFLEXDLL=OFF
-  case "$windows_configure_and_define_make_OCAMLVER" in
+  ocaml_configure_windows_OCAMLVER=$(awk 'NR==1{print}' VERSION)
+  ocaml_configure_windows_MAKEFLEXDLL=OFF
+  case "$ocaml_configure_windows_OCAMLVER" in
     4.00.*|4.01.*|4.02.*|4.03.*|4.04.*|4.05.*|4.06.*|4.07.*|4.08.*|4.09.*|4.10.*|4.11.*|4.12.*)
-      windows_configure_and_define_make_MAKEFLEXDLL=ON
+      ocaml_configure_windows_MAKEFLEXDLL=ON
       ;;
     *)
-      windows_configure_and_define_make_EXTRA_OPTS="$windows_configure_and_define_make_EXTRA_OPTS --with-flexdll"
+      ocaml_configure_windows_EXTRA_OPTS="$ocaml_configure_windows_EXTRA_OPTS --with-flexdll"
       ;;
   esac
 
-  windows_configure_and_define_make_WINPREFIX=$(printf "%s\n" "${windows_configure_and_define_make_PREFIX}" | /usr/bin/cygpath -f - -m)
+  ocaml_configure_windows_WINPREFIX=$(printf "%s\n" "${ocaml_configure_windows_PREFIX}" | /usr/bin/cygpath -f - -m)
 
   # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
   # is probably fine in Cygwin.
   # shellcheck disable=SC2086
   configure_environment_for_ocaml --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
-    PATH="${windows_configure_and_define_make_PATH_PREPEND}$DKML_SYSTEM_PATH" \
-    LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
-    INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
+    PATH="${MSVS_PATH}$DKML_SYSTEM_PATH" \
+    LIB="${MSVS_LIB}${LIB:-}" \
+    INCLUDE="${MSVS_INC}${INCLUDE:-}" \
     MSYS2_ARG_CONV_EXCL='*' \
     $ocaml_configure_no_ocaml_leak_environment \
-    ./configure --prefix "$windows_configure_and_define_make_WINPREFIX" \
-                --build=$windows_configure_and_define_make_BUILD --host="$windows_configure_and_define_make_HOST" \
+    ./configure --prefix "$ocaml_configure_windows_WINPREFIX" \
+                --build=$ocaml_configure_windows_BUILD --host="$ocaml_configure_windows_HOST" \
                 --disable-stdlib-manpages \
-                $windows_configure_and_define_make_EXTRA_OPTS
+                $ocaml_configure_windows_EXTRA_OPTS
   if [ ! -e flexdll ]; then # OCaml 4.13.x has a git submodule for flexdll
     tar -xzf flexdll.tar.gz
     rm -rf flexdll
     mv flexdll-* flexdll
   fi
 
-  # Define make functions
-  if [ "$windows_configure_and_define_make_MAKEFLEXDLL" = ON ]; then
+  if [ "$ocaml_configure_windows_MAKEFLEXDLL" = ON ]; then
     OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=ON
   else
     # shellcheck disable=SC2034
     OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=OFF
   fi
-  ocaml_make() {
-    # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
-    # is probably fine in Cygwin.
-    # Also, Windows needs IFLEXDIR=-I../flexdll makefile variable or else a prior system OCaml (or a prior OCaml in the PATH) can
-    # cause IFLEXDIR=..../ocaml/bin which will can hard-to-reproduce failures (missing flexdll.h, etc.).
-    log_trace env --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
-      PATH="${windows_configure_and_define_make_PATH_PREPEND}$DKML_SYSTEM_PATH" \
-      LIB="${windows_configure_and_define_make_LIB_PREPEND}${LIB:-}" \
-      INCLUDE="${windows_configure_and_define_make_INC_PREPEND}${INCLUDE:-}" \
-      MSYS2_ARG_CONV_EXCL='*' \
-      "${MAKE:-make}" "$@" IFLEXDIR=-I../flexdll
-  }
 }
 
 ocaml_configure_options_for_abi() {
@@ -184,11 +228,6 @@ ocaml_configure() {
     $DKMLSYS_MV "$make_preconfigured_env_script_DEST".tmp "$make_preconfigured_env_script_DEST"
   }
 
-  ocaml_configure_ABI_IS_WINDOWS=OFF
-  case "$ocaml_configure_ABI" in
-  windows_*) ocaml_configure_ABI_IS_WINDOWS=ON ;;
-  esac
-
   # Configure options
   # -----------------
 
@@ -199,15 +238,10 @@ ocaml_configure() {
   # ./configure and define make functions
   # -------------------------------------
 
-  if [ -n "$ocaml_configure_ABI" ] && [ "$ocaml_configure_ABI_IS_WINDOWS" = ON ] ; then
+  if is_abi_windows "$ocaml_configure_ABI"; then
     # Detect the compiler matching the host ABI
-    ocaml_configure_SAVE_DTP="${DKML_TARGET_PLATFORM:-}"
-    DKML_TARGET_PLATFORM="$ocaml_configure_ABI"
     # Sets OCAML_HOST_TRIPLET that corresponds to ocaml_configure_ABI, and creates the specified script
-    autodetect_compiler "$WORK"/env-with-compiler.sh
-    autodetect_compiler --msvs-detect "$WORK"/msvs-detect
-    # shellcheck disable=SC2034
-    DKML_TARGET_PLATFORM=$ocaml_configure_SAVE_DTP
+    DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/env-with-compiler.sh
 
     # When we run OCaml's ./configure, the DKML compiler must be available
     make_preconfigured_env_script "$WORK"/env-with-compiler.sh "$WORK"/preconfigured-env-with-compiler.sh
@@ -215,19 +249,8 @@ ocaml_configure() {
       log_shell "$WORK"/preconfigured-env-with-compiler.sh "$@"
     }
 
-    # Get MSVS_* aligned to the DKML compiler
-    bash "$WORK"/msvs-detect > "$WORK"/msvs-detect.out
-    # shellcheck disable=SC1091
-    . "$WORK"/msvs-detect.out
-    if [ -z "${MSVS_NAME:-}" ] ; then
-      printf "%s\n" "No appropriate Visual Studio C compiler was found -- unable to build OCaml"
-      exit 1
-    fi
-
     # do ./configure and define make using host triplet defined in compiler autodetection
-    windows_configure_and_define_make "$OCAML_HOST_TRIPLET" "$ocaml_configure_PREFIX" \
-      "$MSVS_PATH" "$MSVS_LIB;" "$MSVS_INC;" \
-      "$ocaml_configure_EXTRA_OPTS"
+    ocaml_configure_windows "$ocaml_configure_ABI" "$OCAML_HOST_TRIPLET" "$ocaml_configure_PREFIX" "$ocaml_configure_EXTRA_OPTS"
   else
     # Detect compiler; exports DKML_TARGET_SYSROOT as needed
     DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/with-compiler.sh
@@ -237,15 +260,15 @@ ocaml_configure() {
       "$DKMLSYS_SED" 's/^/@+| /' "$WORK"/with-compiler.sh | "$DKMLSYS_AWK" '{print}' >&2
     fi
 
-    # Add --with-sysroot; on all operating systems it needs to be a path that starts
-    # with a forward slash (/).
+    # sysroot
     if [ -n "${DKML_TARGET_SYSROOT:-}" ]; then
       if [ -x /usr/bin/cygpath ]; then
-        ocaml_configure_SYSROOT=$(/usr/bin/cygpath -au "$DKML_TARGET_SYSROOT")
+        ocaml_configure_SYSROOT=$(/usr/bin/cygpath -am "$DKML_TARGET_SYSROOT")
       else
         ocaml_configure_SYSROOT="$DKML_TARGET_SYSROOT"
       fi
-      ocaml_configure_EXTRA_OPTS="--with-sysroot='$ocaml_configure_SYSROOT' $ocaml_configure_EXTRA_OPTS"
+    else
+      ocaml_configure_SYSROOT=
     fi
 
     # When we run OCaml's ./configure, the with-compiler.sh must be available
@@ -261,15 +284,20 @@ ocaml_configure() {
     }
 
     # do ./configure
-    # shellcheck disable=SC2086
-    run_script_and_then_configure_environment_for_ocaml \
-      "$WORK"/with-compiler.sh \
-      "$DKMLSYS_ENV" $ocaml_configure_no_ocaml_leak_environment \
-      ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
-    # define make function
-    ocaml_make() {
-      log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"
-    }
+    if [ -n "$ocaml_configure_SYSROOT" ]; then
+      # shellcheck disable=SC2086
+      run_script_and_then_configure_environment_for_ocaml \
+        "$WORK"/with-compiler.sh \
+        "$DKMLSYS_ENV" $ocaml_configure_no_ocaml_leak_environment \
+        ./configure --prefix "$ocaml_configure_PREFIX" --with-sysroot="$ocaml_configure_SYSROOT" $ocaml_configure_EXTRA_OPTS
+    else
+      # shellcheck disable=SC2086
+      run_script_and_then_configure_environment_for_ocaml \
+        "$WORK"/with-compiler.sh \
+        "$DKMLSYS_ENV" $ocaml_configure_no_ocaml_leak_environment \
+        ./configure --prefix "$ocaml_configure_PREFIX" $ocaml_configure_EXTRA_OPTS
+    fi
+
     # shellcheck disable=SC2034
     OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL=OFF
   fi

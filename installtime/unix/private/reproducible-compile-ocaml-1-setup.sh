@@ -199,6 +199,7 @@ while getopts ":d:v:t:a:b:e:g:h" opt; do
         e )
             SETUP_ARGS+=( -e "$OPTARG" )
             BUILD_HOST_ARGS+=( -e "$OPTARG" )
+            BUILD_CROSS_ARGS+=( -e "$OPTARG" )
         ;;
         g )
             SETUP_ARGS+=( -g "$OPTARG" )

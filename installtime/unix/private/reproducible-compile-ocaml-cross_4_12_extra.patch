@@ -1,62 +1,250 @@
 diff --git a/configure b/configure
-index 81a77e3b68..9e85f95432 100755
+index 81a77e3b6..0ee1c6ea7 100755
 --- a/configure
 +++ b/configure
-@@ -12450,6 +12450,10 @@ case $host in #(
-       AR=""; RANLIB=echo; RANLIBCMD=""
-       if test "$host_cpu" = "x86_64" ; then :
-   machine="-machine:AMD64 "
-+      elif test "$host_cpu" = "aarch64" ; then
-+  machine="-machine:ARM64 "
-+      elif test "$host_cpu" = "armv7" ; then
-+  machine="-machine:ARM "
- else
-   machine=""
- fi
-@@ -12836,9 +12840,9 @@ fi
-     mkexe='$(FLEXLINK) -exe $(if $(OC_LDFLAGS),-link "$(OC_LDFLAGS)")'
-     oc_ldflags='/ENTRY:wmainCRTStartup'
-     case $host in #(
--  i686-pc-windows) :
-+  i686-pc-windows|armv7-pc-windows) :
-     flexdll_chain=msvc ;; #(
--  x86_64-pc-windows) :
-+  x86_64-pc-windows|aarch64-pc-windows) :
-     flexdll_chain=msvc64 ;; #(
-   *) :
-      ;;
-@@ -13875,6 +13879,10 @@ case $host in #(
-     arch=i386; system=win32 ;; #(
-   x86_64-pc-windows) :
-     arch=amd64; system=win64 ;; #(
-+  armv7-pc-windows) :
-+    arch=arm; model=armv7; system=win32 ;; #(
-+  aarch64-pc-windows) :
-+    arch=arm64; system=win64 ;; #(
-   powerpc64le*-*-linux*) :
-     arch=power; model=ppc64le; system=elf ;; #(
-   powerpc*-*-linux*) :
-@@ -14232,6 +14240,10 @@ case "$arch,$system" in #(
-     default_as="ml -nologo -coff -Cp -c -Fo" ;; #(
-   amd64,win64) :
-     default_as="ml64 -nologo -Cp -c -Fo" ;; #(
-+  arm,win32) :
-+    default_as="armasm -o" ;; #(
-+  arm64,win64) :
-+    default_as="armasm64 -o" ;; #(
-   amd64,macosx) :
-     case $ocaml_cv_cc_vendor in #(
-   clang-*) :
-@@ -17079,10 +17091,10 @@ case $host in #(
-   x86_64-w64-mingw32) :
-     flexdll_chain='mingw64'
-     flexlink_flags="-chain $flexdll_chain -stack 33554432" ;; #(
--  i686-pc-windows) :
-+  i686-pc-windows|armv7-pc-windows) :
-     flexdll_chain='msvc'
-     flexlink_flags="-merge-manifest -stack 16777216" ;; #(
--  x86_64-pc-windows) :
-+  x86_64-pc-windows|aarch64-pc-windows) :
-     flexdll_chain='msvc64'
-     flexlink_flags="-x64 -merge-manifest -stack 33554432" ;; #(
-   *) :
+@@ -6558,7 +6558,7 @@ case $with_sysroot in #(
+      lt_sysroot=`$CC --print-sysroot 2>/dev/null`
+    fi
+    ;; #(
+- /*)
++ /* | ?:*) # /a/b/c or C:\Windows
+    lt_sysroot=`echo "$with_sysroot" | sed -e "$sed_quote_subst"`
+    ;; #(
+  no|'')
+@@ -13885,19 +13885,19 @@ else
+ fi; system=elf ;; #(
+   s390x*-*-linux*) :
+     arch=s390x; model=z10; system=elf ;; #(
+-  armv6*-*-linux-gnueabihf) :
++  armv6*-*-linux-*eabihf*) :
+     arch=arm; model=armv6; system=linux_eabihf ;; #(
+-  armv7*-*-linux-gnueabihf) :
++  armv7*-*-linux-*eabihf*) :
+     arch=arm; model=armv7; system=linux_eabihf ;; #(
+-  armv8*-*-linux-gnueabihf) :
++  armv8*-*-linux-*eabihf*) :
+     arch=arm; model=armv8; system=linux_eabihf ;; #(
+-  armv8*-*-linux-gnueabi) :
++  armv8*-*-linux-*eabi*) :
+     arch=arm; model=armv8; system=linux_eabi ;; #(
+-  armv7*-*-linux-gnueabi) :
++  armv7*-*-linux-*eabi*) :
+     arch=arm; model=armv7; system=linux_eabi ;; #(
+-  armv6t2*-*-linux-gnueabi) :
++  armv6t2*-*-linux-*eabi*) :
+     arch=arm; model=armv6t2; system=linux_eabi ;; #(
+-  armv6*-*-linux-gnueabi) :
++  armv6*-*-linux-*eabi*) :
+     arch=arm; model=armv6; system=linux_eabi ;; #(
+   armv6*-*-freebsd*) :
+     arch=arm; model=armv6; system=freebsd ;; #(
+@@ -13905,13 +13905,13 @@ fi; system=elf ;; #(
+     arch=arm; model=armv6; system=netbsd ;; #(
+   earmv7*-*-netbsd*) :
+     arch=arm; model=armv7; system=netbsd ;; #(
+-  armv5te*-*-linux-gnueabi) :
++  armv5te*-*-linux-*eabi*) :
+     arch=arm; model=armv5te; system=linux_eabi ;; #(
+-  armv5*-*-linux-gnueabi) :
++  armv5*-*-linux-*eabi*) :
+     arch=arm; model=armv5; system=linux_eabi ;; #(
+-  arm*-*-linux-gnueabihf) :
++  arm*-*-linux-*eabihf*) :
+     arch=arm; system=linux_eabihf ;; #(
+-  arm*-*-linux-gnueabi) :
++  arm*-*-linux-*eabi*) :
+     arch=arm; system=linux_eabi ;; #(
+   arm*-*-openbsd*) :
+     arch=arm; system=bsd ;; #(
+diff --git a/configure.ac b/configure.ac
+index 656ffe20c..5f1563c6e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -955,19 +955,19 @@ AS_CASE([$host],
+     [arch=power; AS_IF([$arch64],[model=ppc64],[model=ppc]); system=elf],
+   [[s390x*-*-linux*]],
+     [arch=s390x; model=z10; system=elf],
+-  [armv6*-*-linux-gnueabihf],
++  [armv6*-*-linux-*eabihf*],
+     [arch=arm; model=armv6; system=linux_eabihf],
+-  [armv7*-*-linux-gnueabihf],
++  [armv7*-*-linux-*eabihf*],
+     [arch=arm; model=armv7; system=linux_eabihf],
+-  [armv8*-*-linux-gnueabihf],
++  [armv8*-*-linux-*eabihf*],
+     [arch=arm; model=armv8; system=linux_eabihf],
+-  [armv8*-*-linux-gnueabi],
++  [armv8*-*-linux-*eabi*],
+     [arch=arm; model=armv8; system=linux_eabi],
+-  [armv7*-*-linux-gnueabi],
++  [armv7*-*-linux-*eabi*],
+     [arch=arm; model=armv7; system=linux_eabi],
+-  [armv6t2*-*-linux-gnueabi],
++  [armv6t2*-*-linux-*eabi*],
+     [arch=arm; model=armv6t2; system=linux_eabi],
+-  [armv6*-*-linux-gnueabi],
++  [armv6*-*-linux-*eabi*],
+     [arch=arm; model=armv6; system=linux_eabi],
+   [armv6*-*-freebsd*],
+     [arch=arm; model=armv6; system=freebsd],
+@@ -975,13 +975,13 @@ AS_CASE([$host],
+     [arch=arm; model=armv6; system=netbsd],
+   [earmv7*-*-netbsd*],
+     [arch=arm; model=armv7; system=netbsd],
+-  [armv5te*-*-linux-gnueabi],
++  [armv5te*-*-linux-*eabi*],
+     [arch=arm; model=armv5te; system=linux_eabi],
+-  [armv5*-*-linux-gnueabi],
++  [armv5*-*-linux-*eabi*],
+     [arch=arm; model=armv5; system=linux_eabi],
+-  [arm*-*-linux-gnueabihf],
++  [arm*-*-linux-*eabihf*],
+     [arch=arm; system=linux_eabihf],
+-  [arm*-*-linux-gnueabi],
++  [arm*-*-linux-*eabi*],
+     [arch=arm; system=linux_eabi],
+   [arm*-*-openbsd*],
+     [arch=arm; system=bsd],
+diff --git a/runtime/arm.S b/runtime/arm.S
+index 612757a10..72eff1502 100644
+--- a/runtime/arm.S
++++ b/runtime/arm.S
+@@ -82,6 +82,56 @@
+ trap_ptr          .req    r8
+ alloc_ptr         .req    r10
+ domain_state_ptr  .req    r11
++tmp1              .req    r13
++
++/* Macros for Aarch32 position independent code, much of it described
++ * at
++ * https://developer.arm.com/documentation/100067/0612/armclang-Integrated-Assembler/Assembly-expressions
++ *
++ * lpiclf is load PIC-independent local function for a .data label to `.word .Lfunc`.
++ *   The PIC runtime overhead is 1 extra opcode.
++ * lpicgf is load PIC-independent global function for a .data label to `.word func`
++ *   The PIC runtime overhead is 1 extra opcode.
++ * lpicgv is load PIC-independent global variable for a .data label to `.word func(got)`
++ *   The PIC runtime overhead is 2 extra opcodes.
++ */
++
++#ifdef __PIC__
++        .macro  lpicgv destreg,globalsym
++    /* get address of 'linked_gsym_yy:' in our .data section */
++        adr     tmp1, linked_gsym_\globalsym
++    /* read the word at 'linked_gsym_yy:', which is the symbol itself */
++        ldr     \destreg, [tmp1]
++        .endm
++
++        .macro  lpiclf destreg,localsym
++    /* get address of 'linked_lsym_yy:' in our .data section */
++        adr     tmp1, linked_lsym_\localsym
++    /* read the word at 'linked_lsym_yy:', which is the symbol itself */
++        ldr     \destreg, [tmp1]
++        .endm
++
++        .macro  lpicgf destreg,globalsym
++    /* get address of 'linked_gfunc_yy:' in our .data section */
++        adr     \destreg, linked_gfunc_\globalsym
++    /* read the word at 'linked_gfunc_yy:' (the word is the GOT table entry 'func(got)') */
++        ldr     tmp1, [\destreg]
++    /* read the GOT table entry */
++        ldr     \destreg, [tmp1]
++        .endm
++#else
++        .macro  lpicgv destreg,globalsym
++        ldr     \destreg, =\globalsym
++        .endm
++
++        .macro  lpiclf destreg,localsym
++        ldr     \destreg, =.L\localsym
++        .endm
++
++        .macro  lpicgf destreg,globalsym
++        ldr     \destreg, =\globalsym
++        .endm
++#endif
+ 
+ /* Support for CFI directives */
+ 
+@@ -242,7 +292,7 @@ FUNCTION(caml_c_call)
+ 
+ FUNCTION(caml_start_program)
+         CFI_STARTPROC
+-        ldr     r12, =caml_program
++        lpicgf  r12, caml_program
+ 
+ /* Code shared with caml_callback* */
+ /* Address of OCaml code to call is in r12 */
+@@ -260,7 +310,7 @@ FUNCTION(caml_start_program)
+ #else
+         CFI_OFFSET(lr, -4)
+ #endif
+-        ldr     domain_state_ptr, =Caml_state
++        lpicgv  domain_state_ptr, Caml_state
+         ldr     domain_state_ptr, [domain_state_ptr]
+     /* Setup a callback link on the stack */
+         sub     sp, sp, 16; CFI_ADJUST(16)              /* 8-byte alignment */
+@@ -272,7 +322,7 @@ FUNCTION(caml_start_program)
+         str     r6, [sp, 8]
+     /* Setup a trap frame to catch exceptions escaping the OCaml code */
+         sub     sp, sp, 8; CFI_ADJUST(8)
+-        ldr     r5, =.Ltrap_handler
++        lpiclf  r5, trap_handler
+         ldr     r4, Caml_state(exception_pointer)
+         str     r4, [sp, 0]
+         str     r5, [sp, 4]
+@@ -397,7 +447,7 @@ FUNCTION(caml_callback2_asm)
+         ldr     r0, [r2]          /* r0 = first arg */
+         ldr     r1, [r2,4]        /* r1 = second arg */
+         mov     r2, r12           /* r2 = closure environment */
+-        ldr     r12, =caml_apply2
++        lpicgf  r12, caml_apply2
+         b       .Ljump_to_caml
+         CFI_ENDPROC
+         .size   caml_callback2_asm, .-caml_callback2_asm
+@@ -411,7 +461,7 @@ FUNCTION(caml_callback3_asm)
+         ldr     r0, [r2]          /* r0 = first arg */
+         ldr     r1, [r2,4]        /* r1 = second arg */
+         ldr     r2, [r2,8]        /* r2 = third arg */
+-        ldr     r12, =caml_apply3
++        lpicgf  r12, caml_apply3
+         b       .Ljump_to_caml
+         CFI_ENDPROC
+         .size   caml_callback3_asm, .-caml_callback3_asm
+@@ -419,7 +469,7 @@ FUNCTION(caml_callback3_asm)
+ FUNCTION(caml_ml_array_bound_error)
+         CFI_STARTPROC
+     /* Load address of [caml_array_bound_error] in r7 */
+-        ldr     r7, =caml_array_bound_error
++        lpicgf  r7, caml_array_bound_error
+     /* Call that function */
+         b       caml_c_call
+         CFI_ENDPROC
+@@ -429,6 +479,27 @@ FUNCTION(caml_ml_array_bound_error)
+         .globl  caml_system__code_end
+ caml_system__code_end:
+ 
++#ifdef __PIC__
++/* Constant pool for global offset table entries and other words resolved at link time */
++        .data
++    /* Align on 2^2 = 4 bytes (1 word) since Thumb (T32) mode ADR+LDR can only reference addresses
++       that are 4-byte aligned.
++       Confer: https://developer.arm.com/documentation/100067/0612/armclang-Integrated-Assembler/Alignment-directives */
++        .align 2
++linked_gfunc_caml_program:
++        .word caml_program(got)
++linked_gsym_Caml_state:
++        .word Caml_state
++linked_lsym_trap_handler:
++        .word .Ltrap_handler
++linked_gfunc_caml_apply2:
++        .word caml_apply2(got)
++linked_gfunc_caml_apply3:
++        .word caml_apply3(got)
++linked_gfunc_caml_array_bound_error:
++        .word caml_array_bound_error(got)
++#endif
++
+ /* GC roots for callback */
+ 
+         .data

@@ -1045,6 +1045,9 @@ create_system_launcher() {
     # Set DKMLSYS_*
     autodetect_system_binaries
 
+    create_system_launcher_OUTPUTDIR=$(PATH=/usr/bin:/bin dirname "$create_system_launcher_OUTPUTFILE")
+    $DKMLSYS_INSTALL -d "$create_system_launcher_OUTPUTDIR"
+
     if [ -x /usr/bin/cygpath ]; then
         create_system_launcher_SYSTEMPATHUNIX=$(/usr/bin/cygpath --path "$DKML_SYSTEM_PATH")
     else
@@ -1124,8 +1127,16 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_HAVE_AFL - Whether the CMake compiler is an AFL fuzzy compiler
 #     - env:DKML_COMPILE_CM_CMAKE_SYSROOT - The CMake variable CMAKE_SYSROOT
 #     - env:DKML_COMPILE_CM_CMAKE_SYSTEM_NAME - The CMake variable CMAKE_SYSTEM_NAME
+#     - env:DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_ABI
+#     - env:DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE
+#     - env:DKML_COMPILE_CM_CMAKE_ANDROID_ARM_NEON
+#     - env:DKML_COMPILE_CM_CMAKE_ANDROID_NDK_VERSION
 #     - env:DKML_COMPILE_CM_CMAKE_AR
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER_ID
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OBJECT
+#     - env:DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_NASM_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
@@ -1137,6 +1148,9 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_ASM_FLAGS_RELEASECOMPATPERF
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_ID
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIC
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIE
+#     - env:DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET
 #     - env:DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
@@ -1148,6 +1162,22 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_C_FLAGS_RELEASECOMPATPERF
 #     - env:DKML_COMPILE_CM_CMAKE_C_STANDARD_INCLUDE_DIRECTORIES
 #     - env:DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILER
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILER_ID
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIC
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIE
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_SYSROOT
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_TARGET
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_COMPILER_TARGET
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_FLAGS - All uppercased values of $<CONFIG> should be defined as well. The
+#       _DEBUG/_RELEASE/_RELEASECOMPATFUZZ/_RELEASECOMPATPERF variables below are the standard $<CONFIG> that
+#       come with DKSDK. Other $<CONFIG> may be defined as well on a per-project basis.
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_FLAGS_DEBUG
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_FLAGS_RELEASE
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_FLAGS_RELEASECOMPATFUZZ
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_FLAGS_RELEASECOMPATPERF
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
+#     - env:DKML_COMPILE_CM_CMAKE_CXX_STANDARD_LIBRARIES
 #     - env:DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P
 #     - env:DKML_COMPILE_CM_CMAKE_LINKER
 #     - env:DKML_COMPILE_CM_CMAKE_SHARED_LINKER_FLAGS
@@ -1158,6 +1188,7 @@ create_system_launcher() {
 #     - env:DKML_COMPILE_CM_CMAKE_OBJDUMP
 #     - env:DKML_COMPILE_CM_CMAKE_RANLIB
 #     - env:DKML_COMPILE_CM_CMAKE_STRIP
+#     - env:DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE
 #     - env:DKML_COMPILE_CM_MSVC - The CMake variable MSVC
 # Outputs:
 # - env:DKMLPARENTHOME_BUILDHOST
@@ -1248,7 +1279,9 @@ autodetect_compiler() {
     [ -n "${DKML_COMPILE_CM_CMAKE_SYSTEM_NAME:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}b"
     [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}c"
     [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}d"
-    [ -n "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}e"
+    [ -n "${DKML_COMPILE_CM_CMAKE_CXX_COMPILER:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}e"
+    [ -n "${DKML_COMPILE_CM_CMAKE_CXX_COMPILER_ID:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}f"
+    [ -n "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ] && autodetect_compiler_SPECBITS="${autodetect_compiler_SPECBITS}g"
 
     if [ -z "${DKML_COMPILE_SPEC:-}" ]; then
         if [ ! "$autodetect_compiler_SPECBITS" = "" ]; then
@@ -1257,6 +1290,9 @@ autodetect_compiler() {
         fi
     elif [ "${DKML_COMPILE_SPEC:-}" = 1 ]; then
         case "${DKML_COMPILE_TYPE:-}" in
+            SYS)
+                # Autodetect system host compiler
+                ;;
             VS)
                 if [ ! "$autodetect_compiler_SPECBITS" = "1234" ]; then
                     printf "DKML compile spec 1 for Visual Studio (VS) was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
@@ -1264,7 +1300,7 @@ autodetect_compiler() {
                 fi
                 ;;
             CM)
-                if [ ! "$autodetect_compiler_SPECBITS" = "abcde" ]; then
+                if [ ! "$autodetect_compiler_SPECBITS" = "abcdefg" ]; then
                     printf "DKML compile spec 1 for CMake (CM) was not followed. Error code: %s\n" "$autodetect_compiler_SPECBITS" >&2
                     exit 107
                 fi
@@ -1349,7 +1385,7 @@ autodetect_compiler_msvs_detect_footer() {
   printf "set | awk '%s'\n" '/^MS(VS|VS64)_(NAME|PATH|INC|LIB|ML)=/{print}'
 }
 
-# Sets _CMAKE_C_FLAGS_FOR_CONFIG and _CMAKE_ASM_FLAGS_FOR_CONFIG environment variable to the value
+# Sets _CMAKE_(C|ASM|CXX)_FLAGS_FOR_CONFIG environment variables to the value
 # of config-specific c_flags and asm_flags variable like
 # `DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG` and `DKML_COMPILE_CM_CMAKE_ASM_FLAGS_DEBUG` when
 # `DKML_COMPILE_CM_CONFIG` is `Debug`.
@@ -1358,6 +1394,7 @@ autodetect_compiler_cmake_get_config_flags() {
     autodetect_compiler_cmake_get_config_flags_CONFIGUPPER=$(printf "%s" "$DKML_COMPILE_CM_CONFIG" | tr '[:lower:]' '[:upper:]')
     {
       printf "_CMAKE_C_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_C_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
+      printf "_CMAKE_CXX_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_CXX_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
       printf "_CMAKE_ASM_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_ASM_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
     } > "$autodetect_compiler_OUTPUTFILE".flags.source
     # shellcheck disable=SC1091
@@ -1380,6 +1417,50 @@ autodetect_compiler_cmake() {
             autodetect_compiler_cmake_THE_AS=$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER
         fi
 
+        # Platform-specific requirements
+        # ----
+
+        autodetect_compiler_cmake_Specific_CFLAGS=
+        autodetect_compiler_cmake_Specific_CXXFLAGS=
+        autodetect_compiler_cmake_Specific_LDFLAGS=
+
+        # == Android ==
+
+        if [ "$DKML_COMPILE_CM_CMAKE_SYSTEM_NAME" = "Android" ]; then
+          # https://developer.android.com/ndk/guides/standalone_toolchain#building_open_source_projects_using_standalone_toolchains
+          # > # Tell configure what flags Android requires.
+          # > export CFLAGS="-fPIE -fPIC"
+          # > export LDFLAGS="-pie"
+          # Since they may be CMake string arrays (ex. `-fPIE;-pie`) we replace all semicolons with spaces
+          autodetect_compiler_cmake_Specific_CFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_CFLAGS ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIE:-} ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIC:-}" | $DKMLSYS_SED 's/;/ /g')
+          autodetect_compiler_cmake_Specific_CXXFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_CXXFLAGS ${DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIE:-} ${DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIC:-}" | $DKMLSYS_SED 's/;/ /g')
+          autodetect_compiler_cmake_Specific_LDFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_LDFLAGS ${DKML_COMPILE_CM_CMAKE_C_LINK_OPTIONS_PIE:-}" | $DKMLSYS_SED 's/;/ /g')
+
+          # https://developer.android.com/ndk/guides/standalone_toolchain#abi_compatibility
+          # > By default, an ARM Clang standalone toolchain will target the armeabi-v7a ABI.
+          # > To use NEON instructions, you must use the -mfpu compiler flag: -mfpu=neon.
+          # > Also, make sure to provide the following two flags to the linker: -march=armv7-a -Wl,--fix-cortex-a8.
+          # > The first flag instructs the linker to pick toolchain libraries which are tailored for armv7-a. The 2nd flag is required as a workaround for a CPU bug in some Cortex-A8 implementations.
+          # > You don't have to use any specific compiler flag when targeting the other ABIs.
+          # CMake already gives us -march=armv7-a
+          if cmake_flag_on "${DKML_COMPILE_CM_CMAKE_ANDROID_ARM_NEON:-}"; then
+            autodetect_compiler_cmake_Specific_CFLAGS="$autodetect_compiler_cmake_Specific_CFLAGS -mfpu=neon"
+            autodetect_compiler_cmake_Specific_CXXFLAGS="$autodetect_compiler_cmake_Specific_CXXFLAGS -mfpu=neon"
+          fi
+          if [ "${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_ABI:-}" = armeabi-v7a ]; then
+            autodetect_compiler_cmake_Specific_LDFLAGS="$autodetect_compiler_cmake_Specific_LDFLAGS -Wl,--fix-cortex-a8"
+          fi
+
+          # https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#additional-required-arguments
+          autodetect_compiler_cmake_NDK_MAJVER=$(printf "%s\n" "${DKML_COMPILE_CM_CMAKE_ANDROID_NDK_VERSION:-16}" | sed 's/[.].*//')
+          if [ "$autodetect_compiler_cmake_NDK_MAJVER" -lt 23 ]; then
+            autodetect_compiler_cmake_Specific_CFLAGS="$autodetect_compiler_cmake_Specific_CFLAGS -mstackrealign"
+            autodetect_compiler_cmake_Specific_CXXFLAGS="$autodetect_compiler_cmake_Specific_CXXFLAGS -mstackrealign"
+          fi
+
+        fi
+
+
         # Set _CMAKE_C_FLAGS_FOR_CONFIG and _CMAKE_ASM_FLAGS_FOR_CONFIG to
         # $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
         autodetect_compiler_cmake_get_config_flags
@@ -1391,13 +1472,17 @@ autodetect_compiler_cmake() {
             # Reference: https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
             autodetect_compiler_cmake_CC=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
             printf "  (\"CC\" \"%s\")\n" "$autodetect_compiler_cmake_CC"
-            autodetect_compiler_cmake_CFLAGS=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
+            autodetect_compiler_cmake_CXX=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_CXX_COMPILER:-}")
+            printf "  (\"CXX\" \"%s\")\n" "$autodetect_compiler_cmake_CXX"
+            autodetect_compiler_cmake_CFLAGS=$(escape_arg_as_ocaml_string "$autodetect_compiler_cmake_Specific_CFLAGS ${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
             printf "  (\"CFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_CFLAGS"
+            autodetect_compiler_cmake_CXXFLAGS=$(escape_arg_as_ocaml_string "$autodetect_compiler_cmake_Specific_CXXFLAGS ${DKML_COMPILE_CM_CMAKE_CXX_FLAGS:-} $_CMAKE_CXX_FLAGS_FOR_CONFIG")
+            printf "  (\"CXXFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_CXXFLAGS"
             autodetect_compiler_cmake_AS=$(escape_arg_as_ocaml_string "$autodetect_compiler_cmake_THE_AS")
             printf "  (\"AS\" \"%s\")\n" "$autodetect_compiler_cmake_AS"
             autodetect_compiler_cmake_ASFLAGS=$(escape_arg_as_ocaml_string "${DKML_COMPILE_CM_CMAKE_ASM_FLAGS:-} $_CMAKE_ASM_FLAGS_FOR_CONFIG")
             printf "  (\"ASFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_ASFLAGS"
-            printf "  (\"LDFLAGS\" \"\")\n"
+            printf "  (\"LDFLAGS\" \"%s\")\n" "$autodetect_compiler_cmake_Specific_LDFLAGS"
             printf "  (\"LDLIBS\" \"%s\")\n" "${DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES:-}"
             printf "  (\"AR\" \"%s\")\n" "${DKML_COMPILE_CM_CMAKE_AR:-}"
 
@@ -1418,13 +1503,18 @@ autodetect_compiler_cmake() {
             # Universal ./configure flags
             autodetect_compiler_cmake_CC=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_COMPILER:-}")
             printf "  CC=%s %s\n" "$autodetect_compiler_cmake_CC" "\\"
-            autodetect_compiler_cmake_CFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
+            autodetect_compiler_cmake_CXX=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_CXX_COMPILER:-}")
+            printf "  CXX=%s %s\n" "$autodetect_compiler_cmake_CXX" "\\"
+            autodetect_compiler_cmake_CFLAGS=$(escape_args_for_shell "$autodetect_compiler_cmake_Specific_CFLAGS ${DKML_COMPILE_CM_CMAKE_C_FLAGS:-} $_CMAKE_C_FLAGS_FOR_CONFIG")
             printf "  CFLAGS=%s %s\n" "$autodetect_compiler_cmake_CFLAGS" "\\"
+            autodetect_compiler_cmake_CXXFLAGS=$(escape_args_for_shell "$autodetect_compiler_cmake_Specific_CXXFLAGS ${DKML_COMPILE_CM_CMAKE_CXX_FLAGS:-} $_CMAKE_CXX_FLAGS_FOR_CONFIG")
+            printf "  CXXFLAGS=%s %s\n" "$autodetect_compiler_cmake_CXXFLAGS" "\\"
             autodetect_compiler_cmake_AS=$(escape_args_for_shell "$autodetect_compiler_cmake_THE_AS")
             printf "  AS=%s %s\n" "$autodetect_compiler_cmake_AS" "\\"
             autodetect_compiler_cmake_ASFLAGS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_ASM_FLAGS:-} $_CMAKE_ASM_FLAGS_FOR_CONFIG")
             printf "  ASFLAGS=%s %s\n" "$autodetect_compiler_cmake_ASFLAGS" "\\"
-            printf "  LDFLAGS= %s\n" "\\"
+            autodetect_compiler_cmake_LDFLAGS=$(escape_args_for_shell "$autodetect_compiler_cmake_Specific_LDFLAGS")
+            printf "  LDFLAGS=%s %s\n" "$autodetect_compiler_cmake_LDFLAGS" "\\"
             autodetect_compiler_cmake_LDLIBS=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_C_STANDARD_LIBRARIES:-}")
             printf "  LDLIBS=%s %s\n" "$autodetect_compiler_cmake_LDLIBS" "\\"
             autodetect_compiler_cmake_AR=$(escape_args_for_shell "${DKML_COMPILE_CM_CMAKE_AR:-}")

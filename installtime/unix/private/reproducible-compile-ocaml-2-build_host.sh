@@ -146,11 +146,11 @@ ocaml_configure "$TARGETDIR_UNIX" "$DKMLHOSTABI" "" "$CONFIGUREARGS"
 
 # make
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    ocaml_make flexdll
+    ocaml_make "$DKMLHOSTABI" flexdll
 fi
-ocaml_make -j world
-ocaml_make -j "${BOOTSTRAP_OPT_TARGET:-opt.opt}"
+ocaml_make "$DKMLHOSTABI" -j world
+ocaml_make "$DKMLHOSTABI" -j "${BOOTSTRAP_OPT_TARGET:-opt.opt}"
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    ocaml_make flexlink.opt
+    ocaml_make "$DKMLHOSTABI" flexlink.opt
 fi
-ocaml_make install
+ocaml_make "$DKMLHOSTABI" install
