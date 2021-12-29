@@ -153,6 +153,8 @@ usage() {
         printf "%s\n" "      Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll and --host will have already"
         printf "%s\n" "      been set appropriately, but you can override the --host heuristic by adding it to -f CONFIGUREARGS"
+        printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
+        printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
     } >&2
 }
 
@@ -165,7 +167,7 @@ GIT_COMMITID_OR_TAG=
 TARGETDIR=
 TARGETABIS=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:e:g:h" opt; do
+while getopts ":d:v:t:a:b:e:g:i:j:h" opt; do
     case ${opt} in
         h )
             usage
@@ -205,6 +207,16 @@ while getopts ":d:v:t:a:b:e:g:h" opt; do
             SETUP_ARGS+=( -g "$OPTARG" )
             BUILD_HOST_ARGS+=( -g "$OPTARG" )
             BUILD_CROSS_ARGS+=( -g "$OPTARG" )
+        ;;
+        i )
+            SETUP_ARGS+=( -i "$OPTARG" )
+            BUILD_HOST_ARGS+=( -i "$OPTARG" )
+            BUILD_CROSS_ARGS+=( -i "$OPTARG" )
+        ;;
+        j )
+            SETUP_ARGS+=( -j "$OPTARG" )
+            BUILD_HOST_ARGS+=( -j "$OPTARG" )
+            BUILD_CROSS_ARGS+=( -j "$OPTARG" )
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2

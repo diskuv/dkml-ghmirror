@@ -62,6 +62,8 @@ usage() {
     printf "%s\n" "   -a TARGETABIS: Optional. See reproducible-compile-ocaml-1-setup.sh"
     printf "%s\n" "   -e DKMLHOSTABI: Uses the Diskuv OCaml compiler detector find a host ABI compiler"
     printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
+    printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
+    printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
   } >&2
 }
 
@@ -70,7 +72,9 @@ TARGETDIR=
 TARGETABIS=
 CONFIGUREARGS=
 DKMLHOSTABI=
-while getopts ":d:t:a:g:e:h" opt; do
+OCAMLCARGS=
+OCAMLOPTARGS=
+while getopts ":d:t:a:g:e:i:j:h" opt; do
   case ${opt} in
   h)
     usage
@@ -96,6 +100,12 @@ while getopts ":d:t:a:g:e:h" opt; do
     ;;
   e)
     DKMLHOSTABI="$OPTARG"
+    ;;
+  i)
+    OCAMLCARGS="$OPTARG"
+    ;;
+  j)
+    OCAMLOPTARGS="$OPTARG"
     ;;
   \?)
     printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -323,9 +333,11 @@ build_world() {
   build_world_PRECONFIGURE=$1
   shift
 
-  # PREFIX is captured in `ocamlc -config` so it needs to be a mixed Unix/Win32 path
+  # PREFIX is captured in `ocamlc -config` so it needs to be a mixed Unix/Win32 path.
+  # BUILD_ROOT is used in `ocamlopt.opt -I ...` so it needs to be a native path or mixed Unix/Win32 path.
   if [ -x /usr/bin/cygpath ]; then
     build_world_PREFIX=$(/usr/bin/cygpath -am "$build_world_PREFIX")
+    build_world_BUILD_ROOT=$(/usr/bin/cygpath -am "$build_world_BUILD_ROOT")
   fi
 
   case "$build_world_TARGET_ABI" in
@@ -373,11 +385,14 @@ build_world() {
   $DKMLSYS_MV "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh.tmp "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh
 
   # Wrappers
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlc.opt$HOST_EXE_EXT" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlopt.opt$HOST_EXE_EXT" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -nostdlib
-
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlc.opt$build_world_TARGET_EXE_EXT" -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlopt.opt$build_world_TARGET_EXE_EXT" -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -nostdlib
+  # shellcheck disable=SC2086
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlc.opt$HOST_EXE_EXT" $OCAMLCARGS -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
+  # shellcheck disable=SC2086
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlopt.opt$HOST_EXE_EXT" $OCAMLOPTARGS -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -nostdlib
+  # shellcheck disable=SC2086
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlc.opt$build_world_TARGET_EXE_EXT" $OCAMLCARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
+  # shellcheck disable=SC2086
+  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlopt.opt$build_world_TARGET_EXE_EXT" $OCAMLOPTARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -nostdlib
 
   # clean (otherwise you will 'make inconsistent assumptions' errors with a mix of host + target binaries)
   make clean

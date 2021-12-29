@@ -56,6 +56,8 @@ usage() {
         printf "%s\n" "   -b PREF: Required and used only for the MSVC compiler. See reproducible-compile-ocaml-1-setup.sh"
         printf "%s\n" "   -e DKMLHOSTABI: Uses the Diskuv OCaml compiler detector find a host ABI compiler"
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
+        printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
+        printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
     } >&2
 }
 
@@ -63,8 +65,10 @@ DKMLDIR=
 TARGETDIR=
 DKMLHOSTABI=
 CONFIGUREARGS=
+OCAMLCARGS=
+OCAMLOPTARGS=
 export MSVS_PREFERENCE=
-while getopts ":d:t:b:e:g:h" opt; do
+while getopts ":d:t:b:e:g:i:j:h" opt; do
     case ${opt} in
         h )
             usage
@@ -91,6 +95,12 @@ while getopts ":d:t:b:e:g:h" opt; do
         g )
             CONFIGUREARGS="$OPTARG"
         ;;
+        i)
+          OCAMLCARGS="$OPTARG"
+          ;;
+        j)
+          OCAMLOPTARGS="$OPTARG"
+          ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -143,6 +153,9 @@ cd "$OCAMLSRC_UNIX"
 
 # ./configure
 ocaml_configure "$TARGETDIR_UNIX" "$DKMLHOSTABI" "" "$CONFIGUREARGS"
+
+# TODO: Propagate OCAMLCARGS and OCAMLOPTARGS, perhaps through CAMLC and CAMLOPT Makefile
+# TODO: variables.
 
 # make
 if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
