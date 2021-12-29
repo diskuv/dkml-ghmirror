@@ -15,16 +15,10 @@ usage() {
     echo "    release.sh -h  Display this help message." >&2
     echo "    release.sh -p  Create a prerelease." >&2
     echo "    release.sh     Create a release." >&2
-    echo "Options:" >&2
-    echo "       -p PLATFORM: The target platform or 'dev'" >&2
-    echo "       -s: Select the 'diskuv-host-tools' switch" >&2
-    echo "       -b BUILDTYPE: Optional. The build type. If specified will create the switch" >&2
-    echo "            in the build directory that corresponds to BUILDTYPE. Otherwise creates" >&2
-    echo "            a global switch" >&2
 }
 
 PRERELEASE=OFF
-while getopts ":h:p" opt; do
+while getopts ":hp" opt; do
     case ${opt} in
         h )
             usage

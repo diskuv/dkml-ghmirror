@@ -45,7 +45,7 @@ OCAMLVERSION_OR_HOME=
 OPAMHOME=
 FLAVOR=CI
 DKMLPLATFORM=
-while getopts ":h:d:o:p:v:f:" opt; do
+while getopts ":hd:o:p:v:f:" opt; do
     case ${opt} in
         h )
             usage

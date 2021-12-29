@@ -46,7 +46,7 @@ else
 fi
 OPAMHOME=
 OCAMLVERSION_OR_HOME=
-while getopts ":h:p:d:o:v:" opt; do
+while getopts ":hp:d:o:v:" opt; do
     case ${opt} in
         h )
             usage

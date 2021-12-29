@@ -55,7 +55,7 @@ fi
 TARGETDIR=
 OUTPUTFILE=
 BOOTSTRAP_ONLY=OFF
-while getopts ":h:p:d:t:o:x" opt; do
+while getopts ":hp:d:t:o:x" opt; do
     case ${opt} in
         h )
             usage

@@ -146,7 +146,7 @@ fi
 OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
-while getopts ":h:b:p:sd:u:o:t:v:y" opt; do
+while getopts ":hb:p:sd:u:o:t:v:y" opt; do
     case ${opt} in
         h )
             usage
