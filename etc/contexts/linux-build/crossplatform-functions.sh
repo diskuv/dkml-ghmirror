@@ -854,9 +854,6 @@ else
 vcpkg_triplet_arg_platform() {
     vcpkg_triplet_arg_platform_PLATFORM=$1
     shift
-    # TODO: This static list is brittle. Should parse the Makefile or better yet
-    # place in a different file that can be used by this script and the Makefile.
-    # In fact, the list we should be using is base.mk:VCPKG_TRIPLET_*
     case "$vcpkg_triplet_arg_platform_PLATFORM" in
         # See base.mk:DKML_PLATFORMS for why OS/X triplet is chosen rather than iOS (which would be dev-darwin_arm64_iosdevice)
         # Caution: arm64-osx and arm64-ios triplets are Community supported. https://github.com/microsoft/vcpkg/tree/master/triplets/community
@@ -867,6 +864,12 @@ vcpkg_triplet_arg_platform() {
         windows_arm64)      DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
         darwin_arm64)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
         darwin_x86_64)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
+        linux_x86_64)       DKML_VCPKG_HOST_TRIPLET=x64-linux ;;
+        # There is no 32-bit Linux vcpkg triplet!
+        # linux_x86)          DKML_VCPKG_HOST_TRIPLET=x86-linux ;;
+        linux_arm32v6)      DKML_VCPKG_HOST_TRIPLET=arm-linux ;;
+        linux_arm32v7)      DKML_VCPKG_HOST_TRIPLET=arm-linux ;;
+        linux_arm64)        DKML_VCPKG_HOST_TRIPLET=arm64-linux ;;
         *)
             printf "%s\n" "FATAL: Unsupported vcpkg triplet for DKMLPLATFORM: $vcpkg_triplet_arg_platform_PLATFORM" >&2
             exit 1
