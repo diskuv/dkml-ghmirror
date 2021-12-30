@@ -276,7 +276,7 @@ exec_in_platform() {
     if [ "${_exec_dev_or_arch_helper_COMPILATION:-}" = ON ]; then
         printf "  -c" >> "$_exec_dev_or_arch_helper_CMDARGS"
     fi
-    if is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
+    if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] || is_dev_platform || ! is_arg_linux_based_platform "$_exec_dev_or_arch_helper_PLATFORM"; then
         if [ -x /usr/bin/cygpath ]; then
             _exec_dev_or_arch_helper_ACTUALTOPDIR=$(/usr/bin/cygpath -aw "$TOPDIR")
         else
@@ -306,6 +306,8 @@ exec_in_platform() {
             printf "%s\n" "exec '$DKMLDIR'/runtime/unix/within-dev.sh -p '$_exec_dev_or_arch_helper_PLATFORM' -d '$STATEDIR' -u '$USERMODE' -0 '${ACTUAL_PRE_HOOK_SINGLE:-}' -1 '${ACTUAL_PRE_HOOK_DOUBLE:-}' \\" > "$_exec_dev_or_arch_helper_CMDFILE"
         fi
     else
+        # TODO: within-sandbox.sh is deprecated. We can use CMake and ExternalProject through Docker or WSL2 to
+        # do much of the same more cleanly.
         for _exec_dev_or_arch_helper_ARG in "$@"; do
             if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
                 _exec_dev_or_arch_helper_ARG=$(replace_all "${_exec_dev_or_arch_helper_ARG}" @@EXPAND_TOPDIR@@ "/work")
