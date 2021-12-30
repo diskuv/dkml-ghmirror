@@ -1400,7 +1400,7 @@ autodetect_compiler_cmake_get_config_flags() {
       printf "_CMAKE_CXX_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_CXX_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
       printf "_CMAKE_ASM_FLAGS_FOR_CONFIG=\"\${DKML_COMPILE_CM_CMAKE_ASM_FLAGS_%s:-}\"\n" "$autodetect_compiler_cmake_get_config_flags_CONFIGUPPER"
     } > "$autodetect_compiler_OUTPUTFILE".flags.source
-    # shellcheck disable=SC1091
+    # shellcheck disable=SC1090
     . "$autodetect_compiler_OUTPUTFILE".flags.source
     rm -f "$autodetect_compiler_OUTPUTFILE".flags.source
 }
@@ -1590,23 +1590,21 @@ autodetect_compiler_darwin() {
 
         if [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
             if [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_x86_64" ] ; then
-                printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
-                        "clang -arch x86_64 -Wno-trigraphs -c" \
-                        "clang -arch x86_64 -Wno-trigraphs -c" \
-                        "clang -arch x86_64" \
-                        "ld -r -arch x86_64"
+                printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' CFLAGS='%s' LD='%s' LDFLAGS='%s' " "$DKMLSYS_ENV" \
+                    "clang" \
+                    "-arch x86_64 -c" \
+                    "clang" \
+                    "-arch x86_64" \
+                    "ld" \
+                    "-arch x86_64"
             elif [ "$autodetect_compiler_PLATFORM_ARCH" = "darwin_arm64" ]; then
-                if [ "$BUILDHOST_ARCH" = "darwin_arm64" ]; then
-                    printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' PARTIALLD='%s' " "$DKMLSYS_ENV" \
-                        "clang -arch arm64 -Wno-trigraphs -c" \
-                        "clang -arch arm64 -Wno-trigraphs -c" \
-                        "clang -arch arm64" \
-                        "ld -r -arch arm64"
-                else
-                    printf "%s\n" "FATAL: Only Apple Silicon (darwin_arm64) build machines can target Apple Silicon binaries." >&2
-                    printf "%s\n" "       Apple does not provide Rosetta emulation on Intel macOS machines." >&2
-                    exit 107
-                fi
+                printf "exec %s AS='%s' ASFLAGS='%s' CC='%s' CFLAGS='%s' LD='%s' LDFLAGS='%s' " "$DKMLSYS_ENV" \
+                    "clang" \
+                    "-arch arm64 -c" \
+                    "clang" \
+                    "-arch arm64" \
+                    "ld" \
+                    "-arch arm64"
             else
                 printf "%s\n" "FATAL: check_state autodetect_compiler_darwin + unsupported arch=$autodetect_compiler_PLATFORM_ARCH" >&2
                 exit 107

@@ -58,6 +58,7 @@ usage() {
         printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
         printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
         printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
+        printf "%s\n" "   -k HOSTABISCRIPT: Optional. See reproducible-compile-ocaml-1-setup.sh"
     } >&2
 }
 
@@ -67,8 +68,9 @@ DKMLHOSTABI=
 CONFIGUREARGS=
 OCAMLCARGS=
 OCAMLOPTARGS=
+HOSTABISCRIPT=
 export MSVS_PREFERENCE=
-while getopts ":d:t:b:e:g:i:j:h" opt; do
+while getopts ":d:t:b:e:g:i:j:k:h" opt; do
     case ${opt} in
         h )
             usage
@@ -96,11 +98,14 @@ while getopts ":d:t:b:e:g:i:j:h" opt; do
             CONFIGUREARGS="$OPTARG"
         ;;
         i)
-          OCAMLCARGS="$OPTARG"
-          ;;
+            OCAMLCARGS="$OPTARG"
+            ;;
         j)
-          OCAMLOPTARGS="$OPTARG"
-          ;;
+            OCAMLOPTARGS="$OPTARG"
+            ;;
+        k)
+            HOSTABISCRIPT="$OPTARG"
+            ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -149,10 +154,20 @@ autodetect_system_path
 # shellcheck disable=SC1091
 . "$DKMLDIR/installtime/unix/private/reproducible-compile-ocaml-functions.sh"
 
+if [ -n "$HOSTABISCRIPT" ]; then
+    case "$HOSTABISCRIPT" in
+    /* | ?:*) # /a/b/c or C:\Windows
+    ;;
+    *) # relative path; need absolute path since we will soon change dir to $OCAMLSRC_UNIX
+    HOSTABISCRIPT="$DKMLDIR/$HOSTABISCRIPT"
+    ;;
+    esac
+fi
+
 cd "$OCAMLSRC_UNIX"
 
 # ./configure
-ocaml_configure "$TARGETDIR_UNIX" "$DKMLHOSTABI" "" "$CONFIGUREARGS"
+ocaml_configure "$TARGETDIR_UNIX" "$DKMLHOSTABI" "$HOSTABISCRIPT" "$CONFIGUREARGS"
 
 # TODO: Propagate OCAMLCARGS and OCAMLOPTARGS, perhaps through CAMLC and CAMLOPT Makefile
 # TODO: variables.

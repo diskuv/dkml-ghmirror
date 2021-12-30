@@ -155,6 +155,8 @@ usage() {
         printf "%s\n" "      been set appropriately, but you can override the --host heuristic by adding it to -f CONFIGUREARGS"
         printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
         printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
+        printf "%s\n" "   -k HOSTABISCRIPT: Optional. A self-contained Posix shell script that can be sourced to set the"
+        printf "%s\n" "      compiler environment variables for the host ABI. See '-a TARGETABIS' for the shell script semantics."
     } >&2
 }
 
@@ -166,8 +168,9 @@ DKMLDIR=
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 TARGETABIS=
+HOSTABISCRIPT=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:e:g:i:j:h" opt; do
+while getopts ":d:v:t:a:b:e:g:i:j:k:h" opt; do
     case ${opt} in
         h )
             usage
@@ -217,6 +220,10 @@ while getopts ":d:v:t:a:b:e:g:i:j:h" opt; do
             SETUP_ARGS+=( -j "$OPTARG" )
             BUILD_HOST_ARGS+=( -j "$OPTARG" )
             BUILD_CROSS_ARGS+=( -j "$OPTARG" )
+        ;;
+        k )
+            SETUP_ARGS+=( -k "$OPTARG" )
+            BUILD_HOST_ARGS+=( -k "$OPTARG" )
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
