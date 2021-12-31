@@ -709,6 +709,16 @@ install_reproducible_system_packages() {
                 printf "true\n"
             } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
         fi
+    elif [ -x /usr/bin/dpkg ]; then
+        # Debian/Ubuntu package restoration
+        dpkg --get-selections > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
+        {
+            # Technique from https://unix.stackexchange.com/questions/176134/installing-packages-by-importing-the-list-with-dpkg-set-selections
+            printf "#!/bin/sh\n"
+            printf "sudo apt-cache dumpavail | sudo dpkg --merge-avail\n"
+            printf "sudo dpkg --set-selections < '%s')\n" "$install_reproducible_system_packages_BOOTSTRAPRELDIR/$install_reproducible_system_packages_PACKAGEFILE"
+            printf 'sudo apt-get dselect-upgrade\n'
+        } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
     else
         printf "%s\n" "TODO: install_reproducible_system_packages for non-Windows platforms" >&2
         exit 1
