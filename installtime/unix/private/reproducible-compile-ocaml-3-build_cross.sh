@@ -306,6 +306,9 @@ make_target() {
   make_caml "$make_target_ABI" BUILD_ROOT="$make_target_BUILD_ROOT" "$@"
 }
 
+# Get a triplet that can be used by OCaml's ./configure.
+# See https://github.com/ocaml/ocaml/blob/35af4cddfd31129391f904167236270a004037f8/configure#L14306-L14334
+# for the Android triplet format.
 ocaml_android_triplet() {
   ocaml_android_triplet_ABI=$1
   shift
@@ -320,7 +323,17 @@ ocaml_android_triplet() {
       ;;
     esac
   fi
-  printf "arm-none-linux-%s\n" "$ocaml_android_triplet_ABI"
+  # Use given DKML ABI to find OCaml triplet
+  case "$ocaml_android_triplet_ABI" in
+    # v7a uses soft-float not hard-float (eabihf). https://developer.android.com/ndk/guides/abis#v7a
+    android_arm32v7a) printf "armv7-none-linux-androideabi\n" ;;
+    # v8a probably doesn't use hard-float since removed in https://android.googlesource.com/platform/ndk/+/master/docs/HardFloatAbi.md
+    android_arm64v8a) printf "armv8-none-linux-androideabi\n" ;;
+    # fallback to v6 (Raspberry Pi 1, Raspberry Pi Zero). Raspberry Pi uses soft-float;
+    # https://www.raspbian.org/RaspbianFAQ#What_is_Raspbian.3F . We do the same since it has most market
+    # share
+    *)                printf "armv5-none-linux-androideabi\n" ;;
+  esac
 }
 
 build_world() {
