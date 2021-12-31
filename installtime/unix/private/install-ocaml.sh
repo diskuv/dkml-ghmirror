@@ -45,7 +45,8 @@ log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-ocaml-1-setup
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$GIT_TAG_OR_COMMIT" \
-    -e "$DKMLHOSTABI"
+    -e "$DKMLHOSTABI" \
+    -k installtime/unix/private/reproducible-compile-ocaml-example_1.sh
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"

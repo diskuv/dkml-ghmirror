@@ -33,7 +33,8 @@ macos:build-ocaml:
       set -eux ; TOPDIR=installtime/none/emptytop installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
         -d . -t _ci/tree -v "$COMMITID" \
         -a "$TARGETABIS" \
-        -e "$HOSTABI"
+        -e "$HOSTABI" \
+        -k installtime/unix/private/reproducible-compile-ocaml-example_1.sh
     - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
     - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
