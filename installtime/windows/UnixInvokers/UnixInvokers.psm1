@@ -25,7 +25,7 @@ function Invoke-CygwinCommand {
     )
     $arglist = @("-l",
         "-c",
-        ('" { ' + ($Command -replace '"', '\"') + '; } 2>&1 "'))
+        ('" { set -x; PATH=/usr/bin:\"$PATH\"; ' + ($Command -replace '"', '\"') + '; } 2>&1 "'))
     if ($TailFunction) {
         $RedirectStandardOutput = New-TemporaryFile
         $RedirectStandardError = New-TemporaryFile
