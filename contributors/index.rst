@@ -12,6 +12,7 @@ Getting Started with Diskuv OCaml
    self
    doc/BeyondBasics
    doc/SdkProject
+   doc/CompilingInDepth
    doc/CommandReference
    doc/Troubleshooting
    doc/OpamIntegration
