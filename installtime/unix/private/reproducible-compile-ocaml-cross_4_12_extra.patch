@@ -106,143 +106,166 @@ index 656ffe20c..5f1563c6e 100644
    [arm*-*-openbsd*],
      [arch=arm; system=bsd],
 diff --git a/runtime/arm.S b/runtime/arm.S
-index 612757a10..72eff1502 100644
+index 612757a10..8adceaa67 100644
 --- a/runtime/arm.S
 +++ b/runtime/arm.S
-@@ -82,6 +82,56 @@
- trap_ptr          .req    r8
- alloc_ptr         .req    r10
- domain_state_ptr  .req    r11
-+tmp1              .req    r13
-+
-+/* Macros for Aarch32 position independent code, much of it described
-+ * at
-+ * https://developer.arm.com/documentation/100067/0612/armclang-Integrated-Assembler/Assembly-expressions
-+ *
-+ * lpiclf is load PIC-independent local function for a .data label to `.word .Lfunc`.
-+ *   The PIC runtime overhead is 1 extra opcode.
-+ * lpicgf is load PIC-independent global function for a .data label to `.word func`
-+ *   The PIC runtime overhead is 1 extra opcode.
-+ * lpicgv is load PIC-independent global variable for a .data label to `.word func(got)`
-+ *   The PIC runtime overhead is 2 extra opcodes.
-+ */
-+
-+#ifdef __PIC__
-+        .macro  lpicgv destreg,globalsym
-+    /* get address of 'linked_gsym_yy:' in our .data section */
-+        adr     tmp1, linked_gsym_\globalsym
-+    /* read the word at 'linked_gsym_yy:', which is the symbol itself */
-+        ldr     \destreg, [tmp1]
-+        .endm
-+
-+        .macro  lpiclf destreg,localsym
-+    /* get address of 'linked_lsym_yy:' in our .data section */
-+        adr     tmp1, linked_lsym_\localsym
-+    /* read the word at 'linked_lsym_yy:', which is the symbol itself */
-+        ldr     \destreg, [tmp1]
-+        .endm
-+
-+        .macro  lpicgf destreg,globalsym
-+    /* get address of 'linked_gfunc_yy:' in our .data section */
-+        adr     \destreg, linked_gfunc_\globalsym
-+    /* read the word at 'linked_gfunc_yy:' (the word is the GOT table entry 'func(got)') */
-+        ldr     tmp1, [\destreg]
-+    /* read the GOT table entry */
-+        ldr     \destreg, [tmp1]
-+        .endm
-+#else
-+        .macro  lpicgv destreg,globalsym
-+        ldr     \destreg, =\globalsym
-+        .endm
-+
-+        .macro  lpiclf destreg,localsym
-+        ldr     \destreg, =.L\localsym
-+        .endm
-+
-+        .macro  lpicgf destreg,globalsym
-+        ldr     \destreg, =\globalsym
-+        .endm
-+#endif
+@@ -216,10 +216,18 @@ FUNCTION(caml_allocN)
+         .size   caml_allocN, .-caml_allocN
  
- /* Support for CFI directives */
+ /* Call a C function from OCaml */
+-/* Function to call is in r7 */
+-
+-FUNCTION(caml_c_call)
+-        CFI_STARTPROC
++/* Function to call is in r7 for non-PIC code, or is a
++   named PLT function for PIC code */
++/* A PLT function address is only available when "cited by a BL-class relocation directive" like `bl func(PLT)`.
++   We can't, for example, do `adr r7, func(PLT)` and then jump to caml_c_call or Ljump_to_caml.
++   So implemented as a macro that inserts the instructions inline and branch jumps (branch_op = bl or blx)
++   to (c_code_addr or caml_code_addr). Use blx for r7/r12 register and bl for named PLT functions.
++   Warning: bl does not switch to/from Thumb state since "it is generally pointless trying to construct a PLT entry
++   entirely in 16-bit Thumb instructions". In other words: Do not emit Thumb PLT entries for PIC code!
++   Confer https://github.com/ARM-software/abi-aa/blob/320a56971fdcba282b7001cf4b84abb4fd993131/aaelf32/aaelf32.rst#plt-sequences-and-usage-models .
++*/
++
++        .macro inline_caml_c_call branch_op c_code_addr
+     /* Record lowest stack address and return address */
+         str     lr, Caml_state(last_return_address)
+         str     sp, Caml_state(bottom_of_stack)
+@@ -230,25 +238,26 @@ FUNCTION(caml_c_call)
+         str     alloc_ptr, Caml_state(young_ptr)
+         str     trap_ptr, Caml_state(exception_pointer)
+     /* Call the function */
+-        blx     r7
++        \branch_op \c_code_addr
+     /* Reload alloc ptr */
+         ldr     alloc_ptr, Caml_state(young_ptr)
+     /* Return */
+         bx      r4
++        .endm
++
++FUNCTION(caml_c_call)
++        CFI_STARTPROC
++        inline_caml_c_call blx r7
+         CFI_ENDPROC
+         .size   caml_c_call, .-caml_c_call
  
-@@ -242,7 +292,7 @@ FUNCTION(caml_c_call)
+ /* Start the OCaml program */
  
- FUNCTION(caml_start_program)
-         CFI_STARTPROC
+-FUNCTION(caml_start_program)
+-        CFI_STARTPROC
 -        ldr     r12, =caml_program
-+        lpicgf  r12, caml_program
- 
+-
  /* Code shared with caml_callback* */
- /* Address of OCaml code to call is in r12 */
-@@ -260,7 +310,7 @@ FUNCTION(caml_start_program)
+-/* Address of OCaml code to call is in r12 */
++/* Address of OCaml code to call should either be r12 for non-PIC code, or is a
++   named PLT function for PIC code. Same discussion as inline_caml_c_call */
+ /* Arguments to the OCaml code are in r0...r3 */
+-
+-.Ljump_to_caml:
++        .macro inline_jump_to_caml branch_op caml_code_addr
+ #if defined(SYS_linux_eabihf) || defined(SYS_netbsd)
+     /* Save callee-save floating-point registers */
+         vpush   {d8-d15}; CFI_ADJUST(64)
+@@ -260,7 +269,14 @@ FUNCTION(caml_start_program)
  #else
          CFI_OFFSET(lr, -4)
  #endif
--        ldr     domain_state_ptr, =Caml_state
-+        lpicgv  domain_state_ptr, Caml_state
++#ifdef __PIC__
++    /* get address of 'linked_gsym_Caml_state:' in our .data section */
++        adr     domain_state_ptr, linked_gsym_Caml_state
++    /* read the word at 'linked_gsym_Caml_state:', which is the address of Caml_state itself */
++        ldr     domain_state_ptr, [domain_state_ptr]
++#else
+         ldr     domain_state_ptr, =Caml_state
++#endif
          ldr     domain_state_ptr, [domain_state_ptr]
      /* Setup a callback link on the stack */
          sub     sp, sp, 16; CFI_ADJUST(16)              /* 8-byte alignment */
-@@ -272,7 +322,7 @@ FUNCTION(caml_start_program)
+@@ -272,7 +288,7 @@ FUNCTION(caml_start_program)
          str     r6, [sp, 8]
      /* Setup a trap frame to catch exceptions escaping the OCaml code */
          sub     sp, sp, 8; CFI_ADJUST(8)
 -        ldr     r5, =.Ltrap_handler
-+        lpiclf  r5, trap_handler
++        adr     r5, .Ltrap_handler
          ldr     r4, Caml_state(exception_pointer)
          str     r4, [sp, 0]
          str     r5, [sp, 4]
-@@ -397,7 +447,7 @@ FUNCTION(caml_callback2_asm)
+@@ -280,7 +296,21 @@ FUNCTION(caml_start_program)
+     /* Reload allocation pointer */
+         ldr     alloc_ptr, Caml_state(young_ptr)
+     /* Call the OCaml code */
+-        blx     r12
++        \branch_op \caml_code_addr
++        .endm
++
++FUNCTION(caml_start_program)
++        CFI_STARTPROC
++
++#ifdef __PIC__
++        inline_jump_to_caml bl caml_program(PLT)
++#else
++        ldr  r12, =caml_program
++#endif
++
++.Ljump_to_caml:
++    /* Regardless of PIC, this local label will be used by caml_callback_asm() */
++        inline_jump_to_caml blx r12
+ .Lcaml_retaddr:
+     /* Pop the trap frame, restoring caml_exception_pointer */
+         ldr     r5, [sp, 0]
+@@ -397,8 +427,12 @@ FUNCTION(caml_callback2_asm)
          ldr     r0, [r2]          /* r0 = first arg */
          ldr     r1, [r2,4]        /* r1 = second arg */
          mov     r2, r12           /* r2 = closure environment */
 -        ldr     r12, =caml_apply2
-+        lpicgf  r12, caml_apply2
++#ifdef __PIC__
++        inline_jump_to_caml bl caml_apply2(PLT)
++#else
++        ldr  r12, =caml_apply2
          b       .Ljump_to_caml
++#endif
          CFI_ENDPROC
          .size   caml_callback2_asm, .-caml_callback2_asm
-@@ -411,7 +461,7 @@ FUNCTION(caml_callback3_asm)
+ 
+@@ -411,17 +445,25 @@ FUNCTION(caml_callback3_asm)
          ldr     r0, [r2]          /* r0 = first arg */
          ldr     r1, [r2,4]        /* r1 = second arg */
          ldr     r2, [r2,8]        /* r2 = third arg */
 -        ldr     r12, =caml_apply3
-+        lpicgf  r12, caml_apply3
++#ifdef __PIC__
++        inline_jump_to_caml bl caml_apply3(PLT)
++#else
++        ldr  r12, =caml_apply3
          b       .Ljump_to_caml
++#endif
          CFI_ENDPROC
          .size   caml_callback3_asm, .-caml_callback3_asm
-@@ -419,7 +469,7 @@ FUNCTION(caml_callback3_asm)
+ 
  FUNCTION(caml_ml_array_bound_error)
          CFI_STARTPROC
++#ifdef __PIC__
++        inline_caml_c_call bl caml_array_bound_error(PLT)
++#else
      /* Load address of [caml_array_bound_error] in r7 */
 -        ldr     r7, =caml_array_bound_error
-+        lpicgf  r7, caml_array_bound_error
++        ldr  r7, =caml_array_bound_error
      /* Call that function */
          b       caml_c_call
++#endif
          CFI_ENDPROC
-@@ -429,6 +479,27 @@ FUNCTION(caml_ml_array_bound_error)
+         .size   caml_ml_array_bound_error, .-caml_ml_array_bound_error
+ 
+@@ -429,6 +471,14 @@ FUNCTION(caml_ml_array_bound_error)
          .globl  caml_system__code_end
  caml_system__code_end:
  
 +#ifdef __PIC__
 +/* Constant pool for global offset table entries and other words resolved at link time */
 +        .data
-+    /* Align on 2^2 = 4 bytes (1 word) since Thumb (T32) mode ADR+LDR can only reference addresses
-+       that are 4-byte aligned.
-+       Confer: https://developer.arm.com/documentation/100067/0612/armclang-Integrated-Assembler/Alignment-directives */
 +        .align 2
-+linked_gfunc_caml_program:
-+        .word caml_program(got)
 +linked_gsym_Caml_state:
 +        .word Caml_state
-+linked_lsym_trap_handler:
-+        .word .Ltrap_handler
-+linked_gfunc_caml_apply2:
-+        .word caml_apply2(got)
-+linked_gfunc_caml_apply3:
-+        .word caml_apply3(got)
-+linked_gfunc_caml_array_bound_error:
-+        .word caml_array_bound_error(got)
 +#endif
 +
  /* GC roots for callback */
