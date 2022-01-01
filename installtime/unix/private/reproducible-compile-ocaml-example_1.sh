@@ -59,7 +59,7 @@ export CC
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1213-L1240
 if [ -n "${AS:-}" ]; then
   _TMP_AS="${AS:-}"
-  AS="$_TMP_AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-} $ASFLAGS"
+  AS="$_TMP_AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-} ${ASFLAGS:-}"
   case "$DKML_TARGET_ABI" in
     darwin_*) AS="$AS -Wno-trigraphs" ;;
   esac

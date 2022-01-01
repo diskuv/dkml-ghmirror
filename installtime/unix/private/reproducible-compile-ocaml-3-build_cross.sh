@@ -374,7 +374,6 @@ build_world() {
     esac
     ;;
   esac
-  printf "build_world_WIN32UNIX_CONSISTENT=%s\n" "$build_world_WIN32UNIX_CONSISTENT" >&2
 
   # Make C compiler script for host and target ABI. Any compile spec (especially from CMake) will be
   # applied to the target compiler

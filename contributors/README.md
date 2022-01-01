@@ -4,7 +4,7 @@
 
 ## Prerequisities
 
-### Diskuv OCaml
+### Windows
 
 Make sure you have installed Diskuv OCaml.
 
