@@ -491,3 +491,74 @@ Changing OCaml to do cross-compilation
     Antonio Nuno Monteiro and Romain Beauxis in
     `discuss.ocaml.org: Cross-compiling implementations / how they work <https://discuss.ocaml.org/t/cross-compiling-implementations-how-they-work/8686>`_
 
+Limitations
+~~~~~~~~~~~
+
+The host ``ocamlrun`` is linked against the **host's** ``runtime/`` library which
+defines the following constants in ``runtime/sys.c``:
+
++----------------------+------------+-------------------------------------+
+| Constant             | Sample     | Description                         |
++======================+============+=====================================+
+| word_size            | 32 or 64   | Number of bits in a word as detected|
+|                      |            | by a C compiler ``sizeof()`` test   |
++----------------------+------------+-------------------------------------+
+| int_size             | 31 or 63   | Number of bits in an OCaml ``int``  |
+|                      |            |                                     |
+|                      | 32 or 64   | - Always ``word_size - 1`` for      |
+|                      |            |   ``ocamlrun``                      |
+|                      |            | - js_of_ocaml (Javascript) runtime  |
+|                      |            |   sets it the same as ``word_size`` |
++----------------------+------------+-------------------------------------+
+| max_wosize           | 2^22 - 1 or| Max size in bytes of a block of     |
+|                      | 2^(54-P) -1| memory on the heap                  |
+|                      |            |                                     |
+|                      |            | - No Array can be larger than this  |
+|                      |            | - P is number of bits reserved for  |
+|                      |            |   Space Time profiling (if any)     |
++----------------------+------------+-------------------------------------+
+| ostype_unix          | True or    | Whether system is Unix              |
+|                      | False      |                                     |
++----------------------+------------+-------------------------------------+
+| ostype_win32         | True or    | Whether system is Windows           |
+|                      | False      |                                     |
++----------------------+------------+-------------------------------------+
+| ostype_cygwin        | True or    | Whether system is Cygwin            |
+|                      | False      |                                     |
++----------------------+------------+-------------------------------------+
+| backend_type         | 0 or 1     | Native (0) or Bytecode (1) backend  |
+|                      |            |                                     |
+|                      |            | - Other values possible for other   |
+|                      |            |   compilers like js_of_ocaml        |
+|                      |            |   (Javascript)                      |
++----------------------+------------+-------------------------------------+
+|naked_pointers_checked| True or    | Whether the naked pointers checker  |
+|                      | False      | is enabled                          |
++----------------------+------------+-------------------------------------+
+
+Any commands like ``<host>/ocamlrun <target>/ocamlc -config`` will inherit
+the host runtime constants (``<host>/runtime/sys.c``) even if all of the target
+configuration (``<target>/utils/config.ml``) is correct. For example
+you can easily get conflicting configurations from ``ocamlc -config``:
+
+.. code:: yaml
+
+    # ...
+    architecture: i386  # From <target>/utils/config.ml
+    model: default      # From <target>/utils/config.ml
+    int_size: 63        # From <host>/runtime/sys.c . No, i386 does not support 63-bit integers!
+    word_size: 64       # From <host>/runtime/sys.c . No, i386 does not support 64-bit words!
+    # ...
+
+.. important::
+    During a cross-compilation the host and the target runtime library constants
+    should be the same. The most critical limitations are:
+    
+    * if your target is a 32-bit system, make sure you use a 32-bit host compiler.
+      That equalizes ``word_size``
+    * if your target is a Unix system, make sure you run the host cross-compiler
+      on a Unix system. That equalizes ``ostype_unix``
+    * if your target is a Windows system, make sure you run the host cross-compiler
+      on a Windows system. That equalizes ``ostype_windows``
+    * no cross-compilation is supported in Cygwin because Cygwin only
+      supports x86_64 Windows
