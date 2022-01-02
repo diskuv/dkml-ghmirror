@@ -562,3 +562,15 @@ you can easily get conflicting configurations from ``ocamlc -config``:
       on a Windows system. That equalizes ``ostype_windows``
     * no cross-compilation is supported in Cygwin because Cygwin only
       supports x86_64 Windows
+
+Even if the host runtime constants were not inherited, there are a few more limitations
+created by:
+
+1. When ``ocamlopt`` is linking object files into an executable on Windows, it uses an
+   executable called ``flexlink.exe`` that expects Windows ``.obj`` (COFF) object files
+   for linking. However Linux uses ELF object files and macOS uses Mach-O object files,
+   so a Windows host cannot support a non-Windows target.
+2. When ``ocamlopt`` is linking object files into an executable on Windows, the host/target
+   compiler must match (MSVC or MinGW) and the host/target word size (32 or 64) must
+   match because ``flexlink.exe`` bundles a word size + compiler named object file
+   ``flexdll_msvc.obj``, ``flexdll_mingw64.obj``, etc. into the final executable.
