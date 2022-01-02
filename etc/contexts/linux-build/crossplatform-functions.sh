@@ -1579,6 +1579,38 @@ autodetect_compiler_system() {
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
+        if command -v gcc >/dev/null; then
+            if command -v g++ >/dev/null; then
+                autodetect_compiler_system_GPLUSPLUS=ON
+            fi
+            if command -v as >/dev/null; then
+                autodetect_compiler_system_AS=ON
+            fi
+            if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
+                printf "  (\"CC\" \"%s\")\n" "gcc"
+                [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  (\"CXX\" \"%s\")\n" "g++"
+                [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  (\"AS\" \"%s\")\n" "as"
+                case "$autodetect_compiler_PLATFORM_ARCH" in
+                    *_x86 | *_arm32*)
+                        printf "  (\"CFLAGS\" \"%s\")\n" "-m32"
+                        [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  (\"CXXFLAGS\" \"%s\")\n" "-m32"
+                        [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  (\"ASFLAGS\" \"%s\")\n" "--32"
+                        ;;
+                esac
+            elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
+                printf "  CC=%s %s\n" "gcc" "\\"
+                [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  CXX=%s %s\n" "g++" "\\"
+                [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  AS=%s %s\n" "as" "\\"
+                case "$autodetect_compiler_PLATFORM_ARCH" in
+                    *_x86 | *_arm32*)
+                        printf "  CFLAGS=%s %s\n" "-m32" "\\"
+                        [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  CXXFLAGS=%s %s\n" "-m32" "\\"
+                        [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  ASFLAGS=%s %s\n" "--32" "\\"
+                        ;;
+                esac
+            fi
+        fi
+
         if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
             printf ")"
         elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
