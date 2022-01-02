@@ -13,6 +13,18 @@ index 41d8e2636..fd42078f3 100644
  
  # Installation of the *.ml sources of compiler-libs
  .PHONY: install-compiler-sources
+diff --git a/Makefile.config.in b/Makefile.config.in
+index 652a1c5ba..59c96d6e5 100644
+--- a/Makefile.config.in
++++ b/Makefile.config.in
+@@ -229,6 +229,7 @@ WITH_PROFINFO=@profinfo@
+ PROFINFO_WIDTH=@profinfo_width@
+ WITH_FPIC=@fpic@
+ TARGET=@target@
++TARGET_OS=@target_os@
+ HOST=@host@
+ FLAMBDA=@flambda@
+ WITH_FLAMBDA_INVARIANTS=@flambda_invariants@
 diff --git a/configure b/configure
 index 81a77e3b6..0ee1c6ea7 100755
 --- a/configure
@@ -286,15 +298,64 @@ index 612757a10..8adceaa67 100644
  /* GC roots for callback */
  
          .data
+diff --git a/utils/Makefile b/utils/Makefile
+index 11e2cebe2..286538fdd 100644
+--- a/utils/Makefile
++++ b/utils/Makefile
+@@ -83,6 +83,7 @@ config.ml: config.mlp $(ROOTDIR)/Makefile.config Makefile
+ 	    $(call SUBST,SYSTEM) \
+ 	    $(call SUBST,SYSTHREAD_SUPPORT) \
+ 	    $(call SUBST,TARGET) \
++	    $(call SUBST,TARGET_OS) \
+ 	    $(call SUBST,WITH_FRAME_POINTERS) \
+ 	    $(call SUBST,WITH_PROFINFO) \
+ 	    $(call SUBST,FLAT_FLOAT_ARRAY) \
 diff --git a/utils/clflags.ml b/utils/clflags.ml
-index a193d53d2..f8bdac69a 100644
+index a193d53d2..0dc2b90f0 100644
 --- a/utils/clflags.ml
 +++ b/utils/clflags.ml
-@@ -162,6 +162,7 @@ let dlcode = ref true (* not -nodynlink *)
+@@ -160,9 +160,15 @@ let std_include_dir () =
+ let shared = ref false (* -shared *)
+ let dlcode = ref true (* not -nodynlink *)
  
- let pic_code = ref (match Config.architecture with (* -fPIC *)
-                      | "amd64" -> true
-+                     | "arm"   -> true
-                      | _       -> false)
+-let pic_code = ref (match Config.architecture with (* -fPIC *)
+-                     | "amd64" -> true
+-                     | _       -> false)
++let pic_code = ref (
++  let android =
++    let l = String.length "linux-android" in
++    String.length Config.target_os >= l && String.equal (String.sub Config.target_os 0 l) "linux-android"
++  in
++  match Config.architecture, android with (* -fPIC *)
++    | "amd64", _ -> true
++    | _, true    -> true
++    | _          -> false)
  
  let runtime_variant = ref "";;      (* -runtime-variant *)
+ let with_runtime = ref true;;         (* -with-runtime *)
+diff --git a/utils/config.mli b/utils/config.mli
+index 1b73eed02..6d5eade22 100644
+--- a/utils/config.mli
++++ b/utils/config.mli
+@@ -194,6 +194,9 @@ val host : string
+ val target : string
+ (** Whether the compiler is a cross-compiler *)
+ 
++val target_os : string
++(** The OS part of the target ABI triplet *)
++
+ val flambda : bool
+ (** Whether the compiler was configured for flambda *)
+ 
+diff --git a/utils/config.mlp b/utils/config.mlp
+index 5bfa30d69..259f6b59e 100644
+--- a/utils/config.mlp
++++ b/utils/config.mlp
+@@ -136,6 +136,7 @@ let ext_dll = "%%EXT_DLL%%"
+ 
+ let host = "%%HOST%%"
+ let target = "%%TARGET%%"
++let target_os = "%%TARGET_OS%%"
+ 
+ let default_executable_name =
+   match Sys.os_type with
