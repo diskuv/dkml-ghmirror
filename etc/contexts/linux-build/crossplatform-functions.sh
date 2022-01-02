@@ -1059,7 +1059,7 @@ create_system_launcher() {
     autodetect_system_binaries
 
     create_system_launcher_OUTPUTDIR=$(PATH=/usr/bin:/bin dirname "$create_system_launcher_OUTPUTFILE")
-    $DKMLSYS_INSTALL -d "$create_system_launcher_OUTPUTDIR"
+    [ ! -e "$create_system_launcher_OUTPUTDIR" ] && $DKMLSYS_INSTALL -d "$create_system_launcher_OUTPUTDIR" # Avoid 'Operation not permitted' if /tmp
 
     if [ -x /usr/bin/cygpath ]; then
         create_system_launcher_SYSTEMPATHUNIX=$(/usr/bin/cygpath --path "$DKML_SYSTEM_PATH")
