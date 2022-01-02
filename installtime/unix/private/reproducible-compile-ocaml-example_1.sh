@@ -42,19 +42,33 @@ disambiguate_filesystem_paths
 # Common passthrough flags
 export PATH LDFLAGS AR
 
-# CFLAGS
-# The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code
-export CFLAGS
-
 # CC
-# The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code
+# The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code.
 # clang and perhaps other compilers need --target=armv7-none-linux-androideabi21 for example
 if [ -n "${CC:-}" ]; then
+  ORIG_CC=$CC
   CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-}"
   # clang and perhaps other compilers need --sysroot=C:/Users/beckf/AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot for example
   CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT:-}${DKML_COMPILE_CM_CMAKE_SYSROOT:-}"
+else
+  ORIG_CC=
 fi
 export CC
+
+# CFLAGS
+# The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code.
+# -m32 is an option that needs to be in CC for OCaml rather than CFLAGS since CFLAGS not used to created shared libraries.
+if [ -n "${CC:-}" ]; then
+  if printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-m32\b'; then
+      CC="$CC -m32"
+      CFLAGS=$(printf "%s" "$CFLAGS" | PATH=/usr/bin:/bin sed 's/\B-m32\b//g')
+  fi
+  if printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-m64\b'; then
+      CC="$CC -m64"
+      CFLAGS=$(printf "%s" "$CFLAGS" | PATH=/usr/bin:/bin sed 's/\B-m64\b//g')
+  fi
+fi
+export CFLAGS
 
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1213-L1240
 if [ -n "${AS:-}" ]; then
@@ -75,6 +89,11 @@ if [ -n "${AS:-}" ]; then
   # By default ASPP is the same as AS. But since ASPP involves preprocessing and many assemblers do not include
   # preprocessing, we may need to look at the C compiler (ex. clang) and see if we should override ASPP.
   ASPP="$AS"
+  case "$ORIG_CC" in
+    gcc|*-gcc|*/gcc)
+      ASPP="$CC -c" # include -m32 by using $CC
+      ;;
+  esac
   case "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" in
     AppleClang|Clang)
       # If we have clang assembler available we need to use it for ASPP so we have a preprocessor.
@@ -119,6 +138,19 @@ export AS ASPP
 if [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
   LD=$DKML_COMPILE_CM_CMAKE_LINKER
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
+fi
+# -melf_* is an option that needs to be in LD for OCaml rather than LDFLAGS since LDFLAGS is overused and passed
+# to $CC (ex. gcc).
+if [ -n "${LD:-}" ]; then
+  if printf "%s" "${LDFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-melf_i386\b'; then
+    LD="$LD -melf_i386"
+    DIRECT_LD=$LD
+    LDFLAGS=$(printf "%s" "$LDFLAGS" | PATH=/usr/bin:/bin sed 's/\B-melf_i386\b//g')
+  elif printf "%s" "${LDFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-melf_x86_64\b'; then
+    LD="$LD -melf_x86_64"
+    DIRECT_LD=$LD
+    LDFLAGS=$(printf "%s" "$LDFLAGS" | PATH=/usr/bin:/bin sed 's/\B-melf_x86_64\b//g')
+  fi
 fi
 export LD DIRECT_LD
 

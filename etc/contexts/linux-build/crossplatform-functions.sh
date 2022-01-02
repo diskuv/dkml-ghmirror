@@ -1579,35 +1579,54 @@ autodetect_compiler_system() {
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
-        if command -v gcc >/dev/null; then
-            if command -v g++ >/dev/null; then
-                autodetect_compiler_system_GPLUSPLUS=ON
+        autodetect_compiler_system_GCC=$(command -v gcc)
+        if [ -n "$autodetect_compiler_system_GCC" ]; then
+            case "$autodetect_compiler_PLATFORM_ARCH" in
+                *_x86 | *_arm32*)
+                    autodetect_compiler_system_CFLAGS=-m32
+                    ;;
+            esac
+            autodetect_compiler_system_GPLUSPLUS=$(command -v g++)
+            if [ -n "$autodetect_compiler_system_GPLUSPLUS" ]; then
+                case "$autodetect_compiler_PLATFORM_ARCH" in
+                    *_x86 | *_arm32*)
+                        autodetect_compiler_system_CXXFLAGS=-m32
+                        ;;
+                esac
             fi
-            if command -v as >/dev/null; then
-                autodetect_compiler_system_AS=ON
+            autodetect_compiler_system_AS=$(command -v as)
+            if [ -n "$autodetect_compiler_system_AS" ]; then
+                case "$autodetect_compiler_PLATFORM_ARCH" in
+                    *_x86 | *_arm32*)
+                        autodetect_compiler_system_ASFLAGS=--32
+                        ;;
+                esac
+            fi
+            autodetect_compiler_system_LD=$(command -v ld)
+            if [ -n "$autodetect_compiler_system_LD" ]; then
+                case "$autodetect_compiler_PLATFORM_ARCH" in
+                    linux_x86)    autodetect_compiler_system_LDFLAGS=-melf_i386 ;;
+                    linux_x86_64) autodetect_compiler_system_LDFLAGS=-melf_x86_64 ;;
+                esac
             fi
             if [ "$autodetect_compiler_OUTPUTMODE" = SEXP ]; then
-                printf "  (\"CC\" \"%s\")\n" "gcc"
-                [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  (\"CXX\" \"%s\")\n" "g++"
-                [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  (\"AS\" \"%s\")\n" "as"
-                case "$autodetect_compiler_PLATFORM_ARCH" in
-                    *_x86 | *_arm32*)
-                        printf "  (\"CFLAGS\" \"%s\")\n" "-m32"
-                        [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  (\"CXXFLAGS\" \"%s\")\n" "-m32"
-                        [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  (\"ASFLAGS\" \"%s\")\n" "--32"
-                        ;;
-                esac
+                printf "  (\"CC\" \"%s\")\n" "$autodetect_compiler_system_GCC"
+                printf "  (\"CFLAGS\" \"%s\")\n" "${autodetect_compiler_system_CFLAGS:-}"
+                [ -n "${autodetect_compiler_system_GPLUSPLUS:-}" ] && printf "  (\"CXX\" \"%s\")\n" "$autodetect_compiler_system_GPLUSPLUS"
+                [ -n "${autodetect_compiler_system_GPLUSPLUS:-}" ] && printf "  (\"CXXFLAGS\" \"%s\")\n" "${autodetect_compiler_system_CXXFLAGS:-}"
+                [ -n "${autodetect_compiler_system_AS:-}" ] && printf "  (\"AS\" \"%s\")\n" "$autodetect_compiler_system_AS"
+                [ -n "${autodetect_compiler_system_AS:-}" ] && printf "  (\"ASFLAGS\" \"%s\")\n" "${autodetect_compiler_system_ASFLAGS:-}"
+                [ -n "${autodetect_compiler_system_LD:-}" ] && printf "  (\"LD\" \"%s\")\n" "$autodetect_compiler_system_LD"
+                [ -n "${autodetect_compiler_system_LD:-}" ] && printf "  (\"LDFLAGS\" \"%s\")\n" "${autodetect_compiler_system_LDFLAGS:-}"
             elif [ "$autodetect_compiler_OUTPUTMODE" = LAUNCHER ]; then
-                printf "  CC=%s %s\n" "gcc" "\\"
-                [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  CXX=%s %s\n" "g++" "\\"
-                [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  AS=%s %s\n" "as" "\\"
-                case "$autodetect_compiler_PLATFORM_ARCH" in
-                    *_x86 | *_arm32*)
-                        printf "  CFLAGS=%s %s\n" "-m32" "\\"
-                        [ "${autodetect_compiler_system_GPLUSPLUS:-}" = ON ] && printf "  CXXFLAGS=%s %s\n" "-m32" "\\"
-                        [ "${autodetect_compiler_system_AS:-}" = ON ] && printf "  ASFLAGS=%s %s\n" "--32" "\\"
-                        ;;
-                esac
+                printf "  CC=%s %s\n" "$autodetect_compiler_system_GCC" "\\"
+                printf "  CFLAGS=%s %s\n" "${autodetect_compiler_system_CFLAGS:-}" "\\"                        
+                [ -n "${autodetect_compiler_system_GPLUSPLUS:-}" ] && printf "  CXX=%s %s\n" "$autodetect_compiler_system_GPLUSPLUS" "\\"
+                [ -n "${autodetect_compiler_system_GPLUSPLUS:-}" ] && printf "  CXXFLAGS=%s %s\n" "${autodetect_compiler_system_CXXFLAGS:-}" "\\"
+                [ -n "${autodetect_compiler_system_AS:-}" ] && printf "  AS=%s %s\n" "$autodetect_compiler_system_AS" "\\"
+                [ -n "${autodetect_compiler_system_AS:-}" ] && printf "  ASFLAGS=%s %s\n" "${autodetect_compiler_system_ASFLAGS:-}" "\\"
+                [ -n "${autodetect_compiler_system_LD:-}" ] && printf "  LD=%s %s\n" "$autodetect_compiler_system_LD" "\\"
+                [ -n "${autodetect_compiler_system_LD:-}" ] && printf "  LDFLAGS=%s %s\n" "${autodetect_compiler_system_LDFLAGS:-}" "\\"
             fi
         fi
 

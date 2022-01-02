@@ -198,6 +198,12 @@ ocaml_configure_options_for_abi() {
           ;;
       esac
       ;;
+    linux_x86_64)
+      printf "%s=%s %s=%s" "--host" "x86_64-none-linux" "--target" "x86_64-none-linux"
+      ;;
+    linux_x86)
+      printf "%s=%s %s=%s" "--host" "i686-none-linux" "--target" "i686-none-linux"
+      ;;
   esac
 }
 
