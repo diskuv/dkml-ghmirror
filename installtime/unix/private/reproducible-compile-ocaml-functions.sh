@@ -58,7 +58,7 @@ detect_msvs() {
   if is_abi_windows "$detect_msvs_ABI" ; then
     # Get MSVS_* aligned to the DKML compiler
     if [ ! -e "$WORK"/msvs-detect.out ]; then
-      DKML_TARGET_PLATFORM="$detect_msvs_ABI" autodetect_compiler --msvs-detect "$WORK"/msvs-detect
+      DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$detect_msvs_ABI" autodetect_compiler --msvs-detect "$WORK"/msvs-detect
       bash "$WORK"/msvs-detect > "$WORK"/msvs-detect.out
     fi
 
@@ -241,7 +241,7 @@ ocaml_configure() {
   if is_abi_windows "$ocaml_configure_ABI"; then
     # Detect the compiler matching the host ABI
     # Sets OCAML_HOST_TRIPLET that corresponds to ocaml_configure_ABI, and creates the specified script
-    DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/env-with-compiler.sh
+    DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$ocaml_configure_ABI" autodetect_compiler "$WORK"/env-with-compiler.sh
 
     # When we run OCaml's ./configure, the DKML compiler must be available
     make_preconfigured_env_script "$WORK"/env-with-compiler.sh "$WORK"/preconfigured-env-with-compiler.sh

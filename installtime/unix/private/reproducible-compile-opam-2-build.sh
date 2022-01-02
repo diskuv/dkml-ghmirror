@@ -145,7 +145,7 @@ fi
 autodetect_cpus
 
 # Autodetect compiler like Visual Studio on Windows.
-DKML_TARGET_PLATFORM="$DKMLPLATFORM" autodetect_compiler "$WORK"/launch-compiler.sh
+DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKMLPLATFORM" autodetect_compiler "$WORK"/launch-compiler.sh
 if [ -n "$OCAML_HOST_TRIPLET" ]; then
     BOOTSTRAP_EXTRA_OPTS="--host=$OCAML_HOST_TRIPLET"
 else

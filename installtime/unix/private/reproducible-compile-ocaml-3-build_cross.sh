@@ -379,8 +379,8 @@ build_world() {
 
   # Make C compiler script for host and target ABI. Any compile spec (especially from CMake) will be
   # applied to the target compiler
-  DKML_TARGET_PLATFORM="$DKMLHOSTABI" DKML_COMPILE_SPEC=1 DKML_COMPILE_TYPE=SYS autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh
-  DKML_TARGET_PLATFORM="$build_world_TARGET_ABI" autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh
+  DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$DKMLHOSTABI" DKML_COMPILE_SPEC=1 DKML_COMPILE_TYPE=SYS autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh
+  DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_PLATFORM="$build_world_TARGET_ABI" autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh
 
   # Make script to set OCAML_FLEXLINK so flexlink.exe and run correctly on Windows, and other
   # environment variables needed to link OCaml bytecode or native code on the host.
