@@ -26,7 +26,7 @@ index 652a1c5ba..59c96d6e5 100644
  FLAMBDA=@flambda@
  WITH_FLAMBDA_INVARIANTS=@flambda_invariants@
 diff --git a/configure b/configure
-index 81a77e3b6..0ee1c6ea7 100755
+index 81a77e3b6..3636e4888 100755
 --- a/configure
 +++ b/configure
 @@ -6558,7 +6558,7 @@ case $with_sysroot in #(
@@ -38,7 +38,17 @@ index 81a77e3b6..0ee1c6ea7 100755
     lt_sysroot=`echo "$with_sysroot" | sed -e "$sed_quote_subst"`
     ;; #(
   no|'')
-@@ -13885,19 +13885,19 @@ else
+@@ -12751,6 +12751,9 @@ esac
+ case $host in #(
+   *-*-mingw32|*-pc-windows) :
+      ;; #(
++  *-*-linux-android*) :
++    # https://android.googlesource.com/platform/bionic/+/master/docs/32-bit-abi.md
++    ;;
+   *) :
+     common_cppflags="$common_cppflags -D_FILE_OFFSET_BITS=64" ;;
+ esac
+@@ -13885,19 +13888,19 @@ else
  fi; system=elf ;; #(
    s390x*-*-linux*) :
      arch=s390x; model=z10; system=elf ;; #(
@@ -65,7 +75,7 @@ index 81a77e3b6..0ee1c6ea7 100755
      arch=arm; model=armv6; system=linux_eabi ;; #(
    armv6*-*-freebsd*) :
      arch=arm; model=armv6; system=freebsd ;; #(
-@@ -13905,13 +13905,13 @@ fi; system=elf ;; #(
+@@ -13905,13 +13908,13 @@ fi; system=elf ;; #(
      arch=arm; model=armv6; system=netbsd ;; #(
    earmv7*-*-netbsd*) :
      arch=arm; model=armv7; system=netbsd ;; #(
@@ -299,7 +309,7 @@ index 612757a10..6d1db9965 100644
  
          .data
 diff --git a/runtime/i386.S b/runtime/i386.S
-index e1cc5778a..bfc2d3f08 100644
+index e1cc5778a..ec27b6102 100644
 --- a/runtime/i386.S
 +++ b/runtime/i386.S
 @@ -78,6 +78,34 @@
