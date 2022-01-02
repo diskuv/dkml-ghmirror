@@ -325,6 +325,8 @@ ocaml_android_triplet() {
   fi
   # Use given DKML ABI to find OCaml triplet
   case "$ocaml_android_triplet_ABI" in
+    android_x86)      printf "i686-none-linux-android\n" ;;
+    android_x86_64)   printf "x86_64-none-linux-android\n" ;;
     # v7a uses soft-float not hard-float (eabihf). https://developer.android.com/ndk/guides/abis#v7a
     android_arm32v7a) printf "armv7-none-linux-androideabi\n" ;;
     # v8a probably doesn't use hard-float since removed in https://android.googlesource.com/platform/ndk/+/master/docs/HardFloatAbi.md
