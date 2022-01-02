@@ -60,21 +60,33 @@ export CC
 if [ -n "${AS:-}" ]; then
   _TMP_AS="${AS:-}"
   AS="$_TMP_AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-} ${ASFLAGS:-}"
+
+  # Some architectures need flags when compiling OCaml
   case "$DKML_TARGET_ABI" in
     darwin_*) AS="$AS -Wno-trigraphs" ;;
   esac
+
+  # A CMake-configured `AS` will be missing the `-c` option needed by OCaml; fix that
   if printf "%s" "${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OBJECT:-}" | PATH=/usr/bin:/bin grep -q -E -- '\B-c\b'; then
     # CMAKE_ASM_COMPILE_OBJECT contains '-c' as a single word. Ex: <CMAKE_ASM_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>
     AS="$AS -c"
   fi
+
+  # By default ASPP is the same as AS. But since ASPP involves preprocessing and many assemblers do not include
+  # preprocessing, we may need to look at the C compiler (ex. clang) and see if we should override ASPP.
   ASPP="$AS"
-  case "${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_ID:-}" in
+  case "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" in
     AppleClang|Clang)
-      # For clang, AS should be `as` so that relocations work properly and ASPP should be `clang -c`.
+      # If we have clang assembler available we need to use it for ASPP so we have a preprocessor.
+      # Then AS should be clang's `*-as` and ASPP should be `clang [--target xxx] -c`.
       # So we try <bindir>/<CMAKE_ANDROID_ARCH_TRIPLE>-as and <bindir>/<CMAKE_LIBRARY_ARCHITECTURE>-as.
       # (CMAKE_LIBRARY_ARCHITECTURE is poorly documented, but https://lldb.llvm.org/resources/build.html
       # indicates it is typically set to the architecture triple; Android NDK does this).
-      _asm_compiler_bindir=$(PATH=/usr/bin:/bin dirname "$DKML_COMPILE_CM_CMAKE_ASM_COMPILER")
+      #
+      # Note: When searching for clang's `*-as` with macOS XCode nothing will be found. macOS uses
+      # `AS=as -arch <target>` to select the architecture, and AS will have already been set with
+      # autodetect_compiler_darwin().
+      _asm_compiler_bindir=$(PATH=/usr/bin:/bin dirname "$DKML_COMPILE_CM_CMAKE_C_COMPILER")
       _asm_compiler_as=
       if [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as.exe" ]; then
         _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as.exe"
@@ -86,11 +98,13 @@ if [ -n "${AS:-}" ]; then
       elif [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as" ]; then
         _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as"
       fi
+      # Found clang's `as` assembler
       if [ -n "$_asm_compiler_as" ]; then
         if [ -x /usr/bin/cygpath ]; then
           _asm_compiler_as=$(/usr/bin/cygpath -am "$_asm_compiler_as")
         fi
         AS="$_asm_compiler_as"
+        ASPP="$DKML_COMPILE_CM_CMAKE_C_COMPILER ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-} -c"
       fi
       ;;
   esac
