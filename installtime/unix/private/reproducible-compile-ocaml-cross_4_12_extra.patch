@@ -133,7 +133,7 @@ index 656ffe20c..5f1563c6e 100644
    [arm*-*-openbsd*],
      [arch=arm; system=bsd],
 diff --git a/runtime/arm.S b/runtime/arm.S
-index 612757a10..8adceaa67 100644
+index 612757a10..6d1db9965 100644
 --- a/runtime/arm.S
 +++ b/runtime/arm.S
 @@ -216,10 +216,18 @@ FUNCTION(caml_allocN)
@@ -149,7 +149,7 @@ index 612757a10..8adceaa67 100644
 +/* A PLT function address is only available when "cited by a BL-class relocation directive" like `bl func(PLT)`.
 +   We can't, for example, do `adr r7, func(PLT)` and then jump to caml_c_call or Ljump_to_caml.
 +   So implemented as a macro that inserts the instructions inline and branch jumps (branch_op = bl or blx)
-+   to (c_code_addr or caml_code_addr). Use blx for r7/r12 register and bl for named PLT functions.
++   to (c_code_addr or caml_code_funcptr). Use blx for r7/r12 register and bl for named PLT functions.
 +   Warning: bl does not switch to/from Thumb state since "it is generally pointless trying to construct a PLT entry
 +   entirely in 16-bit Thumb instructions". In other words: Do not emit Thumb PLT entries for PIC code!
 +   Confer https://github.com/ARM-software/abi-aa/blob/320a56971fdcba282b7001cf4b84abb4fd993131/aaelf32/aaelf32.rst#plt-sequences-and-usage-models .
@@ -190,7 +190,7 @@ index 612757a10..8adceaa67 100644
  /* Arguments to the OCaml code are in r0...r3 */
 -
 -.Ljump_to_caml:
-+        .macro inline_jump_to_caml branch_op caml_code_addr
++        .macro inline_jump_to_caml branch_op caml_code_funcptr
  #if defined(SYS_linux_eabihf) || defined(SYS_netbsd)
      /* Save callee-save floating-point registers */
          vpush   {d8-d15}; CFI_ADJUST(64)
@@ -223,7 +223,7 @@ index 612757a10..8adceaa67 100644
          ldr     alloc_ptr, Caml_state(young_ptr)
      /* Call the OCaml code */
 -        blx     r12
-+        \branch_op \caml_code_addr
++        \branch_op \caml_code_funcptr
 +        .endm
 +
 +FUNCTION(caml_start_program)
@@ -236,7 +236,7 @@ index 612757a10..8adceaa67 100644
 +#endif
 +
 +.Ljump_to_caml:
-+    /* Regardless of PIC, this local label will be used by caml_callback_asm() */
++    /* Regardless of PIC status, this local label will be used by caml_callback_asm() */
 +        inline_jump_to_caml blx r12
  .Lcaml_retaddr:
      /* Pop the trap frame, restoring caml_exception_pointer */
@@ -298,6 +298,281 @@ index 612757a10..8adceaa67 100644
  /* GC roots for callback */
  
          .data
+diff --git a/runtime/i386.S b/runtime/i386.S
+index e1cc5778a..bfc2d3f08 100644
+--- a/runtime/i386.S
++++ b/runtime/i386.S
+@@ -78,6 +78,34 @@
+ #define CFI_ADJUST(n)
+ #endif
+ 
++/* PIC-friendly macro to get the address of the global variable Caml_state and set it in a register. */
++#ifdef __PIC__
++#define MOV_CAML_STATE_PTR(label, reg) \
++        call    mov_caml_state_##label /* Push IP register */ ; \
++mov_caml_state_##label: \
++        popl    ##reg ; \
++        addl    $_GLOBAL_OFFSET_TABLE_, ##reg ; \
++        movl    Caml_state@GOT(##reg), ##reg
++#else
++#define MOV_CAML_STATE_PTR(label, reg) \
++        movl    G(Caml_state), ##reg
++#endif
++
++/* PIC-friendly macro to call a global function using PLT if PIC */
++        .macro call_global_func name,label
++#ifdef __PIC__
++        pushl   %ebx                           /* Protect ebx */
++        call    call_\label                    /* Push IP register */
++call_\label:
++        popl    %ebx                           /* Pop IP register */
++        addl    $_GLOBAL_OFFSET_TABLE_, %ebx   /* ebx=GOT on PLT entry */
++        call    \name@PLT
++        popl    %ebx
++#else
++        call    G(\name)
++#endif
++        .endm
++
+ #if !defined(SYS_mingw) && !defined(SYS_cygwin)
+ #define STACK_PROBE_SIZE 16384
+ #endif
+@@ -116,7 +144,7 @@ FUNCTION(caml_call_gc)
+         CFI_STARTPROC
+ LBL(caml_call_gc):
+     /* Record lowest stack address and return address */
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_call_gc, %ebx)
+         movl    (%esp), %eax
+         movl    %eax, CAML_STATE(last_return_address, %ebx)
+         leal    4(%esp), %eax
+@@ -139,7 +167,7 @@ LBL(caml_call_gc):
+         movl    %esp, CAML_STATE(gc_regs, %ebx)
+         /* MacOSX note: 16-alignment of stack preserved at this point */
+     /* Call the garbage collector */
+-        call    G(caml_garbage_collection)
++        call_global_func caml_garbage_collection, l_caml_call_gc
+     /* Restore all regs used by the code generator */
+         popl    %eax; CFI_ADJUST(-4)
+         popl    %ebx; CFI_ADJUST(-4)
+@@ -156,7 +184,7 @@ LBL(caml_call_gc):
+ 
+ FUNCTION(caml_alloc1)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_alloc1, %ebx)
+         movl    CAML_STATE(young_ptr, %ebx), %eax
+         subl    $8, %eax
+         movl    %eax, CAML_STATE(young_ptr, %ebx)
+@@ -168,7 +196,7 @@ FUNCTION(caml_alloc1)
+ 
+ FUNCTION(caml_alloc2)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_alloc2, %ebx)
+         movl    CAML_STATE(young_ptr, %ebx), %eax
+         subl    $12, %eax
+         movl    %eax, CAML_STATE(young_ptr, %ebx)
+@@ -180,7 +208,7 @@ FUNCTION(caml_alloc2)
+ 
+ FUNCTION(caml_alloc3)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_alloc3, %ebx)
+         movl    CAML_STATE(young_ptr, %ebx), %eax
+         subl    $16, %eax
+         movl    %eax, CAML_STATE(young_ptr, %ebx)
+@@ -192,7 +220,7 @@ FUNCTION(caml_alloc3)
+ 
+ FUNCTION(caml_allocN)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_allocN, %ebx)
+         /* eax = size - Caml_state->young_ptr */
+         subl    CAML_STATE(young_ptr, %ebx), %eax
+         negl    %eax              /* eax = Caml_state->young_ptr - size */
+@@ -209,7 +237,7 @@ FUNCTION(caml_c_call)
+         CFI_STARTPROC
+     /* Record lowest stack address and return address */
+     /* ecx and edx are destroyed at C call. Use them as temp. */
+-        movl    G(Caml_state), %ecx
++        MOV_CAML_STATE_PTR(l_caml_c_call, %ecx)
+         movl    (%esp), %edx
+         movl    %edx, CAML_STATE(last_return_address, %ecx)
+         leal    4(%esp), %edx
+@@ -228,37 +256,76 @@ FUNCTION(caml_c_call)
+ 
+ /* Start the OCaml program */
+ 
+-FUNCTION(caml_start_program)
+-        CFI_STARTPROC
+-    /* Save callee-save registers */
+-        pushl   %ebx; CFI_ADJUST(4)
+-        pushl   %esi; CFI_ADJUST(4)
+-        pushl   %edi; CFI_ADJUST(4)
+-        pushl   %ebp; CFI_ADJUST(4)
+-    /* Initial entry point is caml_program */
+-        movl    $ G(caml_program), %esi
+-    /* Common code for caml_start_program and caml_callback* */
+-LBL(106):
+-        movl    G(Caml_state), %edi
++     /* Common code for caml_start_program and caml_callback* */
++        .macro inline_jump_to_caml_header label
++        MOV_CAML_STATE_PTR(\label, %edi)
+     /* Build a callback link */
+         pushl   CAML_STATE(gc_regs, %edi); CFI_ADJUST(4)
+         pushl   CAML_STATE(last_return_address, %edi); CFI_ADJUST(4)
+         pushl   CAML_STATE(bottom_of_stack, %edi); CFI_ADJUST(4)
+         /* Note: 16-alignment preserved on MacOSX at this point */
+     /* Build an exception handler */
++#ifdef __PIC__
++        pushl   %ebx                                 /* Push C = orig(ebx) */
++        sub     $ 4, %esp                            /* Push B = <tmp> */
++        call    inline_jump_to_caml_exception_\label /* Push IP register */
++inline_jump_to_caml_exception_\label:
++        popl    %ebx                                 /* Pop IP register */
++        addl    $_GLOBAL_OFFSET_TABLE_, %ebx
++        movl    LBL(108)@GOT(%ebx), %ebx             /* ebx = $ LBL(108) */
++        pushl   %ebx                                 /* Push A = $ LBL(108) */
++                                                     /* Stack = A, B, C */
++        movl    8(%esp), %ebx
++        movl    %ebx,    4(%esp)                     /* Stack = A, C, C */
++        movl    0(%esp), %ebx
++        movl    %ebx,    8(%esp)                     /* Stack = A, C, A */
++        movl    4(%esp), %ebx                        /* ebx = C = orig(ebx) */
++        add     $ 8, %esp                            /* Stack = A = $ LBL(108) */
++#else
+         pushl   $ LBL(108); CFI_ADJUST(4)
++#endif
+         ALIGN_STACK(8)
+         pushl   CAML_STATE(exception_pointer, %edi); CFI_ADJUST(4)
+         movl    %esp, CAML_STATE(exception_pointer, %edi)
++        .endm
++
++        .macro inline_jump_to_caml_plt label caml_code_funcptr
++    /* Call the OCaml code */
++        pushl   %ebx                           /* Protect ebx */
++        call    inline_jump_to_caml_plt_\label /* Push IP register */
++inline_jump_to_caml_plt_\label:
++        popl    %ebx                           /* Pop IP register */
++        addl    $_GLOBAL_OFFSET_TABLE_, %ebx   /* ebx=GOT on PLT entry */
++        call    \caml_code_funcptr@PLT
++        popl    %ebx
++        .endm
++
++FUNCTION(caml_start_program)
++        CFI_STARTPROC
++    /* Save callee-save registers */
++        pushl   %ebx; CFI_ADJUST(4)
++        pushl   %esi; CFI_ADJUST(4)
++        pushl   %edi; CFI_ADJUST(4)
++        pushl   %ebp; CFI_ADJUST(4)
++    /* Initial entry point is caml_program */
++#ifdef __PIC__
++        inline_jump_to_caml_header caml_start_program_initial
++        inline_jump_to_caml_plt    caml_start_program_initial caml_program
++#else
++        movl    $ G(caml_program), %esi
++#endif
++    /* Regardless of PIC status, this local label will be used by caml_callback_asm() */
++LBL(106):
++        inline_jump_to_caml_header caml_start_program_106
+     /* Call the OCaml code */
+         call    *%esi
+ LBL(107):
+-        movl    G(Caml_state), %edi
++        MOV_CAML_STATE_PTR(l_caml_start_program_107, %edi)
+     /* Pop the exception handler */
+         popl    CAML_STATE(exception_pointer, %edi); CFI_ADJUST(-4)
+         addl    $12, %esp       ; CFI_ADJUST(-12)
+ LBL(109):
+-        movl    G(Caml_state), %edi /* Reload for LBL(109) entry */
++        MOV_CAML_STATE_PTR(l_caml_start_program_109, %edi) /* Reload for LBL(109) entry */
+     /* Pop the callback link, restoring the global variables */
+         popl    CAML_STATE(bottom_of_stack, %edi); CFI_ADJUST(-4)
+         popl    CAML_STATE(last_return_address, %edi); CFI_ADJUST(-4)
+@@ -282,7 +349,7 @@ LBL(108):
+ 
+ FUNCTION(caml_raise_exn)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_raise_exn, %ebx)
+         testl   $1, CAML_STATE(backtrace_active, %ebx)
+         jne     LBL(110)
+         movl    CAML_STATE(exception_pointer, %ebx), %esp
+@@ -299,7 +366,7 @@ LBL(110):
+         pushl   %edx; CFI_ADJUST(4)         /* arg 3: sp of raise */
+         pushl   %eax; CFI_ADJUST(4)         /* arg 2: pc of raise */
+         pushl   %esi; CFI_ADJUST(4)         /* arg 1: exception bucket */
+-        call    G(caml_stash_backtrace)
++        call_global_func caml_stash_backtrace, l_caml_raise_exn
+         movl    %esi, %eax              /* Recover exception bucket */
+         movl    %edi, %esp
+         popl    CAML_STATE(exception_pointer, %ebx); CFI_ADJUST(-4)
+@@ -312,7 +379,7 @@ LBL(110):
+ 
+ FUNCTION(caml_raise_exception)
+         CFI_STARTPROC
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_raise_exception, %ebx)
+         testl   $1, CAML_STATE(backtrace_active, %ebx)
+         jne     LBL(112)
+         movl    8(%esp), %eax
+@@ -331,7 +398,7 @@ LBL(112):
+         pushl   CAML_STATE(last_return_address, %ebx); CFI_ADJUST(4)
+         /* 1: exception bucket */
+         pushl   %esi; CFI_ADJUST(4)
+-        call    G(caml_stash_backtrace)
++        call_global_func caml_stash_backtrace, l_caml_raise_exception
+         movl    %esi, %eax              /* Recover exception bucket */
+         movl    CAML_STATE(exception_pointer, %ebx), %esp
+         popl    CAML_STATE(exception_pointer, %ebx); CFI_ADJUST(-4)
+@@ -370,8 +437,13 @@ FUNCTION(caml_callback2_asm)
+         movl    28(%esp), %edi   /* arguments array */
+         movl    0(%edi), %eax    /* arg1: first argument */
+         movl    4(%edi), %ebx    /* arg2: second argument */
++#ifdef __PIC__
++        inline_jump_to_caml_header caml_callback2_asm
++        inline_jump_to_caml_plt    caml_callback2_asm caml_apply2
++#else
+         movl    $ G(caml_apply2), %esi   /* code pointer */
+         jmp     LBL(106)
++#endif
+         CFI_ENDPROC
+ ENDFUNCTION(caml_callback2_asm)
+ 
+@@ -388,8 +460,13 @@ FUNCTION(caml_callback3_asm)
+         movl    0(%edi), %eax    /* arg1: first argument */
+         movl    4(%edi), %ebx    /* arg2: second argument */
+         movl    8(%edi), %ecx    /* arg3: third argument */
++#ifdef __PIC__
++        inline_jump_to_caml_header caml_callback3_asm
++        inline_jump_to_caml_plt    caml_callback3_asm caml_apply3
++#else
+         movl    $ G(caml_apply3), %esi   /* code pointer */
+         jmp     LBL(106)
++#endif
+         CFI_ENDPROC
+ ENDFUNCTION(caml_callback3_asm)
+ 
+@@ -405,7 +482,7 @@ FUNCTION(caml_ml_array_bound_error)
+         ffree   %st(6)
+         ffree   %st(7)
+     /* Record lowest stack address and return address */
+-        movl    G(Caml_state), %ebx
++        MOV_CAML_STATE_PTR(l_caml_ml_array_bound_error, %ebx)
+         movl    (%esp), %edx
+         movl    %edx, CAML_STATE(last_return_address, %ebx)
+         leal    4(%esp), %edx
+@@ -413,7 +490,7 @@ FUNCTION(caml_ml_array_bound_error)
+     /* Re-align the stack */
+         andl    $-16, %esp
+     /* Branch to [caml_array_bound_error] (never returns) */
+-        call    G(caml_array_bound_error)
++        call_global_func caml_array_bound_error, l_caml_ml_array_bound_error
+         CFI_ENDPROC
+         ENDFUNCTION(caml_ml_array_bound_error)
+ 
 diff --git a/utils/Makefile b/utils/Makefile
 index 11e2cebe2..286538fdd 100644
 --- a/utils/Makefile

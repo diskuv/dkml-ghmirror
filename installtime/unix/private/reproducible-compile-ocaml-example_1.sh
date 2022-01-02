@@ -105,6 +105,9 @@ if [ -n "${AS:-}" ]; then
         fi
         AS="$_asm_compiler_as"
         ASPP="$DKML_COMPILE_CM_CMAKE_C_COMPILER ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-} -c"
+        if [ "${DKML_COMPILE_CM_CONFIG:-}" = "Debug" ]; then
+          ASPP="$ASPP -g"
+        fi
       fi
       ;;
   esac
