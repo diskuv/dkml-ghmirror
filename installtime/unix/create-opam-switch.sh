@@ -772,7 +772,8 @@ if [ "$PINNED_NUMLINES" -le 2 ] || ! [ -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_C
             # Input: opam pin add --yes --no-action -k version "0install" "2.17"
             # Input (older versions): opam pin add --yes --no-action -k version 0install 2.17
             # Output:   "0install.2.17"
-            tr -d '"' "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/$OCAMLVERSION/pins.txt" | \
+            # Caution: `tr` on MSYS2 only operates on standard input and output; no named file argument.
+            tr -d '"' < "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version/fdopen-mingw/$OCAMLVERSION/pins.txt" | \
             awk -v dquot='"' 'NF>=2 { l2=NF-1; l1=NF; print "  " dquot $l2 "." $l1 dquot}'
         fi
     } | sort > "$WORK"/new-pinned
