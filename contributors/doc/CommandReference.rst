@@ -1,6 +1,8 @@
 Command Reference
 =================
 
+.. _WithDkml:
+
 with-dkml.exe
 -------------
 

@@ -18,6 +18,7 @@ Getting Started with Diskuv OCaml
    doc/OpamIntegration
    doc/Advanced
    doc/FutureExtensions
+   doc/Planning/index
 
 Introduction
 ------------
