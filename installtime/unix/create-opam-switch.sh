@@ -517,6 +517,7 @@ if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
         set_opamswitchdir_of_system "$PLATFORM"
         OPAM_EXEC_OPTS="-s"
     else
+        if [ -z "$DKMLPLATFORM" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty DKMLPLATFORM" >&2; exit 1; fi
         set_opamswitchdir_of_system "$DKMLPLATFORM"
         OPAM_EXEC_OPTS="-s -d '$STATEDIR' -p '$DKMLPLATFORM' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
     fi
@@ -525,7 +526,7 @@ else
     set_opamrootandswitchdir
 
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "check_state nonempty BUILDTYPE" >&2; exit 1; fi
+        if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty BUILDTYPE" >&2; exit 1; fi
         OPAM_EXEC_OPTS="-p $PLATFORM"
         if [ -n "$STATEDIR" ]; then
             OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -t $STATEDIR"

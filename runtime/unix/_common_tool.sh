@@ -230,7 +230,7 @@ set_ocaml_variant_for_windows_switches() {
 #                           time-consuming, especially on Windows which needs to call
 #                           VsDevCmd.bat
 # Inputs:
-#   env:PLATFORM          - required. which platform to run in
+#   env:PLATFORM          - (deprecated) optional. which platform to run in
 #   env:BUILDTYPE         - optional
 #   env:PLATFORM_EXEC_PRE_SINGLE - optional. acts as hook.
 #                           the specified bash statements, if any, are 'eval'-d _before_ the
@@ -261,9 +261,6 @@ exec_in_platform() {
     _exec_dev_or_arch_helper_PLATFORM=${PLATFORM:-}
     if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$_exec_dev_or_arch_helper_PLATFORM" = dev ]; then
         printf "FATAL: exec_in_platform() must not have PLATFORM=dev\n" >&2
-        exit 107
-    elif [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -z "$_exec_dev_or_arch_helper_PLATFORM" ]; then
-        printf "FATAL: exec_in_platform() must not have empty/unset PLATFORM\n" >&2
         exit 107
     fi
 
