@@ -12,7 +12,6 @@ set -euf
 usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    within-dev.sh -h                          Display this help message." >&2
-    printf "%s\n" "    within-dev.sh -h                          Display this help message." >&2
     printf "%s\n" "    within-dev.sh [-p PLATFORM] [-b BUILDTYPE] command ...  (Deprecated) Run the command and any arguments in the dev platform." >&2
     printf "%s\n" "       -p PLATFORM: The target platform used. Defaults to 'dev'. DKML_TOOLS_DIR and DKML_DUNE_BUILD_DIR will be based on this" >&2
     printf "%s\n" "       -b BUILDTYPE: If specified, will set DKML_DUNE_BUILD_DIR in the dev platform" >&2
@@ -33,12 +32,6 @@ usage() {
     echo '               eval /tmp/eval.sh' >&2
     echo '             Useful for setting environment variables (possibly from a script).' >&2
 }
-
-# no arguments should display usage
-if [ $# -eq 0 ]; then
-    usage
-    exit 1
-fi
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     # shellcheck disable=SC2034
