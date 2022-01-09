@@ -96,36 +96,80 @@ if [ -n "${AS:-}" ]; then
   esac
   case "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" in
     AppleClang|Clang)
-      # If we have clang assembler available we need to use it for ASPP so we have a preprocessor.
-      # Then AS should be clang's `*-as` and ASPP should be `clang [--target xxx] -c`.
-      # So we try <bindir>/<CMAKE_ANDROID_ARCH_TRIPLE>-as and <bindir>/<CMAKE_LIBRARY_ARCHITECTURE>-as.
-      # (CMAKE_LIBRARY_ARCHITECTURE is poorly documented, but https://lldb.llvm.org/resources/build.html
-      # indicates it is typically set to the architecture triple; Android NDK does this).
+      # Clang Integrated Assembler
+      # --------------------------
       #
-      # Note: When searching for clang's `*-as` with macOS XCode nothing will be found. macOS uses
+      # Clang has an integrated assembler that will can be invoked indirectly (`clang --target xxx -c something.s`)
+      # or directly (`clang -cc1as -help`). Calling with the `cc1as` form directly is rarely a good idea because the
+      # `--target` form can inject a lot of useful default options when it itself calls `clang -cc1as <options-for-target>`.
+      #
+      # The integrated assembler is not strictly compatible with GNU `as` even though it recognizes GNU assembly syntax.
+      # For OCaml the problem is that the integrated assembler will "error: invalid symbol redefinition" on OCaml native
+      # generated assembly code like:
+      #   .L108:
+      #   .L108:
+      # 	  bl	camlCamlinternalFormatBasics__entry(PLT)
+      # Until those bugs are fixed we can't use clang for native generated code (the `AS` ./configure variable). However
+      # clang can be used for the assembly code in the runtime library (the `ASPP` ./configure variable) since that assembly
+      # code is hand-crafted and also because the clang integrated assembler has a preprocessor.
+
+      # Android NDK
+      # -----------
+      #
+      # Android NDK comes with a) a Clang compiler and b) a GNU AS assembler and c) sometimes a YASM assembler
+      # in its bin folder
+      # (ex. ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/{clang,arm-linux-androideabi-as,yasm}).
+      # The Android NDK toolchain used within CMake will select the Clang compiler as its CMAKE_ASM_COMPILER.
+      #
+      # The GNU AS assembler (https://sourceware.org/binutils/docs/as/index.html) does not support preprocessing
+      # so it cannot be used as the `ASPP` ./configure variable.
+      
+      # XCode (macOS/iOS)
+      # -----------------
+      #
+      # Nothing will be found in the code below that searches for a `<triple>-as` assembler. macOS uses
       # `AS=as -arch <target>` to select the architecture, and AS will have already been set with
       # autodetect_compiler_darwin().
-      _asm_compiler_bindir=$(PATH=/usr/bin:/bin dirname "$DKML_COMPILE_CM_CMAKE_C_COMPILER")
-      _asm_compiler_as=
-      if [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as.exe" ]; then
-        _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as.exe"
-      elif [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as" ]; then
-        _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}-as"
 
-      elif [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as.exe" ]; then
-        _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as.exe"
-      elif [ -e "$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as" ]; then
-        _asm_compiler_as="$_asm_compiler_bindir/${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}-as"
-      fi
-      # Found clang's `as` assembler
-      if [ -n "$_asm_compiler_as" ]; then
-        if [ -x /usr/bin/cygpath ]; then
-          _asm_compiler_as=$(/usr/bin/cygpath -am "$_asm_compiler_as")
+      # Triples
+      # -------
+      #
+      # Android NDK for example exposes a triple like so: CMAKE_ANDROID_ARCH_TRIPLE=arm-linux-androideabi
+      # It also has the same triple in CMAKE_LIBRARY_ARCHITECTURE.
+      # Other toolchains may support it as well; CMAKE_LIBRARY_ARCHITECTURE is poorly documented, but
+      # https://lldb.llvm.org/resources/build.html indicates it is typically set to the architecture triple
+
+      # Find GNU AS assembler named `<triple>-as`, if any
+      #
+      #   Nothing should be found in this code section if you are using an Xcode toolchain. macOS uses
+      #   `AS=as -arch <target>` to select the architecture, and AS will have already been set with
+      #   autodetect_compiler_darwin().
+      _c_compiler_bindir=$(PATH=/usr/bin:/bin dirname "$DKML_COMPILE_CM_CMAKE_C_COMPILER")
+      _gnu_as_compiler=
+      for _compiler_triple in "${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_TRIPLE:-}" "${DKML_COMPILE_CM_CMAKE_LIBRARY_ARCHITECTURE:-}"; do
+        if [ -n "$_compiler_triple" ]; then
+          if [ -e "$_c_compiler_bindir/$_compiler_triple-as.exe" ]; then
+            _gnu_as_compiler="$_c_compiler_bindir/$_compiler_triple-as.exe"
+            break
+          elif [ -e "$_c_compiler_bindir/$_compiler_triple-as" ]; then
+            _gnu_as_compiler="$_c_compiler_bindir/$_compiler_triple-as"
+            break
+          fi
         fi
-        AS="$_asm_compiler_as"
-        ASPP="$DKML_COMPILE_CM_CMAKE_C_COMPILER ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-} -c"
+      done
+      if [ -n "$_gnu_as_compiler" ]; then
+        # Found GNU AS assembler
+        if [ -x /usr/bin/cygpath ]; then
+          _gnu_as_compiler=$(/usr/bin/cygpath -am "$_gnu_as_compiler")
+        fi
+        AS="$_gnu_as_compiler"
+        ASPP="$DKML_COMPILE_CM_CMAKE_C_COMPILER ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-} ${CFLAGS:-} -c"
         if [ "${DKML_COMPILE_CM_CONFIG:-}" = "Debug" ]; then
-          ASPP="$ASPP -g"
+          AS="$AS -g"
+          # CFLAGS will already include `-g` if the toolchain wanted it.
+          # But we add -fdebug-macro since there are very useful macros in the runtime code (ex. runtime/arm.S) that should be expanded when in disassembly
+          # or in lldb/gdb debugger.
+          ASPP="$ASPP -fdebug-macro"
         fi
       fi
       ;;
