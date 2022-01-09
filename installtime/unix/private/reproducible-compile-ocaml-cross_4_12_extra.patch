@@ -277,7 +277,7 @@ index 656ffe20c..5f1563c6e 100644
    [arm*-*-openbsd*],
      [arch=arm; system=bsd],
 diff --git a/runtime/arm.S b/runtime/arm.S
-index 612757a10..2e7d4ffa8 100644
+index 612757a10..879c99758 100644
 --- a/runtime/arm.S
 +++ b/runtime/arm.S
 @@ -129,7 +129,9 @@ caml_hot__code_end:
@@ -363,7 +363,7 @@ index 612757a10..2e7d4ffa8 100644
          cmp     alloc_ptr, r7
          bcc     .Lcaml_call_gc
          bx      lr
-@@ -216,39 +218,51 @@ FUNCTION(caml_allocN)
+@@ -216,39 +218,59 @@ FUNCTION(caml_allocN)
          .size   caml_allocN, .-caml_allocN
  
  /* Call a C function from OCaml */
@@ -423,32 +423,41 @@ index 612757a10..2e7d4ffa8 100644
  /* Arguments to the OCaml code are in r0...r3 */
 -
 -.Ljump_to_caml:
-+/* Macro user is responsible for
-+   a) blx branching to the PLT function (or bx branching to r12 if presetup since
-+      r12 will not be modified)
-+   b) using jump_to_caml_procalloc at the end (but inside) of the CFI procedure.
-+   Same reason for existence as inline_caml_c_call */
-+        .macro jump_to_caml_inline label
++/* Instructions for using call_caml_XXXX:
++        1. (optional) set r12
++        2. `call_caml_enter`
++        3. `blx some_function(PLT)` ...or if you preset r12... `bx r12`
++        4. `call_caml_exit`
++
++        At end inside the CFI PROC do `call_caml_relocs`.
++                Why? Linker will do PIC relocations in this word space.
++
++        Add `call_caml_framedescr` in the PIC portion of caml_system__frametable.
++        And increment caml_system__frametable.num_descriptors.
++                Why? All callsite return addresses have to be visible to GC.
++*/
++        .macro call_caml_enter callsite_label:req
  #if defined(SYS_linux_eabihf) || defined(SYS_netbsd)
      /* Save callee-save floating-point registers */
          vpush   {d8-d15}; CFI_ADJUST(64)
-@@ -260,43 +274,81 @@ FUNCTION(caml_start_program)
+@@ -260,43 +282,58 @@ FUNCTION(caml_start_program)
  #else
          CFI_OFFSET(lr, -4)
  #endif
 +#ifdef __PIC__
-+    /* read the PREL word in the local .text section, which is the PC-relative address of Caml_state's GOT entry */
-+	ldr.w   domain_state_ptr, .LISP\label
++    /* Read the PREL word in the local .text section, which is the PC-relative address of
++       Caml_state's GOT entry */
++        ldr.w   domain_state_ptr, \callsite_label\()_isp
 +    /* Label for PC of next add instruction */
-+.LPCNAI\label:
-+	add.w   domain_state_ptr, pc
-+    /* load the entry from the GOT; the address of Caml_state variable */
-+	ldr     domain_state_ptr, [domain_state_ptr]
++\callsite_label\()_pcnai: /* `.Lxyz_pcnai:` if callsite_label=`.Lxyz` */
++        add.w   domain_state_ptr, pc
++    /* Load the entry from the GOT; the address of Caml_state variable */
++        ldr     domain_state_ptr, [domain_state_ptr]
 +#else
-+    /* load the address of Caml_state variable */
++    /* Load the address of Caml_state variable */
          ldr     domain_state_ptr, =Caml_state
 +#endif
-+    /* load the malloc'd Caml_state pointer */
++    /* Load the Caml_state pointer */
          ldr     domain_state_ptr, [domain_state_ptr]
      /* Setup a callback link on the stack */
          sub     sp, sp, 16; CFI_ADJUST(16)              /* 8-byte alignment */
@@ -472,43 +481,23 @@ index 612757a10..2e7d4ffa8 100644
          mov     trap_ptr, sp
      /* Reload allocation pointer */
 -        ldr     alloc_ptr, Caml_state(young_ptr)
+-    /* Call the OCaml code */
+-        blx     r12
+-.Lcaml_retaddr:
 +        ldr     alloc_ptr, Caml_state_var(young_ptr)
 +        .endm
-+    /* Place in at end of .cfi proc since logically part of procedure, and because the word can be seen during
-+       disassembly + debugging (same as clang). */
-+        .macro jump_to_caml_procalloc label
-+#ifdef __PIC__
-+	.align  2
-+    /* Local indirect symbol pointer for \label that will be linked statically with the correct GOT math. */
-+.LISP\label:
-+	.word	Caml_state(GOT_PREL) - ((.LPCNAI\label + 8) - .LISP\label) /* 8 = ldr.w || .LPCNAI\label: || adr.w */
-+#endif
-+        .endm
 +
-+FUNCTION(caml_start_program)
-+        CFI_STARTPROC
-+
-+#ifdef __PIC__
-+        jump_to_caml_inline     caml_start_program_siteA
-+    /* Call the OCaml code */
-+        bl      caml_program(PLT)
-+#else
-+        ldr     r12, =caml_program
-+#endif
-+
-+    /* Regardless of PIC status, this local label will be used by caml_callback_asm() */
-+.Ljump_to_caml:
-+        jump_to_caml_inline     caml_start_program_siteB
-     /* Call the OCaml code */
-         blx     r12
- .Lcaml_retaddr:
++        .macro  call_caml_exit retaddr_label:req return_result_label:req
++        .type	\retaddr_label, %function
++\retaddr_label:
      /* Pop the trap frame, restoring caml_exception_pointer */
          ldr     r5, [sp, 0]
 -        str     r5, Caml_state(exception_pointer)
 +        str     r5, Caml_state_var(exception_pointer)
          add     sp, sp, 8; CFI_ADJUST(-8)
      /* Pop the callback link, restoring the global variables */
- .Lreturn_result:
+-.Lreturn_result:
++\return_result_label:
          ldr     r5, [sp, 0]
 -        str     r5, Caml_state(bottom_of_stack)
 +        str     r5, Caml_state_var(bottom_of_stack)
@@ -525,16 +514,52 @@ index 612757a10..2e7d4ffa8 100644
      /* Reload callee-save registers and return address */
          pop     {r4-r8,r10,r11,lr}; CFI_ADJUST(-32)
  #if defined(SYS_linux_eabihf) || defined(SYS_netbsd)
-@@ -304,6 +356,8 @@ FUNCTION(caml_start_program)
+@@ -304,6 +341,44 @@ FUNCTION(caml_start_program)
          vpop    {d8-d15}; CFI_ADJUST(-64)
  #endif
          bx      lr
-+        jump_to_caml_procalloc  caml_start_program_siteA
-+        jump_to_caml_procalloc  caml_start_program_siteB
++        .endm
++
++        .macro call_caml_relocs callsite_label:req
++#ifdef __PIC__
++        .align  2
++    /* Local indirect symbol pointer for \label that will be linked statically with
++       the correct GOT math. */
++\callsite_label\()_isp: /* `.Lxyz_isp:` if callsite_label=`.Lxyz` */
++    /* 8 = opcode_size( ldr.w ; \callsite_label\()_pcnai: adr.w ) */
++        .word	Caml_state(GOT_PREL) - ((\callsite_label\()_pcnai + 8) - \callsite_label\()_isp)
++#endif
++        .endm
++
++        .macro call_caml_framedescr retaddr_label:req
++#ifdef __PIC__
++        .word	\retaddr_label  /* return address into callback */
++        .short  -1              /* negative frame size => use callback link */
++        .short  0               /* no roots */
++        .align  2
++#endif
++        .endm
++
++FUNCTION(caml_start_program)
++        CFI_STARTPROC
++
++#ifdef __PIC__
++        call_caml_enter         .Lcaml_start_program
++        bl      caml_program(PLT)
++#else
++        ldr     r12, =caml_program
++
++/* Address of OCaml code to call is in r12 */
++.Ljump_to_caml:
++        call_caml_enter         .Lcaml_start_program
++        blx     r12
++#endif
++        call_caml_exit          .Lcaml_retaddr, .Lreturn_result
++        call_caml_relocs        .Lcaml_start_program
          CFI_ENDPROC
          .type   .Lcaml_retaddr, %function
          .size   .Lcaml_retaddr, .-.Lcaml_retaddr
-@@ -315,7 +369,7 @@ FUNCTION(caml_start_program)
+@@ -315,7 +390,7 @@ FUNCTION(caml_start_program)
  .Ltrap_handler:
          CFI_STARTPROC
      /* Save exception pointer */
@@ -543,7 +568,7 @@ index 612757a10..2e7d4ffa8 100644
      /* Encode exception bucket as an exception result */
          orr     r0, r0, 2
      /* Return it */
-@@ -329,7 +383,7 @@ FUNCTION(caml_start_program)
+@@ -329,7 +404,7 @@ FUNCTION(caml_start_program)
  FUNCTION(caml_raise_exn)
          CFI_STARTPROC
      /* Test if backtrace is active */
@@ -552,7 +577,7 @@ index 612757a10..2e7d4ffa8 100644
          cbz     r1, 1f
      /* Preserve exception bucket in callee-save register r4 */
          mov     r4, r0
-@@ -356,15 +410,15 @@ FUNCTION(caml_raise_exception)
+@@ -356,15 +431,15 @@ FUNCTION(caml_raise_exception)
      /* Load exception bucket */
          mov     r0, r1
      /* Reload trap ptr and alloc ptr */
@@ -573,35 +598,50 @@ index 612757a10..2e7d4ffa8 100644
          mov     r3, trap_ptr                        /* arg4: sp of handler */
          bl      caml_stash_backtrace
      /* Restore exception bucket */
-@@ -397,8 +451,15 @@ FUNCTION(caml_callback2_asm)
+@@ -385,7 +460,14 @@ FUNCTION(caml_callback_asm)
+         ldr     r0, [r2]        /* r0 = first arg */
+                                 /* r1 = closure environment */
+         ldr     r12, [r1]       /* code pointer */
++#ifdef __PIC__
++        call_caml_enter         .Lcaml_callback_asm
++        blx     r12
++#else
+         b       .Ljump_to_caml
++#endif
++        call_caml_exit          .Lcaml_callback_asm_retaddr, .Lcaml_callback_asm_return_result
++        call_caml_relocs        .Lcaml_callback_asm
+         CFI_ENDPROC
+         .size   caml_callback_asm, .-caml_callback_asm
+ 
+@@ -397,8 +479,15 @@ FUNCTION(caml_callback2_asm)
          ldr     r0, [r2]          /* r0 = first arg */
          ldr     r1, [r2,4]        /* r1 = second arg */
          mov     r2, r12           /* r2 = closure environment */
 +#ifdef __PIC__
-+        jump_to_caml_inline     caml_callback2_asm_siteA
-+    /* Call the OCaml code */
++        call_caml_enter         .Lcaml_callback2_asm
 +        bl      caml_apply2(PLT)
 +#else
          ldr     r12, =caml_apply2
          b       .Ljump_to_caml
 +#endif
-+        jump_to_caml_procalloc  caml_callback2_asm_siteA
++        call_caml_exit          .Lcaml_callback2_asm_retaddr, .Lcaml_callback2_asm_return_result
++        call_caml_relocs        .Lcaml_callback2_asm
          CFI_ENDPROC
          .size   caml_callback2_asm, .-caml_callback2_asm
  
-@@ -411,17 +472,28 @@ FUNCTION(caml_callback3_asm)
+@@ -411,17 +500,28 @@ FUNCTION(caml_callback3_asm)
          ldr     r0, [r2]          /* r0 = first arg */
          ldr     r1, [r2,4]        /* r1 = second arg */
          ldr     r2, [r2,8]        /* r2 = third arg */
 +#ifdef __PIC__
-+        jump_to_caml_inline     caml_callback3_asm_siteA
-+    /* Call the OCaml code */
++        call_caml_enter         .Lcaml_callback3_asm
 +        bl      caml_apply3(PLT)
 +#else
          ldr     r12, =caml_apply3
          b       .Ljump_to_caml
 +#endif
-+        jump_to_caml_procalloc  caml_callback3_asm_siteA
++        call_caml_exit          .Lcaml_callback3_asm_retaddr, .Lcaml_callback3_asm_return_result
++        call_caml_relocs        .Lcaml_callback3_asm
          CFI_ENDPROC
          .size   caml_callback3_asm, .-caml_callback3_asm
  
@@ -618,6 +658,27 @@ index 612757a10..2e7d4ffa8 100644
 +#endif
          CFI_ENDPROC
          .size   caml_ml_array_bound_error, .-caml_ml_array_bound_error
+ 
+@@ -435,11 +535,15 @@ caml_system__code_end:
+         .align  2
+         .globl  caml_system__frametable
+ caml_system__frametable:
+-        .word   1               /* one descriptor */
+-        .word   .Lcaml_retaddr  /* return address into callback */
+-        .short  -1              /* negative frame size => use callback link */
+-        .short  0               /* no roots */
+-        .align  2
++#ifdef __PIC__
++        .word   4               /* num_descriptors including .Lcaml_retaddr */
++        call_caml_framedescr    .Lcaml_callback_asm_retaddr
++        call_caml_framedescr    .Lcaml_callback2_asm_retaddr
++        call_caml_framedescr    .Lcaml_callback3_asm_retaddr
++#else
++        .word   1               /* one descriptor (only .Lcaml_retaddr) */
++#endif
++        call_caml_framedescr    .Lcaml_retaddr
+         .type   caml_system__frametable, %object
+         .size   caml_system__frametable, .-caml_system__frametable
  
 diff --git a/runtime/i386.S b/runtime/i386.S
 index e1cc5778a..ec27b6102 100644
