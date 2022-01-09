@@ -26,10 +26,30 @@ index 652a1c5ba..59c96d6e5 100644
  FLAMBDA=@flambda@
  WITH_FLAMBDA_INVARIANTS=@flambda_invariants@
 diff --git a/asmcomp/arm/emit.mlp b/asmcomp/arm/emit.mlp
-index e44f7652b..c3f0e57fa 100644
+index e44f7652b..5cf031d77 100644
 --- a/asmcomp/arm/emit.mlp
 +++ b/asmcomp/arm/emit.mlp
-@@ -1012,7 +1012,7 @@ let data l =
+@@ -1006,13 +1006,26 @@ let emit_item = function
+ 
+ let data l =
+   `	.data\n`;
+-  List.iter emit_item l
++  List.iter emit_item l;
++  (* If data block is exclusively for one global symbol, emit ELF object info *)
++  match l with
++  | Cglobal_symbol s :: Cdefine_symbol s_ :: tl when s=s_ ->
++    if
++      List.exists
++        (function | Cglobal_symbol _ | Cdefine_symbol _ -> true | _ -> false)
++        tl
++    then
++      ()
++    else
++      `	.type	{emit_symbol s}, %object\n`;
++      `	.size	{emit_symbol s}, .-{emit_symbol s}\n`
++  | _ -> ()
+ 
+ (* Beginning / end of an assembly file *)
  
  let begin_assembly() =
    reset_debug_info();
