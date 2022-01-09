@@ -151,12 +151,16 @@ usage() {
         printf "%s\n" "      Especially useful to find a 32-bit Windows host compiler that can use 64-bits of memory for the compiler."
         printf "%s\n" "      Values include: windows_x86, windows_x86_64, android_arm64v8a, darwin_x86_64, etc."
         printf "%s\n" "      Others are/will be documented on https://diskuv.gitlab.io/diskuv-ocaml"
-        printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll and --host will have already"
-        printf "%s\n" "      been set appropriately, but you can override the --host heuristic by adding it to -f CONFIGUREARGS"
         printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
         printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
         printf "%s\n" "   -k HOSTABISCRIPT: Optional. A self-contained Posix shell script that can be sourced to set the"
         printf "%s\n" "      compiler environment variables for the host ABI. See '-a TARGETABIS' for the shell script semantics."
+        printf "%s\n" "   -m HOSTCONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure for the host ABI. --with-flexdll"
+        printf "%s\n" "      and --host will have already been set appropriately, but you can override the --host heuristic by adding it"
+        printf "%s\n" "      to -m HOSTCONFIGUREARGS"
+        printf "%s\n" "   -n TARGETCONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure for the target ABI. --with-flexdll"
+        printf "%s\n" "      and --host will have already been set appropriately, but you can override the --host heuristic by adding it"
+        printf "%s\n" "      to -n TARGETCONFIGUREARGS"
     } >&2
 }
 
@@ -168,9 +172,8 @@ DKMLDIR=
 GIT_COMMITID_OR_TAG=
 TARGETDIR=
 TARGETABIS=
-HOSTABISCRIPT=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:e:g:i:j:k:h" opt; do
+while getopts ":d:v:t:a:b:e:i:j:k:m:n:h" opt; do
     case ${opt} in
         h )
             usage
@@ -206,11 +209,6 @@ while getopts ":d:v:t:a:b:e:g:i:j:k:h" opt; do
             BUILD_HOST_ARGS+=( -e "$OPTARG" )
             BUILD_CROSS_ARGS+=( -e "$OPTARG" )
         ;;
-        g )
-            SETUP_ARGS+=( -g "$OPTARG" )
-            BUILD_HOST_ARGS+=( -g "$OPTARG" )
-            BUILD_CROSS_ARGS+=( -g "$OPTARG" )
-        ;;
         i )
             SETUP_ARGS+=( -i "$OPTARG" )
             BUILD_HOST_ARGS+=( -i "$OPTARG" )
@@ -224,6 +222,14 @@ while getopts ":d:v:t:a:b:e:g:i:j:k:h" opt; do
         k )
             SETUP_ARGS+=( -k "$OPTARG" )
             BUILD_HOST_ARGS+=( -k "$OPTARG" )
+        ;;
+        m )
+            SETUP_ARGS+=( -m "$OPTARG" )
+            BUILD_HOST_ARGS+=( -m "$OPTARG" )
+        ;;
+        n )
+            SETUP_ARGS+=( -n "$OPTARG" )
+            BUILD_CROSS_ARGS+=( -n "$OPTARG" )
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2

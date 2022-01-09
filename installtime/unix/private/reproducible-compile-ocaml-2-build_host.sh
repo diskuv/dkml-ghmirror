@@ -55,10 +55,12 @@ usage() {
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -b PREF: Required and used only for the MSVC compiler. See reproducible-compile-ocaml-1-setup.sh"
         printf "%s\n" "   -e DKMLHOSTABI: Uses the Diskuv OCaml compiler detector find a host ABI compiler"
-        printf "%s\n" "   -g CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure"
         printf "%s\n" "   -i OCAMLCARGS: Optional. Extra arguments passed to ocamlc like -g to save debugging"
         printf "%s\n" "   -j OCAMLOPTARGS: Optional. Extra arguments passed to ocamlopt like -g to save debugging"
         printf "%s\n" "   -k HOSTABISCRIPT: Optional. See reproducible-compile-ocaml-1-setup.sh"
+        printf "%s\n" "   -m CONFIGUREARGS: Optional. Extra arguments passed to OCaml's ./configure. --with-flexdll"
+        printf "%s\n" "      and --host will have already been set appropriately, but you can override the --host heuristic by adding it"
+        printf "%s\n" "      to -m CONFIGUREARGS"
     } >&2
 }
 
@@ -70,7 +72,7 @@ OCAMLCARGS=
 OCAMLOPTARGS=
 HOSTABISCRIPT=
 export MSVS_PREFERENCE=
-while getopts ":d:t:b:e:g:i:j:k:h" opt; do
+while getopts ":d:t:b:e:m:i:j:k:h" opt; do
     case ${opt} in
         h )
             usage
@@ -94,7 +96,7 @@ while getopts ":d:t:b:e:g:i:j:k:h" opt; do
         e )
             DKMLHOSTABI="$OPTARG"
         ;;
-        g )
+        m )
             CONFIGUREARGS="$OPTARG"
         ;;
         i)
