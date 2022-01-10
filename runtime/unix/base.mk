@@ -281,15 +281,9 @@ initvcpkg:
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_FEATUREFLAG_CMAKE_PLATFORM=ON log_shell '$(DKML_DIR)/installtime/unix/private/install-dkmlplugin-vcpkg.sh' -p $$BUILDHOST_ARCH
 
 define CONFIGURE_platform_template
-  .PHONY: initdocker-$(1)
-  initdocker-$(1):
-	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && \
-	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi
-
   .PHONY: initcommon-$(1)
-  initcommon-$(1): initdocker-$(1)
+  initcommon-$(1):
 	@. '$(DKML_DIR)/etc/contexts/linux-build/crossplatform-functions.sh' && autodetect_posix_shell && \
-	if is_arg_linux_based_platform $(1); then DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_trace '$(DKML_DIR)/runtime/unix/configure-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"; fi && \
 	DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' log_shell '$(DKML_DIR)/runtime/unix/build-sandbox-init-common.sh' $(1)
 
   .PHONY: initvcpkg-$(1)
