@@ -184,9 +184,6 @@ if is_unixy_windows_build_machine || [ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]; then
         elif is_arg_darwin_based_platform "$PLATFORM"; then
             # Use clang, just like the OCaml system compiler (`ocamlc -config`) from `brew install opam`
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -allowAppleClang
-        elif is_reproducible_platform; then
-            # Use cmake and ninja from the system if we are in a reproducible Linux container.
-            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics -useSystemBinaries
         else
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" -disableMetrics
         fi
