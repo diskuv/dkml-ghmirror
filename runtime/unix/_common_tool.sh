@@ -390,9 +390,9 @@ set_opamrootdir() {
         else
             if [ -n "${OPAMROOT:-}" ]; then
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
-            else
-                # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
-                OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
+            elif [ -z "${OPAMROOTDIR_BUILDHOST:-}" ]; then
+                # Use existing Opam to know where the Opam root is
+                OPAMROOTDIR_BUILDHOST=$(opam var --global root)
             fi
             # shellcheck disable=SC2034
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
