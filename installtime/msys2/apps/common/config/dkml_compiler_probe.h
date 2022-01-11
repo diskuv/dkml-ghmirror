@@ -56,15 +56,13 @@
 #               define DKML_PLATFORM_NAME "linux_arm32v7"
 #               define DKML_PLATFORM_linux_arm32v7
 #           endif /* __ARM_ARCH_6__ || ...,  __ARM_ARCH_7__ || ... */
+#       elif __x86_64__
+#           define DKML_PLATFORM_NAME "linux_x86_64"
+#           define DKML_PLATFORM_linux_x86_64
 #       elif __i386__
-#           if __x86_64__
-#               define DKML_PLATFORM_NAME "linux_x86_64"
-#               define DKML_PLATFORM_linux_x86_64
-#           else
-#               define DKML_PLATFORM_NAME "linux_x86"
-#               define DKML_PLATFORM_linux_x86
-#           endif /* __x86_64__ */
-#       endif /* __aarch64__, __arm__, __i386__ */
+#           define DKML_PLATFORM_NAME "linux_x86"
+#           define DKML_PLATFORM_linux_x86
+#       endif /* __aarch64__, __arm__, __x86_64__, __i386__ */
 #   endif /* __ANDROID__ */
 #elif _WIN32
 #   define DKML_OS_NAME "Windows"
