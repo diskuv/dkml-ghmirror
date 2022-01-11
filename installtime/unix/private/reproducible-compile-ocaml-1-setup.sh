@@ -463,7 +463,7 @@ install_reproducible_common
 install_reproducible_readme           installtime/unix/private/reproducible-compile-ocaml-README.md
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-check_linker.sh
 install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-functions.sh
-install_reproducible_file             installtime/unix/private/reproducible-compile-ocaml-example_1.sh
+install_reproducible_file             installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
 if [ -n "$TARGETABIS" ]; then
     _accumulator=
     # Loop over each target abi script file; each file separated by semicolons, and each term with an equals

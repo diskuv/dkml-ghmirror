@@ -60,6 +60,11 @@ The preview versions 0.2.x run on **64-bit Windows** and:
 
 ![Twitter Follow](https://img.shields.io/twitter/follow/diskuv?style=social)
 
+## Unix
+
+Install the latest version of Opam before using this distribution. See
+https://opam.ocaml.org/doc/Install.html for the latest instructions.
+
 ## Licensing
 
 As a developer there is:

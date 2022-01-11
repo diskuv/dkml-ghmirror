@@ -854,6 +854,8 @@ platform_vcpkg_triplet() {
         windows_arm64-*)      DKML_VCPKG_HOST_TRIPLET=arm64-windows ;;
         darwin_arm64-*)       DKML_VCPKG_HOST_TRIPLET=arm64-osx ;;
         darwin_x86_64-*)      DKML_VCPKG_HOST_TRIPLET=x64-osx ;;
+        linux_x86_64-*)       DKML_VCPKG_HOST_TRIPLET=x64-linux ;;
+        linux_x86-*)          DKML_VCPKG_HOST_TRIPLET=x86-linux ;;
         *)
             printf "%s\n" "FATAL: Unsupported vcpkg triplet for PLATFORM-BUILDHOST_ARCH: $PLATFORM-$BUILDHOST_ARCH" >&2
             exit 1

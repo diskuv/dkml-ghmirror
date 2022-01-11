@@ -116,7 +116,7 @@ usage() {
     printf "%s\n" "       to use. The OCaml home determines the native code produced by the switch." >&2
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
-    printf "%s\n" "    -y Say yes to all questions" >&2
+    printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
     printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
@@ -322,6 +322,12 @@ esac
 
 # Set OCAML_OPTIONS if we are building the OCaml base. And if so, set
 # TARGET_ variables that can be used to pick an Opam variant (OCAMLVARIANT) later.
+#
+# Also any "EXTRA" compiler flags. Use standard ./configure compiler flags
+# (AS/ASFLAGS/CC/etc.) not OCaml ./configure compiler flags (AS/ASPP/etc.)
+# any autodetect_compiler() flags will be standard ./configure flags ... and
+# in a hook we'll convert them all to OCaml ./configure flags.
+#
 if [ "$BUILD_OCAML_BASE" = ON ]; then
     # Frame pointers enabled
     # ----------------------
@@ -334,9 +340,6 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
     #  https://github.com/ocaml/opam-repository/blob/ed5ed7529d1d3672ed4c0d2b09611a98ec87d690/packages/ocaml-option-fp/ocaml-option-fp.1/opam#L6
     OCAML_OPTIONS=
     OPAM_SWITCH_CFLAGS=
-    OPAM_SWITCH_CC=
-    OPAM_SWITCH_ASPP=
-    OPAM_SWITCH_AS=
     true > "$WORK"/invariant_for_base.formula.head.txt
     true > "$WORK"/invariant_for_base.formula.tail.txt
     case "$BUILDTYPE" in
@@ -398,10 +401,10 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
 
         if [ $TARGET_LINUXARM32 = ON ]; then
             # -Os optimizes for size. Useful for CPUs with small cache sizes. Confer https://wiki.gentoo.org/wiki/GCC_optimization
-            OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS -Os"
+            OPAM_SWITCH_CFLAGS="${OPAM_SWITCH_CFLAGS:-} -Os"
         fi
     else
-        if [ "$DKML_COMPILE_CM_CMAKE_SYSTEM_NAME" = Linux ] && [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" = 8 ]; then
+        if [ "$DKML_COMPILE_CM_CMAKE_SYSTEM_NAME" = Linux ] && [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" -eq 8 ]; then
             case "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" in
                 Clang | GNU) TARGET_CANENABLEFRAMEPOINTER=ON ;; # _not_ AppleClang
                 *) TARGET_CANENABLEFRAMEPOINTER=OFF ;;
@@ -409,61 +412,10 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         else
             TARGET_CANENABLEFRAMEPOINTER=OFF
         fi
-        if [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" = 4 ]; then
+        if [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" -eq 4 ]; then
             TARGET_32BIT=ON
         else
             TARGET_32BIT=OFF
-        fi
-
-        # Set _CMAKE_C_FLAGS_FOR_CONFIG to $DKML_COMPILE_CM_CMAKE_C_FLAGS_DEBUG if DKML_COMPILE_CM_CONFIG=Debug, etc.
-        autodetect_compiler_cmake_get_config_c_flags
-
-        # Assembler details can be found at https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14563-L14595
-        # Pay attention to the order of precedence for the operating systems
-        if [ -n "$DKML_COMPILE_CM_CMAKE_ASM_COMPILER" ]; then
-            OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_COMPILER"
-            OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
-        fi
-        if cmake_flag_on "$DKML_COMPILE_CM_MSVC"; then
-            # Use the MASM compiler (ml/ml64) which is required for OCaml with MSVC.
-            # See https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14585-L14588 for options
-            if [ "$TARGET_32BIT" = ON ]; then
-                OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER -nologo -coff -Cp -c -Fo"
-            else
-                OPAM_SWITCH_AS="$DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER -nologo -Cp -c -Fo"
-            fi
-            OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
-        elif [ "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" = "AppleClang" ] || [ "$DKML_COMPILE_CM_CMAKE_C_COMPILER_ID" = "Clang" ]; then
-            [ -n "$OPAM_SWITCH_AS" ] && OPAM_SWITCH_AS="$OPAM_SWITCH_AS -Wno-trigraphs" && OPAM_SWITCH_ASPP="$OPAM_SWITCH_AS"
-        fi
-
-        # C details
-        OPAM_SWITCH_CC="$DKML_COMPILE_CM_CMAKE_C_COMPILER"
-        OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS $DKML_COMPILE_CM_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG"
-
-        # Platform fixups which haven't been done yet
-        if cmake_flag_on "$DKML_COMPILE_CM_MSVC"; then
-            # To avoid the following when /Zi or /ZI is enabled:
-            #   2># major_gc.c : fatal error C1041: cannot open program database 'Z:\build\windows_x86\Debug\dksdk\system\_opam\.opam-switch\build\ocaml-variants.4.12.0+options+dkml+msvc32\runtime\vc140.pdb'; if multiple CL.EXE write to the same .PDB file, please use /FS
-            # we use /FS. This slows things down, so we should only do it
-            if printf "%s" "$OPAM_SWITCH_CFLAGS" | grep -q "[/-]Zi"; then
-                OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS /FS"
-            elif printf "%s" "$OPAM_SWITCH_CFLAGS" | grep -q "[/-]ZI"; then
-                OPAM_SWITCH_CFLAGS="$OPAM_SWITCH_CFLAGS /FS"
-            fi
-
-            # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKML_COMPILE_CM_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
-            #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/host-tools/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
-            #   cl : Command line error D8016 : '/RTC1' and '/O2' command-line options are incompatible
-            # we remove any /RTC1 from the flags
-            OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's#\B/RTC1\b##g')
-
-            # Always use dash (-) form of options rather than slash (/) options. Makes MSYS2 not try
-            # to think the option is a filepath and try to translate it.
-            OPAM_SWITCH_CFLAGS=$(printf "%s" "$OPAM_SWITCH_CFLAGS" | sed 's# /# -#g')
-            OPAM_SWITCH_CC=$(printf "%s" "$OPAM_SWITCH_CC" | sed 's# /# -#g')
-            OPAM_SWITCH_ASPP=$(printf "%s" "$OPAM_SWITCH_ASPP" | sed 's# /# -#g')
-            OPAM_SWITCH_AS=$(printf "%s" "$OPAM_SWITCH_AS" | sed 's# /# -#g')
         fi
     fi
     if [ $BUILD_DEBUG = ON ] && [ $TARGET_CANENABLEFRAMEPOINTER = ON ]; then
@@ -541,7 +493,7 @@ printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/
 printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchexec.sh
 
 printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
-if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
+if [ "$YES" = ON ] && [ "${DKML_OPAM_FORCE_INTERACTIVE:-OFF}" = OFF ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
 printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 
 # Only the compiler should be created; no local .opam files will be auto-installed so that
@@ -593,10 +545,8 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\"
     # Ignore any switch the developer gave. We are creating our own.
     printf "%s\n" "export OPAMSWITCH="
     printf "%s\n" "export OPAM_SWITCH_PREFIX="
-    if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS="; escape_string_for_shell "$OPAM_SWITCH_CFLAGS"; fi
-    if [ -n "${OPAM_SWITCH_CC:-}" ]; then     printf "export CC="; escape_string_for_shell "$OPAM_SWITCH_CC"; fi
-    if [ -n "${OPAM_SWITCH_ASPP:-}" ]; then   printf "export ASPP="; escape_string_for_shell "$OPAM_SWITCH_ASPP"; fi
-    if [ -n "${OPAM_SWITCH_AS:-}" ]; then     printf "export AS="; escape_string_for_shell "$OPAM_SWITCH_AS"; fi
+    if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS=\"\${CFLAGS:-} \""; escape_string_for_shell "$OPAM_SWITCH_CFLAGS"; printf "\n"; fi
+    printf "exec env DKMLDIR='%s' DKML_TARGET_ABI='%s' '%s' \"\$@\"\n" "$DKMLDIR" "$TARGET_ARCH" "$DKMLDIR/installtime/unix/private/standard-compiler-env-to-ocaml-configure-launcher.sh"
 } > "$WORK"/switch-create-prehook.sh
 chmod +x "$WORK"/switch-create-prehook.sh
 
@@ -680,7 +630,7 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
 # 1. Add PATH=<system ocaml>:$PATH if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
-if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then    
+if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then
     DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
     {
         cat "$WORK"/nonswitchexec.sh

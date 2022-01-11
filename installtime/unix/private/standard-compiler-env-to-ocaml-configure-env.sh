@@ -40,7 +40,7 @@ disambiguate_filesystem_paths
 # ---------------------------------------
 
 # Common passthrough flags
-export PATH LDFLAGS AR
+export PATH AR
 
 # CC
 # The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code.
@@ -71,7 +71,21 @@ fi
 export CFLAGS
 
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1213-L1240
-if [ -n "${AS:-}" ]; then
+if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
+    # Use the MASM compiler (ml/ml64) which is required for OCaml with MSVC.
+    # See https://github.com/ocaml/ocaml/blob/4c52549642873f9f738dd89ab39cec614fb130b8/configure#L14585-L14588 for options
+    if [ "${DKML_COMPILE_CM_CONFIG:-}" = "Debug" ]; then
+      _MLARG_EXTRA=" -Zi"
+    else
+      _MLARG_EXTRA=
+    fi
+    if [ "$DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P" -eq 4 ]; then
+      AS="${DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER}${_MLARG_EXTRA} -nologo -coff -Cp -c -Fo"
+    else
+      AS="${DKML_COMPILE_CM_CMAKE_ASM_MASM_COMPILER}${_MLARG_EXTRA} -nologo -Cp -c -Fo"
+    fi
+    ASPP="$AS"
+elif [ -n "${AS:-}" ]; then
   _TMP_AS="${AS:-}"
   AS="$_TMP_AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-} ${ASFLAGS:-}"
 
@@ -183,20 +197,14 @@ if [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
   LD=$DKML_COMPILE_CM_CMAKE_LINKER
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
 fi
-# -melf_* is an option that needs to be in LD for OCaml rather than LDFLAGS since LDFLAGS is overused and passed
-# to $CC (ex. gcc).
+# OCaml uses LDFLAGS for both $CC (ex. gcc) and $LD, so we have to zero out
+# LDFLAGS and push LDFLAGS into LD directly
 if [ -n "${LD:-}" ]; then
-  if printf "%s" "${LDFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-melf_i386\b'; then
-    LD="$LD -melf_i386"
-    DIRECT_LD=$LD
-    LDFLAGS=$(printf "%s" "$LDFLAGS" | PATH=/usr/bin:/bin sed 's/\B-melf_i386\b//g')
-  elif printf "%s" "${LDFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-melf_x86_64\b'; then
-    LD="$LD -melf_x86_64"
-    DIRECT_LD=$LD
-    LDFLAGS=$(printf "%s" "$LDFLAGS" | PATH=/usr/bin:/bin sed 's/\B-melf_x86_64\b//g')
-  fi
+  LD="$LD ${LDFLAGS:-}"
+  DIRECT_LD=$LD
+  LDFLAGS=
 fi
-export LD DIRECT_LD
+export LD DIRECT_LD LDFLAGS
 
 # STRIP, RANLIB, NM, OBJDUMP
 RANLIB="${DKML_COMPILE_CM_CMAKE_RANLIB:-}"
@@ -204,3 +212,28 @@ STRIP="${DKML_COMPILE_CM_CMAKE_STRIP:-}"
 NM="${DKML_COMPILE_CM_CMAKE_NM:-}"
 OBJDUMP="${DKML_COMPILE_CM_CMAKE_OBJDUMP:-}"
 export STRIP RANLIB NM OBJDUMP
+
+# Final fixup
+if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
+    # To avoid the following when /Zi or /ZI is enabled:
+    #   2># major_gc.c : fatal error C1041: cannot open program database 'Z:\build\windows_x86\Debug\dksdk\system\_opam\.opam-switch\build\ocaml-variants.4.12.0+options+dkml+msvc32\runtime\vc140.pdb'; if multiple CL.EXE write to the same .PDB file, please use /FS
+    # we use /FS. This slows things down, so we should only do it
+    if printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin grep -q "[/-]Zi"; then
+        CFLAGS="$CFLAGS /FS"
+    elif printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin grep -q "[/-]ZI"; then
+        CFLAGS="$CFLAGS /FS"
+    fi
+
+    # To avoid the following when /O2 is added by OCaml ./configure to the given "$DKML_COMPILE_CM_CMAKE_C_FLAGS $_CMAKE_C_FLAGS_FOR_CONFIG" = "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1" :
+    #   (cd _build/default/src && C:\DiskuvOCaml\BuildTools\VC\Tools\MSVC\14.26.28801\bin\HostX64\x86\cl.exe -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_CRT_SECURE_NO_DEPRECATE -nologo -O2 -Gy- -MD -DWIN32 -D_WINDOWS -Zi -Ob0 -Od -RTC1 -FS -D_LARGEFILE64_SOURCE -I Z:/build/windows_x86/Debug/dksdk/host-tools/_opam/lib/ocaml -I Z:\build\windows_x86\Debug\dksdk\system\_opam\lib\sexplib0 -I ../compiler-stdlib/src -I ../hash_types/src -I ../shadow-stdlib/src /Foexn_stubs.obj -c exn_stubs.c)
+    #   cl : Command line error D8016 : '/RTC1' and '/O2' command-line options are incompatible
+    # we remove any /RTC1 from the flags
+    CFLAGS=$(printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin sed 's#\B/RTC1\b##g')
+
+    # Always use dash (-) form of options rather than slash (/) options. Makes MSYS2 not try
+    # to think the option is a filepath and try to translate it.
+    CFLAGS=$(printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
+    CC=$(printf "%s" "${CC:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
+    ASPP=$(printf "%s" "${ASPP:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
+    AS=$(printf "%s" "${AS:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
+fi

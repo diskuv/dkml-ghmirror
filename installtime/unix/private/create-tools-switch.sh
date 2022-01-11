@@ -36,11 +36,7 @@ usage() {
 }
 
 STATEDIR=
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 OCAMLVERSION_OR_HOME=
 OPAMHOME=
 FLAVOR=CI
@@ -62,16 +58,10 @@ while getopts ":hd:o:p:v:f:" opt; do
         ;;
         o ) OPAMHOME=$OPTARG ;;
         p )
-            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+            DKMLPLATFORM=$OPTARG
+            if [ "$DKMLPLATFORM" = dev ]; then
                 usage
-                printf "FATAL: The -p option is not supported unless DKML_FEATUREFLAG_CMAKE_PLATFORM=ON\n" >&2
-                exit 107
-            else
-                DKMLPLATFORM=$OPTARG
-                if [ "$DKMLPLATFORM" = dev ]; then
-                    usage
-                    exit 0
-                fi
+                exit 0
             fi
             ;;
         f )
@@ -96,15 +86,10 @@ shift $((OPTIND -1))
 # END Command line processing
 # ------------------
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    # shellcheck disable=SC2034
-    PLATFORM=dev
-else
-    if [ -z "$DKMLPLATFORM" ]; then
-        printf "Must specify -p DKMLPLATFORM option\n" >&2
-        usage
-        exit 1
-    fi
+if [ -z "$DKMLPLATFORM" ]; then
+    printf "Must specify -p DKMLPLATFORM option\n" >&2
+    usage
+    exit 1
 fi
 
 DKMLDIR=$(dirname "$0")
@@ -127,7 +112,10 @@ cd "$TOPDIR"
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
 
-# Just compiler
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
+# Just the OCaml compiler
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release
 else
