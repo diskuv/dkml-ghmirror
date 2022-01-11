@@ -38,7 +38,6 @@ usage() {
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] [-p DKMLPLATFORM]  Configure the Diskuv Opam plugins" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Defaults to the host native platform" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -t TARGETDIR: If specified, place vcpkg in the target directory" >&2
@@ -47,11 +46,7 @@ usage() {
 
 PLATFORM=
 STATEDIR=
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 TARGETDIR=
 OUTPUTFILE=
 BOOTSTRAP_ONLY=OFF
@@ -63,7 +58,7 @@ while getopts ":hp:d:t:o:x" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
-            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+            if [ "$PLATFORM" = dev ]; then
                 usage
                 exit 0
             fi
@@ -91,13 +86,6 @@ while getopts ":hp:d:t:o:x" opt; do
     esac
 done
 shift $((OPTIND -1))
-
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$PLATFORM" ]; then
-        usage
-        exit 1
-    fi
-fi
 
 # END Command line processing
 # ------------------
@@ -132,7 +120,7 @@ autodetect_system_binaries
 set_opamrootdir
 
 # Set default for PLATFORM
-if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -z "$PLATFORM" ]; then
+if [ -z "$PLATFORM" ]; then
     # Set BUILDHOST_ARCH
     autodetect_buildhost_arch
 
@@ -157,11 +145,7 @@ INSTALL_VCPKG_PACKAGES=OFF
 # Set BUILDHOST_ARCH and DKML_VCPKG_HOST_TRIPLET.
 # We need DKML_VCPKG_HOST_TRIPLET especially for Windows since Windows vcpkg defaults
 # to x86-windows.
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    platform_vcpkg_triplet
-else
-    vcpkg_triplet_arg_platform "$PLATFORM"
-fi
+vcpkg_triplet_arg_platform "$PLATFORM"
 
 # Locate vcpkg and the vcpkg package installation directory
 if [ -n "$TARGETDIR" ]; then
