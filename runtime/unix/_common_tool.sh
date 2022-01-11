@@ -345,6 +345,35 @@ set_dksdkcachedir() {
     fi
 }
 
+# Sets the location of the opam executable.
+# Prefers ~/opt/opam/bin/opam{.exe}; otherwise looks in the PATH.
+#
+# Outputs:
+# - env:OPAMEXE - The location of opam or opam.exe
+# Return code: 0 if found; 1 if not found
+set_opamexe() {
+    if [ -e "$HOME/opt/opam/bin/opam.exe" ]; then
+        OPAMEXE="$HOME/opt/opam/bin/opam.exe"
+        return
+    elif [ -e "$HOME/opt/opam/bin/opam" ]; then
+        OPAMEXE="$HOME/opt/opam/bin/opam"
+        return
+    fi
+    set_opamexe_EXE=$(command -v opam 2>/dev/null || true)
+    if [ -n "$set_opamexe_EXE" ]; then
+        # shellcheck disable=SC2034
+        OPAMEXE="$set_opamexe_EXE"
+        return 0
+    fi
+    # Not found
+    printf "FATAL: Opam was not found. Please follow https://opam.ocaml.org/doc/Install.html\n"
+    exit 107
+}
+
+# Finds the Opam root.
+#
+# A side-effect of this call is that `opam init` may be called.
+#
 # Inputs:
 # - env:USERMODE - If 'OFF' uses STATEDIR. Otherwise uses default Opam 2.2 root
 # - env:STATEDIR - If specified, uses <STATEDIR>/opam as the Opam root
@@ -359,6 +388,7 @@ set_dksdkcachedir() {
 # - env:WITHDKMLEXE_BUILDHOST - The plugin binary 'with-dkml.exe'
 # - env:WITHDKMLEXEDIIR_BUILDHOST - The directory containing the plugin binary 'with-dkml.exe'
 set_opamrootdir() {
+    set_opamexe
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_linux_based_platform "$PLATFORM"; then
         # In a reproducible container ...
         OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
@@ -392,7 +422,25 @@ set_opamrootdir() {
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
             elif [ -z "${OPAMROOTDIR_BUILDHOST:-}" ]; then
                 # Use existing Opam to know where the Opam root is
-                OPAMROOTDIR_BUILDHOST=$(opam var --global root)
+                OPAMROOTDIR_BUILDHOST=$($OPAMEXE var --global root 2>/dev/null || true)
+                if [ -z "$OPAMROOTDIR_BUILDHOST" ]; then
+                    # Opam is not initialized. We probably got:
+                    #   [ERROR] Opam has not been initialised, please run `opam init'                
+                    # So conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
+                    set_opamrootdir_VER=$($OPAMEXE --version)
+                    case "$set_opamrootdir_VER" in
+                        1*)
+                            printf "FATAL: You will need to upgrade %s to Opam 2.0+\n" "$OPAMEXE"
+                            exit 107
+                            ;;
+                        2.0.*|2.1.*)
+                            OPAMROOTDIR_BUILDHOST="$HOME/.opam"
+                            ;;
+                        *)
+                            OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
+                            ;;
+                    esac
+                fi
             fi
             # shellcheck disable=SC2034
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"

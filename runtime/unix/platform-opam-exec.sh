@@ -240,6 +240,9 @@ OPAM_ENV_STMT=
 # ------------
 # BEGIN --root
 
+# Set OPAMEXE
+set_opamexe
+
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
 
@@ -248,7 +251,7 @@ OPAM_ROOT_OPT=() # we have a separate array for --root since --root is mandatory
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     OPAM_ROOT_OPT+=( --root "$OPAMROOTDIR_EXPAND" )
     # `--set-switch` will output the globally selected switch, if any.
-    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --set-root --set-switch || true'
+    OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --set-root --set-switch || true'
 fi
 
 # END --root
@@ -294,13 +297,13 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
         OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
+        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
     fi
 else
     if [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
         OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
+        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
     fi
 fi
 
@@ -381,20 +384,20 @@ fi
 set +u # workaround bash 'unbound variable' triggered on empty arrays
 case "$subcommand" in
     help)
-        exec_in_platform opam help "$@"
+        exec_in_platform "$OPAMEXE" help "$@"
     ;;
     init)
-        exec_in_platform opam init --root "$OPAMROOTDIR_EXPAND" "${OPAM_OPTS[@]}" "$@"
+        exec_in_platform "$OPAMEXE" init --root "$OPAMROOTDIR_EXPAND" "${OPAM_OPTS[@]}" "$@"
     ;;
     list | option | repository | env)
-        exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        exec_in_platform "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
     switch)
         if [ "$1" = create ]; then
             # When a switch is created we need a commpiler
-            exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            exec_in_platform -c "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         else
-            exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            exec_in_platform "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
     install | upgrade | pin)
@@ -402,11 +405,11 @@ case "$subcommand" in
         if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
             # When we are upgrading / installing a package in the host tools switch, we must have a compiler so we can compile
             # with-dkml.exe
-            exec_in_platform -c opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            exec_in_platform -c "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         else
             # When we are upgrading / installing a package in any other switch, we will have a with-dkml.exe wrapper to
             # provide the compiler
-            exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            exec_in_platform "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
     exec)
@@ -420,17 +423,17 @@ case "$subcommand" in
         if [ -e "$WITHDKMLEXE_BUILDHOST" ] && [ "${WITHDKML_ENABLE:-ON}" = ON ]; then
             if [ "$1" = "--" ]; then
                 shift
-                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             else
-                exec_in_platform opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             fi
         else
             # Since we do not yet have with-dkml.exe (ie. we are in the middle of a new installation / upgrade), supply the compiler as an
             # alternative so `opam exec -- dune build` works
-            exec_in_platform -c opam exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+            exec_in_platform -c "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
         fi
     ;;
     *)
-        exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+        exec_in_platform "$OPAMEXE" "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
     ;;
 esac

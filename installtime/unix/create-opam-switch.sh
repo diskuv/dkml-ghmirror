@@ -125,7 +125,8 @@ usage() {
     printf "%s\n" "    will be executed." >&2
     printf "%s\n" "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
     printf "%s\n" "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
-    printf "%s\n" "        Example: opam pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
+    printf "%s\n" "    The Opam commands should use \$OPAMEXE as the path to the Opam executable." >&2
+    printf "%s\n" "        Example: \$OPAMEXE pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
     printf "%s\n" "    hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
     printf "%s\n" "        *.sh text eol=lf" >&2
     printf "%s\n" "    or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
@@ -275,6 +276,9 @@ cd "$TOPDIR"
 
 # --------------------------------
 # BEGIN opam switch create
+
+# Set OPAMEXE
+set_opamexe
 
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
@@ -787,7 +791,7 @@ if [ -n "$HOOK_POSTCREATE" ]; then
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  exec -- '%s' '%s'" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
+            printf "  exec -- '%s' 'OPAMEXE=%s' '%s' '%s'" "$DKMLSYS_ENV" "$OPAMEXE" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
         } > "$WORK"/postcreate.sh
         log_shell "$WORK"/postcreate.sh
 
