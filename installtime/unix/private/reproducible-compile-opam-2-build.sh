@@ -144,6 +144,9 @@ fi
 # Set NUMCPUS if unset from autodetection of CPUs
 autodetect_cpus
 
+# Set DKML_POSIX_SHELL
+autodetect_posix_shell
+
 # Autodetect compiler like Visual Studio on Windows.
 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_ABI="$DKMLPLATFORM" autodetect_compiler "$WORK"/launch-compiler.sh
 if [ -n "$OCAML_HOST_TRIPLET" ]; then
@@ -158,6 +161,20 @@ if is_unixy_windows_build_machine; then
     "$WORK"/launch-compiler.sh printf "%s\n" "INCLUDE: ${INCLUDE:-}"
     "$WORK"/launch-compiler.sh printf "%s\n" "LIBS: ${LIBS:-}"
 fi
+
+# Just like OCaml's ./configure, Opam uses non-standard constructions like
+# `$CC ... $LDFLAGS`! That will cause unrecognized options many many times.
+{
+    printf "#!%s\n" "$DKML_POSIX_SHELL"
+    printf "if [ -n \"\${LD:-}\" ]; then\n"
+    # exec env LD="$LD ${LDFLAGS:-}" LDFLAGS= $@
+    printf "  exec env LD=\"\$LD \${LDFLAGS:-}\" LDFLAGS= \"\$@\"\n"
+    printf "else\n"
+    # exec env $@
+    printf "  exec env \"\$@\"\n"
+    printf "fi\n"
+} > "$WORK"/fixup-opam-compiler-env.sh
+chmod +x "$WORK"/fixup-opam-compiler-env.sh
 
 # Running through the `make compiler`, `make lib-pkg` + `configure` process should be done
 # as one atomic unit. A failure in an intermediate step can cause subsequent `make compiler`
@@ -178,7 +195,7 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
 
         # We do what the following does (with customization): `make -C "$OPAMSRC_UNIX" compiler -j "$NUMCPUS"`
         pushd "$OPAMSRC_UNIX"
-        if ! log_trace "$WORK"/launch-compiler.sh \
+        if ! log_trace "$WORK"/launch-compiler.sh "$WORK"/fixup-opam-compiler-env.sh \
             BOOTSTRAP_EXTRA_OPTS="$BOOTSTRAP_EXTRA_OPTS" BOOTSTRAP_OPT_TARGET=opt.opt BOOTSTRAP_ROOT=.. BOOTSTRAP_DIR=bootstrap \
             ./shell/bootstrap-ocaml.sh auto;
         then
@@ -206,7 +223,7 @@ if [ ! -e "$OPAMSRC_UNIX/src/ocaml-flags-configure.sexp" ]; then
     # - MSVS_PREFERENCE is used by OCaml's shell/msvs-detect, and is not used for non-Windows systems.
     # Note: The launch-compiler.sh are needed on jonahbeckford desktops for 32-bit Windows builds, but not on GitLab CI for 32-bit Windows.
     pushd "$OPAMSRC_UNIX"
-    log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" "$WORK"/launch-compiler.sh ./configure --prefix="$TARGETDIR_MIXED"
+    log_trace env PATH="$POST_BOOTSTRAP_PATH" MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE" "$WORK"/launch-compiler.sh "$WORK"/fixup-opam-compiler-env.sh ./configure --prefix="$TARGETDIR_MIXED"
     popd
 fi
 
