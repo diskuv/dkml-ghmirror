@@ -245,7 +245,14 @@ if [ "$BOOTSTRAP_ONLY" = OFF ] && [ "$INSTALL_VCPKG_PACKAGES" = ON ]; then
             install_vcpkg_pkgs_COMMAND_AND_ARGS="& { if ([Environment]::Is64BitOperatingSystem) { \${env:ProgramFiles(x86)} = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86) }; \$proc = Start-Process -NoNewWindow -FilePath '$VCPKG_BUILDHOST\\vcpkg.exe' -Wait -PassThru -ArgumentList (@('install') + ( '$*'.split().Where({ '' -ne \$_ }) ) + @('--triplet=$DKML_VCPKG_HOST_TRIPLET', '--debug')); if (\$proc.ExitCode -ne 0) { throw 'vcpkg failed' } }"
             log_trace "$DKMLSYS_ENV" --unset=TEMP --unset=TMP VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$DKML_SYSTEM_POWERSHELL" -Command "$install_vcpkg_pkgs_COMMAND_AND_ARGS"
         else
-            log_trace "$DKMLSYS_ENV" VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET" --debug
+            # Note: Without CLICOLOR=0 `vcpkg --install` on Linux (vcpkg 2021.12.01) will give:
+            #       Failed to parse CMake console output to locate port start/end markers
+            # Confer: https://github.com/microsoft/vcpkg/issues/20430
+            if [ "${DKML_BUILD_TRACE:-}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ]; then
+                log_trace "$DKMLSYS_ENV" CLICOLOR=0 VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET" --debug
+            else
+                log_trace "$DKMLSYS_ENV" CLICOLOR=0 VCPKG_VISUAL_STUDIO_PATH="$VCPKG_VISUAL_STUDIO_PATH" PATH="$VCPKG_PATH" "$VCPKG_UNIX"/vcpkg install "$@" --triplet="$DKML_VCPKG_HOST_TRIPLET"
+            fi
         fi
     }
 
