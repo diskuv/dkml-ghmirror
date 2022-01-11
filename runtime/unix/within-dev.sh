@@ -261,7 +261,7 @@ if [ "$COMPILATION" = ON ]; then
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
             autodetect_compiler "$LAUNCHER"
         else
-            DKML_TARGET_PLATFORM=$PLATFORM autodetect_compiler "$LAUNCHER"
+            DKML_TARGET_ABI=$PLATFORM autodetect_compiler "$LAUNCHER"
         fi
         EXITCODE=$?
         set -e

@@ -1098,13 +1098,13 @@ create_system_launcher() {
 # will be the Visual Studio installation detected by this function.
 #
 # Example:
-#   DKML_TARGET_PLATFORM=windows_x86 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON autodetect_compiler --msvs-detect /tmp/msvs-detect
+#   DKML_TARGET_ABI=windows_x86 DKML_FEATUREFLAG_CMAKE_PLATFORM=ON autodetect_compiler --msvs-detect /tmp/msvs-detect
 #   eval `bash /tmp/msvs-detect` # this is what https://github.com/ocaml/opam/blob/c7759e08722520d3ab8a8e162f3841d270191490/configure#L3655 does
 #   echo $MSVS_NAME # etc.
 #
 # Inputs:
 # - $1 - Optional. If provided, then $1/include and $1/lib are added to INCLUDE and LIB, respectively
-# - env:DKML_TARGET_PLATFORM - This variable will select the compiler options necessary to cross-compile (or native compile)
+# - env:DKML_TARGET_ABI - This variable will select the compiler options necessary to cross-compile (or native compile)
 #   to the target PLATFORM. 'dev' is not a target platform.
 # - env:DKML_PREFER_CROSS_OVER_NATIVE - Optional. ON means prefer to create a cross-compiler, while OFF (the default)
 #   means to prefer to create a native compiler. The only time the preference is used is when both native and cross compilers
@@ -1275,8 +1275,8 @@ autodetect_compiler() {
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         autodetect_compiler_PLATFORM_ARCH=${PLATFORM:-dev}
     else
-        if [ -n "${DKML_TARGET_PLATFORM:-}" ]; then
-            autodetect_compiler_PLATFORM_ARCH=$DKML_TARGET_PLATFORM
+        if [ -n "${DKML_TARGET_ABI:-}" ]; then
+            autodetect_compiler_PLATFORM_ARCH=$DKML_TARGET_ABI
         else
             autodetect_compiler_PLATFORM_ARCH=$BUILDHOST_ARCH
         fi

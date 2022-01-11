@@ -23,7 +23,7 @@
 # described in https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html. The
 # compiler will have been from:
 # a) find the compiler selected/validated in the Diskuv OCaml installation (Windows) or on first-use (Unix)
-# b) find the specific architecture that has been given to us in DKML_TARGET_PLATFORM
+# b) find the specific architecture that has been given to us in DKML_TARGET_ABI
 #
 # On exit the variables needed for github.com/ocaml/ocaml/configure will be set and exported.
 set -euf

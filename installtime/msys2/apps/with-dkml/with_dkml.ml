@@ -470,9 +470,9 @@ let main_with_result () =
   Lazy.force get_dkmlversion >>= fun dkmlversion ->
   Lazy.force Target_context.V1.get_platform_name >>= fun target_platform_name ->
   let cache_keys = [ dkmlversion ] in
-  (* FIRST, set DKML_TARGET_PLATFORM, which may be overridden by DKML_TARGET_PLATFORM_OVERRIDE *)
+  (* FIRST, set DKML_TARGET_ABI, which may be overridden by DKML_TARGET_PLATFORM_OVERRIDE *)
   let target_platform_name = OS.Env.opt_var "DKML_TARGET_PLATFORM_OVERRIDE" ~absent:target_platform_name in
-  OS.Env.set_var "DKML_TARGET_PLATFORM" (Some target_platform_name) >>= fun () ->
+  OS.Env.set_var "DKML_TARGET_ABI" (Some target_platform_name) >>= fun () ->
   let cache_keys = target_platform_name :: cache_keys in
   (* SECOND, set MSYS2 environment variables.
      - This is needed before is_msys2_msys_build_machine() is called from crossplatform-functions.sh

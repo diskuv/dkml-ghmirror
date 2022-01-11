@@ -87,7 +87,7 @@ Arguments CMD ARGS
       On Windows the command may come from MSYS2. For example, ``bash`` is a valid command.
 
 Sequence of operations
-   #. The environment variable ``DKML_TARGET_PLATFORM`` will be detected through compiler probing and set to one of:
+   #. The environment variable ``DKML_TARGET_ABI`` will be detected through compiler probing and set to one of:
 
       - ``android_arm64v8a``
       - ``android_arm32v7a``
@@ -112,7 +112,7 @@ Sequence of operations
          An :ref:`SDK Project <SDKProjects>` supports cross-compilation and can have many ``with-dkml`` binaries. Any
          ``./makeit *-<platform>-<buildtype>`` target like ``./makeit build-windows_x86-Debug`` or ``./makeit build-dev`` will first
          call a ``./makeit init-<platform>`` target; that will compile a ``with-dkml`` binary using a compiler specific to the given
-         ``<platform>``. That means that ``DKML_TARGET_PLATFORM`` will be ``<platform>``, except ``DKML_TARGET_PLATFORM`` will
+         ``<platform>``. That means that ``DKML_TARGET_ABI`` will be ``<platform>``, except ``DKML_TARGET_ABI`` will
          be the results of probing the system compiler if ``<platform> = "dev"``.
 
       .. warning::
