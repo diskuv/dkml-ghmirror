@@ -389,68 +389,63 @@ set_opamexe() {
 # - env:WITHDKMLEXEDIIR_BUILDHOST - The directory containing the plugin binary 'with-dkml.exe'
 set_opamrootdir() {
     set_opamexe
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_arg_linux_based_platform "$PLATFORM"; then
-        # In a reproducible container ...
-        OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
-        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
-        OPAMROOTDIR_EXPAND="@@EXPAND_TOPDIR@@/$OPAMROOTDIR_BUILDHOST"
-        WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
-        WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
-    else
-        if [ "$__USERMODE" = OFF ] && [ -n "${STATEDIR:-}" ]; then
-            OPAMROOTDIR_BUILDHOST="$STATEDIR/opam"
-            if [ -x /usr/bin/cygpath ]; then OPAMROOTDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$OPAMROOTDIR_BUILDHOST"); fi
-            # shellcheck disable=SC2034
-            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}plugins${OS_DIR_SEP}diskuvocaml"
-            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST${OS_DIR_SEP}with-dkml${OS_DIR_SEP}$dkml_root_version"
-            # shellcheck disable=SC2034
-            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST${OS_DIR_SEP}with-dkml.exe"
-        elif is_unixy_windows_build_machine; then
-            if [ -n "${OPAMROOT:-}" ]; then
-                # If the developer sets OPAMROOT with an environment variable, then we will respect that
-                # just like `opam` would do.
-                OPAMROOTDIR_BUILDHOST="$OPAMROOT"
-            else
-                # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
-                OPAMROOTDIR_BUILDHOST="${LOCALAPPDATA}\\opam"
-            fi
-            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
-            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST\\with-dkml\\$dkml_root_version"
-            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST\\with-dkml.exe"
+    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
+        printf "DKML_FEATUREFLAG_CMAKE_PLATFORM must be ON during its deprecation." >&2
+        exit 107
+    fi
+    if [ "$__USERMODE" = OFF ] && [ -n "${STATEDIR:-}" ]; then
+        OPAMROOTDIR_BUILDHOST="$STATEDIR/opam"
+        if [ -x /usr/bin/cygpath ]; then OPAMROOTDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$OPAMROOTDIR_BUILDHOST"); fi
+        # shellcheck disable=SC2034
+        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}plugins${OS_DIR_SEP}diskuvocaml"
+        WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST${OS_DIR_SEP}with-dkml${OS_DIR_SEP}$dkml_root_version"
+        # shellcheck disable=SC2034
+        WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST${OS_DIR_SEP}with-dkml.exe"
+    elif is_unixy_windows_build_machine; then
+        if [ -n "${OPAMROOT:-}" ]; then
+            # If the developer sets OPAMROOT with an environment variable, then we will respect that
+            # just like `opam` would do.
+            OPAMROOTDIR_BUILDHOST="$OPAMROOT"
         else
-            if [ -n "${OPAMROOT:-}" ]; then
-                OPAMROOTDIR_BUILDHOST="$OPAMROOT"
-            elif [ -z "${OPAMROOTDIR_BUILDHOST:-}" ]; then
-                # Use existing Opam to know where the Opam root is
-                OPAMROOTDIR_BUILDHOST=$($OPAMEXE var --global root 2>/dev/null || true)
-                if [ -z "$OPAMROOTDIR_BUILDHOST" ]; then
-                    # Opam is not initialized. We probably got:
-                    #   [ERROR] Opam has not been initialised, please run `opam init'                
-                    # So conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
-                    set_opamrootdir_VER=$($OPAMEXE --version)
-                    case "$set_opamrootdir_VER" in
-                        1*)
-                            printf "FATAL: You will need to upgrade %s to Opam 2.0+\n" "$OPAMEXE"
-                            exit 107
-                            ;;
-                        2.0.*|2.1.*)
-                            OPAMROOTDIR_BUILDHOST="$HOME/.opam"
-                            ;;
-                        *)
-                            OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
-                            ;;
-                    esac
-                fi
+            # Conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
+            OPAMROOTDIR_BUILDHOST="${LOCALAPPDATA}\\opam"
+        fi
+        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
+        WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST\\with-dkml\\$dkml_root_version"
+        WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST\\with-dkml.exe"
+    else
+        if [ -n "${OPAMROOT:-}" ]; then
+            OPAMROOTDIR_BUILDHOST="$OPAMROOT"
+        elif [ -z "${OPAMROOTDIR_BUILDHOST:-}" ]; then
+            # Use existing Opam to know where the Opam root is
+            OPAMROOTDIR_BUILDHOST=$($OPAMEXE var --global root 2>/dev/null || true)
+            if [ -z "$OPAMROOTDIR_BUILDHOST" ]; then
+                # Opam is not initialized. We probably got:
+                #   [ERROR] Opam has not been initialised, please run `opam init'                
+                # So conform to https://github.com/ocaml/opam/pull/4815#issuecomment-910137754
+                set_opamrootdir_VER=$($OPAMEXE --version)
+                case "$set_opamrootdir_VER" in
+                    1*)
+                        printf "FATAL: You will need to upgrade %s to Opam 2.0+\n" "$OPAMEXE"
+                        exit 107
+                        ;;
+                    2.0.*|2.1.*)
+                        OPAMROOTDIR_BUILDHOST="$HOME/.opam"
+                        ;;
+                    *)
+                        OPAMROOTDIR_BUILDHOST="${XDG_CONFIG_HOME:-$HOME/.config}/opam"
+                        ;;
+                esac
             fi
-            # shellcheck disable=SC2034
-            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
-            WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
-            # shellcheck disable=SC2034
-            WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
         fi
         # shellcheck disable=SC2034
-        OPAMROOTDIR_EXPAND="$OPAMROOTDIR_BUILDHOST"
+        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
+        WITHDKMLEXEDIR_BUILDHOST="$DKMLPLUGIN_BUILDHOST/with-dkml/$dkml_root_version"
+        # shellcheck disable=SC2034
+        WITHDKMLEXE_BUILDHOST="$WITHDKMLEXEDIR_BUILDHOST/with-dkml.exe"
     fi
+    # shellcheck disable=SC2034
+    OPAMROOTDIR_EXPAND="$OPAMROOTDIR_BUILDHOST"
     # shellcheck disable=SC2034
     DKMLPLUGIN_EXPAND="$OPAMROOTDIR_EXPAND/plugins/diskuvocaml"
 }
