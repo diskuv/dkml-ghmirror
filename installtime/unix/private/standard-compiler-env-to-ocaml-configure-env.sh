@@ -47,6 +47,30 @@ export PATH AR
 # clang and perhaps other compilers need --target=armv7-none-linux-androideabi21 for example
 if [ -n "${CC:-}" ]; then
   ORIG_CC=$CC
+
+  # OCaml's 4.14+ ./configure has func_cc_basename () which returns "gcc" if a GCC compiler, etc.
+  # However it uses the basename ... so a symlink from /usr/bin/cc to to /etc/alternatives/cc to /usr/bin/gcc
+  # to /usr/bin/x86_64-linux-gnu-gcc-9 for example would return "cc" and then code like
+  # `./configure --enable-frame-pointers` would fail because it was looking for "gcc".
+  #
+  # Even worse, earlier versions of OCaml just used the variable "$CC" and checked if it was "gcc*".
+  #
+  # Mitigation: See if $CC resolves to the same realpath as gcc. Use it if it does. But prefer
+  # "gcc" if it is /usr/bin/gcc.
+  _GCCEXE=$(command -v gcc || true)
+  if [ -n "$_GCCEXE" ] && [ -x /usr/bin/realpath ]; then
+    _CC_1=$(/usr/bin/realpath "$CC")
+    _CC_2=$(/usr/bin/realpath "$_GCCEXE")
+    _CC_RESOLVE=$_GCCEXE
+    if [ "$_GCCEXE" = /usr/bin/gcc ]; then
+      _CC_RESOLVE=gcc
+    fi
+    if [ "$_CC_1" = "$_CC_2" ]; then
+      CC=$_CC_RESOLVE
+    fi
+  fi
+
+  # Add --target if necessary
   CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-}"
   # clang and perhaps other compilers need --sysroot=C:/Users/beckf/AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot for example
   CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT:-}${DKML_COMPILE_CM_CMAKE_SYSROOT:-}"
