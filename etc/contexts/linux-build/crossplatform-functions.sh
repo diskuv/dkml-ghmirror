@@ -2065,7 +2065,7 @@ autodetect_compiler_vsdev() {
 log_shell() {
     autodetect_system_binaries
     autodetect_posix_shell
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+    if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then
         printf "%s\n" "@+ $DKML_POSIX_SHELL $*" >&2
         # If trace level > 2 and the first argument is a _non binary_ file then print contents
         if [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ] && [ -e "$1" ] && "$DKMLSYS_GREP" -qI . "$1"; then
