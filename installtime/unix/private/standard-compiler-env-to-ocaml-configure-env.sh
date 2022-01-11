@@ -91,6 +91,12 @@ if [ -n "${CC:-}" ]; then
       CC="$CC -m64"
       CFLAGS=$(printf "%s" "$CFLAGS" | PATH=/usr/bin:/bin sed 's/\B-m64\b//g')
   fi
+
+  # For OCaml 5.00 there is an error with GCC:
+  #   gc_ctrl.c:201:28: error: format ‘%zu’ expects argument of type ‘size_t’, but argument 3 has type ‘long unsigned int’ [-Werror=format=]
+  case "${CC:-}" in
+    */gcc*|gcc*) CFLAGS="${CFLAGS:-} -Wno-format" ;;
+  esac
 fi
 export CFLAGS
 

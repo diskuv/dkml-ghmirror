@@ -110,6 +110,7 @@ usage() {
         printf "%s\n" "   -t DIR: Target directory for the reproducible directory tree"
         printf "%s\n" "   -v COMMIT: Git commit or tag for https://github.com/ocaml/ocaml. Strongly prefer a commit id for much stronger"
         printf "%s\n" "      reproducibility guarantees"
+        printf "%s\n" "   -u COMMIT: Git commit or tag for https://github.com/ocaml/ocaml for the host ABI. Defaults to -v COMMIT"
         printf "%s\n" "   -a TARGETABIS: Optional. A named list of self-contained Posix shell script that can be sourced to set the"
         printf "%s\n" "      compiler environment variables for the target ABI. If not specified then the OCaml environment"
         printf "%s\n" "      will be purely for the host ABI. All path should use the native host platform's path"
@@ -169,11 +170,12 @@ BUILD_HOST_ARGS=()
 BUILD_CROSS_ARGS=()
 
 DKMLDIR=
-GIT_COMMITID_OR_TAG=
+HOST_GIT_COMMITID_OR_TAG=
+TARGET_GIT_COMMITID_OR_TAG=
 TARGETDIR=
 TARGETABIS=
 MSVS_PREFERENCE="$OPT_MSVS_PREFERENCE"
-while getopts ":d:v:t:a:b:e:i:j:k:m:n:h" opt; do
+while getopts ":d:v:u:t:a:b:e:i:j:k:m:n:h" opt; do
     case ${opt} in
         h )
             usage
@@ -188,9 +190,13 @@ while getopts ":d:v:t:a:b:e:i:j:k:m:n:h" opt; do
             fi
         ;;
         v )
-            GIT_COMMITID_OR_TAG="$OPTARG"
-            SETUP_ARGS+=( -v "$GIT_COMMITID_OR_TAG" )
+            TARGET_GIT_COMMITID_OR_TAG="$OPTARG"
+            SETUP_ARGS+=( -v "$TARGET_GIT_COMMITID_OR_TAG" )
         ;;
+        u )
+            HOST_GIT_COMMITID_OR_TAG="$OPTARG"
+            SETUP_ARGS+=( -v "$HOST_GIT_COMMITID_OR_TAG" )
+        ;;        
         t )
             TARGETDIR="$OPTARG"
             SETUP_ARGS+=( -t . )
@@ -240,10 +246,13 @@ while getopts ":d:v:t:a:b:e:i:j:k:m:n:h" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -z "$DKMLDIR" ] || [ -z "$GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; then
+if [ -z "$DKMLDIR" ] || [ -z "$TARGET_GIT_COMMITID_OR_TAG" ] || [ -z "$TARGETDIR" ]; then
     printf "%s\n" "Missing required options" >&2
     usage
     exit 1
+fi
+if [ -z "$HOST_GIT_COMMITID_OR_TAG" ]; then
+    HOST_GIT_COMMITID_OR_TAG=$TARGET_GIT_COMMITID_OR_TAG
 fi
 
 # Add options that have defaults
@@ -306,6 +315,12 @@ find_ocaml_crosscompile_patch() {
         # shellcheck disable=SC2034
         OCAMLPATCHEXTRA= # TODO
         ;;
+    5.00.*)
+        # shellcheck disable=SC2034
+        OCAMLPATCHFILE=reproducible-compile-ocaml-cross_5_00.patch
+        # shellcheck disable=SC2034
+        OCAMLPATCHEXTRA=reproducible-compile-ocaml-cross_5_00_extra.patch
+        ;;
     *)
         echo "FATAL: There is no cross-compiling patch file yet for OCaml $find_ocaml_crosscompile_patch_VER" >&2
         exit 107
@@ -318,6 +333,12 @@ apply_ocaml_crosscompile_patch() {
     shift
     apply_ocaml_crosscompile_patch_SRCDIR=$1
     shift
+
+    # Quick exit on zero byte patch files (which are invalid patch files but
+    # good for indicating nothing to patch)
+    if [ ! -s "$apply_ocaml_crosscompile_patch_PATCHFILE" ]; then
+        return
+    fi
 
     apply_ocaml_crosscompile_patch_SRCDIR_MIXED="$apply_ocaml_crosscompile_patch_SRCDIR"
     apply_ocaml_crosscompile_patch_PATCH_MIXED="$PWD"/installtime/unix/private/$apply_ocaml_crosscompile_patch_PATCHFILE
@@ -351,6 +372,8 @@ apply_ocaml_crosscompile_patch() {
 autodetect_buildhost_arch
 
 get_ocaml_source() {
+    get_ocaml_source_COMMIT=$1
+    shift
     get_ocaml_source_SRCUNIX="$1"
     shift
     get_ocaml_source_SRCMIXED="$1"
@@ -361,14 +384,14 @@ get_ocaml_source() {
         install -d "$get_ocaml_source_SRCUNIX"
         log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
         # do NOT --recurse-submodules because we don't want submodules (ex. flexdll/) that are in HEAD but
-        # are not in $GIT_COMMITID_OR_TAG
+        # are not in $get_ocaml_source_COMMIT
         log_trace git clone https://github.com/ocaml/ocaml "$get_ocaml_source_SRCMIXED"
-        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$get_ocaml_source_COMMIT"
     else
         # allow tag to move (for development and for emergency fixes), if the user chose a tag rather than a commit
-        if git -C "$get_ocaml_source_SRCMIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi
+        if git -C "$get_ocaml_source_SRCMIXED" tag -l "$get_ocaml_source_COMMIT" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$get_ocaml_source_SRCMIXED" tag -d "$get_ocaml_source_COMMIT"; fi
         log_trace git -C "$get_ocaml_source_SRCMIXED" fetch --tags
-        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+        log_trace git -C "$get_ocaml_source_SRCMIXED" -c advice.detachedHead=false checkout "$get_ocaml_source_COMMIT"
     fi
     log_trace git -C "$get_ocaml_source_SRCMIXED" submodule update --init --recursive
 
@@ -419,7 +442,7 @@ get_ocaml_source() {
 # It is hard to reason about mutated source directories with different-platform object files, so we use a pristine source dir
 # for the host and other pristine source dirs for each target.
 
-get_ocaml_source "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED" "$BUILDHOST_ARCH"
+get_ocaml_source "$HOST_GIT_COMMITID_OR_TAG" "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED" "$BUILDHOST_ARCH"
 
 # Find but do not apply the cross-compiling patches to the host ABI
 _OCAMLVER=$(awk 'NR==1{print}' "$OCAMLSRC_UNIX"/VERSION)
@@ -436,7 +459,7 @@ if [ -n "$TARGETABIS" ]; then
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
         # git clone
-        get_ocaml_source "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml" "$_targetabi"
+        get_ocaml_source "$TARGET_GIT_COMMITID_OR_TAG" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml" "$_targetabi"
         # git patch src/ocaml
         apply_ocaml_crosscompile_patch "$OCAMLPATCHFILE"  "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml"
         if [ -n "$OCAMLPATCHEXTRA" ]; then

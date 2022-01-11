@@ -238,6 +238,7 @@ $OCamlLangGitCommit = switch ($OCamlLangVersion)
 {
     "4.12.1" {"46c947827ec2f6d6da7fe5e195ae5dda1d2ad0c5"; Break}
     "4.13.1" {"ab626576eee205615a9d7c5a66c2cb2478f1169c"; Break}
+    "5.00.0+dev0-2021-11-05" {"284834d31767d323aae1cee4ed719cc36aa1fb2c"; Break}
     default {
         Write-Error -Category InvalidArgument `
             -Message ("`n`nThe OCaml version $OCamlLangVersion is not supported")
