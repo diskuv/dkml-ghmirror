@@ -348,10 +348,24 @@ set_dksdkcachedir() {
 # Sets the location of the opam executable.
 # Prefers ~/opt/opam/bin/opam{.exe}; otherwise looks in the PATH.
 #
+# Inputs:
+# - env:OPAMHOME - If specified, use <OPAMHOME>/bin/opam or <OPAMHOME>/bin/opam.exe
 # Outputs:
 # - env:OPAMEXE - The location of opam or opam.exe
 # Return code: 0 if found; 1 if not found
 set_opamexe() {
+    if [ -n "${OPAMHOME:-}" ]; then
+        if [ -e "$OPAMHOME/bin/opam.exe" ]; then
+            OPAMEXE="$OPAMHOME/bin/opam.exe"
+            return
+        elif [ -e "$OPAMHOME/bin/opam" ]; then
+            OPAMEXE="$OPAMHOME/bin/opam"
+            return
+        else
+            printf "FATAL: OPAMHOME is %s yet %s/bin/opam{.exe} does not exist\n" "$OPAMHOME" "$OPAMHOME"
+            exit 107
+        fi
+    fi
     if [ -e "$HOME/opt/opam/bin/opam.exe" ]; then
         OPAMEXE="$HOME/opt/opam/bin/opam.exe"
         return
@@ -377,6 +391,7 @@ set_opamexe() {
 # Inputs:
 # - env:USERMODE - If 'OFF' uses STATEDIR. Otherwise uses default Opam 2.2 root
 # - env:STATEDIR - If specified, uses <STATEDIR>/opam as the Opam root
+# - env:OPAMHOME - If specified, use <OPAMHOME>/bin/opam or <OPAMHOME>/bin/opam.exe
 # - env:PLATFORM - Deprecated. Only checked if DKML_FEATUREFLAG_CMAKE_PLATFORM is OFF or not defined.
 # Outputs:
 # - env:OPAMROOTDIR_BUILDHOST - The path to the Opam root directory that is usable only on the
