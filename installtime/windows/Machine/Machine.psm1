@@ -12,7 +12,9 @@ Import-Module Deployers # for Get-Sha256Hex16OfText
 # Magic constants that will identify new and existing deployments:
 # * Microsoft build numbers
 # * Semver numbers
-$Windows10SdkVer = "18362"        # KEEP IN SYNC with WindowsAdministrator.rst and DKSDK's cmake/toolchains/os_windows.cmake
+
+#   OCaml on Windows 32-bit requires Windows SDK 10.0.18362.0 (MSVC bug). Let's be consistent and use it for 64-bit as well.
+$Windows10SdkVer = "18362"        # KEEP IN SYNC with WindowsAdministrator.rst
 $Windows10SdkFullVer = "10.0.$Windows10SdkVer.0"
 
 # Visual Studio minimum version
@@ -181,6 +183,12 @@ Export-ModuleMember -Variable VsBuildToolsInstallChannel
 Export-ModuleMember -Variable VsAddComponents
 Export-ModuleMember -Variable VsRemoveComponents
 Export-ModuleMember -Variable VsDescribeComponents
+
+# Exports for when someone wants to do:
+#   cmake -G "Visual Studio 16 2019" -D CMAKE_SYSTEM_VERSION=$Windows10SdkFullVer -T version=$VcVarsVer
+Export-ModuleMember -Variable Windows10SdkFullVer
+Export-ModuleMember -Variable VcVarsVer
+
 # -----------------------------------
 
 $MachineDeploymentHash = Get-Sha256Hex16OfText -Text $MachineDeploymentId
