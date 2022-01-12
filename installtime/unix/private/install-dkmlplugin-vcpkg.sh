@@ -34,7 +34,6 @@ run_with_vcpkg_pkgs() {
 usage() {
     printf "%s\n" "Usage:" >&2
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh -h                   Display this help message" >&2
-    printf "%s\n" "    install-dkmlplugin-vcpkg.sh -p PLATFORM          (Deprecated) Configure the Diskuv Opam plugins" >&2
     printf "%s\n" "    install-dkmlplugin-vcpkg.sh [-d STATEDIR] [-p DKMLPLATFORM]  Configure the Diskuv Opam plugins" >&2
     printf "%s\n" "      Without '-d' the Opam root will be the Opam 2.2 default" >&2
     printf "%s\n" "Options:" >&2
@@ -116,9 +115,6 @@ cd "$TOPDIR"
 # Set DKMLSYS_*
 autodetect_system_binaries
 
-# Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND and WITHDKMLEXE(DIR)_BUILDHOST
-set_opamrootdir
-
 # Set default for PLATFORM
 if [ -z "$PLATFORM" ]; then
     # Set BUILDHOST_ARCH
@@ -132,8 +128,6 @@ fi
 
 # Q: Why is vcpkg here rather than in DiskuvOCamlHome?
 #
-# (Deprecated) vcpkg is architecture specific. Each package it installs is for
-# a specific `--triplet`.
 # (Updated) vcpkg is set in SDK Projects in the CMake toolchain, which will cause
 # the `VCPKG_TOOLCHAIN` CMake variable to be ON. It will also put vcpkg_installed into
 # the build directory, which is 1-1 with an architecture. Per
@@ -151,6 +145,9 @@ vcpkg_triplet_arg_platform "$PLATFORM"
 if [ -n "$TARGETDIR" ]; then
     VCPKG_UNIX="$TARGETDIR"
 else
+    # Set DKMLPLUGIN_BUILDHOST
+    set_opamrootdir
+
     # shellcheck disable=SC2154
     VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
 fi
