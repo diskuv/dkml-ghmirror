@@ -116,11 +116,7 @@ autodetect_cpus
 autodetect_posix_shell
 
 # Just the OCaml compiler
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release
-else
-    log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
-fi
+log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 
 # Flavor packages
 {
@@ -137,11 +133,7 @@ fi
         *) printf "%s\n" "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
     esac
 } > "$WORK"/config-diskuv-host-tools.sh
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    log_shell "$WORK"/config-diskuv-host-tools.sh
-else
-    log_shell "$WORK"/config-diskuv-host-tools.sh -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
-fi
+log_shell "$WORK"/config-diskuv-host-tools.sh -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 
 # END create system switch
 # -----------------------

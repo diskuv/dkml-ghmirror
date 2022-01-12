@@ -92,10 +92,7 @@ usage() {
     printf "%s\n" "                                                      'base' OCaml compiler, although this path is rare since DKSDK will typically" >&2
     printf "%s\n" "                                                      create and use an OCaml home. DKSDK will also supply variables so that the" >&2
     printf "%s\n" "                                                      -b option is not needed; otherwise -b option is required." >&2
-    printf "%s\n" "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    (Deprecated) Create the Opam switch" >&2
-    printf "%s\n" "    create-opam-switch.sh [-b BUILDTYPE] -s           (Deprecated) Expert. Create the diskuv-host-tools switch" >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Determines how to make an OCaml home if a version number is specified" >&2
     printf "%s\n" "       (or nothing) using -v option. Also part of the name for the host-tools switch if -s option" >&2
     printf "%s\n" "    -d STATEDIR: Create <STATEDIR>/_opam as an Opam switch prefix, unless [-s] is also" >&2
@@ -132,18 +129,11 @@ usage() {
     printf "%s\n" "    or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
 }
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=
-fi
 BUILDTYPE=
 DISKUV_TOOLS_SWITCH=OFF
 STATEDIR=
 YES=OFF
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
@@ -154,14 +144,10 @@ while getopts ":hb:p:sd:u:o:t:v:y" opt; do
             exit 0
         ;;
         p )
-            if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-                PLATFORM=$OPTARG
-            else
-                DKMLPLATFORM=$OPTARG
-                if [ "$DKMLPLATFORM" = dev ]; then
-                    usage
-                    exit 0
-                fi
+            DKMLPLATFORM=$OPTARG
+            if [ "$DKMLPLATFORM" = dev ]; then
+                usage
+                exit 0
             fi
         ;;
         b )
@@ -195,37 +181,27 @@ while getopts ":hb:p:sd:u:o:t:v:y" opt; do
 done
 shift $((OPTIND -1))
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -z "$STATEDIR" ] && [ -z "$PLATFORM" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
-        usage
-        exit 1
-    elif [ -n "$STATEDIR" ] && [ -z "$BUILDTYPE" ]; then
-        usage
-        exit 1
-    elif [ -n "$PLATFORM" ] && [ -z "$BUILDTYPE" ]; then
-        usage
-        exit 1
-    fi
-else
-    if [ -z "$USERMODE" ]; then
-        usage
-        exit 1
-    fi
-    if [ ! "$USERMODE" = ON ] && [ ! "$USERMODE" = OFF ]; then
-        usage
-        exit 1
-    fi
-    if [ "$USERMODE" = OFF ] && [ -z "$STATEDIR" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
-        usage
-        exit 1
-    fi
-    if [ -z "$BUILDTYPE" ] && [ -z "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ]; then
-        usage
-        exit 1
-    fi
-    if [ -z "${TARGET_OPAMSWITCH:-}" ] && [ -n "$STATEDIR" ]; then
-        TARGET_OPAMSWITCH="$STATEDIR"
-    fi
+if [ -z "$USERMODE" ]; then
+    usage
+    exit 1
+fi
+if [ ! "$USERMODE" = ON ] && [ ! "$USERMODE" = OFF ]; then
+    usage
+    printf "FATAL: Invalid -u USERMODE\n" >&2
+    exit 1
+fi
+if [ "$USERMODE" = OFF ] && [ -z "$STATEDIR" ] && [ "$DISKUV_TOOLS_SWITCH" = OFF ]; then
+    usage
+    printf "FATAL: Missing -d STATEDIR or -s\n" >&2
+    exit 1
+fi
+if [ -z "$BUILDTYPE" ] && [ -z "${DKML_COMPILE_CM_CMAKE_SIZEOF_VOID_P:-}" ]; then
+    usage
+    printf "FATAL: Missing -b BUILDTYPE\n" >&2
+    exit 1
+fi
+if [ -z "${TARGET_OPAMSWITCH:-}" ] && [ -n "$STATEDIR" ]; then
+    TARGET_OPAMSWITCH="$STATEDIR"
 fi
 
 # END Command line processing
@@ -238,33 +214,15 @@ fi
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then printf "%s\n" "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 # `diskuv-host-tools` is the host architecture, so use `dev` as its platform
-if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        PLATFORM=dev
-    fi
-fi
 if [ -n "$STATEDIR" ]; then
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        PLATFORM=dev
-    fi
     # shellcheck disable=SC2034
     DKML_DUNE_BUILD_DIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
     # shellcheck disable=SC2034
     TOPDIR="$STATEDIR"
 fi
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_build.sh
-    else
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_tool.sh
-    fi
-else
-    # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_build.sh
-fi
+# shellcheck disable=SC1091
+. "$DKMLDIR"/runtime/unix/_common_build.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -291,18 +249,6 @@ set_dkmlparenthomedir
 
 # Set DKMLSYS_*
 autodetect_system_binaries
-
-# Set BUILDHOST_ARCH
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    autodetect_buildhost_arch
-    if [ "$PLATFORM" = dev ]; then
-        TARGET_ARCH=$BUILDHOST_ARCH
-    else
-        TARGET_ARCH=$PLATFORM
-    fi
-else
-    TARGET_ARCH=$DKMLPLATFORM
-fi
 
 # Get the OCaml version and check whether to build an OCaml base (ocamlc compiler, etc.)
 if [ -x /usr/bin/cygpath ]; then
@@ -351,7 +297,7 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         Release*) BUILD_DEBUG=OFF; BUILD_RELEASE=ON ;;
         *) BUILD_DEBUG=OFF; BUILD_RELEASE=OFF
     esac
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] || [ -n "$DKMLPLATFORM" ]; then
+    if [ -n "$DKMLPLATFORM" ]; then
         # We'll set compiler options to:
         # * use static builds for Linux platforms running in a (musl-based Alpine) container
         # * use flambda optimization if a `Release*` build type
@@ -389,16 +335,16 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         #     # NOTE 2021/08/03: `ocaml-option-static` seems to do nothing. No difference when running `dune printenv --verbose`
         #     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-static
         # fi
-        case "$TARGET_ARCH" in
+        case "$DKMLPLATFORM" in
             windows_*)    TARGET_LINUXARM32=OFF ;;
             linux_arm32*) TARGET_LINUXARM32=ON ;;
             *)            TARGET_LINUXARM32=OFF
         esac
-        case "$TARGET_ARCH" in
+        case "$DKMLPLATFORM" in
             *_x86 | linux_arm32*) TARGET_32BIT=ON ;;
             *) TARGET_32BIT=OFF
         esac
-        case "$TARGET_ARCH" in
+        case "$DKMLPLATFORM" in
             linux_x86_64) TARGET_CANENABLEFRAMEPOINTER=ON ;;
             *) TARGET_CANENABLEFRAMEPOINTER=OFF
         esac
@@ -469,29 +415,14 @@ if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
 
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        set_opamswitchdir_of_system "$PLATFORM"
-        OPAM_EXEC_OPTS="-s"
-    else
-        if [ -z "$DKMLPLATFORM" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty DKMLPLATFORM" >&2; exit 1; fi
-        set_opamswitchdir_of_system "$DKMLPLATFORM"
-        OPAM_EXEC_OPTS="-s -d '$STATEDIR' -p '$DKMLPLATFORM' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
-    fi
+    if [ -z "$DKMLPLATFORM" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty DKMLPLATFORM" >&2; exit 1; fi
+    set_opamswitchdir_of_system "$DKMLPLATFORM"
+    OPAM_EXEC_OPTS="-s -d '$STATEDIR' -p '$DKMLPLATFORM' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
 else
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootandswitchdir
 
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        if [ -z "${BUILDTYPE:-}" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty BUILDTYPE" >&2; exit 1; fi
-        OPAM_EXEC_OPTS="-p $PLATFORM"
-        if [ -n "$STATEDIR" ]; then
-            OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -t $STATEDIR"
-        else
-            OPAM_EXEC_OPTS="$OPAM_EXEC_OPTS -b $BUILDTYPE"
-        fi
-    else
-        OPAM_EXEC_OPTS=" -p '$DKMLPLATFORM' -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
-    fi
+    OPAM_EXEC_OPTS=" -p '$DKMLPLATFORM' -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
 fi
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchexec.sh
 printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchexec.sh
@@ -550,7 +481,7 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\"
     printf "%s\n" "export OPAMSWITCH="
     printf "%s\n" "export OPAM_SWITCH_PREFIX="
     if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS=\"\${CFLAGS:-} \""; escape_string_for_shell "$OPAM_SWITCH_CFLAGS"; printf "\n"; fi
-    printf "exec env DKMLDIR='%s' DKML_TARGET_ABI='%s' '%s' \"\$@\"\n" "$DKMLDIR" "$TARGET_ARCH" "$DKMLDIR/installtime/unix/private/standard-compiler-env-to-ocaml-configure-launcher.sh"
+    printf "exec env DKMLDIR='%s' DKML_TARGET_ABI='%s' '%s' \"\$@\"\n" "$DKMLDIR" "$DKMLPLATFORM" "$DKMLDIR/installtime/unix/private/standard-compiler-env-to-ocaml-configure-launcher.sh"
 } > "$WORK"/switch-create-prehook.sh
 chmod +x "$WORK"/switch-create-prehook.sh
 
