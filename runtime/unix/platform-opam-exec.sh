@@ -190,6 +190,11 @@ fi
 # END Command line processing
 # ------------------
 
+# Win32 conversions
+if [ -x /usr/bin/cygpath ]; then
+    if [ -n "$OPAMHOME" ]; then OPAMHOME=$(/usr/bin/cygpath -am "$OPAMHOME"); fi
+fi
+
 # `diskuv-host-tools` is the host architecture, so use `dev` as its platform
 if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
