@@ -7,12 +7,10 @@ type buildtype = Debug | Release | ReleaseCompatPerf | ReleaseCompatFuzz
 
 let buildtype_t =
   let doc =
-    {|Configure the local directory to build OCaml code for optimum performance or other use cases.
-
-  $(b,Debug) - The default.
-  $(b,Release) - Most optimal code. Should be faster than ReleaseCompat* builds.
-  $(b,ReleaseCompatPerf) - Compatibility with 'perf' monitoring tool. Compatible with Linux only.
-  $(b,ReleaseCompatFuzz) - Compatibility with 'afl' fuzzing tool. Compatible with Linux only.|}
+    if Sys.win32 then
+      {|$(b,Debug) or $(b,Release)|}
+    else
+      {|$(b,Debug), $(b,Release), $(b,ReleaseCompatPerf), or $(b,ReleaseCompatFuzz)|}
   in
   let docv = "BUILDTYPE" in
   let conv_buildtype =

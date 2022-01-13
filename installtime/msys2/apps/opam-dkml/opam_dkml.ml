@@ -88,11 +88,21 @@ let () =
                "Creates or updates an `_opam` subdirectory from zero or more \
                 `*.opam` files in the local directory"
              ~man:
-               [
+               ([
                  `P
                    "The `_opam` directory, also known as the local Opam \
                     switch, holds an OCaml compiler and all of the packages \
                     that are specified in the `*.opam` files.";
-               ]
+                 `P
+                   "$(b,--build-type=Release) uses the flamba optimizer \
+                    described at https://ocaml.org/manual/flambda.html";
+               ] @ if Sys.win32 then [] else [
+                 `P
+                   "$(b,--build-type=ReleaseCompatPerf) has compatibility \
+                    with 'perf' monitoring tool. Compatible with Linux only.";
+                 `P
+                   "$(b,--build-type=ReleaseCompatFuzz) has compatibility \
+                    with 'afl' fuzzing tool. Compatible with Linux only.";
+               ])
              "init" );
        ]
