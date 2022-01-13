@@ -59,14 +59,10 @@ if [ -z "${DKMLDIR:-}" ]; then
 fi
 if [ ! -e "$DKMLDIR/.dkmlroot" ]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
-else
-    # shellcheck disable=SC2034
-    STATEDIR=
-    # shellcheck disable=SC2034
-    USERMODE=ON
-fi
+# shellcheck disable=SC2034
+STATEDIR=
+# shellcheck disable=SC2034
+USERMODE=ON
 
 # shellcheck disable=SC1091
 . "$DKMLDIR"/runtime/unix/_common_tool.sh
@@ -82,15 +78,9 @@ cd "$TOPDIR"
 # -----------------------
 # BEGIN opam switch create  --empty
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -p "$PLATFORM" "$@"
-    }
-else
-    run_opam() {
-        log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
-    }
-fi
+run_opam() {
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+}
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
