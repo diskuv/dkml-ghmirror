@@ -1,8 +1,20 @@
 # Vagrant for Windows Testing
 
+## Installing Vagrant
+
+Install Vagrant if you haven't already.
+
+On macOS, use `brew install vagrant`. Other operating system instructions can be found at https://www.vagrantup.com/downloads
+
+## Running Vagrant machines
+
 > The Windows password for the Windows VM is [vagrant](https://github.com/gusztavvargadr/packer/blob/ca4c8286786dec7b718613f226da44bc2a54be11/src/u/packer/builders/virtualbox-iso/http/preseed.cfg#L27)
 
-> If all you want is an English installation, just type `vagrant up`
+### English Testing
+
+Just type `vagrant up`
+
+### Non-English Testing
 
 FIRST, to get the language packs needed for non-English Windows testing:
 
@@ -10,7 +22,7 @@ FIRST, to get the language packs needed for non-English Windows testing:
 the value of `config.vm.box` in Vagrantfile, from https://docs.microsoft.com/en-us/azure/virtual-desktop/language-packs
 - Place it in this directory (`vagrant/win32`) with the new name `CLIENTLANGPACKDVD_OEM_MULTI.iso`
 
-SECOND, to start the Windows virtual machines:
+SECOND, to start the Windows virtual machines you can use the following PowerShell script:
 
 ```powershell
 # Only English (en-US)
