@@ -1412,7 +1412,7 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON " +
-                "'$DkmlPath\installtime\unix\private\create-diskuv-boot-DO-NOT-DELETE-switch.sh' -o '$ProgramMSYS2AbsPath'")
+                "'$DkmlPath\installtime\unix\private\create-diskuv-boot-DO-NOT-DELETE-switch.sh' -p '$DkmlHostAbi' -o '$ProgramMSYS2AbsPath'")
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE

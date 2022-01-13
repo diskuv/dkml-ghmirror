@@ -31,16 +31,25 @@ usage() {
     printf "%s\n" "    create-diskuv-boot-DO-NOT-DELETE-switch.sh      Create the Opam switch." >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
+    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'); must be present if -s option since part of the switch name" >&2
 }
 
 OPAMHOME=
-while getopts ":o:h" opt; do
+DKMLPLATFORM=
+while getopts ":o:p:h" opt; do
     case ${opt} in
         h )
             usage
             exit 0
         ;;
         o ) OPAMHOME=$OPTARG ;;
+        p )
+            DKMLPLATFORM=$OPTARG
+            if [ "$DKMLPLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
+        ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -49,6 +58,11 @@ while getopts ":o:h" opt; do
     esac
 done
 shift $((OPTIND -1))
+
+if [ -z "$DKMLPLATFORM" ]; then
+    usage
+    exit 1
+fi
 
 # END Command line processing
 # ------------------
@@ -79,7 +93,7 @@ cd "$TOPDIR"
 # BEGIN opam switch create  --empty
 
 run_opam() {
-    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -o "$OPAMHOME" "$@"
+    log_trace "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -u "$USERMODE" -d "$STATEDIR" -s -p "$DKMLPLATFORM" -o "$OPAMHOME" "$@"
 }
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
