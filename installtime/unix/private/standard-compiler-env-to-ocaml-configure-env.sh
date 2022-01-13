@@ -78,6 +78,14 @@ if [ -n "${CC:-}" ]; then
   if [ -n "${DKML_COMPILE_CM_CMAKE_SYSROOT:-}" ]; then
     CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT:-}${DKML_COMPILE_CM_CMAKE_SYSROOT:-}"
   fi
+
+  # Clang compilers from Xcode should use clang -arch XXXX; the -arch won't be exported in CMAKE variables
+  if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then
+    case "$DKML_TARGET_ABI,${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" in
+      darwin_arm64,AppleClang|darwin_arm64,Clang)   CC="$CC -arch arm64" ;;
+      darwin_x86_64,AppleClang|darwin_x86_64,Clang) CC="$CC -arch x86_64" ;;
+    esac
+  fi
 else
   ORIG_CC=
 fi
@@ -85,8 +93,8 @@ export CC
 
 # CFLAGS
 # The value of this appears in `ocamlc -config`; will be viral to most Opam packages with embedded C code.
-# -m32 is an option that needs to be in CC for OCaml rather than CFLAGS since CFLAGS not used to created shared libraries.
 if [ -n "${CC:-}" ]; then
+  # -m32 is an option that needs to be in CC for OCaml rather than CFLAGS since CFLAGS not used to created shared libraries.
   if printf "%s" "${CFLAGS:-}" | PATH=/usr/bin:/bin grep -q '\B-m32\b'; then
       CC="$CC -m32"
       CFLAGS=$(printf "%s" "$CFLAGS" | PATH=/usr/bin:/bin sed 's/\B-m32\b//g')
@@ -121,12 +129,22 @@ if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
     ASPP="$AS"
 elif [ -n "${AS:-}" ]; then
   _TMP_AS="${AS:-}"
-  AS="$_TMP_AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-} ${ASFLAGS:-}"
+  AS="$_TMP_AS ${ASFLAGS:-}"
+  if [ -n "${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-}" ]; then
+    AS="$AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-}"
+  fi
 
   # Some architectures need flags when compiling OCaml
   case "$DKML_TARGET_ABI" in
     darwin_*) AS="$AS -Wno-trigraphs" ;;
   esac
+  # Clang compilers from Xcode should use clang ... -arch XXXX; the -arch won't be exported in CMAKE variables
+  if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then
+    case "$DKML_TARGET_ABI,${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_ID:-}" in
+      darwin_arm64,AppleClang|darwin_arm64,Clang)   AS="$AS -arch arm64" ;;
+      darwin_x86_64,AppleClang|darwin_x86_64,Clang) AS="$AS -arch x86_64" ;;
+    esac
+  fi
 
   # A CMake-configured `AS` will be missing the `-c` option needed by OCaml; fix that
   if printf "%s" "${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OBJECT:-}" | PATH=/usr/bin:/bin grep -q -E -- '\B-c\b'; then
@@ -231,12 +249,17 @@ if [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
   LD=$DKML_COMPILE_CM_CMAKE_LINKER
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
 fi
-# OCaml uses LDFLAGS for both $CC (ex. gcc) and $LD, so we have to zero out
-# LDFLAGS and push LDFLAGS into LD directly
 if [ -n "${LD:-}" ]; then
+  # OCaml uses LDFLAGS for both $CC (ex. gcc) and $LD, so we have to zero out
+  # LDFLAGS and push LDFLAGS into LD directly
   LD="$LD ${LDFLAGS:-}"
   DIRECT_LD=$LD
   LDFLAGS=
+  # Xcode linkers should use ld -arch XXXX
+  case "$DKML_TARGET_ABI" in
+    darwin_arm64)  LD="$LD -arch arm64"  ; DIRECT_LD="$DIRECT_LD -arch arm64" ;;
+    darwin_x86_64) LD="$LD -arch x86_64" ; DIRECT_LD="$DIRECT_LD -arch x86_64" ;;
+  esac
 fi
 export LD DIRECT_LD LDFLAGS
 
@@ -247,7 +270,10 @@ NM="${DKML_COMPILE_CM_CMAKE_NM:-}"
 OBJDUMP="${DKML_COMPILE_CM_CMAKE_OBJDUMP:-}"
 export STRIP RANLIB NM OBJDUMP
 
-# Final fixup
+# Final fixups
+# ------------
+# Precondition: All flags already set
+
 if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
     # To avoid the following when /Zi or /ZI is enabled:
     #   2># major_gc.c : fatal error C1041: cannot open program database 'Z:\build\windows_x86\Debug\dksdk\system\_opam\.opam-switch\build\ocaml-variants.4.12.0+options+dkml+msvc32\runtime\vc140.pdb'; if multiple CL.EXE write to the same .PDB file, please use /FS
@@ -270,4 +296,19 @@ if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
     CC=$(printf "%s" "${CC:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
     ASPP=$(printf "%s" "${ASPP:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
     AS=$(printf "%s" "${AS:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
+fi
+
+# Use XCode launcher when available so system libraries, etc. can be set
+_XCRUN_WHERE=$(command -v xcrun 2>&1 || true)
+if [ -n "$_XCRUN_WHERE" ]; then
+  _XCRUN_LAUNCH="$_XCRUN_WHERE "
+  case "$DKML_TARGET_ABI" in
+    darwin_*)
+      if [ -n "${AS:-}" ]; then        AS="${_XCRUN_LAUNCH}$AS"; fi
+      if [ -n "${ASPP:-}" ]; then      ASPP="${_XCRUN_LAUNCH}$ASPP"; fi
+      if [ -n "${CC:-}" ]; then        CC="${_XCRUN_LAUNCH}$CC"; fi
+      if [ -n "${LD:-}" ]; then        LD="${_XCRUN_LAUNCH}$LD"; fi
+      if [ -n "${DIRECT_LD:-}" ]; then DIRECT_LD="${_XCRUN_LAUNCH}$DIRECT_LD"; fi
+      ;;
+  esac
 fi
