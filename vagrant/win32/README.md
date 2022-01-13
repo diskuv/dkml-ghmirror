@@ -2,9 +2,13 @@
 
 ## Installing Vagrant
 
+Install VirtualBox if you haven't already. **Apple Silicon (M1) is not supported.**
+
 Install Vagrant if you haven't already.
 
-On macOS, use `brew install vagrant`. Other operating system instructions can be found at https://www.vagrantup.com/downloads
+On macOS, use `brew install vagrant` and then "enable system extensions" as documented on https://scriptcrunch.com/solved-vboxmanage-error-component-machinewrap/.
+
+Other operating system instructions can be found at https://www.vagrantup.com/downloads
 
 ## Running Vagrant machines
 
