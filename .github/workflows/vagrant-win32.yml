@@ -24,6 +24,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-vagrant-
 
+    - name: Sanitize
+      run: rm -rf ~/playground
+
     - name: '"vagrant up" for release "${{ github.ref_name }}"'
       if: ${{ github.ref_type == 'tag' }}
       run: cd vagrant/win32 && vagrant up
@@ -35,3 +38,7 @@ jobs:
     - name: Check test_installation.t status
       run: |
         set -x ; EXITC=$(awk 'NF>0{print $1}' vagrant/win32/test_installation.t/exitcode.en-US.txt) ; if [ ! "$EXITC" = 0 ]; then echo "FATAL: Vagrant test_installation.t FAILED with exit code $EXITC"; exit 1; fi
+
+    - name: Check playground creation
+      run: |
+        set -x ; find vagrant/win32/playground ; if [ ! -e vagrant/win32/playground/_opam/lib/graphics/graphics.cmx ]; then echo "FATAL: Vagrant playground creation FAILED"; exit 1; fi
