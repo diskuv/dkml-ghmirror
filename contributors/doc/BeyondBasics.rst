@@ -111,7 +111,8 @@ You just found that you have two switches. The first switch is the directory "ho
 The other switch says *DO NOT DELETE*. We will avoid those two switches.
 
 Let's now create our own ``playground`` switch. All we need to do is create a directory
-and run ``opam dkml init`` inside our new (or existing) directory:
+and run ``with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init``
+inside our new (or existing) directory:
 
    .. code-block:: doscon
 
@@ -119,7 +120,7 @@ and run ``opam dkml init`` inside our new (or existing) directory:
 
       C:\Users\you\DiskuvOCamlProjects>mkdir playground
       C:\Users\you\DiskuvOCamlProjects>cd playground
-      C:\Users\you\DiskuvOCamlProjects\playground>opam dkml init
+      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init
 
       C:\Users\you\DiskuvOCamlProjects\playground>opam switch
       #  switch                                                                           compiler
