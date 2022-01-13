@@ -40,6 +40,7 @@ usage() {
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Defaults to the host native platform" >&2
     printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
     printf "%s\n" "    -t TARGETDIR: If specified, place vcpkg in the target directory" >&2
+    printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -x: If specified, no packages are installed; vcpkg is only bootstrapped" >&2
 }
 
@@ -47,8 +48,8 @@ PLATFORM=
 STATEDIR=
 USERMODE=ON
 TARGETDIR=
-OUTPUTFILE=
 BOOTSTRAP_ONLY=OFF
+OPAMHOME=
 while getopts ":hp:d:t:o:x" opt; do
     case ${opt} in
         h )
@@ -72,8 +73,9 @@ while getopts ":hp:d:t:o:x" opt; do
             TARGETDIR=$OPTARG
         ;;
         o )
-            OUTPUTFILE=$OPTARG
-        ;;
+            # shellcheck disable=SC2034
+            OPAMHOME=$OPTARG
+            ;;
         x )
             BOOTSTRAP_ONLY=ON
         ;;
@@ -145,7 +147,7 @@ vcpkg_triplet_arg_platform "$PLATFORM"
 if [ -n "$TARGETDIR" ]; then
     VCPKG_UNIX="$TARGETDIR"
 else
-    # Set DKMLPLUGIN_BUILDHOST
+    # Set DKMLPLUGIN_BUILDHOST; uses OPAMHOME if set
     set_opamrootdir
 
     # shellcheck disable=SC2154
@@ -305,10 +307,6 @@ fi
 
 # END install vcpkg packages
 # -----------------------
-
-if [ -n "$OUTPUTFILE" ]; then
-    printf "%s" "$VCPKG_BUILDHOST" > "$OUTPUTFILE"
-fi
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # END           ON-DEMAND OPAM ROOT INSTALLATIONS
