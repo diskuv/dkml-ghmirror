@@ -377,8 +377,9 @@ init_hostvars() {
   NATDYNLINKOPTS=$(grep "NATDYNLINKOPTS=" "$init_hostvars_MAKEFILE_CONFIG" | $DKMLSYS_AWK -F '=' '{print $2}')
   export NATDYNLINK NATDYNLINKOPTS
 
-  # Determine ext_exe from compiler (although the filename extensions on the host should be the same as well)
-  "$OCAMLSRC_HOST_MIXED/ocamlc" -config > "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
+  # Determine ext_exe from compiler (although the filename extensions on the host should be the same as well).
+  #   On Windows ocamlc.exe may Segfault (probably needs the ocamlrun interpreter in correct location). Use ocamlc.opt
+  "$OCAMLSRC_HOST_MIXED/ocamlc.opt" -config > "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
   # shellcheck disable=SC2016
   HOST_EXE_EXT=$($DKMLSYS_AWK '$1=="ext_exe:"{print $2}' "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$")
   rm -f "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
