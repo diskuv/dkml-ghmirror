@@ -272,6 +272,10 @@ build_world() {
     esac
     ;;
   esac
+  if [ "$build_world_WIN32UNIX_CONSISTENT" = OFF ]; then
+    printf "FATAL: You cannot cross-compile between Windows and Unix\n"
+    exit 107
+  fi
 
   # Make C compiler script for target ABI. Any compile spec (especially from CMake) will be
   # applied.
@@ -318,8 +322,11 @@ build_world() {
   }
   log_trace make_host -final ocamlopt.opt
 
-  # Tools we don't need, but are needed by `install` target
-  log_trace make_host -final expunge ocaml ocamldebugger ocamllex.opt ocamltoolsopt
+  # Tools we want that we can compile using the OCaml compiler to run on the host.
+  log_trace make_host -final ocaml ocamldebugger ocamllex.opt ocamltoolsopt
+  
+  # Tools we don't need but are needed by `install` target
+  log_trace make_host -final expunge
 
   # Remove all OCaml compiled modules since they were compiled with boot/ocamlc
   remove_compiled_objects_from_curdir
@@ -363,6 +370,12 @@ build_world() {
   # Remove all OCaml compiled modules since they were compiled for the host ABI
   remove_compiled_objects_from_curdir
 
+  # ------------------------------------------------------------------------------------
+  # From this point on we do _not_ build {ocamlc,ocamlopt,*}.opt native code executables
+  # because they have to run on the host. We already built those! They have all the
+  # settings from ./configure which is tuned for the target ABI.
+  # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
   # Recompile stdlib (and flexdll if enabled)
   #   See notes in 2-build_host.sh for why we compile twice
   #   (We have to serialize the make_ commands because OCaml Makefile do not usually build multiple targets in parallel)
@@ -371,12 +384,12 @@ build_world() {
   fi
   printf "+ INFO: Compiling target stdlib in pass 1\n" >&2
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" -C stdlib all allopt
+  printf "+ INFO: Recompiling target ocaml in pass 1\n" >&2
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocaml
   printf "+ INFO: Recompiling target ocamlc in pass 1\n" >&2
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlc
   printf "+ INFO: Recompiling target ocamlopt in pass 1\n" >&2
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlopt
-  printf "+ INFO: Recompiling target ocamlc.opt/ocamlopt.opt in pass 1\n" >&2
-  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlc.opt ocamlopt.opt
   printf "+ INFO: Recompiling target stdlib in pass 2\n" >&2
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" -C stdlib all allopt
 
@@ -388,14 +401,13 @@ build_world() {
     compilerlibs/ocamlcommon.cmxa \
     compilerlibs/ocamlbytecomp.cmxa \
     compilerlibs/ocamloptcomp.cmxa
-  if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" flexlink.opt
-  fi
 
   ## Install
-  find "$OCAMLSRC_HOST_MIXED"/toplevel -maxdepth 1 \( -name \*.cmi -or -name \*.cmt -or -name \*.cmti -or -name \*.cmo \) -exec "$DKMLSYS_INSTALL" -v {} "toplevel" \;
+  "$DKMLSYS_INSTALL" -v "runtime/ocamlrun$build_world_TARGET_EXE_EXT" "$build_world_PREFIX/bin/"
   log_trace make_host -final install
   log_trace make_host -final -C debugger install
+  "$DKMLSYS_INSTALL" -v "$OCAMLSRC_HOST_MIXED/runtime/ocamlrund" "$OCAMLSRC_HOST_MIXED/runtime/ocamlruni" "$build_world_PREFIX/bin/"
+  "$DKMLSYS_INSTALL" -v "$OCAMLSRC_HOST_MIXED/yacc/ocamlyacc" "$build_world_PREFIX/bin/"
 }
 
 # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
