@@ -25,6 +25,9 @@
 # a) find the compiler selected/validated in the Diskuv OCaml installation (Windows) or on first-use (Unix)
 # b) find the specific architecture that has been given to us in DKML_TARGET_ABI
 #
+# For Windows, this script is called _before_ the Microsoft compiler settings (INCLUDE, LIB, etc.)
+# are applied. So this script won't have much effect on MSVC itself.
+#
 # On exit the variables needed for github.com/ocaml/ocaml/configure will be set and exported.
 set -euf
 

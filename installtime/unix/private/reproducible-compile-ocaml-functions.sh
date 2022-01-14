@@ -138,12 +138,15 @@ ocaml_configure_windows() {
 
   # With MSYS2 it is quite possible to have INCLUDE and Include in the same environment. Opam seems to use camel case, which
   # is probably fine in Cygwin.
+  # And ordinarily you don't need to set DEP_CC, LD, etc. which are auto-discovered by ./configure. However, if gcc
+  # is present (in MSYS2 or Cygwin) then gcc will be used for DEP_CC and ld used for LD.
   # shellcheck disable=SC2086
   configure_environment_for_ocaml --unset=LIB --unset=INCLUDE --unset=PATH --unset=Lib --unset=Include --unset=Path \
     PATH="${MSVS_PATH}$DKML_SYSTEM_PATH" \
     LIB="${MSVS_LIB}${LIB:-}" \
     INCLUDE="${MSVS_INC}${INCLUDE:-}" \
     MSYS2_ARG_CONV_EXCL='*' \
+    DEP_CC="false" LD="link" \
     $ocaml_configure_no_ocaml_leak_environment \
     ./configure --prefix "$ocaml_configure_windows_WINPREFIX" \
                 --build=$ocaml_configure_windows_BUILD --host="$ocaml_configure_windows_HOST" \
