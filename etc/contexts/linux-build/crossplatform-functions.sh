@@ -582,6 +582,11 @@ install_reproducible_readme() {
 
     install_reproducible_readme_RELFILE="$1"
     shift
+
+    # Needs to be in the standard location (so can be reproduced again)
+    install_reproducible_file "$install_reproducible_readme_RELFILE"
+
+    # Also place as a standalone README at the top of the reproducible tree
     install_reproducible_readme_BOOTSTRAPDIR=$DEPLOYDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
     "$DKMLSYS_INSTALL" -d "$install_reproducible_readme_BOOTSTRAPDIR"
     "$DKMLSYS_SED" "s,@@BOOTSTRAPDIR_UNIX@@,$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME/,g" "$DKMLDIR"/"$install_reproducible_readme_RELFILE" > "$install_reproducible_readme_BOOTSTRAPDIR"/README.md

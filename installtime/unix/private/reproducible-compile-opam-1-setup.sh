@@ -195,6 +195,12 @@ fi
 # Copy self into share/dkml-bootstrap/110-compile-opam
 export BOOTSTRAPNAME=110-compile-opam
 export DEPLOYDIR_UNIX="$TARGETDIR_UNIX"
+DESTDIR=$TARGETDIR_UNIX/$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME
+THISDIR=$(pwd)
+if [ "$DESTDIR" = "$THISDIR" ]; then
+    printf "Already deployed the reproducible scripts. Replacing them as needed\n"
+    DKMLDIR=.
+fi
 # shellcheck disable=SC2016
 COMMON_ARGS=(-d "$SHARE_REPRODUCIBLE_BUILD_RELPATH/$BOOTSTRAPNAME")
 install_reproducible_common
