@@ -39,6 +39,24 @@ disambiguate_filesystem_paths
 # github.com/ocaml/ocaml/configure output
 # ---------------------------------------
 
+# Pre-adjustments
+
+#   CMake with Xcode will use a low-level compiler like
+#   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
+#   rather than the high-level compiler driver /usr/bin/clang; with the low-level compiler you
+#   need to use `xcrun` to set required environment variables (SDKROOT, CPATH, LIBPATH; similar
+#   to MSVC cl.exe needing vcvarsall.bat). Mitigate by just overwriting the compiler executables
+#   if a) not already within `xcrun` and b) using AppleClang.
+if [ -z "${SDKROOT:-}" ] && [ -z "${CPATH:-}" ] && [ -z "${LIBPATH:-}" ] && [ "${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" = AppleClang ]; then
+  AS="clang"
+  CC="clang"
+  LD="ld"
+  STRIP="strip"
+  RANLIB="ranlib"
+  NM="nm"
+  OBJDUMP="objdump"
+fi
+
 # Common passthrough flags
 export PATH AR
 
@@ -50,15 +68,14 @@ if [ -n "${CC:-}" ]; then
 
   # OCaml's 4.14+ ./configure has func_cc_basename () which returns "gcc" if a GCC compiler, etc.
   # However it uses the basename ... so a symlink from /usr/bin/cc to to /etc/alternatives/cc to /usr/bin/gcc
-  # to /usr/bin/x86_64-linux-gnu-gcc-9 for example would return "cc" and then code like
+  # to /usr/bin/x86_64-linux-gnu-gcc-9 for example (Ubuntu 20) would return "cc" and then code like
   # `./configure --enable-frame-pointers` would fail because it was looking for "gcc".
   #
   # Even worse, earlier versions of OCaml just used the variable "$CC" and checked if it was "gcc*".
-  #
-  # Mitigation: See if $CC resolves to the same realpath as gcc. Use it if it does. But prefer
-  # "gcc" if it is /usr/bin/gcc.
   _GCCEXE=$(command -v gcc || true)
   if [ -n "$_GCCEXE" ] && [ -x /usr/bin/realpath ]; then
+    # Mitigation GCC_EXE: See if $CC resolves to the same realpath as gcc. Use it if it does. But prefer
+    # "gcc" if it is /usr/bin/gcc.
     _CC_1=$(/usr/bin/realpath "$CC")
     _CC_2=$(/usr/bin/realpath "$_GCCEXE")
     _CC_RESOLVE=$_GCCEXE
@@ -137,8 +154,10 @@ if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
     fi
     ASPP="$AS"
 elif [ -n "${AS:-}" ]; then
-  _TMP_AS="${AS:-}"
-  AS="$_TMP_AS ${ASFLAGS:-}"
+  AS="${AS:-}"
+  if [ -n "${AS:-}" ] && [ -n "${ASFLAGS:-}" ]; then
+    AS="$AS $ASFLAGS"
+  fi
   if [ -n "${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-}" ]; then
     AS="$AS ${DKML_COMPILE_CM_CMAKE_ASM_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_ASM_COMPILER_TARGET:-}"
   fi
@@ -273,10 +292,10 @@ fi
 export LD DIRECT_LD LDFLAGS
 
 # STRIP, RANLIB, NM, OBJDUMP
-RANLIB="${DKML_COMPILE_CM_CMAKE_RANLIB:-}"
-STRIP="${DKML_COMPILE_CM_CMAKE_STRIP:-}"
-NM="${DKML_COMPILE_CM_CMAKE_NM:-}"
-OBJDUMP="${DKML_COMPILE_CM_CMAKE_OBJDUMP:-}"
+if [ -z "${RANLIB:-}" ]; then   RANLIB="${DKML_COMPILE_CM_CMAKE_RANLIB:-}"; fi
+if [ -z "${STRIP:-}" ]; then    STRIP="${DKML_COMPILE_CM_CMAKE_STRIP:-}"; fi
+if [ -z "${NM:-}" ]; then       NM="${DKML_COMPILE_CM_CMAKE_NM:-}"; fi
+if [ -z "${OBJDUMP:-}" ]; then  OBJDUMP="${DKML_COMPILE_CM_CMAKE_OBJDUMP:-}"; fi
 export STRIP RANLIB NM OBJDUMP
 
 # Final fixups
@@ -305,19 +324,4 @@ if cmake_flag_on "${DKML_COMPILE_CM_MSVC:-}"; then
     CC=$(printf "%s" "${CC:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
     ASPP=$(printf "%s" "${ASPP:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
     AS=$(printf "%s" "${AS:-}" | PATH=/usr/bin:/bin sed 's# /# -#g')
-fi
-
-# Use XCode launcher when available so system libraries, etc. can be set
-_XCRUN_WHERE=$(command -v xcrun 2>&1 || true)
-if [ -n "$_XCRUN_WHERE" ]; then
-  _XCRUN_LAUNCH="$_XCRUN_WHERE "
-  case "$DKML_TARGET_ABI" in
-    darwin_*)
-      if [ -n "${AS:-}" ]; then        AS="${_XCRUN_LAUNCH}$AS"; fi
-      if [ -n "${ASPP:-}" ]; then      ASPP="${_XCRUN_LAUNCH}$ASPP"; fi
-      if [ -n "${CC:-}" ]; then        CC="${_XCRUN_LAUNCH}$CC"; fi
-      if [ -n "${LD:-}" ]; then        LD="${_XCRUN_LAUNCH}$LD"; fi
-      if [ -n "${DIRECT_LD:-}" ]; then DIRECT_LD="${_XCRUN_LAUNCH}$DIRECT_LD"; fi
-      ;;
-  esac
 fi
