@@ -334,12 +334,6 @@ apply_ocaml_crosscompile_patch() {
     apply_ocaml_crosscompile_patch_SRCDIR=$1
     shift
 
-    # Quick exit on zero byte patch files (which are invalid patch files but
-    # good for indicating nothing to patch)
-    if [ ! -s "$apply_ocaml_crosscompile_patch_PATCHFILE" ]; then
-        return
-    fi
-
     apply_ocaml_crosscompile_patch_SRCDIR_MIXED="$apply_ocaml_crosscompile_patch_SRCDIR"
     apply_ocaml_crosscompile_patch_PATCH_MIXED="$PWD"/installtime/unix/private/$apply_ocaml_crosscompile_patch_PATCHFILE
     if [ -x /usr/bin/cygpath ]; then
