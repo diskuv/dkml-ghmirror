@@ -755,7 +755,7 @@ install_reproducible_script_with_args() {
     install_reproducible_file "$install_reproducible_script_with_args_SCRIPTFILE"
     "$DKMLSYS_INSTALL" -d "$install_reproducible_script_with_args_BOOTSTRAPDIR"/"$install_reproducible_script_with_args_RECREATEDIR"/
     {
-        printf "#!/bin/sh\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s " \
+        printf "#!/bin/sh\nset -euf\nexec env TOPDIR=\"\$PWD/%s/installtime/none/emptytop\" %s " \
             "$install_reproducible_script_with_args_BOOTSTRAPRELDIR" \
             "$install_reproducible_script_with_args_BOOTSTRAPRELDIR/$install_reproducible_script_with_args_SCRIPTFILE"
         escape_args_for_shell "$@"

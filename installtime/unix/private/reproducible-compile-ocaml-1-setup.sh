@@ -371,6 +371,14 @@ apply_ocaml_crosscompile_patch() {
 # Set BUILDHOST_ARCH
 autodetect_buildhost_arch
 
+clean_ocaml_install() {
+    clean_ocaml_install_DIR=$1
+    shift
+    for clean_ocaml_install_SUBDIR in bin lib man; do
+        log_trace rm -rf "${clean_ocaml_install_DIR:?}/$clean_ocaml_install_SUBDIR"
+    done
+}
+
 get_ocaml_source() {
     get_ocaml_source_COMMIT=$1
     shift
@@ -380,6 +388,7 @@ get_ocaml_source() {
     shift
     get_ocaml_source_TARGETPLATFORM="$1"
     shift
+
     if [ ! -e "$get_ocaml_source_SRCUNIX/Makefile" ] || [ ! -e "$get_ocaml_source_SRCUNIX/.git" ]; then
         install -d "$get_ocaml_source_SRCUNIX"
         log_trace rm -rf "$get_ocaml_source_SRCUNIX" # clean any partial downloads
@@ -442,6 +451,7 @@ get_ocaml_source() {
 # It is hard to reason about mutated source directories with different-platform object files, so we use a pristine source dir
 # for the host and other pristine source dirs for each target.
 
+clean_ocaml_install "$TARGETDIR_UNIX"
 get_ocaml_source "$HOST_GIT_COMMITID_OR_TAG" "$OCAMLSRC_UNIX" "$OCAMLSRC_MIXED" "$BUILDHOST_ARCH"
 
 # Find but do not apply the cross-compiling patches to the host ABI
@@ -458,6 +468,8 @@ if [ -n "$TARGETABIS" ]; then
     while IFS= read -r _abientry
     do
         _targetabi=$(printf "%s" "$_abientry" | sed 's/=.*//')
+        # clean install
+        clean_ocaml_install "$TARGETDIR_UNIX/opt/mlcross/$_targetabi"
         # git clone
         get_ocaml_source "$TARGET_GIT_COMMITID_OR_TAG" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml" "$TARGETDIR_MIXED/opt/mlcross/$_targetabi/src/ocaml" "$_targetabi"
         # git patch src/ocaml
@@ -469,10 +481,6 @@ if [ -n "$TARGETABIS" ]; then
         apply_ocaml_crosscompile_patch "reproducible-compile-ocaml-cross_flexdll_0_39.patch" "$TARGETDIR_UNIX/opt/mlcross/$_targetabi/src/ocaml/flexdll"
     done < "$WORK"/tabi
 fi
-
-# ---------------------------
-# Patch the sources
-
 
 # ---------------------------
 # Finish

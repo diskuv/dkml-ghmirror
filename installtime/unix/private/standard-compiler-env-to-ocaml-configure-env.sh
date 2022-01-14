@@ -79,11 +79,20 @@ if [ -n "${CC:-}" ]; then
     CC="$CC ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT:-}${DKML_COMPILE_CM_CMAKE_SYSROOT:-}"
   fi
 
-  # Clang compilers from Xcode should use clang -arch XXXX; the -arch won't be exported in CMAKE variables
+  # Clang compilers from Xcode should use clang -arch XXXX; the -arch won't be exported in CMake variables
+  # And autodetect_darwin() correctly separates CC from CFLAGS ... but the internal `mksharedlib` ./configure
+  # variable uses $CC to make shared libraries (ignoring $CFLAGS). So we have to add it in even if we don't
+  # use CMake.
+  # It is fine if there is duplication.
   if [ "${DKML_COMPILE_TYPE:-}" = CM ]; then
     case "$DKML_TARGET_ABI,${DKML_COMPILE_CM_CMAKE_C_COMPILER_ID:-}" in
       darwin_arm64,AppleClang|darwin_arm64,Clang)   CC="$CC -arch arm64" ;;
       darwin_x86_64,AppleClang|darwin_x86_64,Clang) CC="$CC -arch x86_64" ;;
+    esac
+  else
+    case "$DKML_TARGET_ABI" in # Assume Clang compiler
+      darwin_arm64)  CC="$CC -arch arm64" ;;
+      darwin_x86_64) CC="$CC -arch x86_64" ;;
     esac
   fi
 else

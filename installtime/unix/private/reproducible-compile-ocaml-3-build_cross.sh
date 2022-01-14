@@ -160,131 +160,26 @@ fi
 # Prereqs for reproducible-compile-ocaml-functions.sh
 autodetect_system_binaries
 autodetect_system_path
+autodetect_cpus
+autodetect_posix_shell
 
 # shellcheck disable=SC1091
 . "$DKMLDIR/installtime/unix/private/reproducible-compile-ocaml-functions.sh"
-
-# Set NUMCPUS
-autodetect_cpus
-
-# Set DKML_POSIX_SHELL
-autodetect_posix_shell
 
 ## Parameters
 
 if [ -x /usr/bin/cygpath ]; then
   OCAML_HOST=$(/usr/bin/cygpath -aw "$TARGETDIR_UNIX")
-  OCAMLSRC_HOST_UNIX=$(/usr/bin/cygpath -au "$TARGETDIR_UNIX/src/ocaml")
   # Makefiles have very poor support for Windows paths, so use mixed (ex. C:/Windows) paths
   OCAMLSRC_HOST_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX/src/ocaml")
-  OCAMLBIN_HOST_MIXED=$(/usr/bin/cygpath -am "$TARGETDIR_UNIX/bin")
-  # Use Windows paths to specify host paths on Windows ... ocamlc.exe -I <path> will
-  # not understand Unix paths (but give you _no_ warning that something is wrong)
-  host_dir_sep=\\
 else
   OCAML_HOST=$TARGETDIR_UNIX
-  OCAMLSRC_HOST_UNIX="$TARGETDIR_UNIX/src/ocaml"
   OCAMLSRC_HOST_MIXED="$TARGETDIR_UNIX/src/ocaml"
-  OCAMLBIN_HOST_MIXED=$TARGETDIR_UNIX/bin
-  host_dir_sep=/
 fi
+export OCAMLSRC_HOST_MIXED
 
-# Determine ext_exe from compiler (although the filename extensions on the host should be the same as well)
-# shellcheck disable=SC2016
-HOST_EXE_EXT=$("$OCAML_HOST${host_dir_sep}bin${host_dir_sep}ocamlc" -config | $DKMLSYS_AWK '$1=="ext_exe:"{print $2}')
-
-OCAMLRUN="$OCAMLBIN_HOST_MIXED/ocamlrun$HOST_EXE_EXT"
-OCAMLLEX="$OCAMLBIN_HOST_MIXED/ocamllex$HOST_EXE_EXT"
-OCAMLYACC="$OCAMLBIN_HOST_MIXED/ocamlyacc$HOST_EXE_EXT"
-OCAMLDOC="$OCAMLBIN_HOST_MIXED/ocamldoc$HOST_EXE_EXT"
-CAMLDEP="$OCAMLBIN_HOST_MIXED/ocamlc$HOST_EXE_EXT -depend"
-
-# [genWrapper NAME EXECUTABLE <genWrapperArgs*>]
-#
-# Preconditions: Give all <genWrapperArgs> in native Windows or Unix path format.
-#
-# We want the literal expansion of the command line to look like:
-#   EXECUTABLE <genWrapperArgs> "$@"
-# Example:
-#   C:/a/b/c/ocamlc.opt.exe -I Z:\x\y\z "$@"
-#
-# It is important in the example above that EXECUTABLE is in mixed Windows/Unix path format
-# (ie. using forward slashes); that is because the "dash" shell is explicitly used if it is
-# available, and dash on MSYS2 cannot directly launch a Windows executable in the native Windows
-# path format (forward slashes).
-genWrapper() {
-  genWrapper_NAME=$1
-  shift
-  genWrapper_EXECUTABLE=$1
-  shift
-
-  genWrapper_DIRNAME=$(dirname "$genWrapper_NAME")
-  install -d "$genWrapper_DIRNAME"
-
-  if [ -x /usr/bin/cygpath ]; then
-    genWrapper_EXECUTABLE=$(/usr/bin/cygpath -am "$genWrapper_EXECUTABLE")
-  fi
-
-  {
-    printf "#!%s\n" "$DKML_POSIX_SHELL"
-    printf "set -euf\n"
-    printf "exec "                                 # exec
-    escape_args_for_shell "$genWrapper_EXECUTABLE" # EXECUTABLE
-    printf " "                                     #
-    escape_args_for_shell "$@"                     # <genWrapperArgs>
-    printf " %s\n" '"$@"'                          # "$@"
-  } >"$genWrapper_NAME".tmp
-  $DKMLSYS_CHMOD +x "$genWrapper_NAME".tmp
-  $DKMLSYS_MV "$genWrapper_NAME".tmp "$genWrapper_NAME"
-}
-
-make_caml() {
-  make_caml_ABI=$1
-  shift
-
-  ocaml_make "$make_caml_ABI" \
-    -j"$NUMCPUS" -l"$NUMCPUS" \
-    CAMLDEP="$CAMLDEP" \
-    CAMLLEX="$OCAMLLEX" OCAMLLEX="$OCAMLLEX" \
-    CAMLYACC="$OCAMLYACC" OCAMLYACC="$OCAMLYACC" \
-    CAMLRUN="$OCAMLRUN" OCAMLRUN="$OCAMLRUN" \
-    CAMLC="$CAMLC" OCAMLC="$CAMLC" \
-    CAMLOPT="$CAMLOPT" OCAMLOPT="$CAMLOPT" \
-    OCAMLDOC_RUN="$OCAMLDOC" \
-    "$@"
-}
-
-HOST_MAKEFILE_CONFIG="$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}Makefile.config"
-get_host_variable() {
-  # shellcheck disable=SC2016
-  grep "$1=" "$HOST_MAKEFILE_CONFIG" | $DKMLSYS_AWK -F '=' '{print $2}'
-}
-
-NATDYNLINK=$(get_host_variable "NATDYNLINK")
-NATDYNLINKOPTS=$(get_host_variable "NATDYNLINKOPTS")
-
-make_host() {
-  make_host_BUILD_ROOT=$1
-  shift
-
-  # BUILD_ROOT is passed to `ocamlrun .../ocamlmklink -o unix -oc unix -ocamlc '$(CAMLC)'`
-  # in Makefile, so needs to be mixed Unix/Win32 path. Also the just mentioned example is
-  # run from the Command Prompt on Windows rather than MSYS2 on Windows, so use /usr/bin/env
-  # to always switch into Unix context.
-  make_host_ENV=$DKMLSYS_ENV
-  if [ -x /usr/bin/cygpath ]; then
-    make_host_BUILD_ROOT=$(/usr/bin/cygpath -am "$make_host_BUILD_ROOT")
-    make_host_ENV=$(/usr/bin/cygpath -am "$make_host_ENV")
-  fi
-
-  CAMLC="$make_host_ENV $make_host_BUILD_ROOT/bin/ocamlcHost.wrapper"
-  CAMLOPT="$make_host_ENV $make_host_BUILD_ROOT/bin/ocamloptHost.wrapper"
-
-  make_caml "$DKMLHOSTABI" \
-    NATDYNLINK="$NATDYNLINK" \
-    NATDYNLINKOPTS="$NATDYNLINKOPTS" \
-    "$@"
-}
+# Probe the artifacts from ./configure already done by the host ABI and host ABI's ./ocamlc
+init_hostvars
 
 make_target() {
   make_target_ABI=$1
@@ -302,9 +197,8 @@ make_target() {
     make_target_ENV=$(/usr/bin/cygpath -am "$make_target_ENV")
   fi
 
-  CAMLC="$make_host_ENV $make_target_BUILD_ROOT/bin/ocamlcTarget.wrapper"
-  CAMLOPT="$make_host_ENV $make_target_BUILD_ROOT/bin/ocamloptTarget.wrapper"
-
+  CAMLC="$make_target_ENV $make_target_BUILD_ROOT/support/ocamlcTarget.wrapper" \
+  CAMLOPT="$make_target_ENV $make_target_BUILD_ROOT/support/ocamloptTarget.wrapper" \
   make_caml "$make_target_ABI" BUILD_ROOT="$make_target_BUILD_ROOT" "$@"
 }
 
@@ -379,36 +273,16 @@ build_world() {
     ;;
   esac
 
-  # Make C compiler script for host and target ABI. Any compile spec (especially from CMake) will be
-  # applied to the target compiler
-  DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_ABI="$DKMLHOSTABI" DKML_COMPILE_SPEC=1 DKML_COMPILE_TYPE=SYS autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh
-  DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_ABI="$build_world_TARGET_ABI" autodetect_compiler "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh
+  # Make C compiler script for target ABI. Any compile spec (especially from CMake) will be
+  # applied.
+  install -d "$build_world_BUILD_ROOT"/support
+  DKML_FEATUREFLAG_CMAKE_PLATFORM=ON DKML_TARGET_ABI="$build_world_TARGET_ABI" autodetect_compiler "$build_world_BUILD_ROOT"/support/with-target-c-compiler.sh
 
-  # Make script to set OCAML_FLEXLINK so flexlink.exe and run correctly on Windows, and other
-  # environment variables needed to link OCaml bytecode or native code on the host.
-  {
-    printf "#!%s\n" "$DKML_POSIX_SHELL"
-    if [ -x "$OCAMLSRC_HOST_UNIX/boot/ocamlrun" ] && [ -x "$OCAMLSRC_HOST_UNIX/flexdll/flexlink" ]; then
-      printf "# Since OCAML_FLEXLINK does not support spaces like in '%s'\n" 'C:\Users\John Doe\flexdll'
-      printf "# TODO: Write 'ocamlrun flexlink.exe' into a script without spaces, and set OCAML_FLEXLINK to that\n"
-      printf "export OCAML_FLEXLINK='%s/boot/ocamlrun %s/flexdll/flexlink.exe'\n" "$OCAMLSRC_HOST_UNIX" "$OCAMLSRC_HOST_MIXED"
-      printf "exec \"\$@\"\n"
-    else
-      printf "exec \"\$@\"\n"
-    fi
-  } >"$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh.tmp
-  $DKMLSYS_CHMOD +x "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh.tmp
-  $DKMLSYS_MV "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh.tmp "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh
-
-  # Wrappers
+  # Target wrappers
   # shellcheck disable=SC2086
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlc.opt$HOST_EXE_EXT" $OCAMLCARGS -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
+  log_trace genWrapper "$build_world_BUILD_ROOT/support/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT"/support/with-target-c-compiler.sh "$OCAMLSRC_HOST_MIXED"/support/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlc.opt$build_world_TARGET_EXE_EXT" $OCAMLCARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -nostdlib # TODO: Do we need this? -I "$OCAML_HOST${HOST_DIRSEP}lib${HOST_DIRSEP}ocaml${HOST_DIRSEP}stublibs" -nostdlib
   # shellcheck disable=SC2086
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptHost.wrapper" "$build_world_BUILD_ROOT"/bin/with-host-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$OCAMLBIN_HOST_MIXED/ocamlopt.opt$HOST_EXE_EXT" $OCAMLOPTARGS -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml" -nostdlib
-  # shellcheck disable=SC2086
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamlcTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlc.opt$build_world_TARGET_EXE_EXT" $OCAMLCARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -I "$OCAML_HOST${host_dir_sep}lib${host_dir_sep}ocaml${host_dir_sep}stublibs" -nostdlib
-  # shellcheck disable=SC2086
-  log_trace genWrapper "$build_world_BUILD_ROOT/bin/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT"/bin/with-target-c-compiler.sh "$build_world_BUILD_ROOT"/bin/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlopt.opt$build_world_TARGET_EXE_EXT" $OCAMLOPTARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -nostdlib
+  log_trace genWrapper "$build_world_BUILD_ROOT/support/ocamloptTarget.wrapper" "$build_world_BUILD_ROOT"/support/with-target-c-compiler.sh "$OCAMLSRC_HOST_MIXED"/support/with-linking-on-host.sh "$build_world_BUILD_ROOT/ocamlopt.opt$build_world_TARGET_EXE_EXT" $OCAMLOPTARGS -I "$build_world_BUILD_ROOT/stdlib" -I "$build_world_BUILD_ROOT/otherlibs/unix" -nostdlib
 
   # clean (otherwise you will 'make inconsistent assumptions' errors with a mix of host + target binaries)
   make clean
@@ -430,20 +304,45 @@ build_world() {
   # Build
   # -----
 
+  # Make non-boot ./ocamlc and ./ocamlopt compiler
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
-    log_trace make_host "$build_world_BUILD_ROOT" flexdll
+    log_trace make_host -final flexdll
   fi
-  log_trace make_host "$build_world_BUILD_ROOT" runtime coreall
-  log_trace make_host "$build_world_BUILD_ROOT" opt-core
-  log_trace make_host "$build_world_BUILD_ROOT" ocamlc.opt NATIVECCLIBS= BYTECCLIBS= # host and target C libraries don't mix
+  log_trace make_host -final runtime coreall
+  log_trace make_host -final opt-core
+  log_trace make_host -final ocamlc.opt NATIVECCLIBS= BYTECCLIBS= # host and target C libraries don't mix
+  #   Troubleshooting
+  {
+    printf "+ '%s/ocamlc.opt' -config\n" "$build_world_BUILD_ROOT" >&2
+    "$build_world_BUILD_ROOT"/ocamlc.opt -config >&2
+  }
+  log_trace make_host -final ocamlopt.opt
 
-  # Troubleshooting
-  printf "+ '%s/ocamlc.opt' -config\n" "$build_world_BUILD_ROOT" >&2
-  "$build_world_BUILD_ROOT"/ocamlc.opt -config >&2
+  # Tools we don't need, but are needed by `install` target
+  log_trace make_host -final expunge ocaml ocamldebugger ocamllex.opt ocamltoolsopt
 
-  log_trace make_host "$build_world_BUILD_ROOT" ocamlopt.opt
-  log_trace make_host "$build_world_BUILD_ROOT" compilerlibs/ocamltoplevel.cma otherlibraries
-  log_trace make_host "$build_world_BUILD_ROOT" ocamllex.opt ocamltoolsopt
+  # Remove all OCaml compiled modules since they were compiled with boot/ocamlc
+  remove_compiled_objects_from_curdir
+
+  # Recompile stdlib (and flexdll if enabled)
+  #   See notes in 2-build_host.sh for why we compile twice.
+  #   (We have to serialize the make_ commands because OCaml Makefile do not usually build multiple targets in parallel)
+  if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
+    log_trace make_host -compile-stdlib flexdll
+  fi
+  printf "+ INFO: Compiling host stdlib in pass 1\n" >&2
+  log_trace make_host -final  -C stdlib all allopt
+  printf "+ INFO: Recompiling host ocamlc in pass 1\n" >&2
+  log_trace make_host -final  ocamlc
+  printf "+ INFO: Recompiling host ocamlopt in pass 1\n" >&2
+  log_trace make_host -final  ocamlopt
+  printf "+ INFO: Recompiling host ocamlc.opt/ocamlopt.opt in pass 1\n" >&2
+  log_trace make_host -final  ocamlc.opt ocamlopt.opt
+  printf "+ INFO: Recompiling host stdlib in pass 2\n" >&2
+  log_trace make_host -final  -C stdlib all allopt
+
+  # log_trace make_host -final compilerlibs/ocamltoplevel.cma otherlibraries
+  # log_trace make_host -final ocamllex.opt ocamltoolsopt
 
   # If the host is Windows and the target is Unix then linking to `unix.cma` will fail. So the Unix
   # target will compile otherlibs/unix/unix.cma while the Windows host will compile the
@@ -452,43 +351,51 @@ build_world() {
   # exist in a single unix.cma, so the ocamlc linker will immediately stop trying to create the
   # desired executable. https://stackoverflow.com/questions/17315402/how-to-make-ocaml-bytecode-that-works-on-windows-and-linux
   # is fairly similar. For now there are no good solutions; we just try/continue the compilation.
-  if [ "$build_world_WIN32UNIX_CONSISTENT" = ON ]; then
-    log_trace make_host "$build_world_BUILD_ROOT" ocamldebugger
-    log_trace make_host "$build_world_BUILD_ROOT" ocamltoolsopt.opt
-  else
-    printf "WARNING: Not building ocamldebugger and ocamltoolsopt.opt because you are crossing Windows and Unix host and target\n"
-    printf '#!/bin/sh\necho "FATAL: No cross-compiled ocamldebugger"\nexit 1\n' > debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
-    $DKMLSYS_CHMOD +x debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
-  fi
+  # if [ "$build_world_WIN32UNIX_CONSISTENT" = ON ]; then
+  #   log_trace make_host -final ocamldebugger
+  #   log_trace make_host -final ocamltoolsopt.opt
+  # else
+  #   printf "WARNING: Not building ocamldebugger and ocamltoolsopt.opt because you are crossing Windows and Unix host and target\n"
+  #   printf '#!/bin/sh\necho "FATAL: No cross-compiled ocamldebugger"\nexit 1\n' > debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
+  #   $DKMLSYS_CHMOD +x debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
+  # fi
 
-  log_trace find . -name '*.cm?' -exec rm {} +
+  # Remove all OCaml compiled modules since they were compiled for the host ABI
+  remove_compiled_objects_from_curdir
+
+  # Recompile stdlib (and flexdll if enabled)
+  #   See notes in 2-build_host.sh for why we compile twice
+  #   (We have to serialize the make_ commands because OCaml Makefile do not usually build multiple targets in parallel)
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
     log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" flexdll
   fi
+  printf "+ INFO: Compiling target stdlib in pass 1\n" >&2
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" -C stdlib all allopt
-  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocaml ocamlc
-  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlopt otherlibraries \
-    otherlibrariesopt ocamltoolsopt \
-    driver/main.cmx driver/optmain.cmx \
+  printf "+ INFO: Recompiling target ocamlc in pass 1\n" >&2
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlc
+  printf "+ INFO: Recompiling target ocamlopt in pass 1\n" >&2
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlopt
+  printf "+ INFO: Recompiling target ocamlc.opt/ocamlopt.opt in pass 1\n" >&2
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamlc.opt ocamlopt.opt
+  printf "+ INFO: Recompiling target stdlib in pass 2\n" >&2
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" -C stdlib all allopt
+
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" otherlibraries
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" otherlibrariesopt
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamltoolsopt
+  log_trace touch "lex/ocamllex.opt${build_world_TARGET_EXE_EXT}" # stop warning about native binary older than bytecode binary
+  log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" driver/main.cmx driver/optmain.cmx \
     compilerlibs/ocamlcommon.cmxa \
     compilerlibs/ocamlbytecomp.cmxa \
     compilerlibs/ocamloptcomp.cmxa
-  # otherlibrariesopt:
-  # ocamlrun.exe ../../tools/ocamlmklib -o unix -oc unix -ocamlopt '...' -linkall unix.cmx unixLabels.cmx
-  #   ocamloptTarget.wrapper -shared -o unix.cmxs -I . unix.cmxa
-  #   ** Fatal error: Cannot find file "flexdll_initer_msvc.obj"
-  #   File "caml_startup", line 1:
-  #   Error: Error during linking (exit code 2)
-  # Cross-compiling? Can do Unix to Unix with mingw as host compiler. Or just build correct
-  # unix library when cross-compiling.
   if [ "$OCAML_CONFIGURE_NEEDS_MAKE_FLEXDLL" = ON ]; then
     log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" flexlink.opt
   fi
 
   ## Install
-  log_trace "$DKMLSYS_INSTALL" "$OCAMLRUN" runtime/ocamlrun"$build_world_TARGET_EXE_EXT"
-  log_trace make_host "$build_world_BUILD_ROOT" install
-  log_trace make_host "$build_world_BUILD_ROOT" -C debugger install
+  find "$OCAMLSRC_HOST_MIXED"/toplevel -maxdepth 1 \( -name \*.cmi -or -name \*.cmt -or -name \*.cmti -or -name \*.cmo \) -exec "$DKMLSYS_INSTALL" -v {} "toplevel" \;
+  log_trace make_host -final install
+  log_trace make_host -final -C debugger install
 }
 
 # Loop over each target abi script file; each file separated by semicolons, and each term with an equals
