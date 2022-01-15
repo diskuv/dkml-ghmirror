@@ -1586,14 +1586,14 @@ autodetect_compiler_system() {
             printf "%s\n" "exec $DKMLSYS_ENV \\"
         fi
 
-        autodetect_compiler_system_GCC=$(command -v gcc)
+        autodetect_compiler_system_GCC=$(command -v gcc || true)
         if [ -n "$autodetect_compiler_system_GCC" ]; then
             case "$autodetect_compiler_PLATFORM_ARCH" in
                 *_x86 | *_arm32*)
                     autodetect_compiler_system_CFLAGS=-m32
                     ;;
             esac
-            autodetect_compiler_system_GPLUSPLUS=$(command -v g++)
+            autodetect_compiler_system_GPLUSPLUS=$(command -v g++ || true)
             if [ -n "$autodetect_compiler_system_GPLUSPLUS" ]; then
                 case "$autodetect_compiler_PLATFORM_ARCH" in
                     *_x86 | *_arm32*)
@@ -1601,7 +1601,7 @@ autodetect_compiler_system() {
                         ;;
                 esac
             fi
-            autodetect_compiler_system_AS=$(command -v as)
+            autodetect_compiler_system_AS=$(command -v as || true)
             if [ -n "$autodetect_compiler_system_AS" ]; then
                 case "$autodetect_compiler_PLATFORM_ARCH" in
                     *_x86 | *_arm32*)
@@ -1609,7 +1609,7 @@ autodetect_compiler_system() {
                         ;;
                 esac
             fi
-            autodetect_compiler_system_LD=$(command -v ld)
+            autodetect_compiler_system_LD=$(command -v ld || true)
             if [ -n "$autodetect_compiler_system_LD" ]; then
                 case "$autodetect_compiler_PLATFORM_ARCH" in
                     linux_x86)    autodetect_compiler_system_LDFLAGS=-melf_i386 ;;
