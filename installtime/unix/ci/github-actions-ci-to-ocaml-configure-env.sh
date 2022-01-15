@@ -82,10 +82,9 @@ esac
 #   Exports necessary for OCaml's ./configure
 #       https://developer.android.com/ndk/guides/other_build_systems#autoconf
 find "$TOOLCHAIN/bin" -type f -name '*-clang' # Show API versions for debugging
+find "$TOOLCHAIN/bin" -type f -name '*-as'    # More debugging
 export AR="$TOOLCHAIN/bin/llvm-ar"
 export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
-export AS="$CC -target $TARGET"
-export ASPP="$CC -target $TARGET -c"
 export LD="$TOOLCHAIN/bin/ld"
 export DIRECT_LD="$LD"
 export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
@@ -94,3 +93,11 @@ export NM="$TOOLCHAIN/bin/llvm-nm"
 export OBJDUMP="$TOOLCHAIN/bin/llvm-objdump"
 export CFLAGS=
 export LDFLAGS=
+#       Android NDK comes with a) a Clang compiler and b) a GNU AS assembler and c) sometimes a YASM assembler
+#       in its bin folder
+#       (ex. ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/{clang,arm-linux-androideabi-as,yasm}).
+#
+#       The GNU AS assembler (https://sourceware.org/binutils/docs/as/index.html) does not support preprocessing
+#       so it cannot be used as the `ASPP` ./configure variable.
+export AS="$TOOLCHAIN/bin/$TARGET-as"
+export ASPP="$CC -c"
