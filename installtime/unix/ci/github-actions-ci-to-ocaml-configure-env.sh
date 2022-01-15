@@ -53,7 +53,7 @@ fi
 #   Minimum API
 #       The default is 23 but you can override it with the environment
 #       variable ANDROID_API.
-ANDROID_API=${ANDROID_API:-23}
+API=${ANDROID_API:-23}
 
 #   Toolchain
 case "$BUILDHOST_ARCH" in
@@ -81,7 +81,7 @@ esac
 
 #   Exports necessary for OCaml's ./configure
 #       https://developer.android.com/ndk/guides/other_build_systems#autoconf
-find "$TOOLCHAIN/bin" -type f -ls
+find "$TOOLCHAIN/bin" -type f -name '*-clang' # Show API versions for debugging
 export AR="$TOOLCHAIN/bin/llvm-ar"
 export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
 export AS="$CC --target $TARGET"
