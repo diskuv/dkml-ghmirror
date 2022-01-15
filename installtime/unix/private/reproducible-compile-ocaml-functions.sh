@@ -96,7 +96,13 @@ ocaml_make() {
         MSYS2_ARG_CONV_EXCL='*' \
         "${MAKE:-make}" "$@" IFLEXDIR=-I../flexdll
   else
-    log_trace env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"
+    if ! log_trace --return-error-code env PATH="$DKML_SYSTEM_PATH" "${MAKE:-make}" "$@"; then
+        printf 'FATAL: %s %s failed. config.log is:\n' "${MAKE:-make}" "$*" >&2
+        if [ -e config.log ]; then
+          "$DKMLSYS_SED" 's/^/@= /' config.log >&2
+        fi
+        exit 107
+    fi
   fi
 }
 
