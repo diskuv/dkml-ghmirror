@@ -23,7 +23,7 @@ jobs:
             targetabi: android_arm64v8a
             os: ubuntu-latest
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
-          - hostabi: linux_x86_64
+          - hostabi: linux_x86
             targetabi: android_arm32v7a
             os: ubuntu-latest
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
