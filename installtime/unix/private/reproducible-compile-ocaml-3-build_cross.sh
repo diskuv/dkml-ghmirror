@@ -348,25 +348,6 @@ build_world() {
   printf "+ INFO: Recompiling host stdlib in pass 2\n" >&2
   log_trace make_host -final  -C stdlib all allopt
 
-  # log_trace make_host -final compilerlibs/ocamltoplevel.cma otherlibraries
-  # log_trace make_host -final ocamllex.opt ocamltoolsopt
-
-  # If the host is Windows and the target is Unix then linking to `unix.cma` will fail. So the Unix
-  # target will compile otherlibs/unix/unix.cma while the Windows host will compile the
-  # compatibility module otherlibs/win32unix/unix.cma, but the first requires the C function
-  # `unix_waitpid` while the second requires the C function `win_waitpid`. Both C functions will not
-  # exist in a single unix.cma, so the ocamlc linker will immediately stop trying to create the
-  # desired executable. https://stackoverflow.com/questions/17315402/how-to-make-ocaml-bytecode-that-works-on-windows-and-linux
-  # is fairly similar. For now there are no good solutions; we just try/continue the compilation.
-  # if [ "$build_world_WIN32UNIX_CONSISTENT" = ON ]; then
-  #   log_trace make_host -final ocamldebugger
-  #   log_trace make_host -final ocamltoolsopt.opt
-  # else
-  #   printf "WARNING: Not building ocamldebugger and ocamltoolsopt.opt because you are crossing Windows and Unix host and target\n"
-  #   printf '#!/bin/sh\necho "FATAL: No cross-compiled ocamldebugger"\nexit 1\n' > debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
-  #   $DKMLSYS_CHMOD +x debugger/ocamldebug"$build_world_TARGET_EXE_EXT"
-  # fi
-
   # Remove all OCaml compiled modules since they were compiled for the host ABI
   remove_compiled_objects_from_curdir
 
@@ -396,13 +377,15 @@ build_world() {
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" otherlibraries
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" otherlibrariesopt
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" ocamltoolsopt
-  log_trace touch "lex/ocamllex.opt${build_world_TARGET_EXE_EXT}" # stop warning about native binary older than bytecode binary
+  #   stop warning about native binary older than bytecode binary
+  log_trace touch "lex/ocamllex.opt${build_world_TARGET_EXE_EXT}"
   log_trace make_target "$build_world_TARGET_ABI" "$build_world_BUILD_ROOT" driver/main.cmx driver/optmain.cmx \
     compilerlibs/ocamlcommon.cmxa \
     compilerlibs/ocamlbytecomp.cmxa \
     compilerlibs/ocamloptcomp.cmxa
 
   ## Install
+  "$DKMLSYS_INSTALL" -v -d "$build_world_PREFIX/bin" "$build_world_PREFIX/lib/ocaml"
   "$DKMLSYS_INSTALL" -v "runtime/ocamlrun$build_world_TARGET_EXE_EXT" "$build_world_PREFIX/bin/"
   log_trace make_host -final install
   log_trace make_host -final -C debugger install
