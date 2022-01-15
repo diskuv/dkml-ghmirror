@@ -100,4 +100,4 @@ export LDFLAGS=
 #       The GNU AS assembler (https://sourceware.org/binutils/docs/as/index.html) does not support preprocessing
 #       so it cannot be used as the `ASPP` ./configure variable.
 export AS="$TOOLCHAIN/bin/$TARGET-as"
-export ASPP="$TOOLCHAIN/bin/clang --target $TARGET$API -c"
+export ASPP="$TOOLCHAIN/bin/clang -target $TARGET$API -c"
