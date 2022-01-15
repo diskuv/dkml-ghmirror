@@ -68,11 +68,12 @@ TOOLCHAIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/$HOST_TAG
 
 #   Triple
 case "$DKML_TARGET_ABI" in
-    # Triple in https://developer.android.com/ndk/guides/other_build_systems#overview
-    android_arm64v8a) TARGET=aarch64-linux-android ;;
-    android_arm32v7a) TARGET=armv7a-linux-androideabi ;;
-    android_x86)      TARGET=i686-linux-android ;;
-    android_x86_64)   TARGET=x86_64-linux-android ;;
+    # TARGET = 'Triple' in https://developer.android.com/ndk/guides/other_build_systems#overview
+    # LLVM_TRIPLE = https://llvm.org/doxygen/classllvm_1_1Triple.html
+    android_arm64v8a) TARGET=aarch64-linux-android ;    LLVM_TRIPLE=aarch64-linux-android ;;
+    android_arm32v7a) TARGET=armv7a-linux-androideabi ; LLVM_TRIPLE=arm-linux-androideabi ;;
+    android_x86)      TARGET=i686-linux-android ;       LLVM_TRIPLE=i686-linux-android ;;
+    android_x86_64)   TARGET=x86_64-linux-android ;     LLVM_TRIPLE=x86_64-linux-android ;;
     *)
         printf "FATAL: The DKML_TARGET_ABI must be an DKML Android ABI, not %s\n" "$DKML_TARGET_ABI" >&2
         exit 107
@@ -99,5 +100,5 @@ export LDFLAGS=
 #
 #       The GNU AS assembler (https://sourceware.org/binutils/docs/as/index.html) does not support preprocessing
 #       so it cannot be used as the `ASPP` ./configure variable.
-export AS="$TOOLCHAIN/bin/$TARGET-as"
+export AS="$TOOLCHAIN/bin/$LLVM_TRIPLE-as"
 export ASPP="$TOOLCHAIN/bin/clang -target $TARGET$API -c"
