@@ -1468,7 +1468,7 @@ autodetect_compiler_cmake() {
             autodetect_compiler_cmake_Specific_CXXFLAGS="$autodetect_compiler_cmake_Specific_CXXFLAGS -mfpu=neon"
           fi
           if [ "${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_ABI:-}" = armeabi-v7a ]; then
-            autodetect_compiler_cmake_Specific_LDFLAGS="$autodetect_compiler_cmake_Specific_LDFLAGS -Wl,--fix-cortex-a8"
+            autodetect_compiler_cmake_Specific_LDFLAGS="$autodetect_compiler_cmake_Specific_LDFLAGS --fix-cortex-a8"
           fi
 
           # https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#additional-required-arguments
