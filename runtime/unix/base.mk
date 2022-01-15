@@ -3,7 +3,7 @@
 
 # Version numbers
 
-DKML_BASE_VERSION = 0.3.3-prerel5
+DKML_BASE_VERSION = 0.3.3-prerel6
 
 # Troubleshooting
 
