@@ -78,13 +78,11 @@ jobs:
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host cross onto target ${{ matrix.targetabi }} ABI
       run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
-    - name: Audit
+    - name: Audit file structure
       run: |
+        set "-x"
         cd "${{ env.DIST_DIR }}"
-        find bin
-        find lib
+        find . -maxdepth 2 -type d
         file bin/*
-        find opt/mlcross/ -maxdepth 2
-        find opt/mlcross/${{ matrix.targetabi }}/bin
-        find opt/mlcross/${{ matrix.targetabi }}/lib
+        find opt/mlcross/ -maxdepth 2 -type d
         file opt/mlcross/${{ matrix.targetabi }}/bin/*
