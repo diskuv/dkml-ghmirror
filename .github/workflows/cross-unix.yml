@@ -1,0 +1,76 @@
+name: Unix Cross Compile
+
+on:  
+  push:
+    branches:
+      - 'main'
+      - 'next'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: Would be nice to include Android crosses
+        # from Ubuntu onto Android x86_64, arm32 or arm64 if we had Android
+        # NDK installed.
+        include:
+          - hostabi: darwin_x86_64
+            targetabi: darwin_arm64
+            os: macos-latest        
+    env:
+      BUILD_TYPE: Debug
+      OCAML_GIT_REV: 284834d31767d323aae1cee4ed719cc36aa1fb2c
+      DKML_FEATUREFLAG_CMAKE_PLATFORM: ON
+      DKML_BUILD_TRACE: ON
+      DIST_DIR: dist/${{ matrix.targetabi }}-on-${{ matrix.hostabi }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    # =============== Checkout ===============
+    - uses: actions/checkout@v2
+
+    # =============== Cache ===============
+    - name: Cache builds
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-${{ matrix.hostabi }}-${{ matrix.targetabi }}
+      with:
+        path: |
+          dist/${{ matrix.targetabi }}-on-${{ matrix.hostabi }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.dkmlroot', 'contributors/.userprofile.cachekey') }}
+        restore-keys: |
+          ${{ runner.os }}-dist-${{ env.cache-name }}-
+
+    # ================ Setup ================
+    - name: Install compiler and bubblewrap on Debian/Ubuntu
+      if: ${{ startsWith(matrix.os, 'debian-') || startsWith(matrix.os, 'ubuntu-') }}
+      run: sudo apt install build-essential bubblewrap
+
+    # ================ Build ================
+    - name: Setup ${{ env.BUILD_TYPE }} OCaml
+      run: |
+        TOPDIR=installtime/none/emptytop installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
+          -d . \
+          -t "${{ env.DIST_DIR }}" \
+          -u "${{ env.OCAML_GIT_REV }}" \
+          -v "${{ env.OCAML_GIT_REV }}" \
+          -e "${{ matrix.hostabi }}" \
+          -a "${{ matrix.targetabi }}=installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh" \
+          -k installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+
+    - name: Build ${{ env.BUILD_TYPE }} OCaml for host ${{ matrix.hostabi }} ABI
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
+
+    - name: Build ${{ env.BUILD_TYPE }} OCaml for host cross onto target ${{ matrix.targetabi }} ABI
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
+
+    - name: Audit
+      run: |
+        cd "${{ env.DIST_DIR }}"
+        find bin
+        find lib
+        file bin/*
+        find opt/mlcross/ -maxdepth 2
+        find opt/mlcross/${{ matrix.targetabi }}/bin
+        find opt/mlcross/${{ matrix.targetabi }}/lib
+        file opt/mlcross/${{ matrix.targetabi }}/bin/*
