@@ -60,7 +60,7 @@ reasonably up-to-date and has links to most package's documentation. Just click 
 
 .. image:: https://docs.ocaml.pro/static/imgs/package-page.png
   :width: 400
-  :alt: OCamlPro OCaml Documentation Hub Package Info for AHROCKSDB.0.3.2
+  :alt: OCamlPro OCaml Documentation Hub Package Info for AHROCKSDB.0.3.3
 
 |
 
@@ -202,10 +202,10 @@ Installation Instructions
       PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
 
       PS> iwr `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.2/distribution-portable.zip" `
+        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
         -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"; `
         if ($LastExitCode -ne 0) { bitsadmin /transfer downloadDiskuvOCamlJob /download /priority normal `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.2/distribution-portable.zip" `
+        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
         "$env:TEMP\diskuv-ocaml-distribution.zip" };
 
       PS> Expand-Archive `

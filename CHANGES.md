@@ -1,3 +1,18 @@
+## 0.3.3 (2022-01-14)
+
+> The *Diskuv OCaml* distribution is available under the
+[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
+Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+in particular source code files that prominently display a
+[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Changes:
+* Windows installer would fail when Diskuv zip assets could not be downloaded. Restored behavior
+  from earlier versions that would install Cygwin and build the reproducible assets when
+  downloads fail.
+* Fix regression introduced in 0.3.1 where `opam dkml` would complain of missing PLATFORM
+* Mitigate pre- Windows-1909 bug deleting directories when installer cleans a prior installation
+
 ## 0.3.2 (2021-12-15)
 
 > The *Diskuv OCaml* distribution is available under the
