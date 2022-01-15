@@ -36,7 +36,7 @@
 #    especially the Windows knobs.
 #
 # -------------------------------------------------------
-set -eufx
+set -euf
 
 # ------------------
 # BEGIN Command line processing
