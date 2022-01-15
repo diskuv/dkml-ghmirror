@@ -291,7 +291,13 @@ ocaml_configure() {
     run_script_and_then_configure_environment_for_ocaml() {
       run_script_and_then_configure_environment_for_ocaml_SCRIPT=$1
       shift
-      log_shell "$run_script_and_then_configure_environment_for_ocaml_SCRIPT" "$WORK"/preconfigured-env.sh "$@"
+      if ! log_shell "$run_script_and_then_configure_environment_for_ocaml_SCRIPT" "$WORK"/preconfigured-env.sh "$@"; then
+        printf 'FATAL: ./configure failed. config.log is:\n' >&2
+        if [ -e config.log ]; then
+          "$DKMLSYS_SED" 's/^/@= /' config.log >&2
+        fi
+        exit 107
+      fi
     }
 
     # do ./configure
