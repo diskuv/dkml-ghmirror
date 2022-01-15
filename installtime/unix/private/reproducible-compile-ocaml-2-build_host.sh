@@ -201,7 +201,7 @@ log_trace ocaml_make "$DKMLHOSTABI" opt-core
 log_trace ocaml_make "$DKMLHOSTABI" ocamlc.opt         # Also produces ./ocaml
 #   Generated ./ocamlc for some reason has a shebang reference to the bin/ocamlrun install
 #   location. So install the runtime.
-log_trace install -d "$OCAML_HOST/lib/ocaml"
+log_trace install -d "$OCAML_HOST/bin" "$OCAML_HOST/lib/ocaml"
 log_trace ocaml_make "$DKMLHOSTABI" -C runtime install
 log_trace ocaml_make "$DKMLHOSTABI" ocamlopt.opt       # Can use ./ocamlc (depends on exact sequence above; doesn't now though)
 
