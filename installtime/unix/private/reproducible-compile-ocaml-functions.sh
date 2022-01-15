@@ -362,10 +362,12 @@ genWrapper() {
 # - env:OCAMLSRC_HOST_MIXED
 # - env:DKMLHOSTABI
 init_hostvars() {
+  init_hostvars_ENV_MIXED=$DKMLSYS_ENV
   if [ -x /usr/bin/cygpath ]; then
     # Use Windows paths to specify host paths on Windows ... ocamlc.exe -I <path> will
     # not understand Unix paths (but give you _no_ warning that something is wrong)
     HOST_DIRSEP=\\
+    init_hostvars_ENV_MIXED=$(/usr/bin/cygpath -am "init_hostvars_ENV_MIXED")
   else
     HOST_DIRSEP=/
   fi
@@ -377,27 +379,41 @@ init_hostvars() {
   NATDYNLINKOPTS=$(grep "NATDYNLINKOPTS=" "$init_hostvars_MAKEFILE_CONFIG" | $DKMLSYS_AWK -F '=' '{print $2}')
   export NATDYNLINK NATDYNLINKOPTS
 
-  # Determine ext_exe from compiler (although the filename extensions on the host should be the same as well).
-  #   On Windows ocamlc.exe may Segfault (probably needs the ocamlrun interpreter in correct location). Use ocamlc.opt
-  "$OCAMLSRC_HOST_MIXED/ocamlc.opt" -config > "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
+  # Find OCAMLRUN to run bytecode
+  #   On Windows if you run bytecode executables like ./ocamlc.exe directly you may
+  #   get a segfault! Either run them with 'ocamlrun some_executable.exe' or run
+  #   the native code executable 'some_executable.opt.exe'
+  if [ -e "$OCAMLSRC_HOST_MIXED/runtime/ocamlrun.exe" ]; then
+    OCAMLRUN="$OCAMLSRC_HOST_MIXED/runtime/ocamlrun.exe"
+  else
+    OCAMLRUN="$OCAMLSRC_HOST_MIXED/runtime/ocamlrun"
+  fi
+  export OCAMLRUN
+
+  # Determine ext_exe from compiler (although the filename extensions on the host should be the same as well)
+  if [ -e "$OCAMLSRC_HOST_MIXED/ocamlc.exe" ]; then
+    "$OCAMLRUN" "$OCAMLSRC_HOST_MIXED/ocamlc.exe" -config > "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
+  else
+    "$OCAMLRUN" "$OCAMLSRC_HOST_MIXED/ocamlc" -config > "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
+  fi
   # shellcheck disable=SC2016
   HOST_EXE_EXT=$($DKMLSYS_AWK '$1=="ext_exe:"{print $2}' "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$")
   rm -f "$OCAMLSRC_HOST_MIXED/tmp.ocamlc.config.$$"
   export HOST_EXE_EXT
 
-  export OCAMLRUN="$OCAMLSRC_HOST_MIXED/runtime/ocamlrun$HOST_EXE_EXT"
-  export OCAMLLEX="$OCAMLSRC_HOST_MIXED/lex/ocamllex$HOST_EXE_EXT"
+  export OCAMLLEX="$OCAMLRUN $OCAMLSRC_HOST_MIXED/lex/ocamllex$HOST_EXE_EXT"
+  #     ocamlyacc is produced with MKEXE so it is a native executable
   export OCAMLYACC="$OCAMLSRC_HOST_MIXED/yacc/ocamlyacc$HOST_EXE_EXT"
   case "$DKMLHOSTABI" in
       windows_*)
-          OCAMLDOC="$DKMLSYS_ENV CAML_LD_LIBRARY_PATH=$OCAMLSRC_HOST_MIXED/otherlibs/win32unix:$OCAMLSRC_HOST_MIXED/otherlibs/str $OCAMLSRC_HOST_MIXED/ocamldoc/ocamldoc$HOST_EXE_EXT"
+          OCAMLDOC="$init_hostvars_ENV_MIXED CAML_LD_LIBRARY_PATH=$OCAMLSRC_HOST_MIXED/otherlibs/win32unix:$OCAMLSRC_HOST_MIXED/otherlibs/str $OCAMLSRC_HOST_MIXED/ocamldoc/ocamldoc$HOST_EXE_EXT"
           ;;
       *)
-          OCAMLDOC="$DKMLSYS_ENV CAML_LD_LIBRARY_PATH=$OCAMLSRC_HOST_MIXED/otherlibs/unix:$OCAMLSRC_HOST_MIXED/otherlibs/str $OCAMLSRC_HOST_MIXED/ocamldoc/ocamldoc$HOST_EXE_EXT"
+          OCAMLDOC="$init_hostvars_ENV_MIXED CAML_LD_LIBRARY_PATH=$OCAMLSRC_HOST_MIXED/otherlibs/unix:$OCAMLSRC_HOST_MIXED/otherlibs/str $OCAMLSRC_HOST_MIXED/ocamldoc/ocamldoc$HOST_EXE_EXT"
           ;;
   esac
   export OCAMLDOC
-  export CAMLDEP="$OCAMLSRC_HOST_MIXED/ocamlc$HOST_EXE_EXT -depend"
+  export CAMLDEP="$OCAMLRUN $OCAMLSRC_HOST_MIXED/ocamlc$HOST_EXE_EXT -depend"
   export OCAMLBIN_HOST_MIXED
   export HOST_DIRSEP
 }
