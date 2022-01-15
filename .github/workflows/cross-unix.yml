@@ -1,6 +1,6 @@
 name: Unix Cross Compile
 
-on:  
+on:
   push:
     branches:
       - 'main'
@@ -17,7 +17,20 @@ jobs:
         include:
           - hostabi: darwin_x86_64
             targetabi: darwin_arm64
-            os: macos-latest        
+            os: macos-latest
+            ocamlconfigure: installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+          - hostabi: linux_x86_64
+            targetabi: android_arm64v8a
+            os: ubuntu-latest
+            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+          - hostabi: linux_x86_64
+            targetabi: android_arm32v7a
+            os: ubuntu-latest
+            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+          - hostabi: linux_x86_64
+            targetabi: android_x86_64
+            os: ubuntu-latest
+            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
     env:
       BUILD_TYPE: Debug
       #   OCaml 4.12.1
@@ -56,7 +69,7 @@ jobs:
           -u "${{ env.OCAML_GIT_REV }}" \
           -v "${{ env.OCAML_GIT_REV }}" \
           -e "${{ matrix.hostabi }}" \
-          -a "${{ matrix.targetabi }}=installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh" \
+          -a "${{ matrix.targetabi }}=${{ matrix.ocamlconfigure }}" \
           -k installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host ${{ matrix.hostabi }} ABI
