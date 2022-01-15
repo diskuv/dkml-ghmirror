@@ -84,8 +84,8 @@ esac
 find "$TOOLCHAIN/bin" -type f -name '*-clang' # Show API versions for debugging
 export AR="$TOOLCHAIN/bin/llvm-ar"
 export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
-export AS="$CC --target $TARGET"
-export ASPP="$CC --target $TARGET -c"
+export AS="$CC -target $TARGET"
+export ASPP="$CC -target $TARGET -c"
 export LD="$TOOLCHAIN/bin/ld"
 export DIRECT_LD="$LD"
 export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
