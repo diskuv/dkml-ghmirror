@@ -114,7 +114,6 @@ jobs:
         "${{ env.DIST_DIR }}"/opt/mlcross/${{ matrix.targetabi }}/bin/ocamlopt.opt hello_world.ml -o hello_world.opt.exe -verbose
 
         file hello_world.opt.exe
-        set "-x"
         if [ ! "$(file hello_world.opt.exe)" = "hello_world.opt.exe: ${{ matrix.expectfile }}" ]; then
           printf "FATAL: The archictecture of the OCaml compiled executable does not match the expected architecture: ${{ matrix.expectfile }}\n"
           exit 1
