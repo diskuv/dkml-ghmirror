@@ -1451,10 +1451,12 @@ autodetect_compiler_cmake() {
           # > # Tell configure what flags Android requires.
           # > export CFLAGS="-fPIE -fPIC"
           # > export LDFLAGS="-pie"
-          # Since they may be CMake string arrays (ex. `-fPIE;-pie`) we replace all semicolons with spaces
+          # Since they may be CMake string arrays (ex. `-fPIE;-pie`) we replace all semicolons with spaces.
           autodetect_compiler_cmake_Specific_CFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_CFLAGS ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIE:-} ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_PIC:-}" | $DKMLSYS_SED 's/;/ /g')
           autodetect_compiler_cmake_Specific_CXXFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_CXXFLAGS ${DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIE:-} ${DKML_COMPILE_CM_CMAKE_CXX_COMPILE_OPTIONS_PIC:-}" | $DKMLSYS_SED 's/;/ /g')
-          autodetect_compiler_cmake_Specific_LDFLAGS=$(printf "%s\n" "$autodetect_compiler_cmake_Specific_LDFLAGS ${DKML_COMPILE_CM_CMAKE_C_LINK_OPTIONS_PIE:-}" | $DKMLSYS_SED 's/;/ /g')
+          #     For LDFLAGS since CMake does not have a linker pie options variable (ie. CMAKE_LINKER_OPTIONS_PIE) we hardcode it;
+          #     we intentionally do not use CMAKE_C_LINK_OPTIONS_PIE since that is for the C compiler (clang) not the linker (ld.lld).
+          autodetect_compiler_cmake_Specific_LDFLAGS="--pie $autodetect_compiler_cmake_Specific_LDFLAGS"
 
           # https://developer.android.com/ndk/guides/standalone_toolchain#abi_compatibility
           # > By default, an ARM Clang standalone toolchain will target the armeabi-v7a ABI.
