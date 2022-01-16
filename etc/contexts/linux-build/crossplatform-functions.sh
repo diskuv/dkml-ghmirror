@@ -1464,13 +1464,14 @@ autodetect_compiler_cmake() {
           # > Also, make sure to provide the following two flags to the linker: -march=armv7-a -Wl,--fix-cortex-a8.
           # > The first flag instructs the linker to pick toolchain libraries which are tailored for armv7-a. The 2nd flag is required as a workaround for a CPU bug in some Cortex-A8 implementations.
           # > You don't have to use any specific compiler flag when targeting the other ABIs.
-          # CMake already gives us -march=armv7-a
           if cmake_flag_on "${DKML_COMPILE_CM_CMAKE_ANDROID_ARM_NEON:-}"; then
             autodetect_compiler_cmake_Specific_CFLAGS="$autodetect_compiler_cmake_Specific_CFLAGS -mfpu=neon"
             autodetect_compiler_cmake_Specific_CXXFLAGS="$autodetect_compiler_cmake_Specific_CXXFLAGS -mfpu=neon"
           fi
           if [ "${DKML_COMPILE_CM_CMAKE_ANDROID_ARCH_ABI:-}" = armeabi-v7a ]; then
             autodetect_compiler_cmake_Specific_LDFLAGS="$autodetect_compiler_cmake_Specific_LDFLAGS --fix-cortex-a8"
+            autodetect_compiler_cmake_Specific_CFLAGS="$autodetect_compiler_cmake_Specific_CFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
+            autodetect_compiler_cmake_Specific_CXXFLAGS="$autodetect_compiler_cmake_Specific_CXXFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
           fi
 
           # https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#additional-required-arguments
