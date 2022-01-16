@@ -1,16 +1,17 @@
 Compiling OCaml in Depth
 ========================
 
-We will begin the discussion with an overview of how OCaml is compiled. We will see that one OCaml system
-is used to compile another OCaml system ... the OCaml system you have on your machine. That understanding
-of one system compiling another will be essential to understanding how the cross-compilation works.
+We will begin with an overview of how OCaml is compiled. We will see that a boot
+OCaml system is used to compile the OCaml system you have on your machine.
 
-We will come back to cross-compilation at the end. The second part of the discussion is how C is compiled
-and assembly language are compiled, and where the C and assembly language compilers get invoked.
+The second part is how C and assembly language are compiled, and where the C
+and assembly language compilers get invoked.
 
 Then we will discuss how cross-compilation typically works in the C language.
 
-Finally we will conclude with how cross-compilation works in OCaml.
+Finally we'll use the understanding we've gained for how one OCaml system
+compiles another system to understand how cross-compilation works in
+OCaml.
 
 How OCaml is compiled
 ---------------------

@@ -11,30 +11,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Would be nice to include Android crosses
-        # from Ubuntu onto Android x86_64, arm32 or arm64 if we had Android
-        # NDK installed.
         include:
           - hostabi: darwin_x86_64
             os: macos-latest
             targetabi: darwin_arm64
             targetbits: 64
             ocamlconfigure: installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+            expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
           - hostabi: linux_x86_64
             os: ubuntu-latest
             targetabi: android_arm64v8a
             targetbits: 64
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
           - hostabi: linux_x86
             os: ubuntu-latest
             targetabi: android_arm32v7a
             targetbits: 32
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            expectfile: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, with debug_info, not stripped
           - hostabi: linux_x86_64
             os: ubuntu-latest
             targetabi: android_x86_64
             targetbits: 64
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            expectfile: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
     env:
       BUILD_TYPE: Debug
       #   OCaml 4.12.1
@@ -97,3 +98,14 @@ jobs:
         file bin/* >&2
         find opt/mlcross/ -maxdepth 2 -type d >&2
         file opt/mlcross/${{ matrix.targetabi }}/bin/* >&2
+
+    - name: Test cross-compiling OCaml
+      run: |
+        echo 'let () = print_endline "Hello World!"' > hello_world.ml
+        "${{ env.DIST_DIR }}"/opt/mlcross/${{ matrix.targetabi }}/bin/ocamlopt.opt hello_world.ml -o hello_world.opt.exe -verbose
+        
+        file hello_world.opt.exe
+        if [ ! "$(file hello_world.opt.exe)" = "${{ matrix.expectfile }}" ]; then
+          printf "FATAL: The archictecture of the OCaml compiled executable does not match: ${{ matrix.expectfile }}\n"
+          exit 1
+        fi
