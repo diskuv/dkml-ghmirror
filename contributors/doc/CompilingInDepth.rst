@@ -47,7 +47,7 @@ from a single ``.ml`` source file.
 and generate more bytecode.
 
 All we are missing so far is a way to run arbitrary bytecode files like ``ocamlc`` and ``ocamllex``. That missing
-program is ``ocamlrun``: ``ocamlrun`` is the bytecode interpreter for the Caml Virtual Machine. 
+program is ``ocamlrun``: ``ocamlrun`` is the bytecode interpreter for the Caml Virtual Machine.
 
 To build executables like the ``ocamlrun`` bytecode interpreter, OCaml uses an "autoconf" build system where:
 
@@ -481,8 +481,82 @@ Now we are basically done. With ``ocamlopt`` we can recompile everything into na
 For example ``./ocamlc.opt`` and ``./ocamlopt.opt`` are created using the same procedure as ``./ocamlc`` and ``./ocamlopt``, except instead
 of using ``./ocamlc`` to compile them into bytecode executable, ``./ocamlopt`` is used to compile them into native code executables.
 
-How C is cross-compiled
------------------------
+How C code is cross-compiled
+----------------------------
+
+For this section we'll use an example where we cross-compile the Java compiler
+``javac``. Just like OCaml much of the low-level Java source code is C code. The
+concepts introduced in this section will carry forward to the
+next section where we describe the cross-compiling of OCaml compilers ``ocamlc``
+and ``ocamlopt``.
+
+We want to use an Ubuntu 64-bit machine to create a ``javac.exe`` that can run
+on Windows. To compile ``javac.exe`` there are three different machines we need to
+consider:
+
+Build Machine
+  You would use the following "autoconf" pattern to build yourself a new
+  ``javac`` binary:
+
+  .. code:: c
+
+      git clone https://git.openjdk.java.net/jdk/
+      cd jdk
+      ./configure ...
+      make ...
+      make install
+
+  The machine where you type "git clone" and "./configure" is the Build Machine.
+
+  The Build Machine is a **Ubuntu (Linux x86_64) 64-bit machine**.
+
+Host Machine
+  Since we want to run ``javac.exe`` on Windows machines, the Host Machine
+  is a **Windows Intel/AMD 64-bit machine**.
+
+Target Machine
+  ``javac.exe`` will compile ``.java`` source files into ``.class`` bytecode
+  files. These ``.class`` bytecode files can be run on any machine.
+
+  The Target Machine is *any* machine; we can take the Java compiled output
+  ``Main.class`` that was produced on a Windows machine and then run the
+  ``Main.class`` on a macOS machine.
+
+To produce a Windows ``javac.exe`` from a Linux machine we need to supply
+a C compiler that is a Linux executable that runs on Linux but generate
+Windows executables (.exe) and Windows shared libraries (.dll).
+
+1. If you want a GCC compiler you would install and use the compiler
+   ``/usr/bin/x86_64-w64-mingw32-gcc-win32`` using your Linux package
+   manager (ex. ``apt install gcc-mingw-w64-x86-64`` on Ubuntu).
+   If you instead wanted to generate 32-bit Windows executables you would install
+   and use ``/usr/bin/i686-w64-mingw32-gcc-win32``.
+
+   In general, GCC prefixes its compilers and tools with the Host Machine
+   "triple" (ex. ``i686-w64-mingw32`` describes 32-bit Intel/AMD Windows targets).
+2. If you want a Clang compiler you would install and the compiler
+   ``/usr/bin/clang`` (ex. ``apt install clang`` on Ubuntu). You would use
+   "target" compiler flags (typically the ``CFLAGS`` environment variable) to set
+   the Host Machine. ``/usr/bin/clang --target=i686-pc-win32`` would
+   create executables for 32-bit Intel/AMD Windows while
+   ``/usr/bin/clang --target=x86_64-pc-win32`` would create executables for
+   64-bit Intel/AMD Windows.
+
+In addition to the Build-Machine-running, Host-Machine-producing compiler we
+must also have C libraries to link against and C headers to compile against.
+Since the C compiler will produce code that runs on the Host Machine, the C
+libraries and C headers must be for the Host Machine. Those C libraries and
+headers are collected in a directory structure called a **sysroot**:
+
+.. code:: text
+
+    <sysroot>
+      └── usr
+          ├── include
+          │   └── *.h
+          └── lib
+              ├── *.a or *.lib
+              └── *.so or *.dll
 
 Changing OCaml to do cross-compilation
 --------------------------------------
@@ -491,6 +565,66 @@ Changing OCaml to do cross-compilation
     The technique presented here was first described by EduardoRFS,
     Antonio Nuno Monteiro and Romain Beauxis in
     `discuss.ocaml.org: Cross-compiling implementations / how they work <https://discuss.ocaml.org/t/cross-compiling-implementations-how-they-work/8686>`_
+
+The build procedure for compiling the OCaml system starts with the Build Machine
+generating the ``ocamlc`` compiler and the ``ocamlrun`` bytecode interpreter; in
+other words both ``ocamlc`` and ``ocamlrun`` are Host Machine executables. To
+continue building the rest of the OCaml system the ``ocamlc`` and ``ocamlrun``
+executables must be run. So building an OCaml system requires that
+**the Build Machine must be capable of running Host Machine executables**.
+
+Without loss of generality we will only describe the Host Machine, and expect
+you to use a compatible Build Machine. So a Windows 32-bit Host Machine
+executable can be run on a Windows 32-bit or 64-bit Build Machine, but a
+Windows 64-bit Host Machine executable cannot be run on a 32-bit Build Machine.
+
+.. warning:: When can't a 64-bit Build Machine run 32-bit executables?
+    Apple Silicon (M1, etc.) hardware has 64-bit ARM processors, but for cost
+    and energy savings the 32-bit ARM circuitry has been removed. You cannot run
+    32-bit ARM executables on Apple Silicon.
+
+    Most 64-bit Linux distributions do not come natively with 32-bit system
+    libraries; you have to install something called the "i386" architecture to
+    run most 32-bit binaries. There are tricks around needing these 32-bit system
+    libraries, but usually the i386 architecture is easy to install in popular
+    Linux distributions.
+
+**TODO: Describe Target Machine for OCaml and how it is different than javac**
+
+**TODO: This following section needs fill-in and editing; especially Why? for each step**
+
+Steps:
+
+- Configure OCaml constants + configs for Target Machine
+- Compile ocamlc and ocamlopt that runs on both the Build Machine and Host Machine.
+
+  .. note::
+      ocamlc/ocamlopt now will have configuration (ex. ocamlc -config) for the
+      Target Machine, which is precisely what we want
+
+- Compile all executable tools like ocamlyacc, ocamldebugger, etc. with the current
+  ocamlc/ocamlopt
+- At this point all of the executables run on the Host Machine
+  
+  .. note::
+     ocamlc/ocamlopt now will produce bytecode + native code that runs on the Host
+     Machine. We don't that. We want to fix ocamlc/ocamlopt to produce
+     bytecode + native code that runs on the Target Machine.
+
+- Remove *all* OCaml compiled intermediate code. We could be selective and just
+  remove the portions that contain instructions for producing Host Machine
+  bytecode + native code, but it is easier and safer to remove everything
+  intermediate. The executable tools are not deleted because they are not intermediate.
+- Recompile stdlib and its runtime dependencies (bytecode and native code runtime
+  libraries) for the Target Machine
+- Regenerate ocamlc/ocamlopt using Host Machine ocamlc (which will produce Host
+  Machine executable ocamlc and Host Machine executable ocamlopt but that contain
+  Target Machine standard + runtime libraries)
+- Recompile stdlib again but include other libraries (unix, str, bigarray) for
+  the Target Machine
+- Recompile the bytecode and native code compiler libraries for the Target Machine,
+  in case an Opam package or other OCaml package wants to bypass the compiler
+  executables ocamlc/ocamlopt.
 
 Limitations
 ~~~~~~~~~~~
@@ -554,7 +688,7 @@ you can easily get conflicting configurations from ``ocamlc -config``:
 .. important::
     During a cross-compilation the host and the target runtime library constants
     should be the same. The most critical limitations are:
-    
+
     * if your target is a 32-bit system, make sure you use a 32-bit host compiler.
       That equalizes ``word_size``
     * if your target is a Unix system, make sure you run the host cross-compiler
