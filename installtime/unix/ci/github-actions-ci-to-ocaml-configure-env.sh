@@ -96,7 +96,7 @@ export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
 export STRIP="$TOOLCHAIN/bin/llvm-strip"
 export NM="$TOOLCHAIN/bin/llvm-nm"
 export OBJDUMP="$TOOLCHAIN/bin/llvm-objdump"
-export CFLAGS=$_android_cflags
+export CFLAGS="$_android_cflags"
 export LDFLAGS=
 #       Android NDK comes with a) a Clang compiler and b) a GNU AS assembler and c) sometimes a YASM assembler
 #       in its bin folder
