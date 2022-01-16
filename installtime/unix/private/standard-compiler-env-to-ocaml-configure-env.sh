@@ -276,10 +276,13 @@ export AS ASPP
 
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure#L3434-L3534
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1158-L1175
+#
+# OCaml uses LDFLAGS for both $CC (ex. gcc) and $LD, so we have to zero out
+# LDFLAGS and push LDFLAGS into LD directly
 if [ "${DKML_COMPILE_CM_CMAKE_SYSTEM_NAME:-}" = "Android" ]; then
   #   For Android we'll use clang for the linker which is what the recommended options in
   #   https://developer.android.com/ndk/guides/standalone_toolchain#building_open_source_projects_using_standalone_toolchains
-  #   implie. Also we get CMAKE_C_LINK_OPTIONS_PIE so C compiler is best (no equivalent
+  #   imply. Also we get CMAKE_C_LINK_OPTIONS_PIE so C compiler is best (no equivalent
   #   CMAKE_LINKER_OPTIONS_PIE variable for the standalone linker)
   LD="$DKML_COMPILE_CM_CMAKE_C_COMPILER"
   if [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-}" ]; then
@@ -290,16 +293,19 @@ if [ "${DKML_COMPILE_CM_CMAKE_SYSTEM_NAME:-}" = "Android" ]; then
   fi
   #   Translate `-fPIE;-pie` into `-fPIE -pie`
   LD=$(printf "%s\n" "$LD ${DKML_COMPILE_CM_CMAKE_C_LINK_OPTIONS_PIE:-}" | PATH=/usr/bin:/bin sed 's/;/ /g')
+  #   Since we are using clang as the linker, we need to prefix every word in LDFLAGS with -Wl, to pass it to linker
+  for _ldflag in ${LDFLAGS:-}; do
+    LD="$LD -Wl,$_ldflag"
+  done
+  LDFLAGS=
   #   DIRECT_LD is used by ./configure to create PARTIALLD, the ld -r partial linker. `-r` and `-pie` conflict, so
   #   regardless we are not using the LD logic above.
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
 elif [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
-  LD=$DKML_COMPILE_CM_CMAKE_LINKER
+  LD="$DKML_COMPILE_CM_CMAKE_LINKER ${LDFLAGS:-}"
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
-fi
-if [ -n "${LD:-}" ]; then
-  # OCaml uses LDFLAGS for both $CC (ex. gcc) and $LD, so we have to zero out
-  # LDFLAGS and push LDFLAGS into LD directly
+  LDFLAGS=
+elif [ -n "${LD:-}" ]; then
   LD="$LD ${LDFLAGS:-}"
   DIRECT_LD=$LD
   LDFLAGS=
