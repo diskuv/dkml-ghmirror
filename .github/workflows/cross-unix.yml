@@ -12,30 +12,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - hostabi: darwin_x86_64
+          - name: "[macOS] arm64 on [macOS] x86_64"
+            hostabi: darwin_x86_64
             os: macos-latest
             targetabi: darwin_arm64
             targetbits: 64
             ocamlconfigure: installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
-            expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
-          - hostabi: linux_x86_64
+            expectfile: Mach-O 64-bit executable arm64
+
+          - name: "[android] aarch64 on [linux] x86_64"
+            hostabi: linux_x86_64
             os: ubuntu-latest
             targetabi: android_arm64v8a
             targetbits: 64
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
-          - hostabi: linux_x86
+
+          - name: "[android] armv7a on [linux] x86"
+            hostabi: linux_x86
             os: ubuntu-latest
             targetabi: android_arm32v7a
             targetbits: 32
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, with debug_info, not stripped
-          - hostabi: linux_x86_64
+
+          - name: "[android] x86_64 on [linux] x86_64"
+            hostabi: linux_x86_64
             os: ubuntu-latest
             targetabi: android_x86_64
             targetbits: 64
             ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+
+    name: ${{ matrix.name }}
     env:
       BUILD_TYPE: Debug
       #   OCaml 4.12.1
@@ -103,9 +112,10 @@ jobs:
       run: |
         echo 'let () = print_endline "Hello World!"' > hello_world.ml
         "${{ env.DIST_DIR }}"/opt/mlcross/${{ matrix.targetabi }}/bin/ocamlopt.opt hello_world.ml -o hello_world.opt.exe -verbose
-        
+
         file hello_world.opt.exe
-        if [ ! "$(file hello_world.opt.exe)" = "${{ matrix.expectfile }}" ]; then
-          printf "FATAL: The archictecture of the OCaml compiled executable does not match: ${{ matrix.expectfile }}\n"
+        set "-x"
+        if [ ! "$(file hello_world.opt.exe)" = "hello_world.opt.exe: ${{ matrix.expectfile }}" ]; then
+          printf "FATAL: The archictecture of the OCaml compiled executable does not match the expected architecture: ${{ matrix.expectfile }}\n"
           exit 1
         fi
