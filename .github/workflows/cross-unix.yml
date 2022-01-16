@@ -89,10 +89,11 @@ jobs:
       run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
     - name: Audit file structure
+      # Use stderr since `set -x` goes to stderr and GitHub does not interleave stdout/stderr nicely
       run: |
         set "-x"
         cd "${{ env.DIST_DIR }}"
-        find . -maxdepth 2 -type d
-        file bin/*
-        find opt/mlcross/ -maxdepth 2 -type d
-        file opt/mlcross/${{ matrix.targetabi }}/bin/*
+        find . -maxdepth 2 -type d >&2
+        file bin/* >&2
+        find opt/mlcross/ -maxdepth 2 -type d >&2
+        file opt/mlcross/${{ matrix.targetabi }}/bin/* >&2
