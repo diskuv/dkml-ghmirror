@@ -276,7 +276,24 @@ export AS ASPP
 
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure#L3434-L3534
 # https://github.com/ocaml/ocaml/blob/01c6f16cc69ce1d8cf157e66d5702fadaa18d247/configure.ac#L1158-L1175
-if [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
+if [ "${DKML_COMPILE_CM_CMAKE_SYSTEM_NAME:-}" = "Android" ]; then
+  #   For Android we'll use clang for the linker which is what the recommended options in
+  #   https://developer.android.com/ndk/guides/standalone_toolchain#building_open_source_projects_using_standalone_toolchains
+  #   implie. Also we get CMAKE_C_LINK_OPTIONS_PIE so C compiler is best (no equivalent
+  #   CMAKE_LINKER_OPTIONS_PIE variable for the standalone linker)
+  LD="$DKML_COMPILE_CM_CMAKE_C_COMPILER"
+  if [ -n "${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-}" ]; then
+    LD="$LD ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_TARGET:-}${DKML_COMPILE_CM_CMAKE_C_COMPILER_TARGET:-}"
+  fi
+  if [ -n "${DKML_COMPILE_CM_CMAKE_SYSROOT:-}" ]; then
+    LD="$LD ${DKML_COMPILE_CM_CMAKE_C_COMPILE_OPTIONS_SYSROOT:-}${DKML_COMPILE_CM_CMAKE_SYSROOT:-}"
+  fi
+  #   Translate `-fPIE;-pie` into `-fPIE -pie`
+  LD=$(printf "%s\n" "$LD ${DKML_COMPILE_CM_CMAKE_C_LINK_OPTIONS_PIE:-}" | PATH=/usr/bin:/bin sed 's/;/ /g')
+  #   DIRECT_LD is used by ./configure to create PARTIALLD, the ld -r partial linker. `-r` and `-pie` conflict, so
+  #   regardless we are not using the LD logic above.
+  DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
+elif [ -n "${DKML_COMPILE_CM_CMAKE_LINKER:-}" ]; then
   LD=$DKML_COMPILE_CM_CMAKE_LINKER
   DIRECT_LD=$DKML_COMPILE_CM_CMAKE_LINKER
 fi
