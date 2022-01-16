@@ -226,7 +226,7 @@ ocaml_android_triplet() {
     # v7a uses soft-float not hard-float (eabihf). https://developer.android.com/ndk/guides/abis#v7a
     android_arm32v7a) printf "armv7-none-linux-androideabi\n" ;;
     # v8a probably doesn't use hard-float since removed in https://android.googlesource.com/platform/ndk/+/master/docs/HardFloatAbi.md
-    android_arm64v8a) printf "armv8-none-linux-androideabi\n" ;;
+    android_arm64v8a) printf "aarch64-none-linux-androideabi\n" ;;
     # fallback to v6 (Raspberry Pi 1, Raspberry Pi Zero). Raspberry Pi uses soft-float;
     # https://www.raspbian.org/RaspbianFAQ#What_is_Raspbian.3F . We do the same since it has most market
     # share
