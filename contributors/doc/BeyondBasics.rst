@@ -77,6 +77,30 @@ When we want to add components to your project, such as third-party libraries, w
     (executable
       (name helloworld))
 
+Continuous building
+~~~~~~~~~~~~~~~~~~~
+
+Eventually you may get tired of running ``dune build`` all the time.
+
+Try running the following:
+
+.. code-block:: doscon
+
+   C:\Users\you\DiskuvOCamlProjects>cd helloworld
+   C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c 'X=$(cygpath -au "$DiskuvOCamlHome"); PATH="$X/tools/apps:$PATH"; while true; do dune build --watch; done'
+
+and then edit your ``helloworld.ml`` to say "This is so fast!" instead of
+"Hello, World!".
+
+Then open a new terminal to run:
+
+.. code-block:: doscon
+
+   C:\Users\you\DiskuvOCamlProjects\helloworld>_build/default/helloworld.exe
+   This is so fast!
+
+Anytime you edit your source code, it will recompile what has changed.
+
 Installing packages
 ~~~~~~~~~~~~~~~~~~~
 
