@@ -594,25 +594,22 @@ Windows 64-bit Host Machine executable cannot be run on a 32-bit Build Machine.
 
     Most 64-bit Linux distributions do not come natively with 32-bit system
     libraries; you have to install something called the "i386" architecture to
-    run most 32-bit binaries. There are tricks around needing these 32-bit system
+    run most 32-bit binaries. There are tricks to avoid needing these 32-bit system
     libraries, but usually the i386 architecture is easy to install in popular
     Linux distributions.
 
-**TODO: Describe Target Machine for OCaml and how it is different than javac**
+Here are the modified steps to get a cross-compiling OCaml system:
 
-**TODO: This following section needs fill-in and editing; especially Why? for each step**
-
-Steps:
-
-- Configure OCaml constants + configs for Target Machine
-- Compile ocamlc and ocamlopt that runs on both the Build Machine and Host Machine.
+- Use ``./configure`` to establish constants for the Target Machine. ``utils/config.ml``
+  and ``runtime/sys.c`` will contain settings for the Target Machine.
+- Compile ``ocamlc`` and ``ocamlopt`` that runs on both the Build Machine and Host Machine.
 
   .. note::
-      ocamlc/ocamlopt now will have configuration (ex. ocamlc -config) for the
+      ``ocamlc``/``ocamlopt`` now will have configuration (ex. ``ocamlc -config``) for the
       Target Machine, which is precisely what we want
 
-- Compile all executable tools like ocamlyacc, ocamldebugger, etc. with the current
-  ocamlc/ocamlopt
+- Compile all executable tools like ``ocamlyacc``, ``ocamldebugger``, etc. using
+  the Host Machine ``ocamlc`` / ``ocamlopt``
 - At this point all of the executables run on the Host Machine
   
   .. note::
@@ -624,22 +621,44 @@ Steps:
   remove the portions that contain instructions for producing Host Machine
   bytecode + native code, but it is easier and safer to remove everything
   intermediate. The executable tools are not deleted because they are not intermediate.
-- Recompile stdlib and its runtime dependencies (bytecode and native code runtime
-  libraries) for the Target Machine
-- Regenerate ocamlc/ocamlopt using Host Machine ocamlc (which will produce Host
-  Machine executable ocamlc and Host Machine executable ocamlopt but that contain
+- Recompile ``stdlib`` and its runtime dependencies (``libcamlrun`` bytecode and
+  ``libasmrun`` native code runtime libraries) for the Target Machine
+- Regenerate ``ocamlc`` / ``ocamlopt`` using Host Machine ``ocamlc`` (which will produce Host
+  Machine executable ``ocamlc`` and Host Machine executable ``ocamlopt`` but that contain
   Target Machine standard + runtime libraries)
-- Recompile stdlib again but include other libraries (unix, str, bigarray) for
+- Recompile ``stdlib`` again but include other libraries (``unix``, ``str``, ``bigarray``) for
   the Target Machine
 - Recompile the bytecode and native code compiler libraries for the Target Machine,
   in case an Opam package or other OCaml package wants to bypass the compiler
-  executables ocamlc/ocamlopt.
+  executables ``ocamlc`` / ``ocamlopt``.
+
+The end result will be:
+
+Host Machine
+  The ``ocamlc`` and ``ocamlopt`` will be able to run on the Host machine.
+
+Target Machine
+  ``ocamlc`` will compile ``.ml`` source files into bytecode executables and
+  ``.cmo`` / ``.cma`` bytecode object files. These bytecode files in theory can
+  be run on any machine that has a bytecode interpreter ``ocamlrun``. However
+  because bytecode can make calls to external C libraries, the C libraries need
+  to have the same APIs and the C libraries have to have the same C calling
+  convention (also known as "ABI" or application binary interface). Practically
+  speaking that means bytecode created on a 32-bit system may not work on a
+  64-bit system, and bytecode created on Windows may not work on Unix. Unlike
+  Java, care has to be taken so that bytecode is portable to all Target Machines.
+
+  ``ocamlopt`` will compile ``.ml`` source files into native executables and
+  ``.cmx`` / ``.cmxa`` native object files. The native files will run only on
+  the Target Machine configured at ``./configure`` time.
 
 Limitations
 ~~~~~~~~~~~
 
-The host ``ocamlrun`` is linked against the **host's** ``runtime/`` library which
-defines the following constants in ``runtime/sys.c``:
+Not all Host Machine / Target Machine combinations are possible.
+
+The host ``ocamlrun`` is linked against the **host's** ``runtime/`` library
+which defines the following constants in ``runtime/sys.c``:
 
 +----------------------+------------+-------------------------------------+
 | Constant             | Sample     | Description                         |
@@ -695,26 +714,27 @@ you can easily get conflicting configurations from ``ocamlc -config``:
     # ...
 
 .. important::
-    During a cross-compilation the host and the target runtime library constants
-    should be the same. The most critical limitations are:
+    During a cross-compilation the Host Machine and the Target Machine runtime library
+    constants should be the same. The most critical limitations are:
 
-    * if your target is a 32-bit system, make sure you use a 32-bit host compiler.
+    * if your Target Machine is a 32-bit system, make sure you use a 32-bit Host Machine compiler.
       That equalizes ``word_size``
-    * if your target is a Unix system, make sure you run the host cross-compiler
+    * if your Target Machine is a Unix system, make sure you run the Host Machine cross-compiler
       on a Unix system. That equalizes ``ostype_unix``
-    * if your target is a Windows system, make sure you run the host cross-compiler
+    * if your Target Machine is a Windows system, make sure you run the Host Machine cross-compiler
       on a Windows system. That equalizes ``ostype_windows``
     * no cross-compilation is supported in Cygwin because Cygwin only
       supports x86_64 Windows
 
-Even if the host runtime constants were not inherited, there are a few more limitations
+Even if the Host Machine runtime constants were not inherited, there are a few more limitations
 created by:
 
 1. When ``ocamlopt`` is linking object files into an executable on Windows, it uses an
    executable called ``flexlink.exe`` that expects Windows ``.obj`` (COFF) object files
    for linking. However Linux uses ELF object files and macOS uses Mach-O object files,
-   so a Windows host cannot support a non-Windows target.
-2. When ``ocamlopt`` is linking object files into an executable on Windows, the host/target
-   compiler must match (MSVC or MinGW) and the host/target word size (32 or 64) must
-   match because ``flexlink.exe`` bundles a word size + compiler named object file
-   ``flexdll_msvc.obj``, ``flexdll_mingw64.obj``, etc. into the final executable.
+   so a Windows Host Machine cannot support a non-Windows Target Machine.
+2. When ``ocamlopt`` is linking object files into an executable on Windows, the
+   Host/Target Machine compiler must match (ie. MSVC or MinGW) and the Host/Target Machine
+   word size (ie. 32 or 64) must match because ``flexlink.exe`` bundles a word
+   size + compiler named object file ``flexdll_msvc.obj``, ``flexdll_mingw64.obj``,
+   etc. into the final executable.
