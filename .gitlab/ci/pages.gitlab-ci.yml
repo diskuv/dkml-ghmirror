@@ -1,4 +1,6 @@
 pages:
+  extends:
+    - .alpine:before-sphinx
   stage: deploy
   script:
   - echo Building Sphinx html twice so that Sphinx cross-references work ...
