@@ -72,13 +72,13 @@ jobs:
     # ================ Setup ================
     - name: Install compiler on Debian/Ubuntu
       if: ${{ startsWith(matrix.os, 'debian-') || startsWith(matrix.os, 'ubuntu-') }}
-      run: sudo apt install build-essential
+      run: sudo env DEBIAN_FRONTEND="noninteractive" apt-get -q install -y --no-install-recommends build-essential
     - name: Install bubblewrap for Opam sandboxing on Debian/Ubuntu
       if: ${{ startsWith(matrix.os, 'debian-') || startsWith(matrix.os, 'ubuntu-') }}
-      run: sudo apt install bubblewrap
+      run: sudo env DEBIAN_FRONTEND="noninteractive" apt-get -q install -y --no-install-recommends bubblewrap
     - name: Install 32-bit GCC on Debian/Ubuntu for 32-bit target ABIs
       if: ${{ (startsWith(matrix.os, 'debian-') || startsWith(matrix.os, 'ubuntu-')) && matrix.targetbits == 32 }}
-      run: sudo apt install gcc-multilib g++-multilib
+      run: sudo env DEBIAN_FRONTEND="noninteractive" apt-get -q install -y --no-install-recommends gcc-multilib g++-multilib
 
     # ================ Build ================
     - name: Setup ${{ env.BUILD_TYPE }} OCaml
