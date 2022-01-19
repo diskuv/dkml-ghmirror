@@ -22,7 +22,7 @@ USERMODE=ON
 STATEDIR=
 
 # shellcheck disable=SC1091
-. "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container

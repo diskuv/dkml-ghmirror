@@ -17,7 +17,7 @@ jobs:
             os: macos-latest
             targetabi: darwin_arm64
             targetbits: 64
-            ocamlconfigure: installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh
             expectfile: Mach-O 64-bit executable arm64
 
           - name: "[android] aarch64 on [linux] x86_64"
@@ -25,7 +25,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_arm64v8a
             targetbits: 64
-            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-component-ocamlrun/src/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 
           - name: "[android] armv7a on [linux] x86"
@@ -33,7 +33,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_arm32v7a
             targetbits: 32
-            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-component-ocamlrun/src/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, with debug_info, not stripped
 
           - name: "[android] x86_64 on [linux] x86_64"
@@ -41,7 +41,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_x86_64
             targetbits: 64
-            ocamlconfigure: installtime/unix/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-component-ocamlrun/src/ci/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 
     name: ${{ matrix.name }}
@@ -56,6 +56,8 @@ jobs:
     steps:
     # =============== Checkout ===============
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     # =============== Cache ===============
     - name: Cache builds
@@ -83,20 +85,20 @@ jobs:
     # ================ Build ================
     - name: Setup ${{ env.BUILD_TYPE }} OCaml
       run: |
-        TOPDIR=installtime/none/emptytop installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
+        TOPDIR=vendor/dkml-runtime-common/all/emptytop vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-1-setup.sh \
           -d . \
           -t "${{ env.DIST_DIR }}" \
           -u "${{ env.OCAML_GIT_REV }}" \
           -v "${{ env.OCAML_GIT_REV }}" \
           -e "${{ matrix.hostabi }}" \
           -a "${{ matrix.targetabi }}=${{ matrix.ocamlconfigure }}" \
-          -k installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+          -k vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host ${{ matrix.hostabi }} ABI
-      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-2-build_host-noargs.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host cross onto target ${{ matrix.targetabi }} ABI
-      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
     - name: Audit file structure
       # Use stderr since `set -x` goes to stderr and GitHub does not interleave stdout/stderr nicely

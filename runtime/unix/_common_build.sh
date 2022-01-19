@@ -15,7 +15,7 @@
 #################################################
 
 # shellcheck disable=SC1091
-. "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
 
 # The build root is where all the build files go (except _build for Dune in dev platform). Ordinarily it is a relative
 # directory but can be overridden with DKML_BUILD_ROOT to be an absolute path.

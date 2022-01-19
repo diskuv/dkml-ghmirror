@@ -68,6 +68,11 @@ while getopts ":d:v:t:a:b:c:h" opt; do
                 usage
                 exit 1
             fi
+            # Make into absolute path
+            DKMLDIR_1=$(dirname "$DKMLDIR")
+            DKMLDIR_1=$(cd "$DKMLDIR_1" && pwd)
+            DKMLDIR_2=$(basename "$DKMLDIR")
+            DKMLDIR="$DKMLDIR_1/$DKMLDIR_2"
         ;;
         v )
             DOCKER_IMAGE="$OPTARG"
@@ -117,7 +122,7 @@ fi
 PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
 
 # shellcheck disable=SC1091
-. "$DKMLDIR/runtime/unix/_common_tool.sh"
+. "$DKMLDIR/vendor/dkml-runtime-common/unix/_common_tool.sh"
 
 disambiguate_filesystem_paths
 

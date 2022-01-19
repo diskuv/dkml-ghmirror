@@ -26,7 +26,7 @@ USERMODE=ON
 STATEDIR=
 
 # shellcheck disable=SC1091
-. "$DKMLDIR"/runtime/unix/_common_tool.sh
+. "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
 
 # Keep the _common_tool provided temporary directory, even when we switch into the reproducible directory
 # so the reproducible directory does not leak anything
@@ -41,15 +41,15 @@ cd "$DKMLDIR"
 # >>>>>>>>>
 
 # Install the source code
-log_trace "$DKMLDIR"/installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
+log_trace "$DKMLDIR"/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$GIT_TAG_OR_COMMIT" \
     -e "$DKMLHOSTABI" \
-    -k installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+    -k vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"
 
 # Build and install OCaml (but no cross-compilers)
-log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-2-build_host-noargs.sh

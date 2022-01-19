@@ -132,7 +132,7 @@ similar to the following:
 .. code-block:: bash
 
     ENV_ARGS=()
-    source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
+    source vendor/diskuv-ocaml/vendor/dkml-runtime-common/unix/crossplatform-functions.sh
     autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x86-windows" # if 64-bit
     autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x64-windows" # if 32-bit
 

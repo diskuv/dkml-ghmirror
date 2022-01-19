@@ -12,7 +12,7 @@ macos:build-ocaml:
     matrix:
       - HOSTABI: darwin_x86_64
         NAMESUFFIX: -cross-arm64
-        TARGETABIS: darwin_arm64=installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
+        TARGETABIS: darwin_arm64=vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh
         OCAMLVER: ["4.13.1", "4.12.1"]
   needs: []
   rules:
@@ -31,13 +31,13 @@ macos:build-ocaml:
 
     # ================ Build ================
     - |
-      set -eux ; TOPDIR=installtime/none/emptytop installtime/unix/private/reproducible-compile-ocaml-1-setup.sh \
+      set -eux ; TOPDIR=vendor/dkml-runtime-common/all/emptytop vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-1-setup.sh \
         -d . -t _ci/tree -v "$COMMITID" \
         -a "$TARGETABIS" \
         -e "$HOSTABI" \
-        -k installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh
-    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh
-    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-3-build_cross-noargs.sh
+        -k vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh
+    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-2-build_host-noargs.sh
+    - cd _ci/tree && share/dkml/repro/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
     # ================ Test ================
 

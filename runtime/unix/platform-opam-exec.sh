@@ -20,7 +20,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # shellcheck disable=SC1091
-. "$DKMLDIR/etc/contexts/linux-build/crossplatform-functions.sh"
+. "$DKMLDIR/vendor/dkml-runtime-common/unix/crossplatform-functions.sh"
 
 # ------------------
 # BEGIN Command line processing
@@ -208,7 +208,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
         . "$DKMLDIR"/runtime/unix/_common_build.sh
     else
         # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+        . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
     fi
 else
     if [ -n "${STATEDIR:-}" ]; then
@@ -216,7 +216,7 @@ else
         . "$DKMLDIR"/runtime/unix/_common_build.sh
     else
         # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_tool.sh
+        . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
     fi
 fi
 

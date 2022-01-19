@@ -28,7 +28,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 # shellcheck disable=1091
-. "$DKMLDIR/runtime/unix/_common_tool.sh"
+. "$DKMLDIR/vendor/dkml-runtime-common/unix/_common_tool.sh"
 
 # _common_tool.sh functions expect us to be in $TOPDIR. We'll change directories later.
 cd "$TOPDIR"

@@ -1,0 +1,6 @@
+[submodule "vendor/dkml-runtime-common"]
+	path = vendor/dkml-runtime-common
+	url = https://github.com/diskuv/dkml-runtime-common.git
+[submodule "vendor/dkml-component-ocamlrun"]
+	path = vendor/dkml-component-ocamlrun
+	url = https://github.com/diskuv/dkml-component-ocamlrun.git

@@ -43,14 +43,14 @@ win32:build-ocaml:
     - if ($env:OCAMLVERSION -eq "5.00.0+dev0-2021-11-05") { $COMMITID = "284834d31767d323aae1cee4ed719cc36aa1fb2c" }
     - msys (
       'env'
-      + ' TOPDIR=$PWD/installtime/none/emptytop'
-      + ' installtime/unix/private/reproducible-compile-ocaml-1-setup.sh'
+      + ' TOPDIR=$PWD/vendor/dkml-runtime-common/all/emptytop'
+      + ' vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-1-setup.sh'
       + " -d '" + "$PWD" + "'"
       + " -t '" + "$DEPLOYDIR" + "'"
       + " -v '$COMMITID'"
       + " -e " + "$env:HOSTABI"
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/vendor/dkml-component-ocamlrun/src/reproducible-compile-ocaml-2-build_host-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
 
     # Clean up excess files, including git submodules and cross-compiled targets
@@ -102,7 +102,7 @@ win32:oorepo-fetch-1:
 
     # Setup and Fetch
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/installtime/none/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
@@ -174,7 +174,7 @@ win32:oorepo-matrix-2:
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/installtime/none/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"

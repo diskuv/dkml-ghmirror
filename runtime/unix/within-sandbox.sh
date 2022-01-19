@@ -95,7 +95,7 @@ if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
     # shellcheck disable=SC1091
-    . "$DKMLDIR"/runtime/unix/_common_tool.sh
+    . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
 fi
 
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then

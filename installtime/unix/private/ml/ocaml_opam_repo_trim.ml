@@ -8,7 +8,7 @@
    1. Change the current directory to be vendor/diskuv-ocaml (the directory containing .dkmlroot)
    2. Run the following (replace DV_WindowsMsvcDockerImage with what is in DeploymentVersion.psm1):
 
-     DV_WindowsMsvcDockerImage="ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:810ce2fca08c22ea1bf4066cb75ffcba2f98142d6ce09162905d9ddc09967da8" ; DOCKERARCH=amd64; OCAMLVERSION=4.12.1 ; DEPLOYDIR=$(cygpath -am $TMP/oorepo) ; CI_PROJECT_DIR=$(cygpath -am .) ; env TOPDIR=$CI_PROJECT_DIR/installtime/none/emptytop $CI_PROJECT_DIR/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh -d $CI_PROJECT_DIR -t $DEPLOYDIR -v $DV_WindowsMsvcDockerImage -a $DOCKERARCH -b $OCAMLVERSION
+     DV_WindowsMsvcDockerImage="ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:810ce2fca08c22ea1bf4066cb75ffcba2f98142d6ce09162905d9ddc09967da8" ; DOCKERARCH=amd64; OCAMLVERSION=4.12.1 ; DEPLOYDIR=$(cygpath -am $TMP/oorepo) ; CI_PROJECT_DIR=$(cygpath -am .) ; env TOPDIR=$CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop $CI_PROJECT_DIR/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh -d $CI_PROJECT_DIR -t $DEPLOYDIR -v $DV_WindowsMsvcDockerImage -a $DOCKERARCH -b $OCAMLVERSION
 
    3. Run:
 

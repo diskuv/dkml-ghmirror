@@ -40,7 +40,7 @@ DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # Get cmake_flag_on
 # shellcheck disable=SC1091
-. "$DKMLDIR"/etc/contexts/linux-build/crossplatform-functions.sh
+. "$DKMLDIR"/vendor/dkml-runtime-common/unix/crossplatform-functions.sh
 
 # Need feature flag and usermode and statedir until all legacy code is removed in _common_tool.sh
 # shellcheck disable=SC2034

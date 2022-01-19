@@ -1,5 +1,6 @@
 variables:
   OPAM_SYS_DEPLOY_FOLDER_WINDOWS:  'C:\DiskuvOCaml\OpamSys'
+  GIT_SUBMODULE_STRATEGY: recursive
 
 .alpine:before-sphinx:
   image: python:3.9-alpine

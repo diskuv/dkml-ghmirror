@@ -6,13 +6,13 @@
  (target scripts.ml)
  (deps
   "%{project_root}/installtime/unix/create-opam-switch.sh"
-  "%{project_root}/installtime/unix/private/standard-compiler-env-to-ocaml-configure-env.sh"
-  "%{project_root}/installtime/unix/private/standard-compiler-env-to-ocaml-configure-launcher.sh"
+  "%{project_root}/vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-env.sh"
+  "%{project_root}/vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-launcher.sh"
   "%{project_root}/runtime/unix/platform-opam-exec.sh"
   "%{project_root}/runtime/unix/within-dev.sh"
   "%{project_root}/runtime/unix/_common_build.sh"
-  "%{project_root}/runtime/unix/_common_tool.sh"
-  "%{project_root}/etc/contexts/linux-build/crossplatform-functions.sh")
+  "%{project_root}/vendor/dkml-runtime-common/unix/_common_tool.sh"
+  "%{project_root}/vendor/dkml-runtime-common/unix/crossplatform-functions.sh")
  (action
   (progn
    (run

@@ -82,6 +82,11 @@ while getopts ":d:u:v:t:a:b:c:e:h" opt; do
                 usage
                 exit 1
             fi
+            # Make into absolute path
+            DKMLDIR_1=$(dirname "$DKMLDIR")
+            DKMLDIR_1=$(cd "$DKMLDIR_1" && pwd)
+            DKMLDIR_2=$(basename "$DKMLDIR")
+            DKMLDIR="$DKMLDIR_1/$DKMLDIR_2"
         ;;
         u )
             GIT_URL="$OPTARG"
@@ -144,7 +149,7 @@ USERMODE=ON
 STATEDIR=
 
 # shellcheck disable=SC1091
-. "$DKMLDIR/runtime/unix/_common_tool.sh"
+. "$DKMLDIR/vendor/dkml-runtime-common/unix/_common_tool.sh"
 
 disambiguate_filesystem_paths
 
