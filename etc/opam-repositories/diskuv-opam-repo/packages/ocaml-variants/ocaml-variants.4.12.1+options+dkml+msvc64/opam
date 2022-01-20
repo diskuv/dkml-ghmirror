@@ -4,7 +4,7 @@
 # Also, since ocaml-option-32bit is hardcoded to `available: [ arch = "x86_64" & (os = "linux" | os = "macos") ]` we use different
 # options files to select 32bit vs 64bit rather than use options.
 opam-version: "2.0"
-synopsis: "OCaml 4.12.1 (options + Diskuv OCaml 0.3.3 + 64-bit MSVC)"
+synopsis: "OCaml 4.12.1 (options + Diskuv OCaml 0.4.0 + 64-bit MSVC)"
 maintainer: "[Diskuv, Inc. <support@diskuv.com>]"
 authors: "Xavier Leroy and many contributors"
 homepage: "https://ocaml.org"
