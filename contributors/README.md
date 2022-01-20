@@ -46,7 +46,7 @@ Start the new release on Windows with `release-start-patch`, `release-start-mino
 or `release-start-major`:
 
 ```powershell
-& $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-start-minor
+with-dkml make release-start-minor
 ```
 
 Commit anything that needs changing or fixing, and document your changes/fixes in
@@ -56,7 +56,7 @@ for you. Do not change the placeholder `@@YYYYMMDD@@` in it though.
 When you think you are done, you need to test. Publish a prerelease:
 
 ```powershell
-& $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-prerelease
+with-dkml make release-prerelease
 ```
 
 Test it, and repeat until all problems are fixed.
@@ -64,5 +64,5 @@ Test it, and repeat until all problems are fixed.
 Finally, after you have *at least one* prerelease:
 
 ```powershell
-& $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-complete
+with-dkml make release-complete
 ```
