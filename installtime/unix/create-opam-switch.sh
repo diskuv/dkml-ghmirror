@@ -481,7 +481,7 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\"
     printf "%s\n" "export OPAMSWITCH="
     printf "%s\n" "export OPAM_SWITCH_PREFIX="
     if [ -n "${OPAM_SWITCH_CFLAGS:-}" ]; then printf "export CFLAGS=\"\${CFLAGS:-} \""; escape_string_for_shell "$OPAM_SWITCH_CFLAGS"; printf "\n"; fi
-    printf "exec env DKMLDIR='%s' DKML_TARGET_ABI='%s' '%s' \"\$@\"\n" "$DKMLDIR" "$DKMLPLATFORM" "$DKMLDIR/vendor/dkml-component-ocamlrun/src/standard-compiler-env-to-ocaml-configure-launcher.sh"
+    printf "exec env DKMLDIR='%s' DKML_TARGET_ABI='%s' '%s' \"\$@\"\n" "$DKMLDIR" "$DKMLPLATFORM" "$DKMLDIR/vendor/dkml-component-ocamlcompiler/src/standard-compiler-env-to-ocaml-configure-launcher.sh"
 } > "$WORK"/switch-create-prehook.sh
 chmod +x "$WORK"/switch-create-prehook.sh
 
