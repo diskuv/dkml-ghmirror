@@ -109,7 +109,7 @@ if cmake_flag_on "$IS_DEV_MODE"; then
         # We are missing required packages. Let's install them.
         {
             printf '%s\n' "DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -p '$DKMLPLATFORM' -d '$STATEDIR' -u '$USERMODE' -t '$TARGET_OPAMSWITCH' -b '$BUILDTYPE' -o '$OPAMHOME' -v '$OCAMLHOME' install --jobs=$NUMCPUS --yes \\"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
             printf '%s\n' "  ocamlformat ocamlformat-rpc ocaml-lsp-server ocp-indent utop"
         } > "$WORK"/configure.sh
         print_opam_logs_on_error "$DKML_POSIX_SHELL" "$WORK"/configure.sh
@@ -129,7 +129,7 @@ export OPAMSWITCHNAME_BUILDHOST
 {
     # [configure.sh JOBS]
     printf '%s\n' "exec env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -p '$DKMLPLATFORM' -d '$STATEDIR' -u '$USERMODE' -t '$TARGET_OPAMSWITCH' -b '$BUILDTYPE' -o '$OPAMHOME' -v '$OCAMLHOME' install --jobs=\$1 --yes \\"
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
+    if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf '%s\n' "  --debug-level 2 \\"; fi
     printf '%s\n' "  --deps-only --with-test \\"
     # shellcheck disable=SC2016
     printf ' '

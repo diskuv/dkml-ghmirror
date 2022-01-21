@@ -108,7 +108,7 @@ OPAM_SWITCH_CREATE_ARGS=(
     --yes
 )
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
+if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
 
 if ! is_empty_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install

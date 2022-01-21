@@ -56,20 +56,20 @@ disambiguate_filesystem_paths
 # (only necessary for Windows at the moment, and we don't support Windows containers yet or perhaps never)
 if [ "${SANDBOX_COMPILATION:-ON}" = ON ]; then
     if is_unixy_windows_build_machine; then
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [todo] add compilation tools like vcvars" >&2; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then echo "+ [todo] add compilation tools like vcvars" >&2; fi
     fi
 fi
 
 # run any prehooks (the PATH has already been setup)
 if [ -n "$SANDBOX_PRE_HOOK_SINGLE" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -n20 "$SANDBOX_PRE_HOOK_SINGLE" >&2; fi
+    if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "+ [eval] ..."; tail -n20 "$SANDBOX_PRE_HOOK_SINGLE" >&2; fi
     tmpe="$(mktemp)"
     # shellcheck disable=SC1090
     . "$SANDBOX_PRE_HOOK_SINGLE"
     rm -f "$tmpe"
 fi
 if [ -n "$SANDBOX_PRE_HOOK_DOUBLE" ]; then
-    if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [eval] $SANDBOX_PRE_HOOK_DOUBLE" >&2; fi
+    if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "+ [eval] $SANDBOX_PRE_HOOK_DOUBLE" >&2; fi
     tmpe="$(mktemp)"
     # the `awk ...` is dos2unix equivalent
     eval "$SANDBOX_PRE_HOOK_DOUBLE" | awk '{ sub(/\r$/,""); print }' > "$tmpe"
@@ -86,7 +86,7 @@ if [ -n "${DKML_VCPKG_TRIPLET:-}" ] && [ -n "${OPAMROOT:-}" ]; then
 fi
 
 # print PATH for troubleshooting
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
+if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then echo "+ [PATH] $PATH" >&2; fi
 
 # run the requested command
 if [ $# -eq 0 ]; then

@@ -451,7 +451,7 @@ if is_unixy_windows_build_machine; then
         {
             cat "$WORK"/nonswitchexec.sh
             printf "  repository add fdopen-mingw-%s-%s '%s' --yes --dont-select --kind local --rank=2" "$dkml_root_version" "$OCAMLVERSION" "$OPAMREPO_WINDOWS_OCAMLOPAM"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/repoadd.sh
         log_shell "$WORK"/repoadd.sh
     fi
@@ -473,7 +473,7 @@ else
     printf '%socaml-system.%s%s' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant_for_base.formula.head.txt
 fi
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
+if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
 {
     printf "%s\n" "#!$DKML_POSIX_SHELL"
@@ -485,7 +485,7 @@ if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "  --debug-level 2 \\"
 } > "$WORK"/switch-create-prehook.sh
 chmod +x "$WORK"/switch-create-prehook.sh
 
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
+if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
     printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh $OPAM_EXEC_OPTS switch remove \\" > "$WORK"/switchremoveargs.sh
@@ -517,7 +517,7 @@ else
         {
             cat "$WORK"/nonswitchexec.sh
             printf "%s" "  repository set-repos"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
             cat "$WORK"/repos-choice.lst
         } > "$WORK"/setrepos.sh
         log_shell "$WORK"/setrepos.sh
@@ -525,7 +525,7 @@ else
         {
             cat "$WORK"/nonswitchexec.sh
             printf "%s" "  update"
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/update.sh
         log_shell "$WORK"/update.sh
     fi
@@ -570,7 +570,7 @@ if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 
@@ -582,7 +582,7 @@ if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV = "yes"'
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 
@@ -598,19 +598,19 @@ if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-build-commands='[\"%s\"]' " "$DOW_PATH"
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-install-commands='[\"%s\"]' " "$DOW_PATH"
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
     {
         cat "$WORK"/nonswitchexec.sh
         printf "  option wrap-remove-commands='[\"%s\"]' " "$DOW_PATH"
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/wbc.sh
     log_shell "$WORK"/wbc.sh
 
@@ -759,7 +759,7 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
             cat "$WORK"/nonswitchexec.sh
             printf "  upgrade --fixup"
             if [ "$YES" = ON ]; then printf " --yes"; fi
-            if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s" " --debug-level 2"; fi
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/upgrade.sh
         log_shell "$WORK"/upgrade.sh
     fi

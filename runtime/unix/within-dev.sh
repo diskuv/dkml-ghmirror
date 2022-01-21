@@ -215,7 +215,7 @@ sanitize_path() {
 EOF
 
     if [ -n "$PREHOOK_SINGLE" ]; then
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then
             printf '%s\n' 'printf "+ [eval] ...\n" >&2'
             printf '%s\n' "'$DKMLSYS_SED' 's/^/+| /' '$PREHOOK_SINGLE' >&2"
         fi
@@ -225,7 +225,7 @@ EOF
 
     if [ -n "$PREHOOK_DOUBLE" ]; then
         PREHOOK_DOUBLE_SQ=$(printf '%s' "$PREHOOK_DOUBLE" | escape_stdin_for_single_quote)
-        if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then
             printf "printf %s '%s' >&2\n" \
                 '"%s\n"' \
                 "+ [eval] $PREHOOK_DOUBLE_SQ"
@@ -290,7 +290,7 @@ if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
 fi
 
 # print PATH for troubleshooting
-if [ "${DKML_BUILD_TRACE:-ON}" = ON ]; then printf "%s\n" "+ [PATH] $PATH" >&2; fi
+if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "+ [PATH] $PATH" >&2; fi
 
 # run the requested command (cannot `exec` since the launcher script is a temporary file
 # that needs to be cleaned up after execution)
