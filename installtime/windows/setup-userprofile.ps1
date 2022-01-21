@@ -1485,7 +1485,7 @@ try {
     # We use crossplatform-functions.sh for with-dkml.exe.
     if (!(Test-Path -Path $FunctionsDir)) { New-Item -Path $FunctionsDir -ItemType Directory | Out-Null }
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("set -x && install '$DkmlPath\etc\contexts\linux-build\crossplatform-functions.sh' '$FunctionsDir\crossplatform-functions.sh'")
+        -Command ("set -x && install '$DkmlPath\vendor\dkml-runtime-common\unix\crossplatform-functions.sh' '$FunctionsDir\crossplatform-functions.sh'")
 
     # Only apps, not bootstrap-apps, are installed.
     # And we only need dkml-findup.exe for the CI Flavor.
