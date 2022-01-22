@@ -1,8 +1,6 @@
 #!/bin/bash
 # --------------------------
 # within-dev.sh
-#
-# Analog of within-sandbox.sh and sandbox-entrypoint.sh. Most of the same environment variables should be set albeit with different values.
 # --------------------------
 set -euf
 

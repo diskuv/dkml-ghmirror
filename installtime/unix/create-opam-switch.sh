@@ -315,7 +315,7 @@ if [ "$BUILD_OCAML_BASE" = ON ]; then
         # * `ocaml-option-musl` has a good defaults for embedded systems. But we don't want to optimize for size on a non-embedded system.
         #   Since we have fine grained information about whether we are on a tiny system (ie. ARM 32-bit) we set the CFLAGS ourselves.
         # * Advanced: You can use OCAMLPARAM through `opam config set ocamlparam` (https://github.com/ocaml/opam-repository/pull/16619) or
-        #   just set it in `within-dev.sh` or `sandbox-entrypoint.sh`.
+        #   just set it in `within-dev.sh`.
         # `is_reproducible_platform && case "$PLATFORM" in linux*) ... ;;` then
         #     # NOTE 2021/08/04: When this block is enabled we get the following error, which means the config is doing something that we don't know how to inspect ...
         #

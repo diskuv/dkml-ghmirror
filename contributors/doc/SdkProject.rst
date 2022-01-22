@@ -641,48 +641,6 @@ Use ``make report`` to see what has been built and all of its compiler
 flags. If you need to send in a bug report **include the output of
 ``make report``**.
 
-Build Directories
------------------
-
-The directory structure is the same regardless whether Windows or Linux
-is used as the development platform, unless noted otherwise.
-
--  ``_build``
--  ``build``
--  ``_tools``
-
-   -  ``common`` - Tools shared across all platforms, if any
-   -  ``local`` - Shared platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH
-
-   -  ``opam-bootstrap`` - Native Windows version of Opam, on Windows
-      build machines only
-
-      -  ``bin`` - Install location containing Opam executable and
-         shared DLLs
-
-   -  ``dev`` - Tools for the dev platform
-   -  ``local`` - Dev platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH if the build is for the dev platform
-      -  ``dune`` - Drop-in replacement for ``dune``
-      -  ``opam`` - Drop-in replacement for ``opam``
-
-   -  ``PLATFORM`` - Tools for a specific `target
-      platform <#target-platforms>`__
-   -  ``local`` - Target platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH if the build is for the specific target platform
-      -  ``dune`` - Drop-in replacement for ``dune``
-      -  ``opam`` - Drop-in replacement for ``opam``
-
-*Build PATH manipulation is done in ``.\scripts\unix\within-dev.sh`` and
-``contexts\linux-build\sandbox-entrypoint.sh``*
-
 OCaml
 -----
 
