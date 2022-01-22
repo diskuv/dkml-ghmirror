@@ -163,7 +163,6 @@ ALPINE_ARCH_windows_x86      = x86
 ALPINE_ARCH_windows_x86_64   = x86_64
 # VCPKG_TRIPLET_xxPLATFORMxx  := See https://github.com/microsoft/vcpkg/tree/master/triplets and etc/vcpkg/triplets/
 # At the moment these are not used; instead
-# (deprecated) crossplatform-functions.sh:platform_vcpkg_triplet is used
 # (updated) the CMake launched vcpkg is used
 VCPKG_TRIPLET_android_arm64v8a = arm64-android
 VCPKG_TRIPLET_android_arm32v7a = arm-android

@@ -33,22 +33,13 @@ usage() {
     echo '             Useful for setting environment variables (possibly from a script).' >&2
 }
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    # shellcheck disable=SC2034
-    export PLATFORM=dev
-else
-    PLATFORM=
-fi
+PLATFORM=
 BUILDTYPE=
 PREHOOK_SINGLE=
 PREHOOK_DOUBLE=
 COMPILATION=OFF
 STATEDIR=
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 while getopts ":hb:p:0:1:cu:d:" opt; do
     case ${opt} in
         h )
@@ -57,7 +48,7 @@ while getopts ":hb:p:0:1:cu:d:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
-            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+            if [ "$PLATFORM" = dev ]; then
                 usage
                 exit 0
             fi
@@ -102,38 +93,12 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -n "${BUILDTYPE:-}" ] || [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_build.sh
-    else
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
-    fi
+if [ -n "${STATEDIR:-}" ]; then
+    # shellcheck disable=SC1091
+    . "$DKMLDIR"/runtime/unix/_common_build.sh
 else
-    if [ -n "${STATEDIR:-}" ]; then
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/runtime/unix/_common_build.sh
-    else
-        # shellcheck disable=SC1091
-        . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
-    fi
-fi
-
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    # Set DKML_VCPKG_HOST_TRIPLET
-    platform_vcpkg_triplet
-fi
-
-# Set DKML_VCPKG_MANIFEST_DIR if necessary
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -e "$TOPDIR/vcpkg.json" ]; then
-        DKML_VCPKG_MANIFEST_DIR="$TOPDIR"
-        if [ -x /usr/bin/cygpath ]; then DKML_VCPKG_MANIFEST_DIR=$(/usr/bin/cygpath -aw "$DKML_VCPKG_MANIFEST_DIR"); fi
-        export DKML_VCPKG_MANIFEST_DIR
-    else
-        unset DKML_VCPKG_MANIFEST_DIR
-    fi
+    # shellcheck disable=SC1091
+    . "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
 fi
 
 # Essential environment values.
@@ -144,18 +109,10 @@ LAUNCHER_ARGS=()
 disambiguate_filesystem_paths
 
 # If and only if [-b DKML_DUNE_BUILD_DIR] specified
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -n "${BUILDTYPE:-}" ]; then
-        LAUNCHER_ARGS+=(
-            DKML_DUNE_BUILD_DIR="${BUILD_BASEPATH}$DKML_DUNE_BUILD_DIR"
-        )
-    fi
-else
-    if [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
-        LAUNCHER_ARGS+=(
-            DKML_DUNE_BUILD_DIR="$DKML_DUNE_BUILD_DIR"
-        )
-    fi
+if [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
+    LAUNCHER_ARGS+=(
+        DKML_DUNE_BUILD_DIR="$DKML_DUNE_BUILD_DIR"
+    )
 fi
 
 # Autodetect DKMLSYS_*
@@ -258,11 +215,7 @@ if [ "$COMPILATION" = ON ]; then
     # shellcheck disable=SC2154
     if [ -z "${OPAM_SWITCH_PREFIX:-}" ] || [ ! -e "$OPAM_SWITCH_PREFIX/$OPAM_CACHE_SUBDIR/$WRAP_COMMANDS_CACHE_KEY" ]; then
         set +e
-        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-            autodetect_compiler "$LAUNCHER"
-        else
-            DKML_TARGET_ABI=$PLATFORM autodetect_compiler "$LAUNCHER"
-        fi
+        DKML_TARGET_ABI=$PLATFORM autodetect_compiler "$LAUNCHER"
         EXITCODE=$?
         set -e
         if [ $EXITCODE -ne 0 ]; then
@@ -273,20 +226,6 @@ if [ "$COMPILATION" = ON ]; then
 fi
 if [ ! -e "$LAUNCHER" ]; then
     create_system_launcher "$LAUNCHER"
-fi
-
-# If macOS then make sure we are running the correct architecture.
-# Can really only switch if the launched command is a Universal binary.
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    case "$PLATFORM" in
-        darwin_arm64)
-            # arm64 will be tried first, and then arm64e (Apple Silicon)
-            LAUNCHER_ARGS+=(/usr/bin/arch -arch arm64)
-        ;;
-        darwin_x86_64)
-            LAUNCHER_ARGS+=(/usr/bin/arch -arch x86_64)
-        ;;
-    esac
 fi
 
 # print PATH for troubleshooting
