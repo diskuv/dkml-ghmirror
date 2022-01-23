@@ -166,12 +166,24 @@ fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
     if [ -n "${DKMLHOME_UNIX:-}" ] && is_unixy_windows_build_machine; then
-        # shellcheck disable=SC2154
-        log_trace spawn_rsync -ap \
-            "$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
-            "$OPAMREPOS_UNIX"/fdopen-mingw
+        if has_rsync; then
+            # shellcheck disable=SC2154
+            log_trace spawn_rsync -ap \
+                "$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/ \
+                "$OPAMREPOS_UNIX"/fdopen-mingw
+        else
+            log_trace install -d "$OPAMREPOS_UNIX"/fdopen-mingw
+            cp -r "$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/* \
+                "$OPAMREPOS_UNIX"/fdopen-mingw/
+        fi
     fi
-    log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    if has_rsync; then
+        log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+    else
+        log_trace install -d "$OPAMREPOS_UNIX"/
+        cp -r "$DKMLDIR"/etc/opam-repositories/* \
+            "$OPAMREPOS_UNIX"/
+    fi
     touch "$OPAMREPOS_UNIX".complete
 fi
 

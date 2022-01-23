@@ -235,9 +235,16 @@ OCAML_INTERPRETER_PATH="$DKML_OCAMLHOME_UNIX"/"$DKML_OCAMLHOME_BINDIR_UNIX":"$PA
 # - /packages/
 if [[ "$DRYRUN" = OFF ]]; then
     install -d "$OOREPO_UNIX"
-    log_trace spawn_rsync -a --delete --delete-excluded \
-        --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
-        "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages
+    if has_rsync; then
+        log_trace spawn_rsync -a --delete --delete-excluded \
+            --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
+            "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages
+    else
+        rm -rf "$OOREPO_UNIX"/packages
+        install -d "$OOREPO_UNIX"/packages
+        cp -r "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/* "$OOREPO_UNIX"/packages/
+        find . \( -name '.git*' -o -name '.travis*' -o -name 'Dockerfile' -o -name '*.md' -o -name 'COPYING' \) -exec rm -rf {} \;
+    fi
 else
     printf "%s\n" "Would have synchronized the '$BASEDIR_IN_FULL_OPAMROOT'/cygwin64/home/opam/opam-repository/packages/ directory with $OOREPO_UNIX/packages/"
 fi
