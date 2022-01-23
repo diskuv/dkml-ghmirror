@@ -233,6 +233,14 @@ if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
         #   [ERROR] Sandboxing is not working on your platform ubuntu:
         #           "~/build/opam/opam-init/hooks/sandbox.sh build sh -c echo SUCCESS >$TMPDIR/opam-sandbox-check-out && cat $TMPDIR/opam-sandbox-check-out; rm -f $TMPDIR/opam-sandbox-check-out" exited with code 1 "bwrap: Can't bind mount /oldroot/mnt/z/source on /newroot/home/jonah/source: No such file or directory"
         run_opamsys init --yes --no-setup --bare --disable-sandboxing
+    elif [ -n "${DEFAULT_DOCKCROSS_IMAGE:-}" ] || [ -e /dockcross ]; then
+        # Inside dockcross is already sandboxed. And often Docker containers can't
+        # be nested, so bwrap probably won't work. Regardless, Opam will
+        # preemptively give an error:
+        #   [ERROR] Missing dependencies -- the following commands are required for opam to operate:
+        #       - bwrap: Sandboxing tool bwrap was not found. You should install 'bubblewrap'. See https://opam.ocaml.org/doc/FAQ.html#Why-does-opam-require-bwrap.
+        # which we shouldn't do anything about.
+        run_opamsys init --yes --no-setup --bare --disable-sandboxing
     else
         run_opamsys init --yes --no-setup --bare
     fi
