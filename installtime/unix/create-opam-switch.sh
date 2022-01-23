@@ -722,9 +722,16 @@ fi
 if [ -n "$HOOK_POSTCREATE" ]; then
     HOOK_KEY_POSTCREATE=$(sha256compute "$HOOK_POSTCREATE")
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
+        # If Windows, expect the commands to be executed in Windows/DOS context,
+        # not a MSYS2 context. So use mixed and host paths rather than Unix paths.
+        if [ -x /usr/bin/cygpath ]; then
+            DKMLSYS_ENV_MIXED=$(/usr/bin/cygpath -am "$DKMLSYS_ENV")
+        else
+            DKMLSYS_ENV_MIXED=$DKMLSYS_ENV
+        fi
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  exec -- '%s' 'OPAMEXE=%s' '%s' '%s'" "$DKMLSYS_ENV" "$OPAMEXE" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
+            printf "  exec -- '%s' 'OPAMEXE=%s' '%s' '%s'" "$DKMLSYS_ENV_MIXED" "$OPAMEXE" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
         } > "$WORK"/postcreate.sh
         log_shell "$WORK"/postcreate.sh
 
