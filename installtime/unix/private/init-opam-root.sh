@@ -225,10 +225,14 @@ if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     if is_unixy_windows_build_machine; then
         # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository.
         # --disable-sandboxing: Sandboxing does not work on Windows
-        run_opamsys init --yes --disable-sandboxing --no-setup --kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
-    elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && is_reproducible_platform; then
-        # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
-        run_opamsys init --yes --disable-sandboxing --no-setup --bare
+        run_opamsys init --yes --no-setup --bare --disable-sandboxing --kind local "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL"
+    elif [ -n "${WSL_DISTRO_NAME:-}" ] || [ -n "${WSL_INTEROP:-}" ]; then
+        # On WSL2 the bwrap sandboxing does not work.
+        # See https://giters.com/realworldocaml/book/issues/3331 for one issue; jonahbeckford@ tested as well
+        # with Ubuntu 20.04 LTS in WSL2 and got (paths are slightly changed):
+        #   [ERROR] Sandboxing is not working on your platform ubuntu:
+        #           "~/build/opam/opam-init/hooks/sandbox.sh build sh -c echo SUCCESS >$TMPDIR/opam-sandbox-check-out && cat $TMPDIR/opam-sandbox-check-out; rm -f $TMPDIR/opam-sandbox-check-out" exited with code 1 "bwrap: Can't bind mount /oldroot/mnt/z/source on /newroot/home/jonah/source: No such file or directory"
+        run_opamsys init --yes --no-setup --bare --disable-sandboxing
     else
         run_opamsys init --yes --no-setup --bare
     fi
