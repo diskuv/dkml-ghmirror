@@ -3,10 +3,10 @@ open Dkml_context
 open Bos
 open Astring
 
-let platform_path_norm s = match (Lazy.force Target_context.V1.get_os) with
+let platform_path_norm s = match (Lazy.force Target_context.V2.get_os) with
 | Ok IOS | Ok OSX | Ok Windows -> String.Ascii.lowercase s
 | Ok Android | Ok Linux -> s
-| Error e -> failwith e
+| Error msg -> Fmt.pf Fmt.stderr "FATAL: %a@\n" Rresult.R.pp_msg msg; exit 1
 
 let path_contains entry s =
   String.find_sub ~sub:(platform_path_norm s) (platform_path_norm entry)

@@ -35,7 +35,7 @@ let setup () =
   else Logs.set_level (Some Logs.Warning);
 
   (* Setup MSYS2 *)
-  Lazy.force Target_context.V1.get_platform_name >>= fun target_platform_name ->
+  Lazy.force Target_context.V2.get_platform_name >>= fun target_platform_name ->
   Dkml_environment.set_msys2_entries target_platform_name >>= fun () ->
 
   (* Diagnostics *)
