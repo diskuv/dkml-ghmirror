@@ -578,6 +578,8 @@ if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once"
 fi
 
+printf "INFO: DEBUGGING ON create-opam-switch.sh\n"; set -x
+
 if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
