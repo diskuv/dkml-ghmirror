@@ -43,7 +43,8 @@ let get_osinfo t =
     | [ (_, String ("Linux" as x)) ] -> Result.ok x
     | [ (_, String ("OSX" as x)) ] -> Result.ok x
     | [ (_, String ("Windows" as x)) ] -> Result.ok x
-    | _ -> Result.error "Unknown operating system"
+    | _ ->
+      failwith ("Unknown operating system: no detection found in " ^ Dkml_compiler_probe_c_header.filename)
   in
 
   let platformtypename, platformname =
@@ -62,7 +63,8 @@ let get_osinfo t =
     | [ (_, String ("windows_x86" as x)) ] -> (Result.ok "Windows_x86", Result.ok x)
     | [ (_, String ("windows_arm64" as x)) ] -> (Result.ok "Windows_arm64", Result.ok x)
     | [ (_, String ("windows_arm32" as x)) ] -> (Result.ok "Windows_arm32", Result.ok x)
-    | _ -> (Result.error "Unknown platform", Result.error "Unknown platform")
+    | _ ->
+      failwith ("Unknown platform: no detection found in " ^ Dkml_compiler_probe_c_header.filename)
   in
 
   { ostypename; platformtypename; platformname }
@@ -70,7 +72,10 @@ let get_osinfo t =
 let () =
   main ~name:"discover" (fun t ->
       let { ostypename; platformtypename; platformname } = get_osinfo t in
-      let result_to_string r = match r with | Result.Ok v -> "Result.ok (" ^ v ^ ")" | Result.Error e -> "Result.error (" ^ e ^ ")" in
+      let result_to_string = function
+        | Result.Ok v -> "Result.ok (" ^ v ^ ")"
+        | Result.Error e -> "Result.error (`Msg \"" ^ (String.escaped e) ^ "\")"
+      in
       let quote_string s = "\"" ^ s ^ "\"" in
       let to_lazy s = "lazy (" ^ s ^ ")" in
 

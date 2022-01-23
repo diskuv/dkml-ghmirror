@@ -20,7 +20,9 @@ let dos2unix s = String.concat ~sep:"\n" @@ String.cuts ~sep:"\r\n" s
 *)
 let () =
   let filename = Sys.argv.(1) in
+  let basename = Filename.basename filename in
   let file_as_ocaml_string =
     read_file filename |> String.trim |> dos2unix |> String.Ascii.escape_string
   in
-  print_string ("let contents = \"" ^ file_as_ocaml_string ^ "\"")
+  print_string ("let contents = \"" ^ file_as_ocaml_string ^ "\"\n");
+  print_string ("let filename = \"" ^ (Stdlib.String.escaped basename) ^ "\"\n")

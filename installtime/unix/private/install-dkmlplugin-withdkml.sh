@@ -39,11 +39,7 @@ usage() {
 
 PLATFORM=
 STATEDIR=
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 OPAMHOME=
 OCAMLVERSION_OR_HOME=
 while getopts ":hp:d:o:v:" opt; do
@@ -54,7 +50,7 @@ while getopts ":hp:d:o:v:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
-            if [ ! "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ "$PLATFORM" = dev ]; then
+            if [ "$PLATFORM" = dev ]; then
                 usage
                 exit 0
             fi
@@ -124,13 +120,8 @@ if [ ! -x "$WITHDKMLEXE_BUILDHOST" ]; then
         DKMLDIR_BUILDHOST="$DKMLDIR"
     fi
     install -d "$WITHDKML_TMP_UNIX"
-    if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s \
+    "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -p "$PLATFORM" -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
         -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
-    else
-        "$DKMLDIR"/runtime/unix/platform-opam-exec.sh -s -p "$PLATFORM" -d "$STATEDIR" -u "$USERMODE" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" \
-        -- exec -- dune build --root "$DKMLDIR_BUILDHOST" --build-dir "$WITHDKML_TMP_BUILDHOST" installtime/msys2/apps/with-dkml/with_dkml.exe
-    fi
 
     # Place in plugins
     install -d "$WITHDKMLEXEDIR_BUILDHOST"
