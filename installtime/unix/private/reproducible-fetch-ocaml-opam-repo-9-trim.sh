@@ -240,9 +240,9 @@ if [[ "$DRYRUN" = OFF ]]; then
             --exclude '.git*' --exclude '.travis*' --exclude 'Dockerfile' --exclude '*.md' --exclude 'COPYING' \
             "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/ "$OOREPO_UNIX"/packages
     else
-        rm -rf "$OOREPO_UNIX"/packages
-        install -d "$OOREPO_UNIX"/packages
-        cp -r "$BASEDIR_IN_FULL_OPAMROOT"/cygwin64/home/opam/opam-repository/packages/* "$OOREPO_UNIX"/packages/
+        log_trace rm -rf "$OOREPO_UNIX"/packages
+        log_trace install -d "$OOREPO_UNIX"/packages
+        log_trace sh -x -c "cp -r '$BASEDIR_IN_FULL_OPAMROOT/cygwin64/home/opam/opam-repository/packages'/* '$OOREPO_UNIX/packages/'"
         find . \( -name '.git*' -o -name '.travis*' -o -name 'Dockerfile' -o -name '*.md' -o -name 'COPYING' \) -exec rm -rf {} \;
     fi
 else

@@ -173,16 +173,14 @@ if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
                 "$OPAMREPOS_UNIX"/fdopen-mingw
         else
             log_trace install -d "$OPAMREPOS_UNIX"/fdopen-mingw
-            cp -r "$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH"/* \
-                "$OPAMREPOS_UNIX"/fdopen-mingw/
+            log_trace sh -x -c "cp -r '$DKMLHOME_UNIX/$SHARE_OCAML_OPAM_REPO_RELPATH'/* '$OPAMREPOS_UNIX/fdopen-mingw/'"
         fi
     fi
     if has_rsync; then
         log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
     else
         log_trace install -d "$OPAMREPOS_UNIX"/
-        cp -r "$DKMLDIR"/etc/opam-repositories/* \
-            "$OPAMREPOS_UNIX"/
+        log_trace sh -x -c "cp -r '$DKMLDIR/etc/opam-repositories'/* '$OPAMREPOS_UNIX/'"
     fi
     touch "$OPAMREPOS_UNIX".complete
 fi
