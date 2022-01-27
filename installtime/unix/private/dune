@@ -1,2 +1,2 @@
 ; Don't waste time traversing through unnecessary directories
-(dirs installtime runtime vendor)
+(dirs :standard \ ml)
