@@ -362,7 +362,7 @@ And then we create the Opam file and patch file from the `Creating your own pack
 
 `Creating your own package patches`_ shows where to place these ``/tmp/opam`` and ``/tmp/custom.patch``
 files, and you can see the final results in
-https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/etc/opam-repositories/diskuv-opam-repo/packages/core_kernel/core_kernel.v0.14.2
+https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/vendor/diskuv-opam-repository/packages/core_kernel/core_kernel.v0.14.2
 
 The last step is to update the Opam package repository with our newly copied patches:
 
@@ -375,13 +375,13 @@ Creating your own package patches
 
     This procedure **will not work** if the package already has a patch.
     For example you can't use this procedure if the package is present
-    in ``etc/opam-repositories/diskuv-opam-repo`` and has
+    in ``vendor/diskuv-opam-repository`` and has
     ``patches: [...]`` in its ``opam`` file. You may be able to remove
     the ``patches`` clause and then do a
     ``opam update diskuv-0.3.3 && opam upgrade`` before doing any of these
     instructions, but that procedure has not been tested.
 
-The https://gitlab.com/diskuv/diskuv-ocaml repository has a `etc/opam-repositories/diskuv-opam-repo` folder
+The https://gitlab.com/diskuv/diskuv-ocaml repository has a `vendor/diskuv-opam-repository` folder
 containing all of the patches necessary for the Microsoft Visual Studio toolchain on MSYS2 to work.
 Your local project vendors that repository as a git submodule at `vendor/diskuv-ocaml` (run `git submodule status`
 to see it). You can fork the https://gitlab.com/diskuv/diskuv-ocaml repository (assuming you meet the license requirements
@@ -514,7 +514,7 @@ If after ``opam update diskuv-0.3.3`` you get:
 
 .. code:: text
 
-    [diskuv] synchronised from file://Z:/somewhere/etc/opam-repositories/diskuv-opam-repo
+    [diskuv] synchronised from file://Z:/somewhere/vendor/diskuv-opam-repository
     [ERROR] Could not update repository "diskuv": "Z:\\somewhere\\build\\_tools\\common\\MSYS2\\usr\\bin\\patch.exe -p1 -i C:\\Users\\user\\.opam\\log\\patch-28544-5495c0" exited with code 1
 
 then rerun the command as ``opam update diskuv-0.3.3 -vv``. That will give you

@@ -7,6 +7,9 @@ export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$PATH"
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
+# Which vendor/<dir> should be version synced with this
+SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository)
+
 # ------------------
 # BEGIN Command line processing
 
@@ -68,13 +71,37 @@ fi
 
 # Capture which version will be the release version when the prereleases are finished
 TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg | sed 's/[-+].*//')
+get_new_version() {
+    NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg)
+}
+get_new_version
+CURRENT_VERSION=$NEW_VERSION
 
 if [ "$PRERELEASE" = ON ]; then
     # Increment the prerelease
+
+    # 1. Bump everything, including vendored submodules, but do not commit
     bump2version prerelease \
         --config-file .bumpversion.prerelease.cfg \
-        --message 'Prerelease v{new_version}' \
         --verbose
+    #   the prior bump2version checked if the Git working directory was clean, so this is safe
+    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" add -A
+    done
+    git add -A
+
+    # 2. Make a prerelease commit
+    get_new_version
+    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
+    done
+	git commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
+
+    # 3. Tag
+    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" tag "v$NEW_VERSION"
+    done
+	git tag "v$NEW_VERSION"
 else
     # We are doing a target release, not a prerelease ...
 
@@ -84,7 +111,8 @@ else
         --config-file .bumpversion.release.cfg \
         --new-version "$TARGET_VERSION" \
         --verbose
-    git add -A # the prior bump2version checked if the Git working directory was clean, so this is safe
+    #   the prior bump2version checked if the Git working directory was clean, so this is safe
+    git add -A
 
     # 2. Assemble the change log
     RELEASEDATE=$(date +%Y-%m-%d)
@@ -103,13 +131,17 @@ else
 	bump2version change \
         --config-file .bumpversion.prerelease.cfg \
         --new-version "$TARGET_VERSION" \
-        --message 'Finish v{new_version} release (2 of 2)' \
-        --tag-name 'v{new_version}' \
         --verbose
+    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release"
+        git -C vendor/"$v" tag "v$TARGET_VERSION"
+    done
+    git commit -m "Finish v$TARGET_VERSION release (2 of 2)"
+    git tag "v$TARGET_VERSION"
 fi
 
 # Safety check version for a release
-NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg)
+get_new_version
 if [ "$PRERELEASE" = OFF ]; then
     if [ ! "$NEW_VERSION" = "$TARGET_VERSION" ]; then
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
@@ -152,6 +184,10 @@ else
 fi
 
 # Push
+for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+    git -C vendor/"$v" push
+    git -C vendor/"$v" push --tags
+done
 git push
 git push --tags
 # `git push --atomic origin main "v$NEW_VERSION"` is similar but we don't have to hardcode the branch, and GitLab

@@ -1,0 +1,5 @@
+; Don't waste time traversing through unnecessary directories
+(dirs :standard \ diskuv-opam-repository)
+
+; Don't parse dune targets in these projects but do allow file copying
+(data_only_dirs dkml-runtime-common dkml-component-ocamlcompiler)
