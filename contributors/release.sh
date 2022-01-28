@@ -8,7 +8,8 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
 # Which vendor/<dir> should be version synced with this
-SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository)
+SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository dkml-component-ocamlcompiler)
+SYNCED_RELEASE_VENDORS=(diskuv-opam-repository dkml-component-ocamlcompiler)
 
 # ------------------
 # BEGIN Command line processing
@@ -112,6 +113,9 @@ else
         --new-version "$TARGET_VERSION" \
         --verbose
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
+    for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" add -A
+    done
     git add -A
 
     # 2. Assemble the change log
@@ -125,6 +129,9 @@ else
     git add CHANGES.md "contributors/changes/v$TARGET_VERSION.md"
 
     # 3. Make a release commit
+    for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
+    done
 	git commit -m "Finish v$TARGET_VERSION release (1 of 2)"
 
     # Increment the change which will clear the _prerelease_ state
@@ -133,10 +140,10 @@ else
         --new-version "$TARGET_VERSION" \
         --verbose
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
-        git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release"
+        git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (2 of 2)" -a
         git -C vendor/"$v" tag "v$TARGET_VERSION"
     done
-    git commit -m "Finish v$TARGET_VERSION release (2 of 2)"
+    git commit -m "Finish v$TARGET_VERSION release (2 of 2)" -a
     git tag "v$TARGET_VERSION"
 fi
 
