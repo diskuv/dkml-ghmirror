@@ -439,7 +439,7 @@ squashed in the SIXTH step.
 
 Repeat until you get a successful install.
 
-FIFTH, remove your edits so they do not hide the ``diskuv-opam-repo``
+FIFTH, remove your edits so they do not hide the ``diskuv-opam-repository``
 repository:
 
 .. code:: bash
@@ -465,7 +465,7 @@ SEVENTH, create a self-contained ``opam`` file:
 There should be a ``url { src: "..." checksum: "" }`` in your file.
 If not, make sure you ran ``opam pin remove PACKAGE_NAME``
 
-EIGHTH, create/modify the ``diskuv-opam-repo`` directory (on Windows PowerShell look in
+EIGHTH, create/modify the ``diskuv-opam-repository`` directory (on Windows PowerShell look in
 ``$env:DiskuvOCamlHome\etc\opam-repositories``; in general look wherever
 ``opam repo list --all | awk '$1=="diskuv"{print $2}'`` tells you):
 
@@ -473,20 +473,19 @@ EIGHTH, create/modify the ``diskuv-opam-repo`` directory (on Windows PowerShell 
 
     etc
     └── opam-repositories
-        └── diskuv-opam-repo
+        └── diskuv-opam-repository
             ├── packages
             │   └── <PACKAGE_NAME>
             │       └── <PACKAGE_NAME.PACKAGE_VERSION>
             │           ├── files
             │           │   └── custom.patch           <==  Copy /tmp/custom.patch
             │           └── opam                       <==  Copy /tmp/opam
-            ├── README-diskuv-opam-repo.md             <==> You are reading this!
             └── repo
 
     For more details visit
     https://opam.ocaml.org/doc/Manual.html#Package-definitions
 
-NINTH, update your Opam switch with your new ``diskuv-opam-repo`` patch:
+NINTH, update your Opam switch with your new ``diskuv-opam-repository`` patch:
 
 .. code:: bash
 

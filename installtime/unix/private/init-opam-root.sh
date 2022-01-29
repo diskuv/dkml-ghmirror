@@ -34,6 +34,7 @@ usage() {
     printf "%s\n" "       to use." >&2
     printf "%s\n" "       The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "    -a Use local repository rather than git repository for diskuv-opam-repository. Requires rsync" >&2
 }
 
 PLATFORM=
@@ -45,7 +46,8 @@ else
 fi
 OPAMHOME=
 OCAMLVERSION_OR_HOME=
-while getopts ":hp:d:o:v:" opt; do
+DISKUVOPAMREPO=REMOTE
+while getopts ":hp:d:o:v:a" opt; do
     case ${opt} in
         h )
             usage
@@ -66,6 +68,7 @@ while getopts ":hp:d:o:v:" opt; do
         v )
             OCAMLVERSION_OR_HOME=$OPTARG
         ;;
+        a ) DISKUVOPAMREPO=LOCAL ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -178,11 +181,16 @@ if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     fi
     if has_rsync; then
         log_trace spawn_rsync -ap "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
-        log_trace spawn_rsync -ap "$DKMLDIR"/vendor/diskuv-opam-repository/ "$OPAMREPOS_UNIX/diskuv-opam-repository"
+        if [ "$DISKUVOPAMREPO" = LOCAL ]; then
+            log_trace spawn_rsync -ap "$DKMLDIR"/vendor/diskuv-opam-repository/ "$OPAMREPOS_UNIX/diskuv-opam-repository"
+        fi
     else
-        log_trace install -d "$OPAMREPOS_UNIX"/diskuv-opam-repository
+        log_trace install -d "$OPAMREPOS_UNIX"
         log_trace sh -x -c "cp -r '$DKMLDIR/etc/opam-repositories'/* '$OPAMREPOS_UNIX/'"
-        log_trace sh -x -c "cp -r '$DKMLDIR/vendor/diskuv-opam-repository'/* '$OPAMREPOS_UNIX/diskuv-opam-repository/'"
+        if [ "$DISKUVOPAMREPO" = LOCAL ]; then
+            log_trace install -d "$OPAMREPOS_UNIX"/diskuv-opam-repository
+            log_trace sh -x -c "cp -r '$DKMLDIR/vendor/diskuv-opam-repository'/* '$OPAMREPOS_UNIX/diskuv-opam-repository/'"
+        fi
     fi
     touch "$OPAMREPOS_UNIX".complete
 fi
@@ -265,13 +273,17 @@ if is_unixy_windows_build_machine && is_minimal_opam_root_present "$OPAMROOTDIR_
     fi
 fi
 
-# Make a `default` repo that is actually an overlay of diskuv-opam-repo and fdopen (only on Windows and defined as --rank=2 in create-opam-switch.sh) and finally the offical Opam repository.
+# Make a `default` repo that is actually an overlay of diskuv-opam-repository and fdopen (only on Windows and defined as --rank=2 in create-opam-switch.sh) and finally the offical Opam repository.
 # If we don't we get make a repo named "default" in opam 2.1.0 the following will happen:
 #     #=== ERROR while compiling ocamlbuild.0.14.0 ==================================#
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
 if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]; then
-    OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
-    run_opamsys repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+    if [ "$DISKUVOPAMREPO" = LOCAL ]; then
+        OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repository"
+        run_opamsys repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+    else
+        run_opamsys repository add diskuv-"$dkml_root_version" "git+https://github.com/diskuv/diskuv-opam-repository.git#v$dkml_root_version" --yes --dont-select --rank=1
+    fi
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.
