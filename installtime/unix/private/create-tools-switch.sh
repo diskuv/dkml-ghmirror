@@ -118,8 +118,6 @@ autodetect_posix_shell
 # Just the OCaml compiler
 log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 
-printf "INFO: DEBUGGING ON create-tools-switch.sh\n"; set -x
-
 # Flavor packages
 {
     printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -s -v '$OCAMLVERSION_OR_HOME' -o '$OPAMHOME' \"\$@\" install -y"
