@@ -7,13 +7,14 @@ Param()
 $DV_AvailableOpamVersion = "2.1.0.msys2.12" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 Export-ModuleMember -Variable DV_AvailableOpamVersion
 
-# https://hub.docker.com/r/ocaml/opam/tags?page=1&ordering=last_updated&name=windows-msvc-20H2-ocaml-4.12
-# Q: Why 20H2? Ans:
-#    1. because it is a single kernel image so it is much smaller than multikernel `windows-msvc`
-#    2. it is the latest as of 2021-08-05 so it will be a long time before that Windows kernel is no longer built;
-#       would be nice if we could query https://github.com/avsm/ocaml-dockerfile/blob/ac54d3550159b0450032f0f6a996c2e96d3cafd7/src-opam/dockerfile_distro.ml#L36-L47
+# https://hub.docker.com/r/ocaml/opam/tags?page=1&ordering=last_updated&name=windows-msvc-ltsc2022-ocaml
+# Q: Why use LTSC kernel? Ans:
+#    1. The 2022 LTSC Windows image (https://docs.microsoft.com/en-us/windows-server/get-started/servicing-channels-comparison#long-term-servicing-channel-ltsc)
+#       is available until 2027.
+#    2. It is a single kernel image so it is smaller than multikernel `windows-msvc`
 # Note: You must update this once every couple months because Docker Hub removes old versions.
-$DV_WindowsMsvcDockerImage = "ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:810ce2fca08c22ea1bf4066cb75ffcba2f98142d6ce09162905d9ddc09967da8"
+# Note: It would be nice if we could query https://github.com/avsm/ocaml-dockerfile/blob/ac54d3550159b0450032f0f6a996c2e96d3cafd7/src-opam/dockerfile_distro.ml#L36-L47
+$DV_WindowsMsvcDockerImage = "ocaml/opam:windows-msvc-ltsc2022-ocaml-4.12@sha256:0b884802ec79ed57946175fe39a83b604b31d3eeb2798aae04ad508f85fe37fd"
 Export-ModuleMember -Variable DV_WindowsMsvcDockerImage
 
 $DV_MSYS2Packages = @(
