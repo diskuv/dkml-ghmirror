@@ -96,7 +96,7 @@ if [ "$PRERELEASE" = ON ]; then
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
     done
-	git commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
+	git commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION" -a
 
     # 3. Tag
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
