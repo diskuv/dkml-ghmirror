@@ -114,6 +114,7 @@ usage() {
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
+    printf "%s\n" "    -c PATH: Optional. Semicolon separated PATH that should be available to all users of and packages in the switch" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
     printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
@@ -137,7 +138,8 @@ USERMODE=ON
 OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
-while getopts ":hb:p:sd:u:o:t:v:y" opt; do
+EXTRAPATH=
+while getopts ":hb:p:sd:u:o:t:v:yc:" opt; do
     case ${opt} in
         h )
             usage
@@ -172,6 +174,7 @@ while getopts ":hb:p:sd:u:o:t:v:y" opt; do
             if [ -n "$OPTARG" ]; then OCAMLVERSION_OR_HOME=$OPTARG; fi
         ;;
         o ) OPAMHOME=$OPTARG ;;
+        c ) EXTRAPATH=$OPTARG ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -563,31 +566,26 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
 # NAME
 # ----
 # 1. Add PATH=<system ocaml>:$PATH if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
-# 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
 
 if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then
     DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
     {
         cat "$WORK"/nonswitchexec.sh
-        printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
+        if [ -z "$EXTRAPATH" ]; then
+            printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
+        else
+            EXTRAPATH_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string ";$EXTRAPATH")
+            if ! is_unixy_windows_build_machine; then
+                EXTRAPATH_BUILDHOST_ESCAPED=$(printf "%s" "$EXTRAPATH_BUILDHOST_ESCAPED" | $DKMLSYS_TR ';' ':')
+            fi
+            printf "  option setenv+='PATH += \"%s%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED" "$EXTRAPATH_BUILDHOST_ESCAPED"
+        fi
         if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 
     # Done. Don't repeat anymore
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once"
-fi
-
-if is_unixy_windows_build_machine && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-LUV_USE_SYSTEM_LIBUV.once" ]; then
-    {
-        cat "$WORK"/nonswitchexec.sh
-        printf "  option setenv+='%s' " 'LUV_USE_SYSTEM_LIBUV = "yes"'
-        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
-    } > "$WORK"/setenv.sh
-    log_shell "$WORK"/setenv.sh
-
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-LUV_USE_SYSTEM_LIBUV.once"
 fi
 
 if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
