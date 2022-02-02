@@ -367,6 +367,7 @@ let set_3p_prefix_entries cache_keys =
       >>= fun () -> helper rst
   in
   let dirs = String.cuts ~empty:false ~sep:";" (OS.Env.opt_var ~absent:"" "DKML_3P_PREFIX_PATH") in
+  Logs.debug (fun m -> m "DKML_3P_PREFIX_PATH = @[%a@]" Fmt.(list string) dirs);
   helper (List.rev dirs) >>| fun () ->
   (String.concat ~sep:";" dirs) :: cache_keys
 
@@ -386,10 +387,14 @@ let set_3p_program_entries cache_keys =
       let threep = null_possible_dir in
       let f = (fun entry -> let fp = Fpath.of_string entry in if R.is_error fp then false else not Fpath.(equal threep (R.get_ok fp))) in
       prune_envvar ~f ~path_sep:os_path_sep "PATH" >>= fun () ->
+      Logs.debug (fun m -> m "third-party program directory = %a" Fpath.pp threep);
       OS.Env.parse "PATH" OS.Env.(some string) ~absent:None
-      >>= prepend_envvar ~path_sep:os_path_sep "PATH" (Fpath.to_string threep)
+      >>=
+      prepend_envvar ~path_sep:os_path_sep "PATH" (Fpath.to_string threep)
+      >>= fun () -> helper rst
   in
   let dirs = String.cuts ~empty:false ~sep:";" (OS.Env.opt_var ~absent:"" "DKML_3P_PROGRAM_PATH") in
+  Logs.debug (fun m -> m "DKML_3P_PROGRAM_PATH = @[%a@]" Fmt.(list string) dirs);
   helper (List.rev dirs) >>| fun () ->
   (String.concat ~sep:";" dirs) :: cache_keys
 
