@@ -114,8 +114,9 @@ usage() {
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
-    printf "%s\n" "    -c PATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
-    printf "%s\n" "       in the switch" >&2
+    printf "%s\n" "    -c EXTRAPATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
+    printf "%s\n" "       in the switch. Sets DKML_3P_PROGRAM_PATH in the switch so that with-dkml.exe passes through the EXTRAPATH" >&2
+    printf "%s\n" "    -r EXTRAREPO: Optional. Opam repository to use in the switch. Will be highest priority (rank 1)" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
     printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
@@ -140,7 +141,8 @@ OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
 EXTRAPATH=
-while getopts ":hb:p:sd:u:o:t:v:yc:" opt; do
+EXTRAREPO=
+while getopts ":hb:p:sd:u:o:t:v:yc:r:" opt; do
     case ${opt} in
         h )
             usage
@@ -176,6 +178,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:" opt; do
         ;;
         o ) OPAMHOME=$OPTARG ;;
         c ) EXTRAPATH=$OPTARG ;;
+        r ) EXTRAREPO=$OPTARG ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -439,6 +442,29 @@ printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 # the `opam option` done later in this script can be set.
 printf "%s\n" "  --no-install \\" >> "$WORK"/switchcreateargs.sh
 
+# Add the extra repository, if any
+REPOSPREFIX=
+if [ -n "$EXTRAREPO" ]; then
+    # Make a pretty name for the extra repository
+    #   Ex. git+https://gitlab.com/diskuv/dksdk-opam-repository#main -> dksdk
+    REPONAME=$(printf "%s" "$EXTRAREPO" | $DKMLSYS_SED 's@#.*@@; s@.*/@@; s@-opam-repository@@')
+    #   Do not name clash with the repositories we ordinarily add
+    case "$REPONAME" in
+        diskuv*) REPONAME=diskuv-extra ;;
+        fdopen*) REPONAME=fdopen-extra ;;
+    esac
+    REPOSPREFIX="$REPONAME,"
+    # Add it
+    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME.tar.gz" ]; then
+        {
+            cat "$WORK"/nonswitchexec.sh
+            printf "  repository add %s '%s' --yes --dont-select --rank=1" "$REPONAME" "$EXTRAREPO"
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        } > "$WORK"/repoadd.sh
+        log_shell "$WORK"/repoadd.sh
+    fi
+fi
+
 if is_unixy_windows_build_machine; then
     # create fdopen-mingw-xxx-yyy as rank=2 if not already exists; rank=0 and rank=1 defined in init-opam-root.sh
     # shellcheck disable=SC2154
@@ -461,10 +487,10 @@ if is_unixy_windows_build_machine; then
     fi
 
     printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
-    printf "%s\n" "  --repos='diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default' \\" >> "$WORK"/switchcreateargs.sh
+    printf "  --repos='%s%s' \\\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" >> "$WORK"/switchcreateargs.sh
 else
     printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    printf "%s\n" "  --repos='diskuv-$dkml_root_version,default' \\" >> "$WORK"/switchcreateargs.sh
+    printf "  --repos='%s%s' \\\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,default" >> "$WORK"/switchcreateargs.sh
 fi
 
 if [ "$BUILD_OCAML_BASE" = ON ]; then
@@ -563,32 +589,51 @@ install -d "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
 #   http://opam.ocaml.org/doc/Manual.html#Environment-updates
 #   `=` overrides the environment variable
 #   `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
-#
-# NAME
-# ----
-# 1. Add PATH=<system ocaml>:$PATH if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
 
-if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then
+SETPATH=
+
+# Add PATH=<system ocaml>:$EXTRAPATH:$PATH
+#   Add PATH=<system ocaml> if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
+if [ "$BUILD_OCAML_BASE" = OFF ]; then
     DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
+    SETPATH="$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED;$SETPATH"
+fi
+#   Add PATH=$EXTRAPATH
+if [ -n "$EXTRAPATH" ]; then
+    EXTRAPATH_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$EXTRAPATH")
+    SETPATH="$EXTRAPATH_BUILDHOST_ESCAPED;$SETPATH"
+fi
+#   Remove leading and trailing and duplicated separators
+SETPATH=$(printf "%s" "$SETPATH" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
+if [ -n "$SETPATH" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then
     {
         cat "$WORK"/nonswitchexec.sh
-        # Remove leading and trailing and duplicated separators.
-        EXTRAPATH=$(printf "%s" "$EXTRAPATH" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
-        if [ -z "$EXTRAPATH" ]; then
-            printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
+        # Use Win32 (;) or Unix (:) path separators
+        if is_unixy_windows_build_machine; then
+            SETPATH_WU=$SETPATH # already has semicolons
         else
-            EXTRAPATH_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string ";$EXTRAPATH")
-            if ! is_unixy_windows_build_machine; then
-                EXTRAPATH_BUILDHOST_ESCAPED=$(printf "%s" "$EXTRAPATH_BUILDHOST_ESCAPED" | $DKMLSYS_TR ';' ':')
-            fi
-            printf "  option setenv+='PATH += \"%s%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED" "$EXTRAPATH_BUILDHOST_ESCAPED"
+            SETPATH_WU=$(printf "%s" "$SETPATH" | $DKMLSYS_TR ';' ':')
         fi
+        printf "  option setenv+='PATH += \"%s\"' " "$SETPATH_WU"
         if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
 
     # Done. Don't repeat anymore
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once"
+fi
+
+# Add DKML_3P_PROGRAM_PATH=<system ocaml>;$EXTRAPATH
+if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -n "$SETPATH" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PROGRAM_PATH.once" ]; then
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option setenv+='DKML_3P_PROGRAM_PATH = \"%s\"' " "$SETPATH"
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+    } > "$WORK"/setenv.sh
+    log_shell "$WORK"/setenv.sh
+
+    # Done. Don't repeat anymore
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PROGRAM_PATH.once"
 fi
 
 if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
