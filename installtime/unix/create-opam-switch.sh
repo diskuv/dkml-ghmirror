@@ -114,7 +114,8 @@ usage() {
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
-    printf "%s\n" "    -c PATH: Optional. Semicolon separated PATH that should be available to all users of and packages in the switch" >&2
+    printf "%s\n" "    -c PATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
+    printf "%s\n" "       in the switch" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
     printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
@@ -571,6 +572,8 @@ if [ "$BUILD_OCAML_BASE" = OFF ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_
     DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
     {
         cat "$WORK"/nonswitchexec.sh
+        # Remove leading and trailing and duplicated separators.
+        EXTRAPATH=$(printf "%s" "$EXTRAPATH" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
         if [ -z "$EXTRAPATH" ]; then
             printf "  option setenv+='PATH += \"%s\"' " "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED"
         else
