@@ -1,6 +1,3 @@
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
-    Justification='Some variables are simply for export',
-    Target="VsAddComponents")]
 [CmdletBinding()]
 param ()
 
@@ -127,22 +124,6 @@ $VsSpecialComponents = @(
     # in Get-CompatibleVisualStudios.
     "Microsoft.VisualStudio.Component.VC.$VcVarsVer.x86.x64"
 )
-if (Get-Command Get-WinSystemLocale -ErrorAction SilentlyContinue) {
-    $VsProductLangs = @(
-        # English is required because of https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
-        # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
-        "en-US",
-
-        # Use the system default (will be deduplicated in the next step, and removed if unknown in the following step).
-        # This is to be user-friendly for non-English users; not strictly required since the rest of the docs are in English.
-        (Get-WinSystemLocale).Name
-    )
-} else {
-    # May be running in `setup-userprofile.ps1 -OnlyOutputCacheKey` in a non-Windows pwsh shell
-    $VsProductLangs = @( "en-US" )
-}
-$VsProductLangs = $VsProductLangs | Sort-Object -Property { $_.ToLowerInvariant() } -Unique
-if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
 $VsAvailableProductLangs = @(
     # https://docs.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2019#list-of-language-locales
     "Cs-cz",
@@ -160,17 +141,6 @@ $VsAvailableProductLangs = @(
     "Zh-cn",
     "Zh-tw"
 )
-$VsProductLangs = $VsProductLangs | Where-Object { $VsAvailableProductLangs -contains $_ }
-if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
-$VsAddComponents =
-    ($VsProductLangs | ForEach-Object { $i = 0 }{ @( "--addProductLang", $VsProductLangs[$i] ); $i++ }) +
-    ($VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }) +
-    ($VsSpecialComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsSpecialComponents[$i] ); $i++ })
-$VsDescribeComponents = (
-    "`ta) English language pack (en-US)`n" +
-    "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
-    "`tc) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
-    "`td) Windows 10 SDK ($Windows10SdkFullVer)`n")
 
 # Consolidate the magic constants into a single deployment id
 $VsComponentsHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
@@ -180,9 +150,6 @@ Export-ModuleMember -Variable MachineDeploymentId
 Export-ModuleMember -Variable VsBuildToolsMajorVer
 Export-ModuleMember -Variable VsBuildToolsInstaller
 Export-ModuleMember -Variable VsBuildToolsInstallChannel
-Export-ModuleMember -Variable VsAddComponents
-Export-ModuleMember -Variable VsRemoveComponents
-Export-ModuleMember -Variable VsDescribeComponents
 
 # Exports for when someone wants to do:
 #   cmake -G "Visual Studio 16 2019" -D CMAKE_SYSTEM_VERSION=$Windows10SdkFullVer -T version=$VcVarsVer
@@ -213,6 +180,64 @@ function Import-VSSetup {
     Import-Module VSSetup
 }
 Export-ModuleMember -Function Import-VSSetup
+
+function Get-VisualStudioComponents {
+    [CmdletBinding()]
+    param (
+        [switch]
+        $VcpkgCompatibility
+    )
+
+    # Figure out which languages are needed
+    if ($VcpkgCompatibility) {
+        if (Get-Command Get-WinSystemLocale -ErrorAction SilentlyContinue) {
+            $VsProductLangs = @(
+                # English is required because of https://github.com/microsoft/vcpkg-tool/blob/baf0eecbb56ef87c4704e482a3a296ca8e40ddc4/src/vcpkg/visualstudio.cpp#L286-L291
+                # Confer https://github.com/microsoft/vcpkg#quick-start-windows and https://github.com/microsoft/vcpkg/issues/3842
+                "en-US",
+
+                # Use the system default (will be deduplicated in the next step, and removed if unknown in the following step).
+                # This is to be user-friendly for non-English users; not strictly required since the rest of the docs are in English.
+                (Get-WinSystemLocale).Name
+            )
+        } else {
+            # May be running in `setup-userprofile.ps1 -OnlyOutputCacheKey` in a non-Windows pwsh shell
+            $VsProductLangs = @( "en-US" )
+        }
+        $VsProductLangs = $VsProductLangs | Sort-Object -Property { $_.ToLowerInvariant() } -Unique
+    } else {
+        $VsProductLangs = @()
+    }
+    if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
+
+    #   Only include languages which are available
+    $VsProductLangs = $VsProductLangs | Where-Object { $VsAvailableProductLangs -contains $_ }
+    if (-not ($VsProductLangs -is [array])) { $VsProductLangs = @( $VsProductLangs ) }
+
+    # Troubleshooting description of what needs to be installed
+    if ($VcpkgCompatibility) {
+        $VsDescribeComponents = (
+            "`ta) English language pack (en-US)`n" +
+            "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
+            "`tc) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
+            "`td) Windows 10 SDK ($Windows10SdkFullVer)`n")
+    } else {
+        $VsDescribeComponents = (
+            "`ta) MSVC v142 - VS 2019 C++ x64/x86 build tools (v$VcVarsVer)`n" +
+            "`tb) MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)`n" +
+            "`tc) Windows 10 SDK ($Windows10SdkFullVer)`n")
+    }
+
+    $VsAddComponents =
+        ($VsProductLangs | ForEach-Object { $i = 0 }{ @( "--addProductLang", $VsProductLangs[$i] ); $i++ }) +
+        ($VsComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsComponents[$i] ); $i++ }) +
+        ($VsSpecialComponents | ForEach-Object { $i = 0 }{ @( "--add", $VsSpecialComponents[$i] ); $i++ })
+    @{
+        Add = $VsAddComponents;
+        Describe = $VsDescribeComponents
+    }
+}
+Export-ModuleMember -Function Get-VisualStudioComponents
 
 function Get-VisualStudioProperties {
     [CmdletBinding()]
@@ -251,7 +276,7 @@ function Get-VisualStudioProperties {
         $VcVarsVerChoice = $VcVarsVer
     } else {
         # pick the latest compatible version
-        $matched = ($VcVarsVerCandidates | Sort-Object -Property Version -Descending | Select-Object -Property Id -First 1).Id -match "Microsoft[.]VisualStudio[.]Component[.]VC[.](?<VCVersion>.*)[.]x86[.]x64"
+        ($VcVarsVerCandidates | Sort-Object -Property Version -Descending | Select-Object -Property Id -First 1).Id -match "Microsoft[.]VisualStudio[.]Component[.]VC[.](?<VCVersion>.*)[.]x86[.]x64"
         $VcVarsVerChoice = $Matches.VCVersion
     }
 

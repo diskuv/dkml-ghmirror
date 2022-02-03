@@ -94,6 +94,9 @@
     Run as Administrator.
     We do not recommend you do this unless you are in continuous
     integration (CI) scenarios.
+.Parameter VcpkgCompatibility
+    Install Ninja and CMake to accompany Microsoft's
+    vcpkg (the C package manager).
 .Parameter SkipProgress
     Do not use the progress user interface.
 .Parameter OnlyOutputCacheKey
@@ -156,6 +159,8 @@ param (
     $SkipAutoUpgradeGitWhenOld,
     [switch]
     $AllowRunAsAdmin,
+    [switch]
+    $VcpkgCompatibility,
     [switch]
     $SkipProgress,
     [switch]
@@ -487,7 +492,10 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 20
+$ProgressTotalSteps = 19
+if ($VcpkgCompatibility) {
+    $ProgressTotalSteps = $ProgressTotalSteps - 2
+}
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -866,57 +874,59 @@ try {
     # END inotify-win
     # ----------------------------------------------------------------
 
-    # ----------------------------------------------------------------
-    # BEGIN Ninja
+    if ($VcpkgCompatibility) {
+        # ----------------------------------------------------------------
+        # BEGIN Ninja
 
-    $global:ProgressActivity = "Install Ninja"
-    Write-ProgressStep
+        $global:ProgressActivity = "Install Ninja"
+        Write-ProgressStep
 
-    $NinjaCachePath = "$TempPath\ninja"
-    $NinjaZip = "$NinjaCachePath\ninja-win.zip"
-    $NinjaExeBasename = "ninja.exe"
-    $NinjaToolDir = "$ProgramPath\tools\ninja"
-    $NinjaExe = "$NinjaToolDir\$NinjaExeBasename"
-    if (!(Test-Path -Path $NinjaExe)) {
-        if (!(Test-Path -Path $NinjaToolDir)) { New-Item -Path $NinjaToolDir -ItemType Directory | Out-Null }
-        if (!(Test-Path -Path $NinjaCachePath)) { New-Item -Path $NinjaCachePath -ItemType Directory | Out-Null }
-        Invoke-WebRequest -Uri "https://github.com/ninja-build/ninja/releases/download/v$NinjaVersion/ninja-win.zip" -OutFile "$NinjaZip"
-        Expand-Archive -Path $NinjaZip -DestinationPath $NinjaCachePath -Force
-        Remove-Item -Path $NinjaZip -Force
-        Copy-Item -Path "$NinjaCachePath\$NinjaExeBasename" -Destination "$NinjaExe"
-    }
-
-    # END Ninja
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN CMake
-
-    $global:ProgressActivity = "Install CMake"
-    Write-ProgressStep
-
-    $CMakeCachePath = "$TempPath\cmake"
-    $CMakeZip = "$CMakeCachePath\cmake.zip"
-    $CMakeToolDir = "$ProgramPath\tools\cmake"
-    if (!(Test-Path -Path "$CMakeToolDir\bin\cmake.exe")) {
-        if (!(Test-Path -Path $CMakeToolDir)) { New-Item -Path $CMakeToolDir -ItemType Directory | Out-Null }
-        if (!(Test-Path -Path $CMakeCachePath)) { New-Item -Path $CMakeCachePath -ItemType Directory | Out-Null }
-        if ([Environment]::Is64BitOperatingSystem) {
-            $CMakeDistType = "x86_64"
-        } else {
-            $CMakeDistType = "i386"
+        $NinjaCachePath = "$TempPath\ninja"
+        $NinjaZip = "$NinjaCachePath\ninja-win.zip"
+        $NinjaExeBasename = "ninja.exe"
+        $NinjaToolDir = "$ProgramPath\tools\ninja"
+        $NinjaExe = "$NinjaToolDir\$NinjaExeBasename"
+        if (!(Test-Path -Path $NinjaExe)) {
+            if (!(Test-Path -Path $NinjaToolDir)) { New-Item -Path $NinjaToolDir -ItemType Directory | Out-Null }
+            if (!(Test-Path -Path $NinjaCachePath)) { New-Item -Path $NinjaCachePath -ItemType Directory | Out-Null }
+            Invoke-WebRequest -Uri "https://github.com/ninja-build/ninja/releases/download/v$NinjaVersion/ninja-win.zip" -OutFile "$NinjaZip"
+            Expand-Archive -Path $NinjaZip -DestinationPath $NinjaCachePath -Force
+            Remove-Item -Path $NinjaZip -Force
+            Copy-Item -Path "$NinjaCachePath\$NinjaExeBasename" -Destination "$NinjaExe"
         }
-        Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v$CMakeVersion/cmake-$CMakeVersion-windows-$CMakeDistType.zip" -OutFile "$CMakeZip"
-        Expand-Archive -Path $CMakeZip -DestinationPath $CMakeCachePath -Force
-        Remove-Item -Path $CMakeZip -Force
-        Copy-Item -Path "$CMakeCachePath\cmake-$CMakeVersion-windows-$CMakeDistType\*" `
-            -Recurse `
-            -Destination $CMakeToolDir
+
+        # END Ninja
+        # ----------------------------------------------------------------
+
+        # ----------------------------------------------------------------
+        # BEGIN CMake
+
+        $global:ProgressActivity = "Install CMake"
+        Write-ProgressStep
+
+        $CMakeCachePath = "$TempPath\cmake"
+        $CMakeZip = "$CMakeCachePath\cmake.zip"
+        $CMakeToolDir = "$ProgramPath\tools\cmake"
+        if (!(Test-Path -Path "$CMakeToolDir\bin\cmake.exe")) {
+            if (!(Test-Path -Path $CMakeToolDir)) { New-Item -Path $CMakeToolDir -ItemType Directory | Out-Null }
+            if (!(Test-Path -Path $CMakeCachePath)) { New-Item -Path $CMakeCachePath -ItemType Directory | Out-Null }
+            if ([Environment]::Is64BitOperatingSystem) {
+                $CMakeDistType = "x86_64"
+            } else {
+                $CMakeDistType = "i386"
+            }
+            Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v$CMakeVersion/cmake-$CMakeVersion-windows-$CMakeDistType.zip" -OutFile "$CMakeZip"
+            Expand-Archive -Path $CMakeZip -DestinationPath $CMakeCachePath -Force
+            Remove-Item -Path $CMakeZip -Force
+            Copy-Item -Path "$CMakeCachePath\cmake-$CMakeVersion-windows-$CMakeDistType\*" `
+                -Recurse `
+                -Destination $CMakeToolDir
+        }
+
+
+        # END CMake
+        # ----------------------------------------------------------------
     }
-
-
-    # END CMake
-    # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
     # BEGIN jq
@@ -1452,24 +1462,6 @@ try {
     }
 
     # END install with-dkml
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN install vcpkg
-    #
-    # The system switch will have already been created earlier by "opam init" section. Just with
-    # the CI flavor packages which is all that is necessary to compile the plugins.
-
-    $global:ProgressActivity = "Install DKML plugin vcpkg"
-    Write-ProgressStep
-
-    # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
-    if (!$global:SkipOpamSetup) {
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command "env $UnixPlusPrecompleteVarsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$DkmlPath\installtime\unix\private\install-dkmlplugin-vcpkg.sh' -p '$DkmlHostAbi' -o '$ProgramMSYS2AbsPath' -x"
-    }
-
-    # END install vcpkg
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

@@ -15,6 +15,9 @@
     Run as Administrator.
     We do not recommend you do this unless you are in continuous
     integration (CI) scenarios.
+.Parameter VcpkgCompatibility
+    Install a version of Visual Studio that is compatible with Microsoft's
+    vcpkg (the C package manager).
 .Parameter ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program
@@ -34,6 +37,8 @@ param (
     $SilentInstall,
     [switch]
     $AllowRunAsAdmin,
+    [switch]
+    $VcpkgCompatibility,
     [switch]
     $SkipProgress
 )
@@ -90,7 +95,7 @@ function Write-ProgressStep {
 $global:ProgressActivity = "Setup machine"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipProgress:`$$SkipProgress -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools -AllowRunAsAdmin:`$$AllowRunAsAdmin -SilentInstall:`$$SilentInstall"
+Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -VcpkgCompatibility:`$$VcpkgCompatibility -SkipProgress:`$$SkipProgress -SkipAutoInstallVsBuildTools:`$$SkipAutoInstallVsBuildTools -AllowRunAsAdmin:`$$AllowRunAsAdmin -SilentInstall:`$$SilentInstall"
 
 # END Setup machine
 # ----------------------------------------------------------------
