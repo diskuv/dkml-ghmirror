@@ -116,6 +116,8 @@ usage() {
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
     printf "%s\n" "    -c EXTRAPATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
     printf "%s\n" "       in the switch. Sets DKML_3P_PROGRAM_PATH in the switch so that with-dkml.exe passes through the EXTRAPATH" >&2
+    printf "%s\n" "    -e EXTRAPREFIX: Optional. Semicolon separated DKML_3P_PREFIX_PATH used by with-dkml.exe to add third-party" >&2
+    printf "%s\n" "       C libraries and header files to the C compiler" >&2
     printf "%s\n" "    -r EXTRAREPO: Optional. Opam repository to use in the switch. Will be highest priority (rank 1)" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
@@ -141,8 +143,9 @@ OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
 EXTRAPATH=
+EXTRAPREFIX=
 EXTRAREPO=
-while getopts ":hb:p:sd:u:o:t:v:yc:r:" opt; do
+while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
     case ${opt} in
         h )
             usage
@@ -178,6 +181,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:" opt; do
         ;;
         o ) OPAMHOME=$OPTARG ;;
         c ) EXTRAPATH=$OPTARG ;;
+        e ) EXTRAPREFIX=$OPTARG ;;
         r ) EXTRAREPO=$OPTARG ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -634,6 +638,22 @@ if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -n "$SETPATH" ] && [ ! -e "$OPAMSWITCHF
 
     # Done. Don't repeat anymore
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PROGRAM_PATH.once"
+fi
+
+# Add DKML_3P_PREFIX_PATH=$EXTRAPREFIX
+#   Remove leading and trailing and duplicated separators
+EXTRAPREFIX=$(printf "%s" "$EXTRAPREFIX" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
+if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -n "$EXTRAPREFIX" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PREFIX_PATH.once" ]; then
+    EXTRAPREFIX_ESCAPED=$(escape_arg_as_ocaml_string "$EXTRAPREFIX")
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option setenv+='DKML_3P_PREFIX_PATH = \"%s\"' " "$EXTRAPREFIX_ESCAPED"
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+    } > "$WORK"/setenv.sh
+    log_shell "$WORK"/setenv.sh
+
+    # Done. Don't repeat anymore
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PREFIX_PATH.once"
 fi
 
 if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
