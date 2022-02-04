@@ -315,25 +315,6 @@ fi
 # END --switch
 # ------------
 
-# Use 3p_installed for with-dkml.exe
-WITHDKMLENV=(env)
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    if [ -n "$PLATFORM" ] && [ -n "${BUILDTYPE:-}" ]; then
-        buildhost_pathize "$TOPDIR/build/$PLATFORM/$BUILDTYPE/_3p_installed"
-        # shellcheck disable=SC2154
-        THREEP=$buildhost_pathize_RETVAL
-        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$THREEP" )
-    fi
-else
-    if [ -n "$STATEDIR" ]; then
-        buildhost_pathize "$STATEDIR/3p_installed"
-        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$buildhost_pathize_RETVAL" )
-    elif [ -n "$TARGET_OPAMSWITCH" ]; then
-        buildhost_pathize "$TARGET_OPAMSWITCH/_3p_installed"
-        WITHDKMLENV+=( DKML_3P_PREFIX_PATH="$buildhost_pathize_RETVAL" )
-    fi
-fi
-
 # We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
 # We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
 if [ -n "${PLATFORM_EXEC_PRE_DOUBLE:-}" ]; then PLATFORM_EXEC_PRE_DOUBLE="; $PLATFORM_EXEC_PRE_DOUBLE"; fi
@@ -428,9 +409,9 @@ case "$subcommand" in
         if [ -e "$WITHDKMLEXE_BUILDHOST" ] && [ "${WITHDKML_ENABLE:-ON}" = ON ]; then
             if [ "$1" = "--" ]; then
                 shift
-                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" -- "$WITHDKMLEXE_BUILDHOST" "$@"
             else
-                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "${WITHDKMLENV[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
+                exec_in_platform "$OPAMEXE" exec "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$WITHDKMLEXE_BUILDHOST" "$@"
             fi
         else
             # Since we do not yet have with-dkml.exe (ie. we are in the middle of a new installation / upgrade), supply the compiler as an
