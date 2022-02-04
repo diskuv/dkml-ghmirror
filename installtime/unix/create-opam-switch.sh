@@ -516,10 +516,10 @@ if is_unixy_windows_build_machine; then
     fi
 
     printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
-    printf "  --repos='%s%s' \\\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" >> "$WORK"/switchcreateargs.sh
+    printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" "\\" >> "$WORK"/switchcreateargs.sh
 else
     printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    printf "  --repos='%s%s' \\\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,default" >> "$WORK"/switchcreateargs.sh
+    printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,default" "\\" >> "$WORK"/switchcreateargs.sh
 fi
 
 if [ "$BUILD_OCAML_BASE" = ON ]; then
