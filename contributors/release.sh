@@ -229,7 +229,7 @@ if false; then
 fi
 
 # Upload files to Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
-# GITLAB_TARGET_VERSION=$(echo "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
+# GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
 PACKAGE_REGISTRY_URL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \

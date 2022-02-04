@@ -39,7 +39,7 @@ uninstall_opam_root() {
     uninstall_opam_root_OLDOPAMROOT="$1"
     opam switch list --root "$uninstall_opam_root_OLDOPAMROOT" --short > "$WORK"/list
     for sw in $(cat "$WORK"/list); do
-        trimmed_switch=$(echo "$sw" | awk 'NF>0{print $1}')
+        trimmed_switch=$(printf "%s" "$sw" | awk 'NF>0{print $1}')
         if [ -z "$trimmed_switch" ] || [ "$trimmed_switch" = "/" ]; then
             echo "Unsafe switch deletion: $trimmed_switch" >&2
             exit 2

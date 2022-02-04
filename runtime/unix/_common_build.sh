@@ -87,7 +87,7 @@ set_opamrootandswitchdir() {
     set_opamrootdir
 
     if [ "$USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS" = ON ] && is_unixy_windows_build_machine; then
-        set_opamrootandswitchdir_OPAMGLOBALNAME=$(echo "$TOPDIR" | sha256sum | cut -c1-16 | awk '{print $1}')$(echo "$TOPDIR" | tr / . |  tr -dc '[:alnum:]-_.')
+        set_opamrootandswitchdir_OPAMGLOBALNAME=$(printf "%s" "$TOPDIR" | sha256sum | cut -c1-16 | awk '{print $1}')$(printf "%s" "$TOPDIR" | tr / . |  tr -dc '[:alnum:]-_.')
         OPAMSWITCHISGLOBAL=ON
         OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}$set_opamrootandswitchdir_OPAMGLOBALNAME"
         OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_OPAMGLOBALNAME"

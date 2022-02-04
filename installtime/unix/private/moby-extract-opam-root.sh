@@ -45,7 +45,7 @@ shift
 # DOCKER_IMAGE=ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55, DOCKER_TARGET_ARCH=arm64
 # -> SIMPLE_NAME=ocaml-opam-windows-msvc-20H2-ocaml-4-12-sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55-arm64
 # !!!Keep in sync with moby-download-docker-image.sh (refactor into common place if we share more than twice)!!!
-SIMPLE_NAME=$(echo "$DOCKER_IMAGE" | tr /:@. -)
+SIMPLE_NAME=$(printf "%s" "$DOCKER_IMAGE" | tr /:@. -)
 SIMPLE_NAME=$SIMPLE_NAME-$DOCKER_TARGET_ARCH
 
 OUTDIR=$DESTINATION_OPAM_ROOT/$OCAML_OPAM_PORT-$DOCKER_TARGET_ARCH
