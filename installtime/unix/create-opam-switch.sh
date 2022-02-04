@@ -75,6 +75,17 @@ OCAML_DEFAULT_VERSION=4.12.1
 # ------------------
 # BEGIN Command line processing
 
+# __escape_args_for_shell ARG1 ARG2 ...
+# (Copied from crossplatform-functions.sh)
+#
+# If `__escape_args_for_shell asd sdfs 'hello there'` then prints `asd sdfs hello\ there`
+#
+# Prereq: autodetect_system_binaries
+__escape_args_for_shell() {
+    # Confer %q in https://www.gnu.org/software/bash/manual/bash.html#Shell-Builtin-Commands
+    bash -c 'printf "%q " "$@"' -- "$@" | PATH=/usr/bin:/bin sed 's/ $//'
+}
+
 usage() {
     printf "%s\n" "Creates a local Opam switch with a working compiler.">&2
     printf "%s\n" "  Will pre-pin package versions based on the installed Diskuv OCaml distribution." >&2
@@ -115,9 +126,9 @@ usage() {
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
     printf "%s\n" "    -c EXTRAPATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
-    printf "%s\n" "       in the switch. Sets DKML_3P_PROGRAM_PATH in the switch so that with-dkml.exe passes through the EXTRAPATH" >&2
-    printf "%s\n" "    -e EXTRAPREFIX: Optional. Semicolon separated DKML_3P_PREFIX_PATH used by with-dkml.exe to add third-party" >&2
-    printf "%s\n" "       C libraries and header files to the C compiler" >&2
+    printf "%s\n" "       in the switch. Since the PATH is affected the EXTRAPATH must be for the host ABI" >&2
+    printf "%s\n" "    -e NAME=VAR or -e NAME+=VAR: Optional; can be repeated. Environment variables that will be available" >&2
+    printf "%s\n" "       to all users of and packages in the switch" >&2
     printf "%s\n" "    -r EXTRAREPO: Optional. Opam repository to use in the switch. Will be highest priority (rank 1)" >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
@@ -134,6 +145,19 @@ usage() {
     printf "%s\n" "    or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
 }
 
+DO_COMMANDS=
+add_do_setenv_option() {
+    add_do_setenv_option_CMD=$1
+    shift
+    add_do_setenv_option_ESCAPED=$(__escape_args_for_shell "$add_do_setenv_option_CMD")
+    # newlines are stripped by MSYS2 dash, so use semicolons as separator
+    if [ -z "$DO_COMMANDS" ]; then
+        DO_COMMANDS=$(printf "do_setenv_option %s" "$add_do_setenv_option_ESCAPED")
+    else
+        DO_COMMANDS=$(printf "%s ; do_setenv_option %s" "$DO_COMMANDS" "$add_do_setenv_option_ESCAPED")
+    fi
+}
+
 BUILDTYPE=
 DISKUV_TOOLS_SWITCH=OFF
 STATEDIR=
@@ -143,7 +167,6 @@ OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
 EXTRAPATH=
-EXTRAPREFIX=
 EXTRAREPO=
 while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
     case ${opt} in
@@ -181,7 +204,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
         ;;
         o ) OPAMHOME=$OPTARG ;;
         c ) EXTRAPATH=$OPTARG ;;
-        e ) EXTRAPREFIX=$OPTARG ;;
+        e ) add_do_setenv_option "$OPTARG" ;;
         r ) EXTRAREPO=$OPTARG ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -437,6 +460,8 @@ else
 fi
 printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchexec.sh
 printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchexec.sh
+printf "%s\n" "'$DKMLDIR'/runtime/unix/platform-opam-exec.sh \\" > "$WORK"/nonswitchcall.sh
+printf "%s\n" "  $OPAM_EXEC_OPTS \\" >> "$WORK"/nonswitchcall.sh
 
 printf "%s\n" "switch create \\" > "$WORK"/switchcreateargs.sh
 if [ "$YES" = ON ] && [ "${DKML_OPAM_FORCE_INTERACTIVE:-OFF}" = OFF ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchcreateargs.sh; fi
@@ -599,61 +624,128 @@ SETPATH=
 # Add PATH=<system ocaml>:$EXTRAPATH:$PATH
 #   Add PATH=<system ocaml> if system ocaml. (Especially on Windows and for DKSDK, the system ocaml may not necessarily be on the system PATH)
 if [ "$BUILD_OCAML_BASE" = OFF ]; then
-    DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST")
-    SETPATH="$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST_ESCAPED;$SETPATH"
+    SETPATH="$DKML_OCAMLHOME_ABSBINDIR_BUILDHOST;$SETPATH"
 fi
 #   Add PATH=$EXTRAPATH
 if [ -n "$EXTRAPATH" ]; then
-    EXTRAPATH_BUILDHOST_ESCAPED=$(escape_arg_as_ocaml_string "$EXTRAPATH")
-    SETPATH="$EXTRAPATH_BUILDHOST_ESCAPED;$SETPATH"
+    SETPATH="$EXTRAPATH;$SETPATH"
 fi
 #   Remove leading and trailing and duplicated separators
 SETPATH=$(printf "%s" "$SETPATH" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
-if [ -n "$SETPATH" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once" ]; then
-    {
-        cat "$WORK"/nonswitchexec.sh
-        # Use Win32 (;) or Unix (:) path separators
-        if is_unixy_windows_build_machine; then
-            SETPATH_WU=$SETPATH # already has semicolons
-        else
-            SETPATH_WU=$(printf "%s" "$SETPATH" | $DKMLSYS_TR ';' ':')
-        fi
-        printf "  option setenv+='PATH += \"%s\"' " "$SETPATH_WU"
-        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
-    } > "$WORK"/setenv.sh
-    log_shell "$WORK"/setenv.sh
-
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-PATH.once"
+#   Add the setenv command
+if [ -n "$SETPATH" ]; then
+    # Use Win32 (;) or Unix (:) path separators
+    if is_unixy_windows_build_machine; then
+        SETPATH_WU=$SETPATH # already has semicolons
+    else
+        SETPATH_WU=$(printf "%s" "$SETPATH" | $DKMLSYS_TR ';' ':')
+    fi
+    add_do_setenv_option "PATH+=$SETPATH_WU"
 fi
 
-# Add DKML_3P_PROGRAM_PATH=<system ocaml>;$EXTRAPATH
-if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -n "$SETPATH" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PROGRAM_PATH.once" ]; then
+# Run the setenv commands
+if [ -n "$DO_COMMANDS" ]; then
     {
-        cat "$WORK"/nonswitchexec.sh
-        printf "  option setenv+='DKML_3P_PROGRAM_PATH = \"%s\"' " "$SETPATH"
-        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        printf "#!%s\n" "$DKML_POSIX_SHELL"
+        printf ". '%s'\n" "$DKMLDIR"/vendor/dkml-runtime-common/unix/crossplatform-functions.sh
+
+        printf "modifications=OFF\n"
+
+        #   Example: opam option setenv | sed "s/]/\n/g; s/\[/\n/g" > commands_env.txt; do
+        printf "rm -f '%s'/commands_env.txt\n" \
+            "$WORK"
+        printf "make_commands_env() {\n"
+        printf "  if [ -e '%s'/commands_env.txt ]; then return 0; fi\n" \
+            "$WORK"
+        cat "$WORK"/nonswitchcall.sh
+        printf "    option setenv | %s > '%s'/commands_env.txt\n" \
+            'sed "s/]/\n/g; s/\[/\n/g"' \
+            "$WORK"
+        printf "}\n"
+
+        printf "remove_setenv() {\n"
+        printf "  remove_setenv_NAME=\$1\n"
+        printf "  shift\n"
+        printf "  remove_setenv_OP=\$1\n"
+        printf "  shift\n"
+
+        #   Example: cat commands_env.txt | awk '$1=="DKML_3P_PREFIX_PATH"{print}' | while read remove_setenv_VALUE; do
+        printf "  make_commands_env\n"
+        printf "  cat '%s'/commands_env.txt | awk -v \"NAME=\$remove_setenv_NAME\" -v \"OP=\$remove_setenv_OP\" '\$1==NAME && \$2==OP {print}' > '%s'/do_setenv_option_vars.%s.txt\n" \
+            "$WORK" \
+            "$WORK" \
+            '$$'
+        printf "  cat '%s'/do_setenv_option_vars.%s.txt | while IFS="" read -r remove_setenv_VALUE; do\n" \
+            "$WORK" \
+            '$$'
+        #       Example: option setenv-="${remove_setenv_VALUE}"
+        printf "    ";  cat "$WORK"/nonswitchcall.sh
+        printf "      option setenv-=\"\${remove_setenv_VALUE}\"\n"
+        #   Example: done
+        printf "  done\n"
+
+        printf "}\n"
+
+        # [do_setenv_option 'NAME=VALUE'] and [do_setenv_option 'NAME+=VALUE'] remove all
+        # matching entries from the Opam setenv options, and then add it to the
+        # Opam setenv options.
+        printf "do_setenv_option() {\n"
+        printf "  do_setenv_option_ARG=\$1\n"
+        printf "  shift\n"
+        # shellcheck disable=SC2016
+        printf "  do_setenv_option_NAME=\$(%s)\n" \
+            'printf "%s" "$do_setenv_option_ARG" | PATH=/usr/bin:/bin sed "s/+*=.*//"'
+        # shellcheck disable=SC2016
+        printf "  do_setenv_option_OP=\$(%s)\n" \
+            'printf "%s" "$do_setenv_option_ARG" | PATH=/usr/bin:/bin sed "s/^[^+=]*//; s/=.*/=/"'
+        # shellcheck disable=SC2016
+        printf "  %s > '%s'/do_setenv_option_value.%s.txt\n" \
+            'printf "%s" "$do_setenv_option_ARG"' \
+            "$WORK" \
+            '$$'
+        printf "  do_setenv_option_ARG_CHKSUM=\$(sha256compute '%s'/do_setenv_option_value.%s.txt)\n" \
+            "$WORK" \
+            '$$'
+        printf "  if [ -e '%s'/setenv-\${do_setenv_option_NAME}.\${do_setenv_option_ARG_CHKSUM}.once ]; then return 0; fi\n" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
+        # shellcheck disable=SC2016
+        printf "  do_setenv_option_VALUE=\$(%s)\n" \
+            'printf "%s" "$do_setenv_option_ARG" | PATH=/usr/bin:/bin sed "s/^[^=]*=//"'
+        # VALUE, since it is an OCaml value, will have escaped backslashes and quotes
+        printf "  do_setenv_option_VALUE=\$(escape_arg_as_ocaml_string \"\$do_setenv_option_VALUE\")\n"
+
+        # No clean way to remove a setenv entry. We print any existing entries
+        # and then remove each separately.
+        printf "  remove_setenv \$do_setenv_option_NAME \$do_setenv_option_OP\n"
+
+        #   Example: option setenv+="${do_setenv_option_NAME} = \"${do_setenv_option_VALUE}\""
+        printf "  ";  cat "$WORK"/nonswitchcall.sh
+        printf "    option setenv+=\"\${do_setenv_option_NAME} \$do_setenv_option_OP \\\\\"\${do_setenv_option_VALUE}\\\\\"\" "
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi; printf "\n"
+
+        printf "  modifications=ON\n"
+        #       Done. Don't repeat anymore
+        printf "  touch '%s'/setenv-\${do_setenv_option_NAME}.\${do_setenv_option_ARG_CHKSUM}.once\n" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
+
+        printf "}\n"
+
+        printf "%s" "$DO_COMMANDS"
+        printf "\n"
+
+        # Since Opam 2.1.0 (and perhaps later) do not rewrite the <switch>/environment
+        # file with a `setenv+=`, we force a rebuild by removing the environment and
+        # then running opam env. Confer https://github.com/ocaml/opam/pull/3691
+        printf "if [ \"\$modifications\" = ON ]; then\n"
+        printf "  '%s' -f '%s'\n" "$DKMLSYS_RM" "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/environment"
+        printf "  ";  cat "$WORK"/nonswitchcall.sh
+        printf "    env > /dev/null\n"
+        printf "  if [ ! -e '%s' ]; then echo 'FATAL: Failed to regenerate: %s'; exit 107; fi\n" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/environment" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/.opam-switch/environment"
+        printf "fi\n"
     } > "$WORK"/setenv.sh
     log_shell "$WORK"/setenv.sh
-
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PROGRAM_PATH.once"
-fi
-
-# Add DKML_3P_PREFIX_PATH=$EXTRAPREFIX
-#   Remove leading and trailing and duplicated separators
-EXTRAPREFIX=$(printf "%s" "$EXTRAPREFIX" | $DKMLSYS_SED 's/^;*//; s/;*$//; s/;;*/;/g')
-if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && [ -n "$EXTRAPREFIX" ] && [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PREFIX_PATH.once" ]; then
-    EXTRAPREFIX_ESCAPED=$(escape_arg_as_ocaml_string "$EXTRAPREFIX")
-    {
-        cat "$WORK"/nonswitchexec.sh
-        printf "  option setenv+='DKML_3P_PREFIX_PATH = \"%s\"' " "$EXTRAPREFIX_ESCAPED"
-        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
-    } > "$WORK"/setenv.sh
-    log_shell "$WORK"/setenv.sh
-
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/setenv-DKML_3P_PREFIX_PATH.once"
 fi
 
 if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
