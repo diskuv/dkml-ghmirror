@@ -274,24 +274,14 @@ define CONFIGURE_buildtype_template
 endef
 $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call CONFIGURE_buildtype_template,$(buildtype))))
 
-.PHONY: initvcpkg
-initvcpkg:
-	@. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && autodetect_buildhost_arch && \
-	log_trace env DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/installtime/unix/private/install-dkmlplugin-vcpkg.sh' -p $$BUILDHOST_ARCH
-
 define CONFIGURE_platform_template
   .PHONY: initcommon-$(1)
   initcommon-$(1):
 	@. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && autodetect_posix_shell && \
 	log_trace env DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' '$(DKML_DIR)/runtime/unix/build-sandbox-init-common.sh' $(1)
 
-  .PHONY: initvcpkg-$(1)
-  initvcpkg-$(1):
-	@. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && \
-	log_trace env DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKML_VENDOR_VCPKG='$(DKML_VENDOR_VCPKG)' DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/installtime/unix/private/install-dkmlplugin-vcpkg.sh' -p $(1)
-
   .PHONY: init-$(1)
-  init-$(1): initcommon-$(1) initvcpkg-$(1)
+  init-$(1): initcommon-$(1)
 
   .PHONY: configure-$(1)
   configure-$(1): configure-$(1)-$(BUILDTYPE_DEFAULT)
