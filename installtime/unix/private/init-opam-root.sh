@@ -169,6 +169,11 @@ fi
 if [ ! -e "$OPAMREPOS_UNIX".complete ]; then
     install -d "$OPAMREPOS_UNIX"
     if [ -n "${DKMLHOME_UNIX:-}" ] && is_unixy_windows_build_machine; then
+        if [ ! "${DKMLVERSION:-}" = "$dkml_root_version" ]; then
+            printf "FATAL: The DKML source code at %s needs DKML version '%s', but only '%s' was installed\n" \
+                "$DKMLDIR" "$dkml_root_version" "${DKMLVERSION:-}" >&2
+            exit 107
+        fi
         if has_rsync; then
             # shellcheck disable=SC2154
             log_trace spawn_rsync -ap \
@@ -299,7 +304,7 @@ if [ -e "$OPAMROOTDIR_BUILDHOST/repo/default" ] || [ -e "$OPAMROOTDIR_BUILDHOST/
         cat "$WORK"/default
         printf "%s\n" "FATAL: Details C:" >&2
         cat "$WORK"/list
-        exit 1
+        exit 107
     fi
     if grep -q "/$REPONAME_PENDINGREMOVAL"$ "$WORK"/default; then
         # ok. is like file://C:/source/xxx/etc/opam-repositories/pendingremoval-opam-repo
