@@ -20,7 +20,7 @@ set -euf
 #
 # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
 
-# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's PACKAGES_FDOPEN_TO_REMOVE.
+# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's [packages_fdopen_to_remove].
 # Summary: DKML provides patches for these
 PINNED_PACKAGES_DKML_PATCHES="
     dune-configurator,2.9.1
@@ -44,7 +44,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     ptime,0.8.6-msvcsupport
     "
 
-# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's PACKAGES_FDOPEN_TO_REMOVE.
+# These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's [packages_fdopen_to_remove].
 # Summary: Packages which MUST be pinned and come from the central Opam repository.
 # Reasons:
 # a) pkg used a major version bump and caused major breaking changes to downstream packages
@@ -68,6 +68,12 @@ PINNED_PACKAGES_OPAM="
     fmt,0.8.10
     rresult,0.7.0
     cmdliner,1.0.4
+    odoc-parser,0.9.0
+    stdio,v0.14.0
+    base,v0.14.2
+    dune,2.9.1
+    jingoo,1.4.3
+    utop,2.8.0
     "
 
 OCAML_DEFAULT_VERSION=4.12.1

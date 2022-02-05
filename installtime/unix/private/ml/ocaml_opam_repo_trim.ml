@@ -63,19 +63,7 @@ let pkgvers_fdopen_compiler_agnostic =
     (* The first section:
        * These are packages that are pinned because they are not lexographically the latest *)
     ("seq", "base");
-    (* The second section:
-       * The $*FlavorPackages in installtime\windows\setup-userprofile.ps1 except:
-           any in PINNED_PACKAGES_DKML_PATCHES or PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
-       TODO: The second section should be moved into PINNED_PACKAGES_OPAM (or PINNED_PACKAGES_DKML_PATCHES) over time
-       until it is empty. *)
-    ("dune", "2.9.1");
-    ("jingoo", "1.4.3");
-    ("extlib", "1.7.7-1");
-    ("ocamlformat", "0.19.0");
-    ("ocamlformat-rpc", "0.19.0");
-    ("ocamlformat-rpc-lib", "0.19.0");
-    ("utop", "2.8.0");
-    (* Third section: Any dependencies in fdopen that we need to resolve a particular version *)
+    (* Second section: Any dependencies in fdopen that we need to resolve a particular version *)
     ("dose3", "5.0.1-1");
     ("extlib", "1.7.7-1");
   ]
@@ -131,6 +119,12 @@ let packages_fdopen_to_remove =
     "fmt";
     "rresult";
     "cmdliner";
+    "odoc-parser";
+    "stdio";
+    "base";
+    "dune";
+    "jingoo";
+    "utop";
   ]
 
 (* = ARGUMENT PROCESSING = *)

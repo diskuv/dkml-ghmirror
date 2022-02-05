@@ -2,9 +2,9 @@
 # the "tools" system switch.
 
 # Each package must go into either:
-# 1. PINNED_PACKAGES_OPAM and [packages_fdopen_to_remove] or
-# 2. PINNED_PACKAGES_DKML_PATCHES or
-# 3. [pkgvers_fdopen_compiler_agnostic]
+# 1. PINNED_PACKAGES_OPAM *and* [packages_fdopen_to_remove] or          {package defn is in opam repo}
+# 2. PINNED_PACKAGES_DKML_PATCHES *and* [packages_fdopen_to_remove] or  {package defn is in dkml repo}
+# 3. [pkgvers_fdopen_compiler_agnostic]                                 {package defn is in fdopen repo}
 
 # ocamlfind has hardcoded paths in lib/ocaml/topfind so make sure that it is
 # installed once in the system switch
