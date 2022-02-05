@@ -64,7 +64,9 @@ let pkgvers_fdopen_compiler_agnostic =
        * These are packages that are pinned because they are not lexographically the latest *)
     ("seq", "base");
     (* Second section: Any dependencies in fdopen that we need to resolve a particular version *)
+    (*    dose3.5.0.1: opam 2.1.0 requirement *)
     ("dose3", "5.0.1-1");
+    (*    extlib.X.Y.Z-M: unclear why we need this pinned *)
     ("extlib", "1.7.7-1");
   ]
 
@@ -87,43 +89,50 @@ let packages_fdopen_to_remove =
        * PINNED_PACKAGES_DKML_PATCHES in installtime\unix\create-opam-switch.sh
        and MUST BE IN SYNC.
     *)
-    "dune-configurator";
-    "bigstringaf";
-    "ppx_expect";
-    "digestif";
-    "ocp-indent";
-    "mirage-crypto";
-    "mirage-crypto-ec";
-    "mirage-crypto-pk";
-    "mirage-crypto-rng";
-    "mirage-crypto-rng-async";
-    "mirage-crypto-rng-mirage";
-    "ocamlbuild";
-    "core_kernel";
-    "feather";
-    "ctypes";
-    "ctypes-foreign";
     "ocamlfind";
     "ptime";
+
+    "ocp-indent";
+
+    "bigstringaf";
+    "core_kernel";
+    "ctypes-foreign";
+    "ctypes";
+    "digestif";
+    "dune-configurator";
+    "feather";
+    "mirage-crypto-ec";
+    "mirage-crypto-pk";
+    "mirage-crypto-rng-async";
+    "mirage-crypto-rng-mirage";
+    "mirage-crypto-rng";
+    "mirage-crypto";
+    "ocamlbuild";
+    "ppx_expect";
     (* 4th section corresponds to:
        * PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
        and MUST BE IN SYNC.
     *)
     "ppxlib";
-    "jsonrpc";
-    "lsp";
-    "ocaml-lsp-server";
+
     "bos";
-    "sexplib";
-    "sha";
     "fmt";
     "rresult";
+    "sha";
+    "sexplib";
     "cmdliner";
+
+    "jingoo";
+    "lsp";
+    "ocaml-lsp-server";
+    "jsonrpc";
+    "ocamlformat";
+    "ocamlformat-rpc";
+    "ocamlformat-rpc-lib";
     "odoc-parser";
     "stdio";
     "base";
     "dune";
-    "jingoo";
     "utop";
   ]
 

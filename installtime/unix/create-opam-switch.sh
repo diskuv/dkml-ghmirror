@@ -22,26 +22,33 @@ set -euf
 
 # These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's [packages_fdopen_to_remove].
 # Summary: DKML provides patches for these
+#
+# Sections:
+# 1. Subset of packages from ci-flavor-packages.txt, in `.txt` order
+# 2. Subset of packages from full-flavor-minus-ci-flavor-packages.txt, in `.txt` order
+# 3. Any packages that don't belong in #1 and #2, in alphabetical order
 PINNED_PACKAGES_DKML_PATCHES="
-    dune-configurator,2.9.1
-    bigstringaf,0.8.0
-    ppx_expect,v0.14.1
-    digestif,1.0.1
+    ocamlfind,1.9.1
+    ptime,0.8.6-msvcsupport
+
     ocp-indent,1.8.2-windowssupport
-    mirage-crypto,0.10.4-windowssupport
+
+    bigstringaf,0.8.0
+    core_kernel,v0.14.2
+    ctypes-foreign,0.19.2-windowssupport-r4
+    ctypes,0.19.2-windowssupport-r4
+    digestif,1.0.1
+    dune-configurator,2.9.1
+    feather,0.3.0
+    mccs,1.1+13
     mirage-crypto-ec,0.10.4-windowssupport
     mirage-crypto-pk,0.10.4-windowssupport
-    mirage-crypto-rng,0.10.4-windowssupport
     mirage-crypto-rng-async,0.10.4-windowssupport
     mirage-crypto-rng-mirage,0.10.4-windowssupport
+    mirage-crypto-rng,0.10.4-windowssupport
+    mirage-crypto,0.10.4-windowssupport
     ocamlbuild,0.14.0
-    core_kernel,v0.14.2
-    feather,0.3.0
-    ctypes,0.19.2-windowssupport-r4
-    ctypes-foreign,0.19.2-windowssupport-r4
-    ocamlfind,1.9.1
-    mccs,1.1+13
-    ptime,0.8.6-msvcsupport
+    ppx_expect,v0.14.1
     "
 
 # These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's [packages_fdopen_to_remove].
@@ -57,23 +64,33 @@ PINNED_PACKAGES_DKML_PATCHES="
 # * (b) jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
 # * (c) bos, sha and sexplib are needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as https://opam.ocaml.org/
 # * (c) cmdliner and opam-client (+ opam-*) are needed to compile opam-dkml.exe; same `opam` as https://opam.ocaml.org/
+#
+# Sections:
+# 1. Subset of packages from ci-flavor-packages.txt, in `.txt` order
+# 2. Subset of packages from full-flavor-minus-ci-flavor-packages.txt, in `.txt` order
+# 3. Any packages that don't belong in #1 and #2, in alphabetical order
 PINNED_PACKAGES_OPAM="
-    ppxlib,0.22.0
-    jsonrpc,1.9.0
-    lsp,1.9.0
-    ocaml-lsp-server,1.9.0
     bos,0.2.1
-    sexplib,v0.14.0
-    sha,1.15.1
     fmt,0.8.10
     rresult,0.7.0
+    sha,1.15.1
+    sexplib,v0.14.0
     cmdliner,1.0.4
+
+    jingoo,1.4.3
+    lsp,1.9.0
+    ocaml-lsp-server,1.9.0
+    jsonrpc,1.9.0
+    ocamlformat,0.19.0
+    ocamlformat-rpc,0.19.0
+    ocamlformat-rpc-lib,0.19.0
     odoc-parser,0.9.0
     stdio,v0.14.0
     base,v0.14.2
     dune,2.9.1
-    jingoo,1.4.3
     utop,2.8.0
+
+    ppxlib,0.22.0
     "
 
 OCAML_DEFAULT_VERSION=4.12.1
