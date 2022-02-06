@@ -54,7 +54,7 @@ PINNED_PACKAGES_DKML_PATCHES="
 # These MUST BE IN SYNC with installtime/unix/private/ml/ocaml_opam_repo_trim.ml's [packages_fdopen_to_remove].
 # Summary: Packages which MUST be pinned and come from the central Opam repository.
 # Reasons:
-# a) pkg used a major version bump and caused major breaking changes to downstream packages
+# a) pkg used a major version bump and caused major breaking changes to downstream packages or broke OS (ex. Win32) compatibility
 # b) pkgver not yet present in fdopen
 # c) pkgver is in fdopen, but `opam` file is equivalent to central Opam repository (so no fdopen modifications)
 #
@@ -64,6 +64,7 @@ PINNED_PACKAGES_DKML_PATCHES="
 # * (b) jsonrpc, lsp and ocaml-lsp-server as of 2021-11-22 was not present in the fdopen repository, but was needed by lsp.1.9.0
 # * (c) bos, sha and sexplib are needed to compile with-dkml.exe; bos needs rresult and fmt, and fdopen `opam` files are same as https://opam.ocaml.org/
 # * (c) cmdliner and opam-client (+ opam-*) are needed to compile opam-dkml.exe; same `opam` as https://opam.ocaml.org/
+# * (a) alcotest.1.4.0 works with Win32 MSVC; 1.5.0 does not
 #
 # Sections:
 # 1. Subset of packages from ci-flavor-packages.txt, in `.txt` order
@@ -91,6 +92,11 @@ PINNED_PACKAGES_OPAM="
     utop,2.8.0
 
     ppxlib,0.22.0
+    alcotest,1.4.0
+    alcotest-async,1.4.0
+    alcotest-js,1.4.0
+    alcotest-lwt,1.4.0
+    alcotest-mirage,1.4.0
     "
 
 OCAML_DEFAULT_VERSION=4.12.1

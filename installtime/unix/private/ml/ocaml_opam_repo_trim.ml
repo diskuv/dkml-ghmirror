@@ -113,8 +113,6 @@ let packages_fdopen_to_remove =
        * PINNED_PACKAGES_OPAM in installtime\unix\create-opam-switch.sh
        and MUST BE IN SYNC.
     *)
-    "ppxlib";
-
     "bos";
     "fmt";
     "rresult";
@@ -134,6 +132,13 @@ let packages_fdopen_to_remove =
     "base";
     "dune";
     "utop";
+
+    "ppxlib";
+    "alcotest";
+    "alcotest-async";
+    "alcotest-js";
+    "alcotest-lwt";
+    "alcotest-mirage";
   ]
 
 (* = ARGUMENT PROCESSING = *)
