@@ -6,6 +6,32 @@
 # 2. PINNED_PACKAGES_DKML_PATCHES *and* [packages_fdopen_to_remove] or  {package defn is in dkml repo}
 # 3. [pkgvers_fdopen_compiler_agnostic]                                 {package defn is in fdopen repo}
 
+# Using a constraint instead
+#   All DKML + DKSDK repo pkgs
+#       At least one is selected as a cornerstone. Ex. `ocaml-variants.4.12.1+options+dkml+msvc64`
+#       All other packages must be constrained to versions that are present in UNION(DKML repo,DKSDK repo). Ex. `(mirage-crypto.0.10.3 | mirage-crypto.0.10.4)`
+#
+#   Foundation packages (either ci-flavor-packages -or- full-flavor-minus-ci-flavor-packages -or- some other flavor) {nit: rename flavor to foundation}
+#       All packages are presence constraints. Ex. `dune`
+#
+#   No-go packages (known not to compile on Win32 like Async, or known bad license)
+#       Some packages are no-presence constraints. Ex. `!async`
+#       Autoprobe packages are version constraints. Ex. `!async.v0.14.0`
+#
+#   https://github.com/ocaml-opam/opam-0install-solver ==> solution ALPHA is a list of transitive_reach{cornerstore,foundation} (pkg,ver).
+#
+#   Remainder of Opam packages are free-floating
+#       Package `a` picked at random. Test adding `a` to ALPHA; if build and test of `a` on Windows works, add it to "tested" package.
+#       All packages are presence constraints. Ex. `helloworld`
+#
+#   https://github.com/ocaml-opam/opam-0install-solver ==> solution is a list of transitive_reach{cornerstore,foundation,tested} (pkg,ver).
+#
+#   Any (pkg,ver) present in both Opam and fdopen that are equivalent are
+#   removed from compact fdopen repository. (New rule)
+#
+#   Any pkg with (pkg,ver) not present in full fdopen repository is removed
+#   from compact fdopen repository. (Old rule)
+
 # ocamlfind has hardcoded paths in lib/ocaml/topfind so make sure that it is
 # installed once in the system switch
 ocamlfind.1.9.1
