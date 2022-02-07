@@ -29,7 +29,9 @@ usage() {
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'" >&2
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
-    printf "%s\n" "    -d STATEDIR: If specified, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -d STATEDIR: If specified and -u ON enabled, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "       If ON, uses Opam 2.2+ default root" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
     printf "%s\n" "       The bin/ subdir of the Opam home is added to the PATH" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
@@ -42,7 +44,7 @@ STATEDIR=
 USERMODE=ON
 OPAMHOME=
 OCAMLVERSION_OR_HOME=
-while getopts ":hp:d:o:v:" opt; do
+while getopts ":hp:d:u:o:v:" opt; do
     case ${opt} in
         h )
             usage
@@ -56,10 +58,10 @@ while getopts ":hp:d:o:v:" opt; do
             fi
         ;;
         d )
-            # shellcheck disable=SC2034
             STATEDIR=$OPTARG
-            # shellcheck disable=SC2034
-            USERMODE=OFF
+        ;;
+        u )
+            USERMODE=$OPTARG
         ;;
         o ) OPAMHOME=$OPTARG ;;
         v ) OCAMLVERSION_OR_HOME=$OPTARG ;;

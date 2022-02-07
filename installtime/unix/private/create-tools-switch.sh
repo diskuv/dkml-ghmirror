@@ -27,6 +27,9 @@ usage() {
     printf "%s\n" "                                                        at <STATEDIR>/host-tools" >&2
     printf "%s\n" "Options:" >&2
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform for the tools" >&2
+    printf "%s\n" "    -d STATEDIR: If specified and -u ON enabled, use <STATEDIR>/opam as the Opam root" >&2
+    printf "%s\n" "    -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "       If ON, uses Opam 2.2+ default root" >&2
     printf "%s\n" "    -f FLAVOR: Optional; defaults to CI. The flavor of system packages: 'CI' or 'Full'" >&2
     printf "%s\n" "       'Full' is the same as CI, but has packages for UIs like utop and a language server" >&2
     printf "%s\n" "    -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing usr/bin/ocaml or bin/ocaml)" >&2
@@ -41,17 +44,17 @@ OCAMLVERSION_OR_HOME=
 OPAMHOME=
 FLAVOR=CI
 DKMLPLATFORM=
-while getopts ":hd:o:p:v:f:" opt; do
+while getopts ":hd:u:o:p:v:f:" opt; do
     case ${opt} in
         h )
             usage
             exit 0
         ;;
         d )
-            # shellcheck disable=SC2034
             STATEDIR=$OPTARG
-            # shellcheck disable=SC2034
-            USERMODE=OFF
+        ;;
+        u )
+            USERMODE=$OPTARG
         ;;
         v )
             OCAMLVERSION_OR_HOME=$OPTARG
