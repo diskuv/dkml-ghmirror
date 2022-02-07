@@ -492,9 +492,9 @@ function Import-DiskuvOCamlAsset {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 19
+$ProgressTotalSteps = 17
 if ($VcpkgCompatibility) {
-    $ProgressTotalSteps = $ProgressTotalSteps - 2
+    $ProgressTotalSteps = $ProgressTotalSteps + 2
 }
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
