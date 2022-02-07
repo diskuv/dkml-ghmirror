@@ -502,27 +502,28 @@ printf "%s\n" "  --no-install \\" >> "$WORK"/switchcreateargs.sh
 
 # Add the extra repository, if any
 REPOSPREFIX=
+EXTRAREPONAME=
 if [ -n "$EXTRAREPO" ]; then
     # Make a pretty name for the extra repository
     #   Ex. git+https://gitlab.com/diskuv/dksdk-opam-repository#main -> dksdk
-    REPONAME=$(printf "%s" "$EXTRAREPO" | $DKMLSYS_SED 's@#.*@@; s@.*/@@; s@-opam-repository@@')
+    EXTRAREPONAME=$(printf "%s" "$EXTRAREPO" | $DKMLSYS_SED 's@#.*@@; s@.*/@@; s@-opam-repository@@')
     #   Do not name clash with the repositories we ordinarily add
-    case "$REPONAME" in
-        diskuv*) REPONAME=diskuv-extra ;;
-        fdopen*) REPONAME=fdopen-extra ;;
+    case "$EXTRAREPONAME" in
+        diskuv*) EXTRAREPONAME=diskuv-extra ;;
+        fdopen*) EXTRAREPONAME=fdopen-extra ;;
     esac
-    REPOSPREFIX="$REPONAME,"
+    REPOSPREFIX="$EXTRAREPONAME,"
     # Add it
-    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME.tar.gz" ]; then
+    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$EXTRAREPONAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$EXTRAREPONAME.tar.gz" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
             # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
             case "$EXTRAREPO" in
                 /* | ?:* | file://) # /a/b/c or C:\Windows or file://
-                    printf "  repository add %s '%s' --yes --dont-select --kind local --rank=1" "$REPONAME" "$EXTRAREPO"
+                    printf "  repository add %s '%s' --yes --dont-select --kind local --rank=1" "$EXTRAREPONAME" "$EXTRAREPO"
                     ;;
                 *)
-                    printf "  repository add %s '%s' --yes --dont-select --rank=1" "$REPONAME" "$EXTRAREPO"
+                    printf "  repository add %s '%s' --yes --dont-select --rank=1" "$EXTRAREPONAME" "$EXTRAREPO"
                     ;;
             esac
             if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
@@ -552,10 +553,10 @@ if is_unixy_windows_build_machine; then
         log_shell "$WORK"/repoadd.sh
     fi
 
-    printf "%s\n" "  diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
+    printf "%s\n" "  $EXTRAREPONAME diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
     printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" "\\" >> "$WORK"/switchcreateargs.sh
 else
-    printf "%s\n" "  diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    printf "%s\n" "  $EXTRAREPONAME diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
     printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,default" "\\" >> "$WORK"/switchcreateargs.sh
 fi
 
@@ -607,7 +608,15 @@ else
         printf "%s\n" "  repository list --short"
     } > "$WORK"/list.sh
     log_shell "$WORK"/list.sh > "$WORK"/list
+    UPGRADE_REPO=OFF
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
+        UPGRADE_REPO=ON
+    elif is_unixy_windows_build_machine && awk -v N="fdopen-mingw-$dkml_root_version-$OCAMLVERSION" '$1==N {exit 1}' "$WORK"/list; then
+        UPGRADE_REPO=ON
+    elif [ -n "$EXTRAREPONAME" ] && awk -v N="$EXTRAREPONAME" '$1==N {exit 1}' "$WORK"/list; then
+        UPGRADE_REPO=ON
+    fi
+    if [ "$UPGRADE_REPO" = ON ]; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
         # do a `opam update` so the switch has the latest repository definitions.
         {
