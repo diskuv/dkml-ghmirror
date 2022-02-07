@@ -516,7 +516,15 @@ if [ -n "$EXTRAREPO" ]; then
     if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$REPONAME.tar.gz" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  repository add %s '%s' --yes --dont-select --rank=1" "$REPONAME" "$EXTRAREPO"
+            # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
+            case "$EXTRAREPO" in
+                /* | ?:* | file://) # /a/b/c or C:\Windows or file://
+                    printf "  repository add %s '%s' --yes --dont-select --kind local --rank=1" "$REPONAME" "$EXTRAREPO"
+                    ;;
+                *)
+                    printf "  repository add %s '%s' --yes --dont-select --rank=1" "$REPONAME" "$EXTRAREPO"
+                    ;;
+            esac
             if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/repoadd.sh
         log_shell "$WORK"/repoadd.sh
