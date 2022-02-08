@@ -36,6 +36,7 @@ usage() {
     printf "%s\n" "       to use. The OCaml home determines the native code produced by the switch." >&2
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
+    printf "%s\n" "    -a EXTRAPKG: Optional; can be repeated. An extra package to install in the tools switch" >&2
 }
 
 STATEDIR=
@@ -44,7 +45,8 @@ OCAMLVERSION_OR_HOME=
 OPAMHOME=
 FLAVOR=CI
 DKMLPLATFORM=
-while getopts ":hd:u:o:p:v:f:" opt; do
+EXTRAPKGS=
+while getopts ":hd:u:o:p:v:f:a:" opt; do
     case ${opt} in
         h )
             usage
@@ -76,6 +78,12 @@ while getopts ":hd:u:o:p:v:f:" opt; do
                     usage
                     exit 1
             esac
+        ;;
+        a )
+            if [ -n "$EXTRAPKG" ]; then
+                EXTRAPKGS="$EXTRAPKG "
+            fi
+            EXTRAPKGS="$EXTRAPKG $OPTARG"
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
@@ -125,6 +133,9 @@ log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERS
 {
     printf "%s" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh -s -v '$OCAMLVERSION_OR_HOME' -o '$OPAMHOME' \"\$@\" install -y"
     printf " %s" "--jobs=$NUMCPUS"
+    if [ -n "$EXTRAPKGS" ]; then
+        printf " %s" "$EXTRAPKGS"
+    fi
     case "$FLAVOR" in
         CI)
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt | tr -d '\r'
