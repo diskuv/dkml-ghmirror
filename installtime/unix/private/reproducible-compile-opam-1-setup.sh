@@ -170,14 +170,22 @@ cd "$DKMLDIR"
 
 # Get Opam if not present already
 if [ ! -e "$OPAMSRC_UNIX/Makefile" ] || [ ! -e "$OPAMSRC_UNIX/.git" ]; then
-    install -d "$OPAMSRC_UNIX"
     log_trace rm -rf "$OPAMSRC_UNIX" # clean any partial downloads
-    log_trace git clone "$GIT_URL" "$OPAMSRC_MIXED"
-    log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+    log_trace install -d "$OPAMSRC_UNIX"
+    #   Instead of git clone we use git fetch --depth 1 so we do a shallow clone of the commit
+    log_trace git -C "$OPAMSRC_MIXED" -c init.defaultBranch=master init
+    log_trace git -C "$OPAMSRC_MIXED" remote add origin "$GIT_URL"
+    log_trace git -C "$OPAMSRC_MIXED" fetch --depth 1 origin "$GIT_COMMITID_OR_TAG"
+    log_trace git -C "$OPAMSRC_MIXED" reset --hard FETCH_HEAD
 else
-    if git -C "$OPAMSRC_MIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OPAMSRC_MIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi # allow tag to move (for development and for emergency fixes)
-    log_trace git -C "$OPAMSRC_MIXED" fetch --tags
-    log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+    # Git fetch can be very expensive after a shallow clone; we skip advancing the repository
+    # if the expected tag/commit is a commit and the actual git commit is the expected git commit
+    git_head=$(log_trace git -C "$OPAMSRC_MIXED" rev-parse HEAD)
+    if [ ! "$git_head" = "$GIT_COMMITID_OR_TAG" ]; then
+        if git -C "$OPAMSRC_MIXED" tag -l "$GIT_COMMITID_OR_TAG" | awk 'BEGIN{nonempty=0} NF>0{nonempty+=1} END{exit nonempty==0}'; then git -C "$OPAMSRC_MIXED" tag -d "$GIT_COMMITID_OR_TAG"; fi # allow tag to move (for development and for emergency fixes)
+        log_trace git -C "$OPAMSRC_MIXED" fetch --tags
+        log_trace git -C "$OPAMSRC_MIXED" -c advice.detachedHead=false checkout "$GIT_COMMITID_OR_TAG"
+    fi
 fi
 
 # REPLACE - msvs-detect
