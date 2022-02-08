@@ -271,44 +271,44 @@ autodetect_dkmlvars || true
 # Q: What if there was no switch but there was a root?
 # Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
 
-# Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
+# Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHNAME_EXPAND if there is a switch specified
 if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
-    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
+    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHNAME_EXPAND of `diskuv-host-tools` switch
     set_opamswitchdir_of_system "$PLATFORM"
 elif [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ] && [ -n "${DKML_DUNE_BUILD_DIR:-}" ]; then
     # set --switch only if BUILDTYPE (translated into DKML_DUNE_BUILD_DIR) has been set
     install -d "$DKML_DUNE_BUILD_DIR"
 
-    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_EXPAND
     set_opamrootandswitchdir
 elif [ -n "${STATEDIR:-}" ]; then
-    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_EXPAND
     set_opamrootandswitchdir
 elif [ -n "$TARGET_OPAMSWITCH" ]; then
-    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_EXPAND
     if [ -x /usr/bin/cygpath ]; then
         TARGET_OPAMSWITCH_BUILDHOST=$(/usr/bin/cygpath -aw "$TARGET_OPAMSWITCH")
     else
         TARGET_OPAMSWITCH_BUILDHOST="$TARGET_OPAMSWITCH"
     fi
     OPAMSWITCHFINALDIR_BUILDHOST="$TARGET_OPAMSWITCH_BUILDHOST/_opam"
-    OPAMSWITCHDIR_EXPAND="$TARGET_OPAMSWITCH_BUILDHOST" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
+    OPAMSWITCHNAME_EXPAND="$TARGET_OPAMSWITCH_BUILDHOST" # this won't work in containers, but target is meant for 'dev' platform (perhaps we should check_state?)
 fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:
 #   [ERROR] The selected switch C:/source/xxx/build/dev/Debug is not installed.
 if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
     if [ "$ADD_SWITCH_OPTS" = ON ] &&
-    [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
+    [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHNAME_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
-        OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
+        OPAM_OPTS+=( --switch "$OPAMSWITCHNAME_EXPAND" )
+        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHNAME_EXPAND'" --set-root --set-switch || true'
     fi
 else
-    if [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHDIR_EXPAND:-}" ] &&
+    if [ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" ] && [ -n "${OPAMSWITCHNAME_EXPAND:-}" ] &&
     is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
-        OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
-        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch || true'
+        OPAM_OPTS+=( --switch "$OPAMSWITCHNAME_EXPAND" )
+        OPAM_ENV_STMT="'$OPAMEXE'"' env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHNAME_EXPAND'" --set-root --set-switch || true'
     fi
 fi
 

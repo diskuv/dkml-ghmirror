@@ -101,7 +101,7 @@ set_opamrootdir
 # Set the other vars needed
 OPAMGLOBALNAME="diskuv-boot-DO-NOT-DELETE"
 OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST/$OPAMGLOBALNAME"
-OPAMSWITCHDIR_EXPAND="$OPAMGLOBALNAME"
+OPAMSWITCHNAME_EXPAND="$OPAMGLOBALNAME"
 
 OPAM_SWITCH_CREATE_ARGS=(
     --empty
@@ -112,9 +112,9 @@ if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-l
 
 if ! is_empty_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    LOG_TRACE_RETURN_ERROR_CODE=ON run_opam switch remove "$OPAMSWITCHDIR_EXPAND" --yes || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
+    LOG_TRACE_RETURN_ERROR_CODE=ON run_opam switch remove "$OPAMSWITCHNAME_EXPAND" --yes || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
     # do real install
-    run_opam switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_ARGS[@]}"
+    run_opam switch create "$OPAMSWITCHNAME_EXPAND" "${OPAM_SWITCH_CREATE_ARGS[@]}"
 fi
 
 # END opam switch create --empty

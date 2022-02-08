@@ -1,17 +1,4 @@
 #!/bin/sh
-# -------------------------------------------------------
-# create-opam-switch.sh [-b BUILDTYPE -p PLATFORM | [-b BUILDTYPE] -s]
-#
-# Purpose:
-# 1. Create an OPAMSWITCH (`opam switch create`) as
-#    a local switch that corresponds to the PLATFORM's BUILDTYPE
-#    or to the 'diskuv-host-tools' switch. The created switch will have a working
-#    OCaml system compiler.
-#
-# Prerequisites:
-# * An OPAMROOT created by `init-opam-root.sh`
-#
-# -------------------------------------------------------
 set -euf
 
 # ------
@@ -136,7 +123,7 @@ usage() {
     printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev'). Determines how to make an OCaml home if a version number is specified" >&2
     printf "%s\n" "       (or nothing) using -v option. Also part of the name for the host-tools switch if -s option" >&2
     printf "%s\n" "    -d STATEDIR: Create <STATEDIR>/_opam as an Opam switch prefix, unless [-s] is also" >&2
-    printf "%s\n" "        selected which creates <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
+    printf "%s\n" "        selected which creates <STATEDIR>/host-tools, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "        selected which creates <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
     printf "%s\n" "        <OPAMROOT>/diskuv-host-tools/_opam on non-Windows. See also -t option" >&2
     printf "%s\n" "    -s: Create the diskuv-host-tools or host-tools switch. See the -d option for the rules" >&2
@@ -476,13 +463,13 @@ fi
 # Make launchers for opam switch create <...> and for opam <...>
 if [ "$DISKUV_TOOLS_SWITCH" = ON ]; then
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
-    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-host-tools` switch
+    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHNAME_EXPAND of `diskuv-host-tools` switch
 
     if [ -z "$DKMLPLATFORM" ]; then printf "%s\n" "FATAL: create-opam-switch check_state nonempty DKMLPLATFORM" >&2; exit 1; fi
     set_opamswitchdir_of_system "$DKMLPLATFORM"
     OPAM_EXEC_OPTS="-s -d '$STATEDIR' -p '$DKMLPLATFORM' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
 else
-    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
+    # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHNAME_EXPAND, OPAMSWITCHISGLOBAL, DKMLPLUGIN_BUILDHOST and WITHDKMLEXE_BUILDHOST
     set_opamrootandswitchdir
 
     OPAM_EXEC_OPTS=" -p '$DKMLPLATFORM' -d '$STATEDIR' -t '$TARGET_OPAMSWITCH' -u $USERMODE -o '$OPAMHOME' -v '$OCAMLVERSION_OR_HOME'"
@@ -587,13 +574,13 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
     printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh $OPAM_EXEC_OPTS switch remove \\" > "$WORK"/switchremoveargs.sh
     if [ "$YES" = ON ]; then printf "%s\n" "  --yes \\" >> "$WORK"/switchremoveargs.sh; fi
-    printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchremoveargs.sh
+    printf "  '%s'\n" "$OPAMSWITCHNAME_EXPAND" >> "$WORK"/switchremoveargs.sh
     log_shell "$WORK"/switchremoveargs.sh || rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
 
     # do real install
     printf "%s\n" "exec '$DKMLDIR'/runtime/unix/platform-opam-exec.sh $OPAM_EXEC_OPTS -0 '$WORK/switch-create-prehook.sh' \\" > "$WORK"/switchcreateexec.sh
     cat "$WORK"/switchcreateargs.sh >> "$WORK"/switchcreateexec.sh
-    printf "  '%s'\n" "$OPAMSWITCHDIR_EXPAND" >> "$WORK"/switchcreateexec.sh
+    printf "  '%s'\n" "$OPAMSWITCHNAME_EXPAND" >> "$WORK"/switchcreateexec.sh
     log_shell "$WORK"/switchcreateexec.sh
 
     # the switch create already set the invariant

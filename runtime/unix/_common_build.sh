@@ -73,14 +73,14 @@ USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS=OFF
 # - env:OPAMSWITCHFINALDIR_BUILDHOST - Either:
 #     The path to the switch that represents the build directory that is usable only on the
 #     build machine (not from within a container). For an external (aka local) switch the returned path will be
-#     a `.../_opam`` folder which is where the final contents of the switch live. Use OPAMSWITCHDIR_EXPAND
+#     a `.../_opam`` folder which is where the final contents of the switch live. Use OPAMSWITCHNAME_EXPAND
 #     if you want an XXX argument for `opam --switch XXX` rather than this path which is not compatible.
 # - env:OPAMSWITCHNAME_BUILDHOST - The name of the switch seen on the build host from `opam switch list --short`
 # - env:OPAMSWITCHISGLOBAL - Either ON (switch is global) or OFF (switch is external; aka local)
-# - env:OPAMSWITCHDIR_EXPAND - Either
+# - env:OPAMSWITCHNAME_EXPAND - Either
 #     The path to the switch **not including any _opam subfolder** that works as an argument to `exec_in_platform` -OR-
 #     The name of a global switch that represents the build directory.
-#     OPAMSWITCHDIR_EXPAND works inside or outside of a container.
+#     OPAMSWITCHNAME_EXPAND works inside or outside of a container.
 # - env:WITHDKMLEXE_BUILDHOST - The plugin binary 'with-dkml.exe'
 set_opamrootandswitchdir() {
     # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND and WITHDKMLEXE_BUILDHOST
@@ -91,16 +91,16 @@ set_opamrootandswitchdir() {
         OPAMSWITCHISGLOBAL=ON
         OPAMSWITCHFINALDIR_BUILDHOST="$OPAMROOTDIR_BUILDHOST${OS_DIR_SEP}$set_opamrootandswitchdir_OPAMGLOBALNAME"
         OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_OPAMGLOBALNAME"
-        OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_OPAMGLOBALNAME"
+        OPAMSWITCHNAME_EXPAND="$set_opamrootandswitchdir_OPAMGLOBALNAME"
     else
         # shellcheck disable=SC2034
         OPAMSWITCHISGLOBAL=OFF
         if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
             OPAMSWITCHFINALDIR_BUILDHOST="$BUILDDIR_BUILDHOST${OS_DIR_SEP}_opam"
             if [ -z "$BUILD_BASEPATH" ]; then
-                OPAMSWITCHDIR_EXPAND="$BUILDDIR_BUILDHOST"
+                OPAMSWITCHNAME_EXPAND="$BUILDDIR_BUILDHOST"
             else
-                OPAMSWITCHDIR_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
+                OPAMSWITCHNAME_EXPAND="@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR"
             fi
             OPAMSWITCHNAME_BUILDHOST="$BUILDDIR_BUILDHOST"
         else
@@ -117,7 +117,7 @@ set_opamrootandswitchdir() {
             # shellcheck disable=SC2034
             OPAMSWITCHFINALDIR_BUILDHOST="$set_opamrootandswitchdir_BUILDHOST${OS_DIR_SEP}_opam"
             # shellcheck disable=SC2034
-            OPAMSWITCHDIR_EXPAND="$set_opamrootandswitchdir_BUILDHOST"
+            OPAMSWITCHNAME_EXPAND="$set_opamrootandswitchdir_BUILDHOST"
             # shellcheck disable=SC2034
             OPAMSWITCHNAME_BUILDHOST="$set_opamrootandswitchdir_BUILDHOST"
         fi
