@@ -148,19 +148,15 @@ usage() {
     printf "%s\n" "    -r NAME=EXTRAREPO: Optional; may be repeated. Opam repository to use in the switch. Will be higher priority" >&2
     printf "%s\n" "       than the implicit repositories like the default opam.ocaml.org repository. First repository listed on command" >&2
     printf "%s\n" "       line will be highest priority of the extra repositories." >&2
-    printf "%s\n" "Post Create Switch Hook:" >&2
-    printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
-    printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
-    printf "%s\n" "    Otherwise if <top>/buildconfig/opam/hook-switch-postcreate.sh exists where," >&2
-    printf "%s\n" "    the <top> directory contains dune-project, then the Opam commands in hook-switch-postcreate.sh" >&2
-    printf "%s\n" "    will be executed." >&2
-    printf "%s\n" "    The Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
-    printf "%s\n" "    created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
-    printf "%s\n" "    The Opam commands should use \$OPAMEXE as the path to the Opam executable." >&2
-    printf "%s\n" "        Example: \$OPAMEXE pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
-    printf "%s\n" "    hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
+    printf "%s\n" "    -i HOOK: Commands that will be run after the Opam switch has been created." >&2
+    printf "%s\n" "       The hook file must be a /bin/sh script (POSIX compatible script, not Bash!)." >&2
+    printf "%s\n" "       Opam commands should be platform-neutral, and will be executed after the switch has been initially" >&2
+    printf "%s\n" "       created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
+    printf "%s\n" "       The Opam commands should use \$OPAMEXE as the path to the Opam executable." >&2
+    printf "%s\n" "          Example: \$OPAMEXE pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
+    printf "%s\n" "      hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
     printf "%s\n" "        *.sh text eol=lf" >&2
-    printf "%s\n" "    or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
+    printf "%s\n" "      or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
 }
 
 DO_COMMANDS=
@@ -186,7 +182,8 @@ OPAMHOME=
 DKMLPLATFORM=
 EXTRAPATH=
 EXTRAREPOCMDS=
-while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
+HOOK_POSTCREATE=
+while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:" opt; do
     case ${opt} in
         h )
             usage
@@ -229,6 +226,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
             fi
             EXTRAREPOCMDS="${EXTRAREPOCMDS}add_extra_repo '${OPTARG}'"
         ;;
+        i ) HOOK_POSTCREATE=$OPTARG ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -913,13 +911,6 @@ fi
 # --------------------------------
 # BEGIN opam post create hook
 
-if [ -n "$STATEDIR" ] && [ -e "$STATEDIR"/buildconfig/opam/hook-switch-postcreate.sh ]; then
-    HOOK_POSTCREATE="$STATEDIR"/buildconfig/opam/hook-switch-postcreate.sh
-elif [ -e "$TOPDIR"/buildconfig/opam/hook-switch-postcreate.sh ]; then
-    HOOK_POSTCREATE="$TOPDIR"/buildconfig/opam/hook-switch-postcreate.sh
-else
-    HOOK_POSTCREATE=
-fi
 if [ -n "$HOOK_POSTCREATE" ]; then
     HOOK_KEY_POSTCREATE=$(sha256compute "$HOOK_POSTCREATE")
     if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/hook-postcreate.$dkml_root_version.$HOOK_KEY_POSTCREATE" ]; then
