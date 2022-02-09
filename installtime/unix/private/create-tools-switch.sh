@@ -36,7 +36,6 @@ usage() {
     printf "%s\n" "       to use. The OCaml home determines the native code produced by the switch." >&2
     printf "%s\n" "       Examples: 4.13.1, /usr, /opt/homebrew" >&2
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
-    printf "%s\n" "    -r EXTRAREPO: Optional. Opam repository to use in the switch. Will be highest priority (rank 1)" >&2
     printf "%s\n" "    -a EXTRAPKG: Optional; can be repeated. An extra package to install in the tools switch" >&2
 }
 
@@ -47,8 +46,7 @@ OPAMHOME=
 FLAVOR=CI
 DKMLPLATFORM=
 EXTRAPKGS=
-EXTRAREPO=
-while getopts ":hd:u:o:p:v:f:r:a:" opt; do
+while getopts ":hd:u:o:p:v:f:a:" opt; do
     case ${opt} in
         h )
             usage
@@ -81,7 +79,6 @@ while getopts ":hd:u:o:p:v:f:r:a:" opt; do
                     exit 1
             esac
         ;;
-        r ) EXTRAREPO=$OPTARG ;;
         a )
             if [ -n "$EXTRAPKGS" ]; then
                 EXTRAPKGS="$EXTRAPKGS "
@@ -130,7 +127,7 @@ autodetect_cpus
 autodetect_posix_shell
 
 # Just the OCaml compiler
-log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM" -r "$EXTRAREPO"
+log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 
 # Flavor packages
 {

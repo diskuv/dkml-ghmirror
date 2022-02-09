@@ -145,7 +145,9 @@ usage() {
     printf "%s\n" "       in the switch. Since the PATH is affected the EXTRAPATH must be for the host ABI" >&2
     printf "%s\n" "    -e NAME=VAR or -e NAME+=VAR: Optional; can be repeated. Environment variables that will be available" >&2
     printf "%s\n" "       to all users of and packages in the switch" >&2
-    printf "%s\n" "    -r EXTRAREPO: Optional. Opam repository to use in the switch. Will be highest priority (rank 1)" >&2
+    printf "%s\n" "    -r NAME=EXTRAREPO: Optional; may be repeated. Opam repository to use in the switch. Will be higher priority" >&2
+    printf "%s\n" "       than the implicit repositories like the default opam.ocaml.org repository. First repository listed on command" >&2
+    printf "%s\n" "       line will be highest priority of the extra repositories." >&2
     printf "%s\n" "Post Create Switch Hook:" >&2
     printf "%s\n" "    If (-d STATEDIR) is specified, and STATEDIR/buildconfig/opam/hook-switch-postcreate.sh exists," >&2
     printf "%s\n" "    then the Opam commands in hook-switch-postcreate.sh will be executed." >&2
@@ -183,7 +185,7 @@ OCAMLVERSION_OR_HOME=${OCAML_DEFAULT_VERSION}
 OPAMHOME=
 DKMLPLATFORM=
 EXTRAPATH=
-EXTRAREPO=
+EXTRAREPOCMDS=
 while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
     case ${opt} in
         h )
@@ -221,7 +223,12 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:" opt; do
         o ) OPAMHOME=$OPTARG ;;
         c ) EXTRAPATH=$OPTARG ;;
         e ) add_do_setenv_option "$OPTARG" ;;
-        r ) EXTRAREPO=$OPTARG ;;
+        r )
+            if [ -n "$EXTRAREPOCMDS" ]; then
+                EXTRAREPOCMDS="$EXTRAREPOCMDS; "
+            fi
+            EXTRAREPOCMDS="${EXTRAREPOCMDS}add_extra_repo '${OPTARG}'"
+        ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -488,35 +495,35 @@ printf "%s\n" "  --jobs=$NUMCPUS \\" >> "$WORK"/switchcreateargs.sh
 printf "%s\n" "  --no-install \\" >> "$WORK"/switchcreateargs.sh
 
 # Add the extra repository, if any
-REPOSPREFIX=
-EXTRAREPONAME=
-if [ -n "$EXTRAREPO" ]; then
-    # Make a pretty name for the extra repository
-    #   Ex. git+https://gitlab.com/diskuv/dksdk-opam-repository#main -> dksdk
-    EXTRAREPONAME=$(printf "%s" "$EXTRAREPO" | $DKMLSYS_SED 's@#.*@@; s@.*/@@; s@-opam-repository@@')
-    #   Do not name clash with the repositories we ordinarily add
-    case "$EXTRAREPONAME" in
-        diskuv*) EXTRAREPONAME=diskuv-extra ;;
-        fdopen*) EXTRAREPONAME=fdopen-extra ;;
-    esac
-    REPOSPREFIX="$EXTRAREPONAME,"
+FIRST_REPOS=
+EXTRAREPONAMES=
+add_extra_repo() {
+    add_extra_repo_ARG=$1
+    shift
+    add_extra_repo_NAME=$(printf "%s" "$add_extra_repo_ARG" | $DKMLSYS_SED 's@=.*@@')
+    add_extra_repo_REPO=$(printf "%s" "$add_extra_repo_ARG" | $DKMLSYS_SED 's@^[^=]*=@@')
+    EXTRAREPONAMES="$EXTRAREPONAMES $add_extra_repo_NAME"
+    FIRST_REPOS="${FIRST_REPOS}$add_extra_repo_NAME,"
     # Add it
-    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$EXTRAREPONAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$EXTRAREPONAME.tar.gz" ]; then
+    if [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$add_extra_repo_NAME" ] && [ ! -e "$OPAMROOTDIR_BUILDHOST/repo/$add_extra_repo_NAME.tar.gz" ]; then
         {
             cat "$WORK"/nonswitchexec.sh
             # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
-            case "$EXTRAREPO" in
+            case "$add_extra_repo_REPO" in
                 /* | ?:* | file://) # /a/b/c or C:\Windows or file://
-                    printf "  repository add %s '%s' --yes --dont-select --kind local --rank=1" "$EXTRAREPONAME" "$EXTRAREPO"
+                    printf "  repository add %s '%s' --yes --dont-select --kind local" "$add_extra_repo_NAME" "$add_extra_repo_REPO"
                     ;;
                 *)
-                    printf "  repository add %s '%s' --yes --dont-select --rank=1" "$EXTRAREPONAME" "$EXTRAREPO"
+                    printf "  repository add %s '%s' --yes --dont-select" "$add_extra_repo_NAME" "$add_extra_repo_REPO"
                     ;;
             esac
             if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
         } > "$WORK"/repoadd.sh
         log_shell "$WORK"/repoadd.sh
     fi
+}
+if [ -n "$EXTRAREPOCMDS" ]; then
+    eval "$EXTRAREPOCMDS"
 fi
 
 if is_unixy_windows_build_machine; then
@@ -540,11 +547,11 @@ if is_unixy_windows_build_machine; then
         log_shell "$WORK"/repoadd.sh
     fi
 
-    printf "%s\n" "  $EXTRAREPONAME diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
-    printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" "\\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  $EXTRAREPONAMES diskuv-$dkml_root_version fdopen-mingw-$dkml_root_version-$OCAMLVERSION default \\" > "$WORK"/repos-choice.lst
+    printf "  --repos='%s%s' %s\n" "$FIRST_REPOS" "diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version-$OCAMLVERSION,default" "\\" >> "$WORK"/switchcreateargs.sh
 else
-    printf "%s\n" "  $EXTRAREPONAME diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
-    printf "  --repos='%s%s' %s\n" "$REPOSPREFIX" "diskuv-$dkml_root_version,default" "\\" >> "$WORK"/switchcreateargs.sh
+    printf "%s\n" "  $EXTRAREPONAMES diskuv-$dkml_root_version default \\" > "$WORK"/repos-choice.lst
+    printf "  --repos='%s%s' %s\n" "$FIRST_REPOS" "diskuv-$dkml_root_version,default" "\\" >> "$WORK"/switchcreateargs.sh
 fi
 
 if [ "$BUILD_OCAML_BASE" = ON ]; then
@@ -600,8 +607,13 @@ else
         UPGRADE_REPO=ON
     elif is_unixy_windows_build_machine && awk -v N="fdopen-mingw-$dkml_root_version-$OCAMLVERSION" '$1==N {exit 1}' "$WORK"/list; then
         UPGRADE_REPO=ON
-    elif [ -n "$EXTRAREPONAME" ] && awk -v N="$EXTRAREPONAME" '$1==N {exit 1}' "$WORK"/list; then
-        UPGRADE_REPO=ON
+    elif [ -n "$EXTRAREPONAMES" ]; then
+        printf "%s" "$EXTRAREPONAMES" | $DKMLSYS_TR ' ' '\n' > "$WORK"/extrarepos
+        while IFS= read -r _reponame; do
+            if awk -v N="$_reponame" '$1==N {exit 1}' "$WORK"/list; then
+                UPGRADE_REPO=ON
+            fi
+        done < "$WORK"/extrarepos
     fi
     if [ "$UPGRADE_REPO" = ON ]; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
