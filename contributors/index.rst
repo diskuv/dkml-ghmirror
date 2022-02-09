@@ -41,7 +41,7 @@ that OCaml provides (the sales pitch!), and a good summary of OCaml:
     supported by an active community, and has a rich set of libraries and development tools.
 
 Then we recommend reading *Part 1* of the free online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html>`_. It will guide you through the language and
+`Real World OCaml`_. It will guide you through the language and
 explore each of OCaml's major features. However Windows users will not be able to run the book's code. Instead
 we suggest you install *Diskuv OCaml* (discussed next section) and then follow along in our :ref:`BeyondBasics`
 section.
@@ -87,7 +87,7 @@ synchronize folders between different operating systems (pretty cool!) was devel
 macOS, Linux and Windows for decades. Yet the
 `defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
 was deprecated in 2021. The online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html>`_ solved much of the tribal knowledge problem but you will
+`Real World OCaml`_ solved much of the tribal knowledge problem but you will
 likely run into some roadblocks. Several companies and groups have filled the void
 (Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
 
@@ -286,3 +286,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _Real World OCaml: https://dev.realworldocaml.org/index.html
