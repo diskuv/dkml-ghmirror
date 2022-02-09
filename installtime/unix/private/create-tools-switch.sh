@@ -80,10 +80,10 @@ while getopts ":hd:u:o:p:v:f:a:" opt; do
             esac
         ;;
         a )
-            if [ -n "$EXTRAPKG" ]; then
-                EXTRAPKGS="$EXTRAPKG "
+            if [ -n "$EXTRAPKGS" ]; then
+                EXTRAPKGS="$EXTRAPKGS "
             fi
-            EXTRAPKGS="$EXTRAPKG $OPTARG"
+            EXTRAPKGS="$EXTRAPKGS $OPTARG"
         ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
