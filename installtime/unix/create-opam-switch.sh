@@ -143,8 +143,10 @@ usage() {
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
     printf "%s\n" "    -c EXTRAPATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
     printf "%s\n" "       in the switch. Since the PATH is affected the EXTRAPATH must be for the host ABI" >&2
-    printf "%s\n" "    -e NAME=VAR or -e NAME+=VAR: Optional; can be repeated. Environment variables that will be available" >&2
+    printf "%s\n" "    -e NAME=VAL or -e NAME+=VAL: Optional; can be repeated. Environment variables that will be available" >&2
     printf "%s\n" "       to all users of and packages in the switch" >&2
+    printf "%s\n" "    -f NAME=VAL or -f NAME=: Optional; can be repeated. Opam variables that will be available" >&2
+    printf "%s\n" "       to all <package>.opam in the switch. '-f NAME=' will delete the variable if present" >&2
     printf "%s\n" "    -r NAME=EXTRAREPO: Optional; may be repeated. Opam repository to use in the switch. Will be higher priority" >&2
     printf "%s\n" "       than the implicit repositories like the default opam.ocaml.org repository. First repository listed on command" >&2
     printf "%s\n" "       line will be highest priority of the extra repositories." >&2
@@ -162,18 +164,36 @@ usage() {
     printf "%s\n" "      and the format of PREBUILD must be:" >&2
     printf "%s\n" "        <term> { <filter> } ..." >&2
     printf "%s\n" "      The enclosing [ ] array will be added automatically; do not add it yourself." >&2
+    printf "%s\n" "    -k POSTINSTALL: Optional; may be repeated. A post-install-command that Opam will execute before building any" >&2
+    printf "%s\n" "      Opam package. Documentation is at https://opam.ocaml.org/doc/Manual.html#configfield-post-install-commands" >&2
+    printf "%s\n" "      ; see -j PREBUILD for the format." >&2
+    printf "%s\n" "    -l PREREMOVE: Optional; may be repeated. A pre-remove-command that Opam will execute before building any" >&2
+    printf "%s\n" "      Opam package. Documentation is at https://opam.ocaml.org/doc/Manual.html#configfield-pre-remove-commands" >&2
+    printf "%s\n" "      ; see -j PREBUILD for the format." >&2
 }
 
-DO_COMMANDS=
+DO_SETENV_OPTIONS=
 add_do_setenv_option() {
     add_do_setenv_option_CMD=$1
     shift
     add_do_setenv_option_ESCAPED=$(__escape_args_for_shell "$add_do_setenv_option_CMD")
     # newlines are stripped by MSYS2 dash, so use semicolons as separator
-    if [ -z "$DO_COMMANDS" ]; then
-        DO_COMMANDS=$(printf "do_setenv_option %s" "$add_do_setenv_option_ESCAPED")
+    if [ -z "$DO_SETENV_OPTIONS" ]; then
+        DO_SETENV_OPTIONS=$(printf "do_setenv_option %s" "$add_do_setenv_option_ESCAPED")
     else
-        DO_COMMANDS=$(printf "%s ; do_setenv_option %s" "$DO_COMMANDS" "$add_do_setenv_option_ESCAPED")
+        DO_SETENV_OPTIONS=$(printf "%s ; do_setenv_option %s" "$DO_SETENV_OPTIONS" "$add_do_setenv_option_ESCAPED")
+    fi
+}
+DO_VARS=
+add_do_var() {
+    add_do_var_CMD=$1
+    shift
+    add_do_var_ESCAPED=$(__escape_args_for_shell "$add_do_var_CMD")
+    # newlines are stripped by MSYS2 dash, so use semicolons as separator
+    if [ -z "$DO_VARS" ]; then
+        DO_VARS=$(printf "do_var %s" "$add_do_var_ESCAPED")
+    else
+        DO_VARS=$(printf "%s ; do_var %s" "$DO_VARS" "$add_do_var_ESCAPED")
     fi
 }
 
@@ -189,7 +209,9 @@ EXTRAPATH=
 EXTRAREPOCMDS=
 HOOK_POSTCREATE=
 PREBUILDS=
-while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:j:" opt; do
+POSTINSTALLS=
+PREREMOVES=
+while getopts ":hb:p:sd:u:o:t:v:yc:r:e:f:i:j:k:l:" opt; do
     case ${opt} in
         h )
             usage
@@ -226,6 +248,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:j:" opt; do
         o ) OPAMHOME=$OPTARG ;;
         c ) EXTRAPATH=$OPTARG ;;
         e ) add_do_setenv_option "$OPTARG" ;;
+        f ) add_do_var "$OPTARG" ;;
         r )
             if [ -n "$EXTRAREPOCMDS" ]; then
                 EXTRAREPOCMDS="$EXTRAREPOCMDS; "
@@ -234,6 +257,8 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:j:" opt; do
         ;;
         i ) HOOK_POSTCREATE=$OPTARG ;;
         j ) PREBUILDS="${PREBUILDS} [$OPTARG]" ;;
+        k ) POSTINSTALLS="${POSTINSTALLS} [$OPTARG]" ;;
+        l ) PREREMOVES="${PREREMOVES} [$OPTARG]" ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -693,8 +718,55 @@ if [ -n "$SETPATH" ]; then
     add_do_setenv_option "PATH+=$SETPATH_WU"
 fi
 
-# Run the setenv commands
-if [ -n "$DO_COMMANDS" ]; then
+# Run the `var` commands
+if [ -n "$DO_VARS" ]; then
+    {
+        printf "#!%s\n" "$DKML_POSIX_SHELL"
+        printf ". '%s'\n" "$DKMLDIR"/vendor/dkml-runtime-common/unix/crossplatform-functions.sh
+
+        # [do_setenv_option 'NAME=VALUE'] and [do_setenv_option 'NAME+=VALUE'] remove all
+        # matching entries from the Opam setenv options, and then add it to the
+        # Opam setenv options.
+        printf "do_var() {\n"
+        printf "  do_var_ARG=\$1\n"
+        printf "  shift\n"
+        # shellcheck disable=SC2016
+        printf "  do_var_NAME=\$(%s)\n" \
+            'printf "%s" "$do_var_ARG" | PATH=/usr/bin:/bin sed "s/=.*//"'
+        # shellcheck disable=SC2016
+        printf "  %s > '%s'/do_var_value.%s.txt\n" \
+            'printf "%s" "$do_var_ARG"' \
+            "$WORK" \
+            '$$'
+        printf "  do_var_ARG_CHKSUM=\$(sha256compute '%s'/do_var_value.%s.txt)\n" \
+            "$WORK" \
+            '$$'
+        printf "  if [ -e '%s'/setenv-\${do_var_NAME}.\${do_var_ARG_CHKSUM}.once ]; then return 0; fi\n" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
+        # shellcheck disable=SC2016
+        printf "  do_var_VALUE=\$(%s)\n" \
+            'printf "%s" "$do_var_ARG" | PATH=/usr/bin:/bin sed "s/^[^=]*=//"'
+        # VALUE, since it is an OCaml value, will have escaped backslashes and quotes
+        printf "  do_var_VALUE=\$(escape_arg_as_ocaml_string \"\$do_var_VALUE\")\n"
+
+        #   Example: var ${do_var_NAME}=\"${do_var_VALUE}\""
+        printf "  ";  cat "$WORK"/nonswitchcall.sh
+        printf "    var \${do_var_NAME}=\\\"\${do_var_VALUE}\\\" "
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi; printf "\n"
+
+        #       Done. Don't repeat anymore
+        printf "  touch '%s'/setenv-\${do_var_NAME}.\${do_var_ARG_CHKSUM}.once\n" \
+            "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR"
+
+        printf "}\n"
+
+        printf "%s" "$DO_VARS" ; printf "\n"
+    } > "$WORK"/setvars.sh
+    log_shell "$WORK"/setvars.sh
+fi
+
+# Run the `option setenv` commands
+if [ -n "$DO_SETENV_OPTIONS" ]; then
     {
         printf "#!%s\n" "$DKML_POSIX_SHELL"
         printf ". '%s'\n" "$DKMLDIR"/vendor/dkml-runtime-common/unix/crossplatform-functions.sh
@@ -780,8 +852,7 @@ if [ -n "$DO_COMMANDS" ]; then
 
         printf "}\n"
 
-        printf "%s" "$DO_COMMANDS"
-        printf "\n"
+        printf "%s" "$DO_SETENV_OPTIONS" ; printf "\n"
 
         # Since Opam 2.1.0 (and perhaps later) do not rewrite the <switch>/environment
         # file with a `setenv+=`, we force a rebuild by removing the environment and
@@ -826,21 +897,29 @@ if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$WRAP_COMMANDS_CACHE_KEY"
 fi
 
-printf "%s|%s" "$dkml_root_version" "$PREBUILDS" > "$WORK"/prebuild.key
-PREBUILD_COMMANDS_CACHE_KEY=prebuild-commands."$dkml_root_version".$(sha256compute "$WORK"/prebuild.key)
-if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$PREBUILD_COMMANDS_CACHE_KEY" ]; then
-    PREBUILDS_ESCAPED=$(escape_args_for_shell "$PREBUILDS")
-    {
-        cat "$WORK"/nonswitchexec.sh
-        printf "  option pre-build-commands=[%s] " "$PREBUILDS_ESCAPED"
-        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
-    } > "$WORK"/wbc.sh
-    log_shell "$WORK"/wbc.sh
+option_command() {
+    option_command_OPTION=$1
+    shift
+    option_command_VALUE=$1
+    shift
+    printf "%s|%s" "$dkml_root_version" "$option_command_VALUE" > "$WORK"/"$option_command_OPTION".key
+    option_command_CACHE_KEY="$option_command_OPTION"."$dkml_root_version".$(sha256compute "$WORK"/"$option_command_OPTION".key)
+    if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$option_command_CACHE_KEY" ]; then
+        option_command_ESCAPED=$(escape_args_for_shell "$option_command_VALUE")
+        {
+            cat "$WORK"/nonswitchexec.sh
+            printf "  option %s=[%s] " "$option_command_OPTION" "$option_command_ESCAPED"
+            if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+        } > "$WORK"/option-"$option_command_OPTION".sh
+        log_shell "$WORK"/option-"$option_command_OPTION".sh
 
-    # Done. Don't repeat anymore
-    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$PREBUILD_COMMANDS_CACHE_KEY"
-fi
-
+        # Done. Don't repeat anymore
+        touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$option_command_CACHE_KEY"
+    fi
+}
+option_command pre-build-commands "$PREBUILDS"
+option_command post-install-commands "$POSTINSTALLS"
+option_command pre-remove-commands "$PREREMOVES"
 
 # END opam option
 # --------------------------------
