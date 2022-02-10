@@ -154,9 +154,14 @@ usage() {
     printf "%s\n" "       created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
     printf "%s\n" "       The Opam commands should use \$OPAMEXE as the path to the Opam executable." >&2
     printf "%s\n" "          Example: \$OPAMEXE pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
-    printf "%s\n" "      hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
-    printf "%s\n" "        *.sh text eol=lf" >&2
-    printf "%s\n" "      or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
+    printf "%s\n" "       hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
+    printf "%s\n" "         *.sh text eol=lf" >&2
+    printf "%s\n" "       or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
+    printf "%s\n" "    -j PREBUILD: Optional; may be repeated. A pre-build-command that Opam will execute before building any" >&2
+    printf "%s\n" "      Opam package. Documentation is at https://opam.ocaml.org/doc/Manual.html#configfield-pre-build-commands" >&2
+    printf "%s\n" "      and the format of PREBUILD must be:" >&2
+    printf "%s\n" "        <term> { <filter> } ..." >&2
+    printf "%s\n" "      The enclosing [ ] array will be added automatically; do not add it yourself." >&2
 }
 
 DO_COMMANDS=
@@ -183,7 +188,8 @@ DKMLPLATFORM=
 EXTRAPATH=
 EXTRAREPOCMDS=
 HOOK_POSTCREATE=
-while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:" opt; do
+PREBUILDS=
+while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:j:" opt; do
     case ${opt} in
         h )
             usage
@@ -227,6 +233,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:i:" opt; do
             EXTRAREPOCMDS="${EXTRAREPOCMDS}add_extra_repo '${OPTARG}'"
         ;;
         i ) HOOK_POSTCREATE=$OPTARG ;;
+        j ) PREBUILDS="${PREBUILDS} [$OPTARG]" ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -818,6 +825,22 @@ if [ "$DISKUV_TOOLS_SWITCH" = OFF ] && \
     # Done. Don't repeat anymore
     touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$WRAP_COMMANDS_CACHE_KEY"
 fi
+
+printf "%s|%s" "$dkml_root_version" "$PREBUILDS" > "$WORK"/prebuild.key
+PREBUILD_COMMANDS_CACHE_KEY=prebuild-commands."$dkml_root_version".$(sha256compute "$WORK"/prebuild.key)
+if [ ! -e "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$PREBUILD_COMMANDS_CACHE_KEY" ]; then
+    PREBUILDS_ESCAPED=$(escape_args_for_shell "$PREBUILDS")
+    {
+        cat "$WORK"/nonswitchexec.sh
+        printf "  option pre-build-commands=[%s] " "$PREBUILDS_ESCAPED"
+        if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s" " --debug-level 2"; fi
+    } > "$WORK"/wbc.sh
+    log_shell "$WORK"/wbc.sh
+
+    # Done. Don't repeat anymore
+    touch "$OPAMSWITCHFINALDIR_BUILDHOST/$OPAM_CACHE_SUBDIR/$PREBUILD_COMMANDS_CACHE_KEY"
+fi
+
 
 # END opam option
 # --------------------------------
