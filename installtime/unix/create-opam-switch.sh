@@ -170,6 +170,8 @@ usage() {
     printf "%s\n" "    -l PREREMOVE: Optional; may be repeated. A pre-remove-command that Opam will execute before building any" >&2
     printf "%s\n" "      Opam package. Documentation is at https://opam.ocaml.org/doc/Manual.html#configfield-pre-remove-commands" >&2
     printf "%s\n" "      ; see -j PREBUILD for the format." >&2
+    printf "%s\n" "    -m EXTRAINVARIANT: Optional; may be repeated. Opam package or package.version that will be added to the switch" >&2
+    printf "%s\n" "      invariant" >&2
 }
 
 DO_SETENV_OPTIONS=
@@ -211,7 +213,8 @@ HOOK_POSTCREATE=
 PREBUILDS=
 POSTINSTALLS=
 PREREMOVES=
-while getopts ":hb:p:sd:u:o:t:v:yc:r:e:f:i:j:k:l:" opt; do
+EXTRAINVARIANTS=
+while getopts ":hb:p:sd:u:o:t:v:yc:r:e:f:i:j:k:l:m:" opt; do
     case ${opt} in
         h )
             usage
@@ -259,6 +262,7 @@ while getopts ":hb:p:sd:u:o:t:v:yc:r:e:f:i:j:k:l:" opt; do
         j ) PREBUILDS="${PREBUILDS} [$OPTARG]" ;;
         k ) POSTINSTALLS="${POSTINSTALLS} [$OPTARG]" ;;
         l ) PREREMOVES="${PREREMOVES} [$OPTARG]" ;;
+        m ) EXTRAINVARIANTS="$EXTRAINVARIANTS,$OPTARG" ;;
         \? )
             printf "%s\n" "This is not an option: -$OPTARG" >&2
             usage
@@ -586,13 +590,19 @@ fi
 
 if [ "$BUILD_OCAML_BASE" = ON ]; then
     # ex. '"ocaml-variants" {= "4.12.0+options"}'
-    printf "%s\n" "  --packages='ocaml-variants.$OCAMLVARIANT$OCAML_OPTIONS' \\" >> "$WORK"/switchcreateargs.sh
-    printf '%socaml-variants.%s%s' "'" "$OCAMLVARIANT" "'" >> "$WORK"/invariant_for_base.formula.head.txt
+    invariants=$(printf "ocaml-variants.%s%s\n" \
+        "$OCAMLVARIANT$OCAML_OPTIONS" \
+        "$EXTRAINVARIANTS"
+    )
 else
     # ex. '"ocaml-system" {= "4.12.1"}'
-    printf "%s\n" "  --packages='ocaml-system.$OCAMLVERSION' \\" >> "$WORK"/switchcreateargs.sh
-    printf '%socaml-system.%s%s' "'" "$OCAMLVERSION" "'" >> "$WORK"/invariant_for_base.formula.head.txt
+    invariants=$(printf "ocaml-system.%s%s\n" \
+        "$OCAMLVERSION" \
+        "$EXTRAINVARIANTS"
+    )
 fi
+printf "  --packages='%s' %s\n" "$invariants" "\\" >> "$WORK"/switchcreateargs.sh
+printf "'%s'" "$invariants" >> "$WORK"/invariant_for_base.formula.head.txt
 
 if [ "${DKML_BUILD_TRACE:-OFF}" = ON ]; then printf "%s\n" "  --debug-level 2 \\" >> "$WORK"/switchcreateargs.sh; fi
 
@@ -1051,7 +1061,7 @@ if [ "$NEEDS_INVARIANT" = ON ]; then
             cat "$WORK"/invariant_for_base.formula.head.txt
             cat "$WORK"/invariant_for_base.formula.tail.txt
         else
-            printf "ocaml-system.%s" "$OCAMLVERSION"
+            printf "'ocaml-system.%s%s'" "$OCAMLVERSION" "$EXTRAINVARIANTS"
         fi
     } > "$WORK"/set-invariant.sh
     log_shell "$WORK"/set-invariant.sh
