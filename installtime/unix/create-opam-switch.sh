@@ -1035,7 +1035,7 @@ if [ -n "$HOOK_POSTCREATE" ]; then
         fi
         {
             cat "$WORK"/nonswitchexec.sh
-            printf "  exec -- '%s' 'OPAMEXE=%s' '%s' '%s'" "$DKMLSYS_ENV_MIXED" "$OPAMEXE" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
+            printf "  exec -- '%s' 'OPAMEXE=%s' '__INTERNAL__DKMLDIR=%s' '%s' '%s'" "$DKMLSYS_ENV_MIXED" "$OPAMEXE" "$DKMLDIR" "$DKML_HOST_POSIX_SHELL" "$HOOK_POSTCREATE"
         } > "$WORK"/postcreate.sh
         log_shell "$WORK"/postcreate.sh
 
