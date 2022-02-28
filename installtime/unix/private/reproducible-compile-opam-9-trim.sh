@@ -21,7 +21,7 @@
 #   build files.
 #
 ######################################
-# reproducible-compile-windows-opam-9-trim.sh -d DKMLDIR -t TARGETDIR
+# reproducible-compile-opam-9-trim.sh -d DKMLDIR -t TARGETDIR
 #
 # Remove intermediate files from reproducible target directory
 

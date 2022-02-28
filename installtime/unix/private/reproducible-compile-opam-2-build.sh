@@ -21,7 +21,7 @@
 #   build files.
 #
 ######################################
-# reproducible-compile-windows-opam-2-build.sh -d DKMLDIR -t TARGETDIR
+# reproducible-compile-opam-2-build.sh -d DKMLDIR -t TARGETDIR
 #
 # Sets up the source code for a reproducible build
 
