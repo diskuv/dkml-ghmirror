@@ -91,9 +91,7 @@ let packages_fdopen_to_remove =
     *)
     "ocamlfind";
     "ptime";
-
     "ocp-indent";
-
     "bigstringaf";
     "core_kernel";
     "ctypes-foreign";
@@ -119,7 +117,6 @@ let packages_fdopen_to_remove =
     "sha";
     "sexplib";
     "cmdliner";
-
     "jingoo";
     "lsp";
     "ocaml-lsp-server";
@@ -132,7 +129,6 @@ let packages_fdopen_to_remove =
     "base";
     "dune";
     "utop";
-
     "ppxlib";
     "alcotest";
     "alcotest-async";
@@ -300,7 +296,12 @@ let find_latest_package_version pkg pkg_loc =
   *)
   let is_jane_street_pkg opam_loc =
     let opam_contents = read_whole_file opam_loc in
-    try Str.(search_forward (regexp_string "Jane Street") opam_contents 0) >= 0
+    try
+      Str.(
+        search_forward
+          (regexp_string "homepage: \"https://github.com/janestreet/")
+          opam_contents 0)
+      >= 0
     with Not_found -> false
   in
   let plausible_ver_plus_semver_pairs =
