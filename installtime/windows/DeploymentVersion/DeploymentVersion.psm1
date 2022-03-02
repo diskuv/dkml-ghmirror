@@ -58,6 +58,18 @@ $DV_MSYS2Packages = @(
     "procps", # provides `pgrep`
 
     # ----
+    # Needed by OCaml package `conf-pkg-config`
+    # ----
+
+    #   We do not use the MSYS2 subsystem because that
+    #   could produce binaries that are linked to msys-2.0.dll.
+    #   But it also means that pkg-config is opt-in since
+    #   /mingw64 has to be added to the PATH ... that is perfectly
+    #   fine. Note: DKSDK bundles its own pkg-config (actually pkgconf)
+    #   compiled from vcpkg.
+    "mingw-w64-x86_64-pkg-config",
+
+    # ----
     # Needed for our own sanity!
     # ----
 
