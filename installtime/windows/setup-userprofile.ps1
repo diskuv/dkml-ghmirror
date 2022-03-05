@@ -1163,6 +1163,14 @@ try {
 `@SET DiskuvOCamlDeploymentId=$DeploymentId
 `@SET DiskuvOCamlVersion=$dkml_root_version
 "@
+    $CmakeVarsContents = @"
+`set(DiskuvOCamlVarsVersion 2)
+`cmake_path(SET DiskuvOCamlHome NORMALIZE [=====[$ProgramPath]=====])
+`cmake_path(CONVERT [=====[$ProgramPath\usr\bin;$ProgramPath\bin]=====] TO_CMAKE_PATH_LIST DiskuvOCamlBinaryPaths)
+`cmake_path(SET DiskuvOCamlMSYS2Dir NORMALIZE [=====[$MSYS2Dir]=====])
+`set(DiskuvOCamlDeploymentId [=====[$DeploymentId]=====])
+`set(DiskuvOCamlVersion [=====[$dkml_root_version]=====])
+"@
 
     $ProgramPathDoubleSlashed = $ProgramPath.Replace('\', '\\')
     $SexpVarsContents = @"
@@ -1584,6 +1592,7 @@ try {
     # we write to standard Windows encoding `Unicode` (UTF-16 LE with BOM) and then use dos2unix to convert it to UTF-8 with no BOM.
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.sh" -Value $UnixVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.cmd" -Value $CmdVarsContents -Encoding Unicode
+    Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.cmake" -Value $CmakeVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.utf16le-bom.sexp" -Value $SexpVarsContents -Encoding Unicode
     Set-Content -Path "$ProgramParentPath\dkmlvars.ps1" -Value $PowershellVarsContents -Encoding Unicode
 
@@ -1592,10 +1601,12 @@ try {
             "set -x && " +
             "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh'   '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
             "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd'  '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd' && " +
+            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmake'  '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmake' && " +
             "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' && " +
-            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' && " +
+            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmd' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.cmake' '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sexp' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh'   '$ProgramParentMSYS2AbsPath/dkmlvars.sh' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmd'  '$ProgramParentMSYS2AbsPath/dkmlvars.cmd' && " +
+            "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.cmake'  '$ProgramParentMSYS2AbsPath/dkmlvars.cmake' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sexp' '$ProgramParentMSYS2AbsPath/dkmlvars-v2.sexp'"
         )
 
