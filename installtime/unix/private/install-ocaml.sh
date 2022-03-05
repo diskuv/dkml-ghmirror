@@ -41,15 +41,15 @@ cd "$DKMLDIR"
 # >>>>>>>>>
 
 # Install the source code
-log_trace "$DKMLDIR"/vendor/dkml-component-ocamlcompiler/src/reproducible-compile-ocaml-1-setup.sh \
+log_trace "$DKMLDIR"/vendor/dkml-compiler/src/reproducible-compile-ocaml-1-setup.sh \
     -d "$DKMLDIR" \
     -t "$INSTALLDIR" \
     -v "$GIT_TAG_OR_COMMIT" \
     -e "$DKMLHOSTABI" \
-    -k vendor/dkml-component-ocamlcompiler/src/standard-compiler-env-to-ocaml-configure-env.sh
+    -k vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
 
 # Use reproducible directory created by setup
 cd "$INSTALLDIR"
 
 # Build and install OCaml (but no cross-compilers)
-log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-ocaml/vendor/dkml-component-ocamlcompiler/src/reproducible-compile-ocaml-2-build_host-noargs.sh
+log_trace "$SHARE_REPRODUCIBLE_BUILD_RELPATH"/100-compile-ocaml/vendor/dkml-compiler/src/reproducible-compile-ocaml-2-build_host-noargs.sh
