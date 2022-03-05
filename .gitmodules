@@ -1,9 +1,6 @@
 [submodule "vendor/dkml-runtime-common"]
 	path = vendor/dkml-runtime-common
 	url = https://github.com/diskuv/dkml-runtime-common.git
-[submodule "vendor/dkml-component-ocamlcompiler"]
-	path = vendor/dkml-component-ocamlcompiler
-	url = https://github.com/diskuv/dkml-component-ocamlcompiler.git
 [submodule "vendor/diskuv-opam-repository"]
 	path = vendor/diskuv-opam-repository
 	url = https://github.com/diskuv/diskuv-opam-repository.git
