@@ -74,7 +74,7 @@ let packages_fdopen_to_remove =
   [
     (* The first section is where we don't care what pkg version is used, but we know we don't want fdopen's version:
        * depext is unnecessary as of Opam 2.1
-       * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.1 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
+       * ocaml-compiler-libs,v0.12.4 and jst-config,v0.14.1 and dune-build-info,2.9.3 are part of the good set, but not part of the fdopen repository snapshot. So we remove it in
          reproducible-fetch-ocaml-opam-repo-9-trim.sh so the default Opam repository is used.
     *)
     "depext";

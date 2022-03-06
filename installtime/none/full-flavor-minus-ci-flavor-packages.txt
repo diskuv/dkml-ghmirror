@@ -4,12 +4,12 @@
 # 3. [pkgvers_fdopen_compiler_agnostic]                                 {package defn is in fdopen repo}
 
 # For dkml_templatizer; may be used for creating local projects as well.
-jingoo.1.4.3
+jingoo.1.4.4
 
 # lsp, ocaml-lsp-server and jsonrpc are all vended from the ocaml-lsp project
-lsp.1.9.0
-ocaml-lsp-server.1.9.0
-jsonrpc.1.9.0
+lsp.1.10.3
+ocaml-lsp-server.1.10.3
+jsonrpc.1.10.3
 
 # ocamlformat needs to be 0.18.* or 0.19.* because of https://github.com/ocaml/ocaml-lsp/blob/650fc5c667561f487e6fc1338a531f059e41b713/ocaml-lsp-server.opam#L31
 ocamlformat.0.19.0
@@ -22,4 +22,4 @@ stdio.v0.14.0
 base.v0.14.2
 
 ocp-indent.1.8.2-windowssupport
-utop.2.8.0
+utop.2.9.0

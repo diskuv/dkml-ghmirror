@@ -16,7 +16,7 @@ set -euf
 # 3. Any packages that don't belong in #1 and #2, in alphabetical order
 PINNED_PACKAGES_DKML_PATCHES="
     ocamlfind,1.9.1
-    ptime,0.8.6-msvcsupport
+    ptime,0.8.6
 
     ocp-indent,1.8.2-windowssupport
 
@@ -25,7 +25,7 @@ PINNED_PACKAGES_DKML_PATCHES="
     ctypes-foreign,0.19.2-windowssupport-r4
     ctypes,0.19.2-windowssupport-r4
     digestif,1.0.1
-    dune-configurator,2.9.1
+    dune-configurator,2.9.3
     feather,0.3.0
     mccs,1.1+13
     mirage-crypto-ec,0.10.4-windowssupport
@@ -59,24 +59,24 @@ PINNED_PACKAGES_DKML_PATCHES="
 # 3. Any packages that don't belong in #1 and #2, in alphabetical order
 PINNED_PACKAGES_OPAM="
     bos,0.2.1
-    fmt,0.8.10
+    fmt,0.9.0
     rresult,0.7.0
-    sha,1.15.1
+    sha,1.15.2
     sexplib,v0.14.0
     cmdliner,1.0.4
 
-    jingoo,1.4.3
-    lsp,1.9.0
-    ocaml-lsp-server,1.9.0
-    jsonrpc,1.9.0
+    jingoo,1.4.4
+    lsp,1.10.3
+    ocaml-lsp-server,1.10.3
+    jsonrpc,1.10.3
     ocamlformat,0.19.0
     ocamlformat-rpc,0.19.0
     ocamlformat-rpc-lib,0.19.0
     odoc-parser,0.9.0
     stdio,v0.14.0
     base,v0.14.2
-    dune,2.9.1
-    utop,2.8.0
+    dune,2.9.3
+    utop,2.9.0
 
     ppxlib,0.22.0
     alcotest,1.4.0
