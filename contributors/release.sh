@@ -8,8 +8,8 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
 # Which vendor/<dir> should be version synced with this
-SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository dkml-component-ocamlcompiler)
-SYNCED_RELEASE_VENDORS=(diskuv-opam-repository dkml-component-ocamlcompiler)
+SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository)
+SYNCED_RELEASE_VENDORS=(diskuv-opam-repository)
 
 # ------------------
 # BEGIN Command line processing
