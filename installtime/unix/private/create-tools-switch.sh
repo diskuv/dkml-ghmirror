@@ -126,6 +126,20 @@ autodetect_cpus
 # Set DKML_POSIX_SHELL
 autodetect_posix_shell
 
+# Get OCaml version
+get_ocamlver() {
+    case "$OCAMLVERSION_OR_HOME" in
+        /* | ?:*) # /a/b/c or C:\Windows
+            validate_and_explore_ocamlhome "$OCAMLVERSION_OR_HOME"
+            # the `awk ...` is dos2unix equivalent
+            OCAMLVERSION=$("$DKML_OCAMLHOME_UNIX/$DKML_OCAMLHOME_BINDIR_UNIX/ocamlc" -version | awk '{ sub(/\r$/,""); print }')
+            ;;
+        *)
+            OCAMLVERSION="$OCAMLVERSION_OR_HOME"
+            ;;
+    esac
+}
+
 # Just the OCaml compiler
 log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERSION_OR_HOME" -o "$OPAMHOME" -b Release -d "$STATEDIR" -u "$USERMODE" -p "$DKMLPLATFORM"
 
@@ -141,8 +155,10 @@ log_trace "$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -s -v "$OCAMLVERS
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt | tr -d '\r'
             ;;
         Full)
+            get_ocamlver
             awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/ci-flavor-packages.txt | tr -d '\r'
-            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/full-flavor-minus-ci-flavor-packages.txt | tr -d '\r'
+            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/full-flavor-versionagnostic-minus-ci-flavor-packages.txt | tr -d '\r'
+            awk 'NF>0 && $1 !~ "#.*" {printf " %s", $1}' "$DKMLDIR"/installtime/none/full-flavor-"$OCAMLVERSION"-minus-ci-flavor-packages.txt | tr -d '\r'
             ;;
         *) printf "%s\n" "FATAL: Unsupported flavor $FLAVOR" >&2; exit 107
     esac

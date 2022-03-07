@@ -312,7 +312,10 @@ $CiFlavorToplevels = @(
     # switch that may be deleted later).
     "topfind"
 )
-$FullFlavorPackagesExtra = Get-Content -Path $DkmlPath\installtime\none\full-flavor-minus-ci-flavor-packages.txt | Where-Object {
+$FullFlavorPackagesExtra = Get-Content -Path @(
+    "$DkmlPath\installtime\none\full-flavor-versionagnostic-minus-ci-flavor-packages.txt"
+    "$DkmlPath\installtime\none\full-flavor-$OCamlLangVersion-minus-ci-flavor-packages.txt"
+) | Where-Object {
     # Remove blank lines and comments
     "" -ne $_.Trim() -and -not $_.StartsWith("#")
 } | ForEach-Object { $_.Trim() }

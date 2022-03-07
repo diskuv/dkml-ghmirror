@@ -57,7 +57,7 @@ PINNED_PACKAGES_DKML_PATCHES="
 # 1. Subset of packages from ci-flavor-packages.txt, in `.txt` order
 # 2. Subset of packages from full-flavor-minus-ci-flavor-packages.txt, in `.txt` order
 # 3. Any packages that don't belong in #1 and #2, in alphabetical order
-PINNED_PACKAGES_OPAM="
+PINNED_PACKAGES_OPAM_VERSIONAGNOSTIC="
     bos,0.2.1
     fmt,0.9.0
     rresult,0.7.0
@@ -66,9 +66,6 @@ PINNED_PACKAGES_OPAM="
     cmdliner,1.0.4
 
     jingoo,1.4.4
-    lsp,1.10.3
-    ocaml-lsp-server,1.10.3
-    jsonrpc,1.10.3
     ocamlformat,0.19.0
     ocamlformat-rpc,0.19.0
     ocamlformat-rpc-lib,0.19.0
@@ -85,6 +82,16 @@ PINNED_PACKAGES_OPAM="
     alcotest-lwt,1.4.0
     alcotest-mirage,1.4.0
     "
+PINNED_PACKAGES_OPAM_4_12_1="
+    lsp,1.9.0
+    ocaml-lsp-server,1.9.0
+    jsonrpc,1.9.0
+"
+PINNED_PACKAGES_OPAM_4_13_1="
+    lsp,1.10.3
+    ocaml-lsp-server,1.10.3
+    jsonrpc,1.10.3
+"
 
 OCAML_DEFAULT_VERSION=4.12.1
 
@@ -360,6 +367,12 @@ case "$OCAMLVERSION_OR_HOME_UNIX" in
         BUILD_OCAML_BASE=ON
         ;;
 esac
+
+# Make PINNED_PACKAGES_OPAM be version agnostic + version specific packages
+OCAMLVERSION_ID=$(printf "%s" "$OCAMLVERSION" | $DKMLSYS_TR . _)
+PINNED_PACKAGES_OPAM_VERSIONSPECIFIC_NAME=$(eval printf "PINNED_PACKAGES_OPAM_%s" "$OCAMLVERSION_ID")
+PINNED_PACKAGES_OPAM_VERSIONSPECIFIC=$(eval echo '$'"$PINNED_PACKAGES_OPAM_VERSIONSPECIFIC_NAME")
+PINNED_PACKAGES_OPAM="$PINNED_PACKAGES_OPAM_VERSIONAGNOSTIC $PINNED_PACKAGES_OPAM_VERSIONSPECIFIC"
 
 # Set OCAML_OPTIONS if we are building the OCaml base. And if so, set
 # TARGET_ variables that can be used to pick an Opam variant (OCAMLVARIANT) later.
