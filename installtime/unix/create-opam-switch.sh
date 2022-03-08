@@ -82,12 +82,12 @@ PINNED_PACKAGES_OPAM_VERSIONAGNOSTIC="
     alcotest-lwt,1.4.0
     alcotest-mirage,1.4.0
     "
-PINNED_PACKAGES_OPAM_4_12_1="
+export PINNED_PACKAGES_OPAM_4_12_1="
     lsp,1.9.0
     ocaml-lsp-server,1.9.0
     jsonrpc,1.9.0
 "
-PINNED_PACKAGES_OPAM_4_13_1="
+export PINNED_PACKAGES_OPAM_4_13_1="
     lsp,1.10.3
     ocaml-lsp-server,1.10.3
     jsonrpc,1.10.3
@@ -149,7 +149,8 @@ usage() {
     printf "%s\n" "    -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe" >&2
     printf "%s\n" "    -y Say yes to all questions (can be overridden with DKML_OPAM_FORCE_INTERACTIVE=ON)" >&2
     printf "%s\n" "    -c EXTRAPATH: Optional. Semicolon separated PATH that should be available to all users of and packages" >&2
-    printf "%s\n" "       in the switch. Since the PATH is affected the EXTRAPATH must be for the host ABI" >&2
+    printf "%s\n" "       in the switch. Since the PATH is affected the EXTRAPATH must be for the host ABI." >&2
+    printf "%s\n" "       Users of with-dkml.exe should also do '-e DKML_3P_PROGRAM_PATH+=<EXTRAPATH>' so that PATH can propagate." >&2
     printf "%s\n" "    -e NAME=VAL or -e NAME+=VAL: Optional; can be repeated. Environment variables that will be available" >&2
     printf "%s\n" "       to all users of and packages in the switch" >&2
     printf "%s\n" "    -f NAME=VAL or -f NAME=: Optional; can be repeated. Opam variables that will be available" >&2
@@ -163,7 +164,7 @@ usage() {
     printf "%s\n" "       created with a minimal OCaml compiler, and after DKML pins and options are set for the switch." >&2
     printf "%s\n" "       The Opam commands should use \$OPAMEXE as the path to the Opam executable." >&2
     printf "%s\n" "          Example: \$OPAMEXE pin add --yes opam-lib 'https://github.com/ocaml/opam.git#1.2'" >&2
-    printf "%s\n" "       hook-switch-postcreate.sh must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
+    printf "%s\n" "       The hook file must use LF (not CRLF) line terminators. In a git project we recommend including" >&2
     printf "%s\n" "         *.sh text eol=lf" >&2
     printf "%s\n" "       or similar in a .gitattributes file so on Windows the file is not autoconverted to CRLF on git checkout." >&2
     printf "%s\n" "    -j PREBUILD: Optional; may be repeated. A pre-build-command that Opam will execute before building any" >&2
