@@ -18,7 +18,7 @@ let path_starts_with entry s =
 let path_ends_with entry s =
   String.is_suffix ~affix:(platform_path_norm s) (platform_path_norm entry)
 
-(** prune_path_of_msys2 ()] removes .../MSYS2/usr/bin from the PATH environment variable *)
+(** [prune_path_of_msys2 ()] removes .../MSYS2/usr/bin from the PATH environment variable *)
 let prune_path_of_msys2 () =
   OS.Env.req_var "PATH" >>= fun path ->
   String.cuts ~empty:false ~sep:";" path
