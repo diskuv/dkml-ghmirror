@@ -52,3 +52,7 @@ in a Dune project you would do:
 .. code-block:: powershell
 
     with-dkml ./add-debug.sh dune build --verbose
+
+Now you can open the ``_build/default`` folder in Visual Studio 2019 or 2022,
+and then **Debug** the executable. You can set breakpoints in the C code
+copied by Dune in the ``_build`` folder.
