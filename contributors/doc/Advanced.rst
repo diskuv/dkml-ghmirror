@@ -7,3 +7,4 @@ Advanced
 
     AdvancedToolchain
     AdvancedInstalls/WindowsAdministrator
+    AdvancedDebugging
