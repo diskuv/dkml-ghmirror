@@ -37,7 +37,14 @@
 ocamlfind.1.9.1
 
 # Dune is needed to compile dkml-findup.exe
+# dune-* must be compatible with Dune
 dune.2.9.3
+dune-action-plugin.2.9.3
+dune-glob.2.9.3
+dune-private-libs.2.9.3
+# (not available in 2.9.3) dune-rpc-lwt.2.9.3
+# (not available in 2.9.3) dune-rpc.2.9.3
+dune-site.2.9.3
 # Bos, sha and sexplib are needed to compile with-dkml.exe
 # Bos needs rresult and fmt
 bos.0.2.1
@@ -48,6 +55,8 @@ sexplib.v0.14.0
 # Cmdliner and crunch are needed to compile opam-dkml.exe
 # crunch needs ptime
 # ptime >= 0.8.6 so can work with MSVC compiler
+# uuidm < 0.9.8 because uuidm.0.9.8 has conflict with cmdliner < 1.1.0
 cmdliner.1.0.4
 crunch.3.2.0
 ptime.0.8.6
+uuidm.0.9.7

@@ -117,6 +117,8 @@ let packages_fdopen_to_remove =
     "sha";
     "sexplib";
     "cmdliner";
+    "crunch";
+    "uuidm";
     "jingoo";
     "lsp";
     "ocaml-lsp-server";
@@ -128,6 +130,10 @@ let packages_fdopen_to_remove =
     "stdio";
     "base";
     "dune";
+    "dune-action-plugin";
+    "dune-glob";
+    "dune-private-libs";
+    "dune-site";
     "utop";
     "ppxlib";
     "alcotest";
