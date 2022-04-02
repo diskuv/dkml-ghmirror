@@ -1,9 +1,0 @@
-# All packages listed in this file must go into either:
-# 1. PINNED_PACKAGES_OPAM *and* [packages_fdopen_to_remove] or          {package defn is in opam repo}
-# 2. PINNED_PACKAGES_DKML_PATCHES *and* [packages_fdopen_to_remove] or  {package defn is in dkml repo}
-# 3. [pkgvers_fdopen_compiler_agnostic]                                 {package defn is in fdopen repo}
-
-# lsp, ocaml-lsp-server and jsonrpc are all vended from the ocaml-lsp project
-lsp.1.10.3
-ocaml-lsp-server.1.10.3
-jsonrpc.1.10.3

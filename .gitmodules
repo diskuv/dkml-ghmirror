@@ -7,3 +7,6 @@
 [submodule "vendor/dkml-compiler"]
 	path = vendor/dkml-compiler
 	url = https://github.com/diskuv/dkml-compiler.git
+[submodule "vendor/dkml-runtime-distribution"]
+	path = vendor/dkml-runtime-distribution
+	url = https://github.com/diskuv/dkml-runtime-distribution.git

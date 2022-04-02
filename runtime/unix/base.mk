@@ -75,7 +75,7 @@ DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
 # - this Makefile's VCPKG_TRIPLET_<platform>
 # - runtime/unix/build-sandbox-configure.sh :: (BEGIN opam switch create ... END opam switch create)
 # - vendor/dkml-runtime-common/unix/_common_tool.sh :: autodetect_buildhost_arch
-# - installtime/msys2/apps/with-dkml/config/dkml_compiler_probe.h
+# - vendor/dkml-runtime-distribution/src/msys2/apps/with-dkml/config/dkml_compiler_probe.h
 # - DKSDK's cmake/DKMLConfigureFromCompiler.cmake
 #
 # Naming:
@@ -446,7 +446,7 @@ define UPDATE_template
   .PHONY: update-$(1)
   update-$(1): configure-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox.sh' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/runtime/unix/within-dev.sh' -p $(1) -b $(2) opam update; fi
+		. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox.sh' -p $(1) -b $(2) opam update; else '$(DKML_DIR)/vendor/dkml-runtime-common/unix/_within_dev.sh' -p $(1) -b $(2) opam update; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPDATE_template,$(platform))))
@@ -459,7 +459,7 @@ update-all: $(foreach platform,$(DKML_PLATFORMS),update-$(platform))
 .PHONY: upgrade-dev
 upgrade-dev: configure-dev
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		'$(DKML_DIR)/runtime/unix/within-dev.sh' -b $(buildtype) opam upgrade;
+		'$(DKML_DIR)/vendor/dkml-runtime-common/unix/_within_dev.sh' -b $(buildtype) opam upgrade;
 	)
 
 # upgrade-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
@@ -467,7 +467,7 @@ define UPGRADE_template
   .PHONY: upgrade-$(1)
   upgrade-$(1): configure-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox.sh' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/runtime/unix/within-dev.sh' -p $(1) -b $(2) opam upgrade; fi
+		. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && if is_arg_linux_based_platform $(1); then '$(DKML_DIR)/runtime/unix/within-sandbox.sh' -p $(1) -b $(2) opam upgrade; else '$(DKML_DIR)/vendor/dkml-runtime-common/unix/_within_dev.sh' -p $(1) -b $(2) opam upgrade; fi
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPGRADE_template,$(platform))))
@@ -575,11 +575,11 @@ dkml-report: buildconfig/dune
 				if is_arg_linux_based_platform $(platform); then \
 				  within='$(DKML_DIR)/runtime/unix/within-sandbox.sh'; \
 				else \
-				  within='$(DKML_DIR)/runtime/unix/within-dev.sh'; \
+				  within='$(DKML_DIR)/vendor/dkml-runtime-common/unix/_within_dev.sh'; \
 				fi; \
 				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON $$within -p $(platform) -b $(buildtype) uname -a || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-opam-exec.sh' -b $(buildtype) -t "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
+				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/vendor/dkml-runtime-distribution/src/unix/private/platform-opam-exec.sh' -b $(buildtype) -t "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
 				echo; \
 				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" printenv --display=quiet || true; \
 			fi; \

@@ -1,4 +1,0 @@
-(executable
- (name with_dkml)
- ; No PPX! This should compile with the bare minimum Diskuv OCaml dependencies from the `system` switch
- (libraries dkml_apps_common bos logs logs.fmt fmt fmt.tty sexplib sha))

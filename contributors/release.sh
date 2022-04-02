@@ -8,7 +8,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
 # Which vendor/<dir> should be version synced with this
-SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common diskuv-opam-repository)
+SYNCED_PRERELEASE_VENDORS=(dkml-runtime-common dkml-runtime-distribution diskuv-opam-repository)
 SYNCED_RELEASE_VENDORS=(diskuv-opam-repository)
 
 # ------------------
@@ -167,7 +167,7 @@ rm -f "$FILE"
 install -d contributors/_build/release-zip
 rm -rf contributors/_build/release-zip
 install -d contributors/_build/release-zip
-zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}" -x "installtime/msys2/apps/_build/*"
+zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}" -x "vendor/dkml-runtime-distribution/src/msys2/apps/_build/*"
 pushd contributors/_build/release-zip
 install -d diskuv-ocaml
 cd diskuv-ocaml

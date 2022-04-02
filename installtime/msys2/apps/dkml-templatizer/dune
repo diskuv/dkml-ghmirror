@@ -1,8 +1,0 @@
-(executable
- (name dkml_templatizer)
- (public_name dkml-templatizer)
- (package dkml-apps)
- (libraries bos jingoo str))
-
-(cram
- (deps %{bin:dkml-templatizer}))
