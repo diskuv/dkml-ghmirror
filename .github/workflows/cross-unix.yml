@@ -67,7 +67,7 @@ jobs:
       with:
         path: |
           dist/${{ matrix.targetabi }}-on-${{ matrix.hostabi }}
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.dkmlroot', 'contributors/.userprofile.cachekey') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.dkmlroot') }}
         restore-keys: |
           ${{ runner.os }}-dist-${{ env.cache-name }}-
 

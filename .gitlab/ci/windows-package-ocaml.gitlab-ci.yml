@@ -86,7 +86,6 @@ win32:oorepo-fetch-1:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\moby

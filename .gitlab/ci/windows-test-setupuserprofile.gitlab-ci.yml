@@ -28,7 +28,6 @@ windows:test-setupuserprofile-1-before-init-opam:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
@@ -66,7 +65,6 @@ windows:test-setupuserprofile-2-before-create-system-switch:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
@@ -91,7 +89,6 @@ windows:test-setupuserprofile-3-before-install-system-switch:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml
@@ -116,7 +113,6 @@ windows:test-setupuserprofile-4-remaining:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\LocalAppData\Programs\DiskuvOCaml

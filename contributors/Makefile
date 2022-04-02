@@ -32,15 +32,6 @@ else
 CMAKE = cmake
 endif
 
-.PHONY: .userprofile.cachekey # always rerun
-.userprofile.cachekey: install-powershell
-ifdef COMSPEC
-	../installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | /usr/bin/dos2unix > $@.tmp
-else
-	pwsh ../installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > $@.tmp
-endif
-	mv $@.tmp $@
-
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
 

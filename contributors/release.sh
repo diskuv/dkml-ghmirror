@@ -58,18 +58,6 @@ if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$US
 
 cd "$DKMLDIR"
 
-# Add .userprofile.cachekey which is used by CI.
-if [ -n "${COMSPEC:-}" ]; then
-    installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | dos2unix > contributors/.userprofile.cachekey.tmp
-else
-    pwsh installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > contributors/.userprofile.cachekey.tmp
-fi
-mv contributors/.userprofile.cachekey.tmp contributors/.userprofile.cachekey
-CACHESTATUS=$(git status --porcelain contributors/.userprofile.cachekey)
-if [ -n "$CACHESTATUS" ]; then
-    git commit -m "Update userprofile cache key" contributors/.userprofile.cachekey
-fi
-
 # Capture which version will be the release version when the prereleases are finished
 TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg | sed 's/[-+].*//')
 get_new_version() {
