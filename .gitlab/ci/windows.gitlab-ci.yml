@@ -74,8 +74,9 @@
   # ----------- setup-machine.ps1 -----------
   # Timing: 15 seconds if nothing needs to be installed
 
-  - installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin $ExtraSetupMachineOpts
-  - date
+  # TODO: When setup.exe is done, use that instead.
+  # - vendor\diskuv-ocaml\installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin $ExtraSetupMachineOpts
+  # - date
 
   - $CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
   - $CompatibleVisualStudios
