@@ -24,7 +24,7 @@
   - $ErrorActionPreference = 'Stop'
   - $ProgressPreference = 'SilentlyContinue'
 
-  - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)vendor\dkml-runtime-distribution\windows"
+  - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)vendor\dkml-runtime-distribution\src\windows"
   - Import-Module DeploymentVersion # Use the same $DV_ variables as 'installtime' scripts
   - Import-Module UnixInvokers      # Use Invoke-CygwinCommand and Invoke-MSYS2Command
 
