@@ -101,7 +101,7 @@ win32:oorepo-fetch-1:
 
     # Setup and Fetch
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' vendor/dkml-runtime-distribution/src/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' vendor/dkml-runtime-distribution/src/unix/private/r-f-oorepo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
@@ -112,7 +112,7 @@ win32:oorepo-fetch-1:
     # Because we want to make the full repository as an artifact, we override opamroot/.
     - cygwin ('export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
         + " ; export DKML_MOBYDIR='$env:CI_PROJECT_DIR/_ci/moby'"
-        + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/dkml-runtime-distribution/src/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh"
+        + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/dkml-runtime-distribution/src/unix/private/r-f-oorepo-2-build-noargs.sh"
         + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
@@ -173,7 +173,7 @@ win32:oorepo-matrix-2:
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' vendor/dkml-runtime-distribution/src/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/dkml-runtime-common/all/emptytop' vendor/dkml-runtime-distribution/src/unix/private/r-f-oorepo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
@@ -188,7 +188,7 @@ win32:oorepo-matrix-2:
     # Trim
     - date
     - cygwin ('export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
-        + " ; cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/dkml-runtime-distribution/src/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh"
+        + " ; cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/dkml-runtime-distribution/src/unix/private/r-f-oorepo-9-trim-noargs.sh"
         + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
     - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
