@@ -95,10 +95,10 @@ jobs:
           -k vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host ${{ matrix.hostabi }} ABI
-      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/vendor/dkml-compiler/src/reproducible-compile-ocaml-2-build_host-noargs.sh
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100co/vendor/dkml-compiler/src/reproducible-compile-ocaml-2-build_host-noargs.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host cross onto target ${{ matrix.targetabi }} ABI
-      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100-compile-ocaml/vendor/dkml-compiler/src/reproducible-compile-ocaml-3-build_cross-noargs.sh
+      run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100co/vendor/dkml-compiler/src/reproducible-compile-ocaml-3-build_cross-noargs.sh
 
     - name: Audit file structure
       # Use stderr since `set -x` goes to stderr and GitHub does not interleave stdout/stderr nicely
