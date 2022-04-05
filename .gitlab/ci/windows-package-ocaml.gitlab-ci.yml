@@ -44,13 +44,13 @@ win32:build-ocaml:
     - msys (
       'env'
       + ' TOPDIR=$PWD/vendor/dkml-runtime-common/all/emptytop'
-      + ' vendor/dkml-compiler/src/reproducible-compile-ocaml-1-setup.sh'
+      + ' vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh'
       + " -d '" + "$PWD" + "'"
       + " -t '" + "$DEPLOYDIR" + "'"
       + " -v '$COMMITID'"
       + " -e " + "$env:HOSTABI"
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100co/vendor/dkml-compiler/src/reproducible-compile-ocaml-2-build_host-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100co/vendor/dkml-compiler/src/r-c-ocaml-2-build_host-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
 
     # Clean up excess files, including git submodules and cross-compiled targets
