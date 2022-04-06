@@ -466,13 +466,13 @@ There should be a ``url { src: "..." checksum: "" }`` in your file.
 If not, make sure you ran ``opam pin remove PACKAGE_NAME``
 
 EIGHTH, create/modify the ``diskuv-opam-repository`` directory (on Windows PowerShell look in
-``$env:DiskuvOCamlHome\vendor\dkml-runtime-distribution\opam-repositories``; in general look wherever
+``$env:DiskuvOCamlHome\vendor\dkml-runtime-distribution\repos``; in general look wherever
 ``opam repo list --all | awk '$1=="diskuv"{print $2}'`` tells you):
 
 .. code:: text
 
     etc
-    └── opam-repositories
+    └── repos
         └── diskuv-opam-repository
             ├── packages
             │   └── <PACKAGE_NAME>
