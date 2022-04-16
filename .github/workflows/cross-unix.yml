@@ -88,7 +88,6 @@ jobs:
         TOPDIR=vendor/dkml-runtime-common/all/emptytop vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh \
           -d . \
           -t "${{ env.DIST_DIR }}" \
-          -u "${{ env.OCAML_GIT_REV }}" \
           -v "${{ env.OCAML_GIT_REV }}" \
           -e "${{ matrix.hostabi }}" \
           -a "${{ matrix.targetabi }}=${{ matrix.ocamlconfigure }}" \
