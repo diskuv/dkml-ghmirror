@@ -301,7 +301,7 @@ Usage
         # Opam packages will be placed in `OPAMSWITCH/_opam`
         create-opam-switch.sh [-y] -b BUILDTYPE -d OPAMSWITCH
 
-        # [Expert] Create the diskuv-host-tools switch
+        # [Expert] Create the dkml switch
         create-opam-switch.sh [-y] [-b BUILDTYPE] -s
 
 Option -y

@@ -61,8 +61,8 @@ This switch is reserved for future use so do not delete it.
     known as 'local') Opam switches because ``opam var root`` failed.
     With a global switch that problem goes away.
 
-``diskuv-host-tools`` Local Switch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``dkml`` Local Switch
+~~~~~~~~~~~~~~~~~~~~~
 
 OCaml package directories, C header "include" directories and other
 critical locations are hardcoded into essential OCaml executables like
@@ -70,7 +70,7 @@ critical locations are hardcoded into essential OCaml executables like
 move the Opam switch that contains ``ocamlc`` many of your OCaml builds
 will break.
 
-``diskuv-host-tools`` is the Opam switch for ``ocamlc`` and other essentials
+``dkml`` is the Opam switch for ``ocamlc`` and other essentials
 that is built in its final resting place during installation and never
 moved after. If and when we need to deploy new versions of the
 essentials we use a new directory and rebuild all of the OCaml packages

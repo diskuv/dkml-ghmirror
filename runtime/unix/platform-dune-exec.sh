@@ -38,7 +38,7 @@ usage() {
     printf "%s\n" "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
     printf "%s\n" "          selected which uses <STATEDIR>/host-tools/_opam, and unless [-s] [-u ON] is also" >&2
     printf "%s\n" "          selected which uses <DiskuvOCamlHome>/host-tools/_opam on Windows and" >&2
-    printf "%s\n" "          <OPAMROOT>/diskuv-host-tools/_opam on non-Windows." >&2
+    printf "%s\n" "          <OPAMROOT>/dkml/_opam on non-Windows." >&2
     printf "%s\n" "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
     printf "%s\n" "          the non-system switch will be found if you are in <STATEDIR>" >&2
     printf "%s\n" "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
