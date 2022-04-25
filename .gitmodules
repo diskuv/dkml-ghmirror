@@ -7,3 +7,6 @@
 [submodule "vendor/drd"]
 	path = vendor/drd
 	url = https://github.com/diskuv/dkml-runtime-distribution.git
+[submodule "vendor/drc"]
+	path = vendor/drc
+	url = https://github.com/diskuv/dkml-runtime-common.git
