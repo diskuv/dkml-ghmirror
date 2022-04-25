@@ -31,7 +31,7 @@ macos:build-ocaml:
 
     # ================ Build ================
     - |
-      set -eux ; TOPDIR=vendor/dkml-runtime-common/all/emptytop vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh \
+      set -eux ; TOPDIR=vendor/drc/all/emptytop vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh \
         -d . -t _ci/tree -v "$COMMITID" \
         -a "$TARGETABIS" \
         -e "$HOSTABI" \

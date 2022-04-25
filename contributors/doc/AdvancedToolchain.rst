@@ -466,7 +466,7 @@ There should be a ``url { src: "..." checksum: "" }`` in your file.
 If not, make sure you ran ``opam pin remove PACKAGE_NAME``
 
 EIGHTH, create/modify the ``diskuv-opam-repository`` directory (on Windows PowerShell look in
-``$env:DiskuvOCamlHome\vendor\dkml-runtime-distribution\repos``; in general look wherever
+``$env:DiskuvOCamlHome\vendor\drd\repos``; in general look wherever
 ``opam repo list --all | awk '$1=="diskuv"{print $2}'`` tells you):
 
 .. code:: text
@@ -495,7 +495,7 @@ NINTH, update your Opam switch with your new ``diskuv-opam-repository`` patch:
 this fails*
 
 TENTH, add your new package to the "PINNED\_PACKAGES" variable in
-``vendor/dkml-runtime-distribution/src/unix/create-opam-switch.sh`` if it is not there already.
+``vendor/drd/src/unix/create-opam-switch.sh`` if it is not there already.
 
 Done! Go ahead and continue with your normal build.
 If your patches are useful to the open source community, please consider

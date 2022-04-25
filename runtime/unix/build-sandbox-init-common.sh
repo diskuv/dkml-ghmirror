@@ -25,7 +25,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # shellcheck disable=SC1091
-. "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_tool.sh
+. "$DKMLDIR"/vendor/drc/unix/_common_tool.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -44,7 +44,7 @@ autodetect_buildhost_arch
 # -----------------------
 # BEGIN opam init
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/init-opam-root.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/init-opam-root.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam init
 # -----------------------
@@ -52,7 +52,7 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-
 # -----------------------
 # BEGIN opam create system switch
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/create-tools-switch.sh -f Full -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/create-tools-switch.sh -f Full -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END opam create system switch
 # -----------------------
@@ -60,7 +60,7 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-
 # -----------------------
 # BEGIN install opam plugins
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/install-opamplugin-opam-dkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/install-opamplugin-opam-dkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install opam plugins
 # -----------------------
@@ -68,7 +68,7 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-
 # -----------------------
 # BEGIN install dkml plugins (except vcpkg which is done in DKSDK)
 
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/install-dkmlplugin-withdkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
+log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/install-dkmlplugin-withdkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
 
 # END install dkml plugins
 # -----------------------

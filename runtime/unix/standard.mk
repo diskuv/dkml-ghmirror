@@ -17,7 +17,7 @@ include $(DKML_DIR)/runtime/unix/doc.mk
 
 .PHONY: shell
 shell: # DKMAKE_CALLING_DIR set by make.cmd
-	@. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' LOG_TRACE_RETURN_ERROR_CODE=ON log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' SHELL_SCRIPTFILE=$(SHELL_SCRIPTFILE) "$$SHELL" '$(DKML_DIR)/runtime/unix/shell.sh' 'dev' '' || true
+	@. '$(DKML_DIR)/vendor/drc/unix/crossplatform-functions.sh' && DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' LOG_TRACE_RETURN_ERROR_CODE=ON log_trace env DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' SHELL_SCRIPTFILE=$(SHELL_SCRIPTFILE) "$$SHELL" '$(DKML_DIR)/runtime/unix/shell.sh' 'dev' '' || true
 	@exit 0
 
 .PHONY: build quickbuild test

@@ -131,7 +131,7 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
 # shellcheck disable=SC1091
-. "$DKMLDIR"/vendor/dkml-runtime-common/unix/_common_build.sh
+. "$DKMLDIR"/vendor/drc/unix/_common_build.sh
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -234,7 +234,7 @@ case "$subcommand" in
             else
                 DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR/_dune")
             fi
-            "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            "$DKMLDIR"/vendor/drd/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
         else
             if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
                 DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
@@ -246,7 +246,7 @@ case "$subcommand" in
                 fi
                 DUNE_OPTS+=(--build-dir "$DUNEDIR_BUILDHOST")
             fi
-            "$DKMLDIR"/vendor/dkml-runtime-distribution/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -p "$PLATFORM" -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            "$DKMLDIR"/vendor/drd/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -p "$PLATFORM" -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
         fi
     ;;
 esac

@@ -85,7 +85,7 @@ jobs:
     # ================ Build ================
     - name: Setup ${{ env.BUILD_TYPE }} OCaml
       run: |
-        TOPDIR=vendor/dkml-runtime-common/all/emptytop vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh \
+        TOPDIR=vendor/drc/all/emptytop vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh \
           -d . \
           -t "${{ env.DIST_DIR }}" \
           -v "${{ env.OCAML_GIT_REV }}" \

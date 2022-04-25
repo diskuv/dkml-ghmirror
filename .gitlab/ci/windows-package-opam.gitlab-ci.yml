@@ -31,8 +31,8 @@ win32:build-opam:
 
     - msys (
       'env'
-      + ' TOPDIR=$PWD/vendor/dkml-runtime-common/all/emptytop'
-      + ' vendor/dkml-runtime-distribution/src/unix/private/r-c-opam-1-setup.sh'
+      + ' TOPDIR=$PWD/vendor/drc/all/emptytop'
+      + ' vendor/drd/src/unix/private/r-c-opam-1-setup.sh'
       + " -d '" + "$PWD" + "'"
       + " -a " + "$env:PLATFORM"
       + " -b " + "$($VisualStudioProps.MsvsPreference)"
@@ -40,8 +40,8 @@ win32:build-opam:
       + " -u https://github.com/diskuv/opam"
       + " -v " + $DV_AvailableOpamVersion
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/vendor/dkml-runtime-distribution/src/unix/private/r-c-opam-2-build-noargs.sh')
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/vendor/dkml-runtime-distribution/src/unix/private/r-c-opam-9-trim-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/vendor/drd/src/unix/private/r-c-opam-2-build-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110-compile-opam/vendor/drd/src/unix/private/r-c-opam-9-trim-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\opam.exe")) { throw "Build failed" }
 
     # Create .tar.gz and .zip

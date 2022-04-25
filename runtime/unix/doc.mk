@@ -13,7 +13,7 @@ docs-publish:
 
 	echo Building OCaml documentation
 	install -d _build/
-	. '$(DKML_DIR)/vendor/dkml-runtime-common/unix/crossplatform-functions.sh' && autodetect_ocaml_and_opam_home && DKML_FEATUREFLAG_CMAKE_PLATFORM=ON $(DKML_DIR)/runtime/unix/platform-dune-exec.sh -p dev -b Debug -o "$$OPAMHOME" -v "$$OCAMLHOME" build @doc --release
+	. '$(DKML_DIR)/vendor/drc/unix/crossplatform-functions.sh' && autodetect_ocaml_and_opam_home && DKML_FEATUREFLAG_CMAKE_PLATFORM=ON $(DKML_DIR)/runtime/unix/platform-dune-exec.sh -p dev -b Debug -o "$$OPAMHOME" -v "$$OCAMLHOME" build @doc --release
 
 	echo Building Sphinx html twice so that Sphinx cross-references work ...
 	$(MAKE) html
