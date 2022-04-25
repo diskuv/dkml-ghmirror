@@ -46,5 +46,5 @@ Set-Content -Path "C:\vagrant\test_installation.t\exitcode.$SystemLocale.txt" -V
 (Test-Path -Path C:\vagrant\playground) -or $(New-Item C:\vagrant\playground -ItemType Directory)
 Set-Location C:\vagrant\playground          # aka. cd playground
 $env:OPAMYES = "1"                          # aka. OPAMYES=1 opam dkml init ...
-with-dkml "OPAMSWITCH=$env:DiskuvOCamlHome\host-tools" opam dkml init --build-type=Release --yes # `Release` option is present simply to test CLI option handling of opam dkml init
+with-dkml "OPAMSWITCH=$env:DiskuvOCamlHome\dkml" opam dkml init --build-type=Release --yes # `Release` option is present simply to test CLI option handling of opam dkml init
 with-dkml opam install graphics --yes       # install something with a low number of dependencies, that sufficienly exercises Opam

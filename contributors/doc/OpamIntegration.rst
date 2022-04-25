@@ -164,8 +164,8 @@ This comes from ``ocamlc -config`` (yours will vary slightly):
 .. code-block:: c-objdump
 
     version: 4.12.0
-    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
-    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
+    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/dkml/_opam/lib/ocaml
+    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/dkml/_opam/lib/ocaml
     ccomp_type: msvc
     c_compiler: cl
     ocamlc_cflags: -nologo -O2 -Gy- -MD

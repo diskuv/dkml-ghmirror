@@ -122,20 +122,20 @@ Let's start by finding which switches are available:
       C:\DiskuvOCaml\BuildTools>opam switch
       #  switch                                                      compiler
                 description
-         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
+         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
                 ocaml-system.4.12.1
-                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
+                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
       →  diskuv-boot-DO-NOT-DELETE
                 diskuv-boot-DO-NOT-DELETE
 
       [WARNING] The environment is not in sync with the current switch.
                 You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-You just found that you have two switches. The first switch is the directory "host-tools".
+You just found that you have two switches. The first switch is the directory "dkml".
 The other switch says *DO NOT DELETE*. We will avoid those two switches.
 
 Let's now create our own ``playground`` switch. All we need to do is create a directory
-and run ``with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init``
+and run ``with-dkml OPAMSWITCH=%DiskuvOCamlHome%\dkml opam dkml init``
 inside our new (or existing) directory:
 
    .. code-block:: doscon
@@ -144,7 +144,7 @@ inside our new (or existing) directory:
 
       C:\Users\you\DiskuvOCamlProjects>mkdir playground
       C:\Users\you\DiskuvOCamlProjects>cd playground
-      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init
+      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml OPAMSWITCH=%DiskuvOCamlHome%\dkml opam dkml init
 
       C:\Users\you\DiskuvOCamlProjects\playground>opam switch
       #  switch                                                                           compiler
