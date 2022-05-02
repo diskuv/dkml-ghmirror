@@ -198,7 +198,7 @@ with ``opam list -a``:
       base-threads  base        pinned to version base
       base-unix     base        pinned to version base
       ocaml         4.12.1      pinned to version 4.12.1
-      ocaml-config  2           pinned to version 2
+      ocaml-config  3           pinned to version 3
       ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
 
       C:\Users\you\DiskuvOCamlProjects\playground>opam list -a

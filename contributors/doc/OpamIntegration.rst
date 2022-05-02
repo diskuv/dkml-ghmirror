@@ -107,7 +107,7 @@ The global variables that will be present in a Diskuv OCaml installation are:
     sys-ocaml-arch    x86_64                                                     # Target architecture of the OCaml compiler present on your system
     sys-ocaml-cc      msvc                                                       # Host C Compiler type of the OCaml compiler present on your system
     sys-ocaml-libc    msvc                                                       # Host C Runtime Library type of the OCaml compiler present on your system
-    sys-ocaml-version 4.12.0                                                     # OCaml version present on your system independently of opam, if any
+    sys-ocaml-version 4.12.1                                                     # OCaml version present on your system independently of opam, if any
 
 C Compiler
 ----------
