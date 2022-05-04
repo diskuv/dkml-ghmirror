@@ -37,7 +37,7 @@ win32:build-opam:
       + " -a " + "$env:PLATFORM"
       + " -b " + "$($VisualStudioProps.MsvsPreference)"
       + " -t '" + "$DEPLOYDIR" + "'"
-      + " -u https://github.com/diskuv/opam"
+      + " -u https://github.com/jonahbeckford/opam"
       + " -v " + $DV_AvailableOpamVersion
       )
     - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/110co/vendor/drd/src/unix/private/r-c-opam-2-build-noargs.sh')
