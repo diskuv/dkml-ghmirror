@@ -3,5 +3,5 @@
         "**/release-zip": true
     },
     "python.pythonPath": "${workspaceFolder}/contributors/envs",
-    "restructuredtext.confPath": "${workspaceFolder}\\contributors"
+    "esbonio.sphinx.confDir": "${workspaceFolder}\\contributors"
 }

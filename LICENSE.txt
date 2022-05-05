@@ -1,1247 +1,201 @@
-Fair Source License, version 0.9
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
 
-Copyright © 2021 Diskuv, Inc.
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-Licensor: Diskuv, Inc.
+   1. Definitions.
 
-Software: Diskuv OCaml 0.4.0-prerel20
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
 
-Use Limitation: 5 users, except when the recipient of the Software is either
- * a corporation or institute employing an individual who both co-authored an OCaml Package Manager (“Opam”) published package before August 17, 2021 and whose name, username or email address is in Appendix A, the Use Limitation is 25 users, or
- * a corporation or institute whose legal name is listed in Appendix A, the Use Limitation is 250 users.
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
 
-License Grant. Licensor hereby grants to each recipient of the Software (“you”) a non-exclusive, non-transferable, royalty-free and fully-paid-up license, under all of the Licensor’s copyright and patent rights, to use, copy, distribute, prepare derivative works of, publicly perform and display the Software, subject to the Use Limitation and the conditions set forth below.
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
 
-Use Limitation. The license granted above allows use by up to the number of users per entity set forth above (the “Use Limitation”). For determining the number of users, “you” includes all affiliates, meaning legal entities controlling, controlled by, or under common control with you. If you exceed the Use Limitation, your use is subject to payment of Licensor’s then-current list price for licenses.
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
 
-Conditions. Redistribution in source code or other forms must include a copy of this license document to be provided in a reasonable manner. Any redistribution of the Software is only allowed subject to this license.
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
 
-Trademarks. This license does not grant you any right in the trademarks, service marks, brand names or logos of Licensor.
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
 
-DISCLAIMER. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OR CONDITION, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. LICENSORS HEREBY DISCLAIM ALL LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE.
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
 
-Termination. If you violate the terms of this license, your rights will terminate automatically and will not be reinstated without the prior written consent of Licensor. Any such termination will not affect the right of others who may have received copies of the Software from you.
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
 
-Appendix A.
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
 
-    The Use Limitation exception clause is available to:
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
 
-    "Institut national de recherche en informatique et en automatique" (Inria)
-    "Eduardo Rafael <theeduardorfs@gmail.com>"
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
 
-    and to the list of package authors published by Opam on August 17, 2021:
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
 
-    "0918nobita"
-    "0zat <0.zat.zer0@gmail.com>"
-    "0zat"
-    "<mfp@acm.org>"
-    "A. Seznec and N. Sendrier"
-    "ARB"
-    "ARM Limited"
-    "Aaron Dufour"
-    "Abdallah Saffidine"
-    "Adelyn Breedlove <tenseiken595@gmail.com>"
-    "Adriaan Larmuseau <adriaan.larmuseau@gmail.com>"
-    "Advanced Schema"
-    "Ahrefs <github@ahrefs.com>"
-    "Ahrefs Pte Ltd <github@ahrefs.com>"
-    "Akinori ABE <aabe.65535@gmail.com>"
-    "Akinori ABE <abe@sf.ecei.tohoku.ac.jp>"
-    "Akinori ABE"
-    "Alain Frisch <alain.frisch@lexifi.com>"
-    "Alain Frisch"
-    "Alain Frish"
-    "Alain.Frisch@inria.fr"
-    "Alan Hu <alanh@ccs.neu.edu>"
-    "Alastair Reid"
-    "Albin Coquereau"
-    "Aldrik KLEBER"
-    "Alessandro Cheli"
-    "Alessandro Strada <alessandro.strada@gmail.com>"
-    "Alessandro Strada"
-    "Alex Ionescu"
-    "Alexander Dinu <aluuu@husa.su>"
-    "Alexander Yanin"
-    "Alexandre Moine"
-    "Alexis Bernadet <alexis.bernadet at noos.fr>"
-    "Alfredo Beaumont <alfredo.beaumont@gmail.com>"
-    "Alin Popa"
-    "Alistair O'Brien"
-    "Alix Trieu <alix.trieu@ens-rennes.fr>"
-    "Alt-Ergo developers"
-    "Anders Fugmann <af@issuu.com>"
-    "Anders Fugmann <anders@fugmann.net>"
-    "Anders Fugmann"
-    "Anders Miltner"
-    "Andi McClure <andi.m.mcclure@gmail.com>"
-    "Andre Nathan <andre@hostnet.com.br>"
-    "Andre Nathan <andrenth@gmail.com>"
-    "Andreas Garnaes <andreas.garnaes@gmail.com>"
-    "Andreas Halkjær From"
-    "Andreas Rossberg <rossberg@mpi-sws.org>"
-    "Andrew Ray <andy.ray@ujamjar.com>"
-    "Andrew Rudenko <ceo@prepor.ru>"
-    "Andy Ray <andy.ray@ujamjar.com>"
-    "Andy Ray"
-    "Anil Madhavapeddy <anil@recoil.org>"
-    "Anil Madhavapeddy"
-    "Anthony Green"
-    "Anton Bachin <antonbachin@yahoo.com>"
-    "Anton Kochkov <anton.kochkov@gmail.com>"
-    "Anton Lavrik <alavrik@piqi.org>"
-    "Anton Yabchinskiy <arn@bestmx.ru>"
-    "Antonio Monteiro <anmonteiro@gmail.com>"
-    "Antonio Nuno Monteiro <anmonteiro@gmail.com>"
-    "Anurag Soni"
-    "Arena Developers <silver-snakes@arena.io>"
-    "Arjun Guha <arjun@cs.umass.edu>, Nate Foster <jnfoster@cs.cornell.edu>, Steffen Smolka <smolka@cs.cornell.edu>"
-    "Arlen Cox <arlencox@gmail.com>"
-    "Armael <armael@isomorphis.me>"
-    "Armaël Guéneau"
-    "Arthur Correnson <arthur.correnson@gmail.com>"
-    "Artifex Software, Inc"
-    "Arto Bendiken <arto@bendiken.net>"
-    "Asciidoc dev team"
-    "Ayberk Tosun <ayberk.tosun@gmail.com>"
-    "BAP Team"
-    "BYVoid <byvoid@byvoid.com>"
-    "Beman Dawes, David Abrahams, et al."
-    "Ben Greenman"
-    "Benjamin Canou <benjamin@ocamlpro.com>"
-    "Benjamin Geer"
-    "Benjamin San Souci <benjamin.sansouci@gmail.com>"
-    "Benoit Bataille <benoit.bataille@gmail.com>"
-    "Benoît Barbot"
-    "Benoît Vaugon"
-    "Berke Durak"
-    "Bertrand Bonnefoy-Claudet <bertrand@cryptosense.com>"
-    "Bertrand Jeannet"
-    "Bertrand Jeannnet"
-    "Bikal Lem <gbikal@gmail.com>"
-    "Bikal Lem, <gbikal@gmail.com>"
-    "Blake Loring"
-    "Boning <erebuxy@gmail.com>"
-    "Borja o'Cook <borjaocook@gmail.com>"
-    "Bramford Horton <bram.horton@gmail.com>"
-    "Brecht Hoflack <brecht.hoflack@gmail.com>"
-    "Brendan Long <self@brendanlong.com>"
-    "Brian Caine <brian.d.caine@gmail.com>"
-    "Brian Paul"
-    "Bruno Blanchet <Bruno.Blanchet@inria.fr> and David Cadé <David.Cade@normalesup.org>"
-    "Bruno Blanchet <bruno.blanchet@inria.fr>, Vincent Cheval <vincent.cheval@inria.fr>, Ben Smyth <research@bensmyth.com>, Marc Sylvestre"
-    "Bruno Blanchet <bruno.blanchet@inria.fr>, Vincent Cheval <vincent.cheval@inria.fr>, Marc Sylvestre"
-    "Bzip2 dev team"
-    "C.Y. yuen"
-    "CHEN Xian-an <xianan.chen@gmail.com>"
-    "CSDP"
-    "Carlo Wood"
-    "Carmelo Piccione carmelo.piccione+prob_cache@gmail.com"
-    "Carmelo Piccione carmelo.piccione+riakc_ppx@gmail.com"
-    "Carmelo Piccione"
-    "Carnegie Mellon University BAP Team"
-    "Cedric Cellier <rixed@happyleptic.org>"
-    "Charles Chamberlain"
-    "Cheng Lou <chenglou92@gmail.com>"
-    "Chet Murthy <chetsky@gmail.com>"
-    "Chet Murthy"
-    "Chris Jensen <cjj39@cam.ac.uk>"
-    "Chris Nevers <christophernevers96@gmail.com>"
-    "Christian Lindig <christian.lindig@citrix.com>"
-    "Christian Lindig <lindig@citrix.com>"
-    "Christian Lindig <lindig@gmail.com>"
-    "Christiano F. Haesbaert <haesbaert@haesbaert.org>"
-    "Christoph Höger <christoph.hoeger@tu-berlin.de>"
-    "Christophe Raffalli <christophe.raffalli@univ-savoie.fr>"
-    "Christophe Raffalli <raffalli@univ-savoie.fr>"
-    "Christophe Troestler <Christophe.Troestler@umons.ac.be>"
-    "Christophe Troestler"
-    "Christopher Zimmermann <christopher@gmerlin.de>"
-    "Clément Pascutto"
-    "Codinuum"
-    "Coq team <coqdev@inria.fr>"
-    "Coq"
-    "Corin Chaplin <git@corinchaplin.co.uk>"
-    "Craig Ferguson <craig@tarides.com>"
-    "Craig Ferguson <me@craigfe.io>"
-    "Cristiano Calcagno"
-    "Cryptosense <opensource@cryptosense.com>"
-    "Cyril Allignol <cyril@allignol.com>"
-    "Cédric Le Moigne <cedlemo@gmx.com>"
-    "DaiLambda, Inc"
-    "Damien Pous <Damien.Pous@ens-lyon.fr>"
-    "Dan Gallagher"
-    "Daniel Bünzli <daniel.buenzl i@erratique.ch>"
-    "Daniel Bünzli"
-    "Daniel Stenberg"
-    "Daniel de Rauglaudre"
-    "Daniil Baturin <daniil+soupault@baturin.org>"
-    "Daniil Baturin <daniil@baturin.org>"
-    "Daniil Baturin, Martin Jambon"
-    "Danny Willems <be.danny.willems@gmail.com>"
-    "Danny Willems <contact@danny-willems.be>"
-    "Dario Teixeira <dario.teixeira@nleyten.com>"
-    "Darren Ldl <darrenldldev@gmail.com>"
-    "Darren Ldl"
-    "Dave Bordoley <bordoley@gmail.com>"
-    "Dave Scott <dave@recoil.org>"
-    "Dave Scott"
-    "Dave Tucker <dave@dtucker.co.uk>"
-    "David Allsopp"
-    "David Kaloper <david@numm.org>"
-    "David Kaloper <dk505@cam.ac.uk>"
-    "David Kaloper Meršinjak <david@numm.org>"
-    "David Kaloper Meršinjak <dk505@cam.ac.uk>"
-    "David Kaloper Meršinjak"
-    "David Monniaux"
-    "David Scott"
-    "David Sheets <sheets@alum.mit.edu>"
-    "David Sheets"
-    "Davide Gessa <gessadavide@gmail.com>"
-    "Daypack developers"
-    "Dean Merchant"
-    "Deducteam (Inria) <dedukti-dev@inria.fr>"
-    "Denis Merigoux"
-    "Didier Le Botlan <github.lebotlan@dfgh.net>"
-    "Didier Plaindoux <d.plaindoux@free.fr>"
-    "Didier Wenzek <didier.wenzek@acidalie.com>"
-    "Dividat AG"
-    "Dmitry Grebeniuk <gdsfh1@gmail.com>"
-    "Dominic Price"
-    "Dominik Bousquet <bousquet.dominik@gmail.com>"
-    "Dominik Bousquet"
-    "Dorian Peake <dorian@vereia.com>"
-    "Dpkg dev team"
-    "Drup <drupyog@zoho.com>"
-    "Dwight Guth <dwight.guth@runtimeverification.com>"
-    "ENAC <facile@recherche.enac.fr>"
-    "Edgar Aroutiounian <edgar.factorial@gmail.com>"
-    "Edwin Török"
-    "Eike Ritter, Joshua Philipps, Bruno Blanchet, Vincent Cheval, and Marc Sylvestre "
-    "Emery Hemingway <ehmry@posteo.net>"
-    "Emile Trotignon emile.trotignon@gmail.com"
-    "Emilien Lemaire"
-    "Emmanuel Onzo"
-    "Enguerrand Decorne <enguerrand.decorne@ahrefs.com>"
-    "Eric Stokes <letaris@me.com>"
-    "Erick Tryzelaar <idadesub@users.sourceforge.net>"
-    "Erik L. Arneson <earneson@arnesonium.com>"
-    "Erwan Jahier and Pascal Raymond"
-    "Erwan Jahier"
-    "Erwan/Aaron <erwan.ounn.84@gmail.com>"
-    "Etienne Millon <etienne@cryptosense.com>"
-    "Etienne Millon <me@emillon.org>"
-    "Etienne Millon <me@emillon.org>, Hannes Mehnert <hannes@mehnert.org>"
-    "Fabrice LE FESSANT <fabrice.le_fessant@origin-labs.com>"
-    "Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>"
-    "Fabrice Le Fessant <fabrice.le_fessant@origin-labs.com>"
-    "Fabrice Le Fessant INRIA/OCamlPro <fabrice.le_fessant@inria.fr>"
-    "Facebook"
-    "Facebook. Modifications by Rijnard van Tonder"
-    "Florent Monnier"
-    "Florian Angeletti <octa@polychoron.fr>"
-    "Flow Team <flow@fb.com>"
-    "Francesco Tovagliari <ftovagliari@gmail.com>"
-    "Francois BERENGER"
-    "Francois Berenger"
-    "Francois Rouaix"
-    "François Bobot"
-    "François Pottier <francois.pottier@inria.fr>"
-    "Frederic Bour <frederic.bour@lakaban.net>"
-    "Frédéric Bour <frederic.bour@lakaban.net>"
-    "Frédéric Bour"
-    "Frédéric Recoules"
-    "GNOME devs"
-    "GNU Project | BSD"
-    "GNU Project"
-    "GNU coreutils authors"
-    "Gabriel Hondet"
-    "Gabriel Jaldon"
-    "Gabriel Radanne <drupyog@zoho.com>"
-    "Gabriel Radanne"
-    "Gabriel Scherer <gabriel.scherer@gmail.com>"
-    "Gabriel Scherer"
-    "Gerd Stolpmann <gerd@gerd-stolpmann.de>"
-    "Gerd Stolpmann"
-    "Gerson Moraes <gerson@digirati.com.br>"
-    "Gerson Moraes"
-    "Ghiles Ziat <ghiles.ziat@isae-supaero.fr"
-    "Ghiles Ziat <ghiles.ziat@lip6.fr>"
-    "Google"
-    "Gregory Tsipenyuk <gregtsip@gmail.com>"
-    "Grégoire Henry <gregoire.henry@ocamlpro.com>"
-    "Guilhermo Costa <guillecosta@protonmail.ch>"
-    "Guillaume Bury <guillaume.bury@gmail.com>"
-    "Guillaume Bury"
-    "Guillaume Claret <dev@clarus.me>"
-    "Guillaume Claret"
-    "Guillaume Endignoux <guillaume.endignoux@m4x.org>"
-    "Guillaume Melquiond"
-    "Guillaume Munch-Maccagnoni <Guillaume.Munch-Maccagnoni@inria.fr>"
-    "Gwenaël Delaval"
-    "Hannes Mehnert <hannes@mehnert.org>"
-    "Hannes Mehnert"
-    "Hao Wu <echowuhao@gmail.com>"
-    "Harrison Ainsworth"
-    "Haxe Foundation <contact@haxe.org>"
-    "Helmut Brandl <helmut.brandl@gmx.net>"
-    "Henry Maddocks"
-    "Hezekiah M. Carty <hez@0ok.org>"
-    "Hezekiah M. Carty"
-    "Hongbo Zhang <>"
-    "Hugo	Heuzard"
-    "Hugo Heuzard <hugo.heuzard@gmail.com>"
-    "Hugo Heuzard"
-    "Hugues Cassé <casse@irit.fr> et al"
-    "INAJIMA Daisuke <inajima@sopht.jp>"
-    "Ian F. Darwin"
-    "Ifaz Kabir"
-    "Ilias Garnier"
-    "Ion Alberdi <nolaridebi@gmail.com>"
-    "Isaac Hodes <isaachodes@gmail.com>"
-    "Issuu Raccoon"
-    "Ivan Gotovchits <ivg@ieee.org>"
-    "Iwan Karamazow m.falka@icloud.com"
-    "Izaak Meckler <ihmeckler@gmail.com>"
-    "J Rain De Jager <rain.osdev@gmail.com>"
-    "JHU PL Lab <pl.cs@jhu.edu>"
-    "Jack Feser <feser@csail.mit.edu>"
-    "Jacob Rosales Chase <coby@case.edu>"
-    "Jacques Garrigue et al., Nagoya University"
-    "James Owen <jamesowen@outlook.com>"
-    "Jan Doms <jan.doms@gmail.com>"
-    "Jan Hrdina <jan.hrdka@gmail.com>"
-    "Jan Midtgaard"
-    "Jan Rochel (BeSport)"
-    "Jane Street Capital LLC"
-    "Jane Street Group, LLC <opensource@janestreet.com>"
-    "Jane Street Group, LLC"
-    "Jason D. Nielsen"
-    "Javalib Development team"
-    "Jean-Christophe Filliatre"
-    "Jean-Christophe Filliâtre"
-    "Jean-Noel Avila <jn.avila@free.fr>"
-    "Jeffas"
-    "Jeong Jihoon <binoopang@gmail.com>"
-    "Jeong Jihoon"
-    "Jeremie Dimino <jeremie@dimino.org>"
-    "Jeremy Yallop <yallop@gmail.com>"
-    "Jeremy Yallop"
-    "Jesper Andersen"
-    "Jesse A. Tov <jesse.tov@gmail.com>"
-    "Jesse Haber-Kucharsky <jesse@haber-kucharsky.com>"
-    "Jesse Haber-Kucharsky <jesse@haberkucharsky.com>"
-    "Jia Chen"
-    "Joan Thibault <joan.thibault@ens-rennes.fr>"
-    "Jocelyn Sérot <jocelyn.serot@uca.fr>"
-    "Jochen Bartl <jochenbartl@mailbox.org>"
-    "Joe Hill"
-    "Joel Bjornson <joel.bjornson@gmail.com>"
-    "Joel Jakubovic"
-    "Johan Magnus Jonsson <jmagnusj@gmail.com>"
-    "John Cristy"
-    "John D. Ramsdell <ramsdell@mitre.org>"
-    "John Else <john.else@gmail.com>"
-    "John Else"
-    "John MacFarlane"
-    "John Whitington"
-    "Jon Ludlam"
-    "Jonathan Chan <jyc@fastmail.fm>"
-    "Jonathan Protzenko <jonathan.protzenko@gmail.com>"
-    "Jordan Walke <jordojw@gmail.com>"
-    "Jose Nogueira <ze@thatportugueseguy.com>"
-    "Josef Erben"
-    "Joseph Abrahamson <me@jspha.com>"
-    "Josh Allmann <joshua.allmann@gmail.com>"
-    "Josh Berdine <jjb@fb.com>"
-    "Juergen Hoetzel <juergen@archlinux.org>"
-    "Julia Lawall et. al."
-    "Julian Smart"
-    "Julian Squires <julian@cipht.net>"
-    "Julien Blond <julien.blond@gmail.com>"
-    "Julien Enoch"
-    "Julien Sagot <ju.sagot@gmail.com>"
-    "Julien Sagot ju.sagot@gmail.com"
-    "Julien Sagot"
-    "Julien Signoles"
-    "Jun Furuse"
-    "Justin Lubin <jlubi333@gmail.com>"
-    "Justin Raymond <justin.raymond.14@gmail.com>"
-    "Jérémie Dimino <jeremie@dimino.org>"
-    "Jérémie Dimino"
-    "Jérôme Vouillon <Jerome.Vouillon@pps.univ-paris-diderot.fr>"
-    "K.Kosako"
-    "KC Sivaramakrishnan <kc@kcsrk.info>"
-    "KC Sivaramakrishnan <sk826@cl.cam.ac.uk>"
-    "KC Sivaramakrishnan"
-    "Kakadu"
-    "Kakadu@pm.me kakadu.hafanana@gmail.com"
-    "Kartik Singhal"
-    "Kate <kit.ty.kate@disroot.org>"
-    "Kazuo Koga"
-    "Kenji Sakurai"
-    "Kesha Hietala"
-    "Khoa Nguyen"
-    "Kiran Gopinathan"
-    "Kit Freddura <kitfreddura@gmail.com>"
-    "Kitware, Inc. and Contributors"
-    "Konstantin Romanov <konstantinsromanov@gmail.com>"
-    "Konstantin Weitz <konstantin.weitz@gmail.com>"
-    "Kosuke Tahara <ksk.tahara@gmail.com>"
-    "Kyle Davis <oss@kyldvs.com>"
-    "LLVM Developer Group"
-    "Larry Wall et. al."
-    "Larry Wall"
-    "Laurent Gomila"
-    "Laurent Mazare"
-    "Laurent Thévenoux <lrnt@thvnx.com>"
-    "Leandro Ostera <leandro@ostera.io>"
-    "Leo <leowzukw@vmail.me>"
-    "Leo White <leo@lpw25.net>"
-    "Leonardo Laguna Ruiz <modlfo@gmail.com>"
-    "Leonid Rozenberg <leonidr@gmail.com>"
-    "Levi Roth"
-    "LexiFi, Danny Willems <contact@danny-willems.be>"
-    "Li-yao Xia"
-    "Liang Wang"
-    "Libevent dev team"
-    "Linjie Ding <i@pyroc.at>"
-    "Linus Torvalds"
-    "Louis Gesbert <louis.gesbert@ocamlpro.com>"
-    "Louis Mandel louis@reactiveml.org"
-    "Louis Roché <louis@louisroche.net>"
-    "Luc Maranget <Luc.Maranget@inria.fr>, Susmit Sarkar <ss265@st-andrews.ac.uk>, Jade Alglave <j.alglave@ucl.ac.uk >"
-    "Luc Maranget"
-    "Lucas Pluvinage <lucas.pluvinage@gmail.com>"
-    "Lélio Brun"
-    "Léo Andrès <contact@ndrs.fr>"
-    "MSR"
-    "Maas-Maarten Zeeman"
-    "Magnus Skjegstad <magnus@skjegstad.com>"
-    "Magnus Valle <mvalle@trøll.com>"
-    "Marc Biedermann"
-    "Marc Chevalier <ocolor@marc-chevalier.com>"
-    "Marc Lasson <marc.lasson@lexifi.com>"
-    "Marc Lehmann"
-    "Marc Simon marc.simon42@gmail.com"
-    "Marcello Seri <m.seri@rug.nl>"
-    "Marcello Seri <marcello.seri@gmail.com>"
-    "Marcello Seri"
-    "Marco Aurélio <marcoonroad@gmail.com>"
-    "Marco Aurélio da Silva <marcoonroad@gmail.com>"
-    "Marek Kubica <marek@xivilization.net>"
-    "MariaDB Foundation"
-    "Markus Mottl <markus.mottl@gmail.com>"
-    "Markus Rudy"
-    "Markus W. Weissmann <markus.weissmann@in.tum.de>"
-    "Marshall Roch <mroch@fb.com>"
-    "Martin DeMello"
-    "Martin Jambon"
-    "Martin Lucina <martin@lucina.net>"
-    "Martin Slota <martin.slota@keemail.me>"
-    "Martin Slota <msl@issuu.com>"
-    "Martin Sustrik"
-    "Masaki WATANABE <lambda.watanabe@gmail.com>"
-    "Masateru Kawaguchi"
-    "MassD http://massd.github.io/, Marc Simon marc.simon42@gmail.com"
-    "Mathias Millet"
-    "Matt Bray <mattjbray@gmail.com>"
-    "Matt Gushee <gd4o@havenrock.com>"
-    "Matt Windsor <mattwindsor91@gmail.com>"
-    "Mauricio Fernandez <mfp@acm.org>"
-    "Maurizio Colucci"
-    "Max Brunsfeld"
-    "Max Lantas <mnxndev@outlook.com>"
-    "Max Mouratov <mmouratov@gmail.com>"
-    "Maxence ABELA <maxence.abela+wikitext@gmail.com>"
-    "Maxence Guesdon"
-    "Maxime Levillain <maxime.levillain@ocamlpro.com>"
-    "Maxime Levillain <maxime.levillain@origin-labs.com"
-    "Maxime Levillain"
-    "Maxime Ransan <maxime.ransan@gmail.com>"
-    "Mia Kathage"
-    "Michael Bacarella <m@bacarella.com>"
-    "Michael Bacarella <michael.bacarella@gmail.com>"
-    "Michael Greenberg <michael.greenberg@pomona.edu>"
-    "Michael Grünewald"
-    "Michael Le Barbier Grünewald"
-    "Michael Truog <mjtruog at protonmail dot com>"
-    "Michal Zalewski"
-    "Michał Kurcewicz"
-    "Michel Quercia"
-    "Michele Mu <maker@tumbolandia.net>, Hannes Mehnert <hannes@mehnert.org>"
-    "Mickaël Delahaye <mickael.delahaye@gmail.com>"
-    "Mickaël Delahaye"
-    "Miguel Molina <miguel@erizocosmi.co>"
-    "Mika Illouz"
-    "Mike Furr"
-    "Mike Lin"
-    "Mike McClurg"
-    "Mike Wells"
-    "Miko Nieminen"
-    "Mindy Preston <meetup@yomimono.org>"
-    "Mindy Preston"
-    "Misha Aizatulin <mihhail.aizatulin@gmail.com>"
-    "Mitsunori Komatsu"
-    "Mohamed Iguernlala <mohamed.iguernlala@ocamlpro.com>"
-    "Morten Knaack <knaack@gmail>"
-    "Multiple"
-    "NLopt dev team"
-    "Nandor Licker <n@ndor.email>"
-    "Nate Foster <jnfoster@cs.cornell.edu>"
-    "Nathan Holland <nholland94@gmail.com>"
-    "Nathan Rebours <nathan.p.rebours@gmail.com>"
-    "Nick Zuber <zuber.nicholas@gmail.com>"
-    "Nicolas George"
-    "Nicolas Jeannerod <nicolas.jeannerod@irif.fr>"
-    "Nicolas Ojeda Bar <n.oje.bar@gmail.com>"
-    "Nicolas Ojeda Bar"
-    "Nikolay Zalutskiy <pacemkr@gmail.com>"
-    "Nomadic Labs <contact@nomadic-labs.com>"
-    "Nomadic Labs"
-    "O(1) Labs, LLC <opensource@o1labs.org>"
-    "OCaml batteries-included team"
-    "OCaml contributors"
-    "OCamlPro <contact@ocamlpro.com>"
-    "OcamlPro"
-    "Ocsigen team"
-    "Oleg Kiselyov"
-    "Oliver Gu <gu.oliver@yahoo.com>"
-    "Olivier Levillain <olivier.levillain@telecom-sudparis.eu>"
-    "Omar"
-    "OpenImageIO devs"
-    "OpenJDK and Java Community"
-    "Oracle"
-    "Oscar Spencer"
-    "POSIX"
-    "Pascal Raymond"
-    "Patrick Ferris"
-    "Paul Biggar <paul@darklang.com>"
-    "Paul Moore"
-    "Paul Pelzl <pelzlpj@gmail.com>"
-    "Peter DeGroff"
-    "Peter Squicciarini"
-    "Petter A. Urkedal <paurkedal@gmail.com>"
-    "Phil Eaton <me@eatonphil.com>"
-    "Phil Scott"
-    "Phil Tomson"
-    "Philip A. Nelson, Jason Downs and Sergey Poznyakoff"
-    "Philip Dexter <philip.dexter@gmail.com>"
-    "Philipp Gesang"
-    "Philippe Veber <philippe.veber@gmail.com>"
-    "Philippe Veber"
-    "Philippe Wang <philippe.wang@gmail.com>"
-    "Pierre BOutillier"
-    "Pierre Chambart <pierre.chambart@ocamlpro.com>"
-    "Pierre Chambart"
-    "Pierre Roux <pierre.roux@onera.fr>"
-    "Pierre Weis"
-    "Pieter Goetschalckx <3.14.e.ter@gmail.com>"
-    "Pixz dev team"
-    "Plplot dev team"
-    "Prashanth Mundkur"
-    "Programming Research Laboratory (ROPAS), Seoul National University"
-    "Project Everest"
-    "PyYAML dev team"
-    "Python Software Foundation"
-    "R. Bagnara, P. M. Hill, E. Zaffanella, A. Bagnara et. al."
-    "Radek Micek <radek.micek@gmail.com>"
-    "Ralf Vogler <ralf.vogler@gmail.com>"
-    "Raman Varabets <raman@ahrefs.com>"
-    "Raman Varabets <roman.vorobets@gmail.com>"
-    "Raphael Sousa Santos <contact@raphaelss.com>"
-    "Raphaël Proust <code@bnwr.net>"
-    "Raphaël Proust"
-    "Reynir Björnsson <reynir@reynir.dk>"
-    "Richard Degenne <richdeg2@gmail.com>"
-    "Richard Jones et.al."
-    "Richard Mortier <mort@cantab.net>"
-    "Richard Mortier"
-    "Richard W.M. Jones <rich@annexia.org>"
-    "Richard W.M. Jones"
-    "Rijnard van Tonder"
-    "Risto Stevcev"
-    "Rizo I <rizo@odis.io>"
-    "Rizo Isrof <rizo@odis.io>"
-    "Robert Atkey"
-    "Robert Toth"
-    "Roberto Di Cosmo <roberto@dicosmo.org>"
-    "Robur.coop"
-    "Roddy MacSween <github@roddymacsween.co.uk>"
-    "Rodolphe Lepigre <rodolphe.lepigre@inria.fr>"
-    "Roma Sokolov <sokolov.r.v@gmail.com>"
-    "Romain Bardou <romain.bardou@inria.fr>"
-    "Romain Bardou <romain@bardou.fr>"
-    "Romain Bardou"
-    "Romain Beauxis <toots@rastageeks.org>"
-    "Romain Beauxis"
-    "Romain Calascibetta <romain.calascibetta@gmail.com>"
-    "Romain Calascibetta"
-    "Romain Slootmaekers <romain.slootmaekers@openvstorage.com>"
-    "Ronan Le Hy"
-    "Rory Quinlan <rjamesquinlan@gmail.com>"
-    "Rudi Grinberg"
-    "Russell Smith"
-    "Ryan Moore"
-    "Ryan Slade <ryanslade@gmail.com>"
-    "SAKAMOTO Noriaki <mrty.ityt.pt@gmail.com>"
-    "SDPA Project"
-    "Sadiq Jaffer <sadiq@toao.com>"
-    "Sam Baxter <baxtersa14@gmail.com>"
-    "Sam Lantinga"
-    "Sam Riyad"
-    "Samuel Mimram <samuel.mimram@ens-lyon.org>"
-    "Samuel Mimram <smimram@gmail.com>"
-    "Samuel Mimram"
-    "Sander Spies"
-    "Saswat Padhi <saswat.sourav@gmail.com>"
-    "Sawja development team"
-    "Seb Mondet <seb@mondet.org>"
-    "Sebastian Porto"
-    "Sebastien Fricker"
-    "Sebastien Mondet <seb@mondet.org>"
-    "Sebastien Mondet"
-    "Sergei Lebedev <superbobry@gmail.com>"
-    "Sergei Lebedev"
-    "Shawn McGinty <loltempast@gmail.com>"
-    "Shea Newton <lilac@shnewto.dev>"
-    "Shon Feder"
-    "Si Beaumont"
-    "Sidharth Kuruvila <sidharth.kuruvila@gmail.com>"
-    "Signal 11 Software"
-    "Simon Cruanes <simon.cruanes.2007@m4x.org>"
-    "Simon Cruanes <simon@imandra.ai>"
-    "Simon Cruanes"
-    "Simon Grondin"
-    "Simon Josefsson"
-    "Solvuu"
-    "Soren Norbaek <sorennorbaek@gmail.com>"
-    "Spiros Eliopoulos <seliopou@gmail.com>"
-    "Spiros Eliopoulos <spiros@inhabitedtype.com>"
-    "Stefan Grundmann <sg2342@googlemail.com>"
-    "Stefano Zacchiroli"
-    "Steffen Smolka <smolka@cs.cornell.edu>"
-    "Steffen Smolka smolka@cs.cornell.edu"
-    "Stephane Graham-Lengrand <graham-lengrand@lix.polytechnique.fr>"
-    "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
-    "Stephanos Tsoucas"
-    "Stephen Dolan <stephen.dolan@cl.cam.ac.uk>"
-    "Stephen Dolan"
-    "Stevan Little"
-    "Steve Bleazard <stevebleazard@googlemail.com>"
-    "Steven De Oliveira <de.oliveira.steven@gmail.com>"
-    "Stéphane Legrand"
-    "Sundials dev team"
-    "Sylvain BOILARD <boilard@crans.org>"
-    "Sylvain Le Gall"
-    "Sylvain Pogodalla"
-    "Ta-Chu Kao"
-    "Taine Zhao <thaut@logic.cs.tsukuba.ac.jp>"
-    "Tcl Core Team"
-    "TeX Users Group"
-    "Team Raccoons at Issuu"
-    "Tezos devteam"
-    "The Apache Thrift Maintainers"
-    "The Brotli Authors"
-    "The Charles Stark Draper Laboratory, Inc. <github@draper.com>"
-    "The Coq development team, INRIA, CNRS, and contributors."
-    "The Enlightenment Project"
-    "The Expat Authors"
-    "The Flex Project"
-    "The GCC team"
-    "The GNOME Project et al."
-    "The GNOME Project"
-    "The GStreamer Project"
-    "The GTK Toolkit"
-    "The Glade Authors"
-    "The Kind 2 development team"
-    "The LLVM Team"
-    "The LLVM devs"
-    "The LLVM team"
-    "The Lem Team"
-    "The Links Team <links-dev@inf.ed.ac.uk>"
-    "The MIT Kerberos Team"
-    "The Merlin team"
-    "The MirageOS team"
-    "The Open MPI Development Team"
-    "The OpenSSL Project"
-    "The Savonet Team <savonet-users@lists.sourceforge.net>"
-    "The astring programmers"
-    "The b0 programmers"
-    "The brr programmers"
-    "The down programmers"
-    "The fmt programmers"
-    "The fpath programmers"
-    "The gg programmers"
-    "The goocanvas programmers"
-    "The gtksourceview programmers"
-    "The logs programmers"
-    "The mtime programmers"
-    "The note programmers"
-    "The ocsigen team"
-    "The odig programmers"
-    "The omod programmers"
-    "The opam team"
-    "The otfm programmers"
-    "The ptime programmers"
-    "The qrc programmers"
-    "The stdlib-shims programmers"
-    "The tsdl programmers"
-    "The uucd programmers"
-    "The uucp programmers"
-    "The uunf programmers"
-    "The uuseg programmers"
-    "The vg programmers"
-    "Thibaut Mattio"
-    "Thierry Martinez <martinez@nsup.org>"
-    "Thierry Martinez <thierry.martinez@inria.fr>"
-    "Thomas Barabosch <thomas.barabosch@fkie.fraunhofer.de>"
-    "Thomas Gazagnaire <thomas@gazagnaire.org"
-    "Thomas Gazagnaire <thomas@gazagnaire.org>"
-    "Thomas Gazagnaire"
-    "Thomas Gazagnaire, Jon Ludlam"
-    "Thomas Graf"
-    "Thomas Leonard <talex5@gmail.com>"
-    "Thomas Leonard"
-    "Thomas Refis <trefis@janestreet.com>"
-    "Théophile Bastian <contact@tobast.fr> and Noémie Fong"
-    "Tobias Mock"
-    "Tom Ridge <tom.j.ridge@googlemail.com>"
-    "Tomasz Cichocinski <tomaszcichocinski@gmail.com>"
-    "Tony Aldridge <tony@angry-lawyer.com>"
-    "Tony Wuersch <tony.wuersch@gmail.com>"
-    "Torbjörn Granlund and contributors"
-    "Travis Brady <travis.brady@gmail.com>"
-    "Török Edwin <edwin@etorok.net>"
-    "Ulrik Strid"
-    "Vadim Zaliva"
-    "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>"
-    "Valentin Reis <fre@freux.fr>"
-    "Vincent Bernardoff <vb@luminar.eu.org>"
-    "Vincent Bernardoff <vincent.bernardoff@ocamlpro.com>"
-    "Vincent Bernardoff"
-    "Vincent Jacques <vincent@vincent-jacques.net>"
-    "Vincent.Simonet@vtst.net"
-    "Vincenzo Ciancia"
-    "Virgile Robles"
-    "Vladimir Brankov <vbrankov@janestreet.com>"
-    "Vu Ngoc San <san.vu-ngoc@laposte.net>"
-    "Walter Litwinczyk"
-    "Wayland dev team"
-    "Wim Lewis <wiml@hhhh.org>"
-    "X.Org Foundation"
-    "XZ Utils dev team"
-    "Xavier ALLAMIGEON"
-    "Xavier Clerc"
-    "Xavier Guérin <github@applepine.org>"
-    "Xavier Leroy <xavier.leroy@college-de-france.fr>"
-    "Xavier Leroy and many contributors"
-    "Xavier Leroy"
-    "Xavier R. Guérin"
-    "Xavier Rival et. al."
-    "Xavier Van de Woestyne <xaviervdw@gmail.com>"
-    "Xiph.Org Foundation"
-    "Xkbcommon dev team"
-    "Yann Collet"
-    "Yann Hamdaoui <yann.hamdaoui@gmail.com>"
-    "Yann Régis-Gianas <yann.regis-gianas@irif.fr>"
-    "Yaron M. Minsky"
-    "Yawar Amin <yawar.amin@gmail.com>"
-    "Yoann Padioleau <yoann.padioleau@gmail.com>"
-    "Yoichi Hirai <i@yoichihirai.com>"
-    "Yoriyuki Yamagata"
-    "Yoshikawa Masashi <yoshikawa.masashi.yh8@is.naist.jp>"
-    "Yukang <moorekang@gmail.com>"
-    "Yukihiro Matsumoto (Matz) and contributers"
-    "ZAN DoYe"
-    "Zach Shipko <zachshipko@gmail.com>"
-    "Zach Shipko"
-    "Zoggy <zoggy@bat8.org>"
-    "[Diskuv, Inc. <opensource+dirsp-exchange-kbb2017@support.diskuv.com>]"
-    "[Diskuv, Inc. <opensource+dirsp-exchange@support.diskuv.com>]"
-    "[Diskuv, Inc. <opensource+dirsp-proscript-mirage@support.diskuv.com>]"
-    "[Diskuv, Inc. <opensource+dirsp-proscript@support.diskuv.com>]"
-    "[Diskuv, Inc. <opensource+dirsp-ps2ocaml@support.diskuv.com>]"
-    "\"Christoph Höger <christoph.hoeger@tu-berlin.de>\""
-    "alsa dev team"
-    "andreashauptmann@t-online.de"
-    "andy.ray@ujamjar.com"
-    "anil@recoil.org"
-    "armael@isomorphis.me"
-    "benjamin@ocamlpro.com"
-    "blue-prawn"
-    "c-cube"
-    "c. c. piapiac"
-    "contact@afiniate.com"
-    "copy"
-    "davidwong.crypto@gmail.com"
-    "dboulytchev@gmail.com"
-    "dev@ocsigen.org"
-    "dssi dev team"
-    "edwin@skylable.com"
-    "eir"
-    "elfutils dev team"
-    "essdotteedot <essdotteedot@gmail.com>"
-    "favonia <favonia@gmail.com>"
-    "ffmpeg dev team"
-    "frei0r dev team"
-    "gabriel.scherer@gmail.com"
-    "gabriel@kerneis.info"
-    "hackwaly@qq.com"
-    "hannes@mehnert.org"
-    "hniksic@xemacs.org"
-    "http://openbabel.org/wiki/THANKS"
-    "http://pallini.di.uniroma1.it/Links.html#contact"
-    "http://www.gnuplot.info/faq/faq.html"
-    "http://www.graphviz.org/Credits.php"
-    "http://www.mpfr.org/credit.html"
-    "https://git.savannah.gnu.org/cgit/automake.git/tree/AUTHORS"
-    "https://github.com/SolomonAduolMaina/boomerang/graphs/contributors"
-    "https://github.com/dboulytchev"
-    "https://github.com/linux-pam"
-    "https://github.com/rdkit/rdkit/graphs/contributors"
-    "https://www.csie.ntu.edu.tw/~cjlin/liblinear/contributors.html"
-    "https://www.gnu.org/software/autoconf/autoconf.html#maintainer"
-    "https://www.gnu.org/software/libtool/libtool.html#maintainer"
-    "https://www.r-project.org/contributors.html"
-    "iMatix"
-    "ismailbennani <ismail.lahkim.bennani@ens.fr>"
-    "jack dev team"
-    "james woodyatt <jhw@conjury.org>"
-    "joris giovannangeli"
-    "joyprophecy@gmail.com"
-    "kakadu.hafanana@gmail.com"
-    "kakadu@pm.me"
-    "ladspa dev team"
-    "libFLAC dev team"
-    "libao dev team"
-    "liblo dev team"
-    "libsamplerate dev team"
-    "lilv dev team"
-    "m4b <m4b.github.io@gmail.com>"
-    "m4b"
-    "massd http://massd.github.io/, Marc Simon marc.simon42@gmail.com"
-    "mathias bourgoin"
-    "mirageos-devel@lists.xenproject.org"
-    "mldonkey team"
-    "mmatalka@gmail.com"
-    "mpg123 dev team"
-    "mzp <mzp.ppp@gmail.com>"
-    "nbraud"
-    "neochrome <johan@stenqvist.net>"
-    "npm, Inc."
-    "nv-vn <nv@cock.li>"
-    "orbitz@gmail.com"
-    "papatangonyc@gmail.com"
-    "pierre-vittet@pvittet.com"
-    "portaudio dev team"
-    "progman1"
-    "pulseaudio dev team"
-    "rgrinberg <rudi.grinberg@gmail.com>"
-    "rob.hoes@citrix.com"
-    "ruhatch <ruhatch@me.com>"
-    "samplerate dev team"
-    "seb@mondet.org"
-    "simon.cruanes.2007@m4x.org"
-    "sjg@crufty.net"
-    "soundtouch dev team"
-    "srt dev team"
-    "talex5@gmail.com"
-    "thelema"
-    "thomas@gazagnaire.org"
-    "virgile.prevosto@m4x.org"
-    "whitequark <whitequark@whitequark.org>"
-    "xen-api@list.xen.org"
-    "xen-api@lists.xen.org"
-    "xen-api@lists.xensource.com"
-    "xvw <xavier.vdw@gmail.com>"
-    "yallop@gmail.com"
-    "ygrek <ygrek@autistici.org>"
-    "ygrek"
-    "yomimono"
-    "yutopp"
-    "zero-install-devel@lists.sourceforge.net"
-    "Çagdas Bozman"
-    "文宇祥 <hackwaly@qq.com>"
-    ["Adam Langley" "Alex Biryukov" "Bo-Yin Yang" "Christian Winnerlein" "Colin Percival" "Daniel Dinu" "Daniel J. Bernstein" "Dmitry Khovratovich" "Jean-Philippe Aumasson" "Niels Duif" "Peter Schwabe" "Samuel Neves" "Tanja Lange" "Zooko Wilcox-O'Hearn"]
-    ["Adel Djoudi" "Benjamin Farinier" "Frédéric Recoules" "Josselin Feist" "Lesly-Ann Daniel" "Manh-Dung Nguyen" "Mathilde Ollivier" "Matthieu Lemerre" "Olivier Nicole" "Richard Bonichon" "Robin David" "Ta Thanh Dinh" "Yaëlle Vinçont"]
-    ["Alain Frisch <alain.frisch@lexifi.com>" "Corentin De Souza <de.souza.corentin@gmail.com>"]
-    ["Alain Frisch <alain.frisch@lexifi.com>" "Markus Mottl <markus.mottl@gmail.com>" "Petter Urkedal <paurkedal@gmail.com>"]
-    ["Alain Frisch <alain.frisch@lexifi.com>" "Sebastien Briais <sebastien.briais@lexifi.com>"]
-    ["Alain Frisch <alain.frisch@lexifi.com>" "https://github.com/ocaml-community/sedlex/graphs/contributors"]
-    ["Alasdair Armstrong" "Thomas Bauereiss" "Brian Campbell" "Shaked Flur" "Jonathan French" "Kathy Gray" "Robert Norton" "Christopher Pulte" "Peter Sewell" "Mark Wassell"]
-    ["Albert Cohen <Albert.Cohen@prism.uvsq.fr>" "Sam Steingold <sds@gnu.org>" "Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Stefan Monnier <monnier@iro.umontreal.ca>"]
-    ["Aleksey Nogin" "Jason Hickey" "Gerd Stolpmann"]
-    ["Alexander Ostrovsky" "Markus Weissmann"]
-    ["Alexandre Miquel" "Jun Furuse" "Didier Rémy" "Pierre Weis" "Xavier Leroy" "Roberto Di Cosmo" "Didier Le Botlan" "Alan Schmitt"]
-    ["Alexis Bernadet" "Pierre Hauweele"]
-    ["Alfredo Beaumont <alfredo.beaumont@gmail.com>" "Sonia Meruelo <smeruelo@gmail.com>"]
-    ["Anders Fugmann <anders@fugmann.net>" "Nick Betteridge <lists.nick.betteridge@gmail.com"]
-    ["Anders Fugmann" "Pedro Borges" "Peter Zotov"]
-    ["Andre Nathan <andre@digirati.com.br>" "Jeff Shaw <shawjef3@msu.edu>" "Markus W. Weissmann <markus.weissmann@in.tum.de>" "Florian Pichlmeier <florian.pichlmeier@mytum.de>"]
-    ["Andre Nathan <andre@digirati.com.br>" "Jeff Shaw <shawjef3@msu.edu>"]
-    ["Andre Nathan" "Antonin Décimo" "Dmitry Grebeniuk" "François Bobot" "Gerd Stolpmann" "Goswin von Brederlow" "Joshua Smith" "Kaustuv Chaudhuri" "Markus W. Weissmann" "Mehdi Dogguy" "Niki Yoshiuchi" "Pierre Chambart" "Roman Vorobets" "Stéphane Glondu" "Sylvain Le Gall" "ygrek" "Zhenya Lykhovyd"]
-    ["Andreas Hauptmann" "Stephane Graham-Lengrand"]
-    ["Andreas Rossberg <rossberg@mpi-sws.org>" "Philip Blair <philip@grain-lang.org>"]
-    ["Andrew Gacek" "Yuting Wang" "Kaustuv Chaudhuri"]
-    ["Andrew Makhorin" "GNU"]
-    ["Andrey Mokhov <andrey.mokhov@gmail.com>" "Jeremie Dimino <jeremie@dimino.org>"]
-    ["Andrey Popp <8mayday@gmail.com>" "Rusty Key <iam@stfoo.ru>" "Louis Roché <louis@louisroche.net>" "Oleksiy Golovko <alexei.golovko@gmail.com>" "Rudi Grinberg <me@rgrinberg.com>" "Sacha Ayoun <sachaayoun@gmail.com>" "cannorin <cannorin@gmail.com>"]
-    ["Angelo Corsaro" "Julien Enoch" "Oliver Hecart" "Gabriele Baldoni"]
-    ["Anil Madhavapeddy <anil@recoil.org>" "Dan Williams <djwillia@us.ibm.com>" "Martin Lucina <martin@lucina.net>"]
-    ["Anil Madhavapeddy <anil@recoil.org>" "David Scott <dave.scott@docker.com>" "David Sheets <dsheets@docker.com>" "Gaetan de Villele <gdevillele@gmail.com>" "Ian Campbell <ian.campbell@docker.com>" "Magnus Skjegstad <magnus@skjegstad.com>" "Mindy Preston <mindy.preston@docker.com>" "Sebastiaan van Stijn <github@gone.nl>" "Thomas Gazagnaire <thomas@gazagnaire.com>" "Thomas Leonard <thomas.leonard@docker.com>"]
-    ["Anil Madhavapeddy <anil@recoil.org>" "Rizo Isrof <rizo@odis.io>" "Patrick Ferris" "favonia@gmail.com" "Alan J Hu <alanh@ccs.neu.edu>"]
-    ["Anil Madhavapeddy" "Balraj Singh" "Richard Mortier" "Nicolas Ojeda Bar" "Thomas Gazagnaire" "Vincent Bernardoff" "Magnus Skjegstad" "Mindy Preston" "Thomas Leonard" "David Scott" "Gabor Pali" "Hannes Mehnert" "Haris Rotsos" "Kia" "Luke Dunstan" "Pablo Polvorin" "Tim Cuthbertson" "lnmx" "pqwy"]
-    ["Anil Madhavapeddy" "Daniel C. Bünzli" "Matthew Gray"]
-    ["Anil Madhavapeddy" "Dave Scott" "Richard Mortier"]
-    ["Anil Madhavapeddy" "Dave Scott" "Thomas Gazagnaire"]
-    ["Anil Madhavapeddy" "David Scott" "Thomas Gazagnaire" "Hannes Mehnert"]
-    ["Anil Madhavapeddy" "David Scott" "Thomas Leonard"]
-    ["Anil Madhavapeddy" "David Scott"]
-    ["Anil Madhavapeddy" "David Sheets" "Andy Ray" "Jeff Hammerbacher" "Thomas Gazagnaire" "Rudi Grinberg" "Qi Li" "Jeremy Yallop" "Dave Tucker"]
-    ["Anil Madhavapeddy" "David Sheets" "Rudi Grinberg"]
-    ["Anil Madhavapeddy" "John Else" "Thomas Leonard" "Andrew Cooper" "David Scott"]
-    ["Anil Madhavapeddy" "Maxence Guesdon"]
-    ["Anil Madhavapeddy" "Mindy Preston" "Thomas Gazagnaire"]
-    ["Anil Madhavapeddy" "Nathan Rebours" "Lucas Pluvinage" "Jules Aguillon"]
-    ["Anil Madhavapeddy" "Nathan Rebours"]
-    ["Anil Madhavapeddy" "Patrick Ferris"]
-    ["Anil Madhavapeddy" "Richard Mortier" "Thomas Gazagnaire" "Pierre Chambart" "David Kaloper" "Jeremy Yallop" "David Scott" "Mindy Preston" "Thomas Leonard" "Anton Kochkov" "Etienne Millon"]
-    ["Anil Madhavapeddy" "Richard Mortier" "Thomas Gazagnaire" "Pierre Chambart" "David Kaloper" "Jeremy Yallop" "David Scott" "Mindy Preston" "Thomas Leonard" "Etienne Millon"]
-    ["Anil Madhavapeddy" "Richard Mortier" "Thomas Gazagnaire"]
-    ["Anil Madhavapeddy" "Sadiq Jaffer" "Thomas Leonard"]
-    ["Anil Madhavapeddy" "Stefano Zacchiroli" "David Sheets" "Thomas Gazagnaire" "David Scott" "Rudi Grinberg" "Andy Ray"]
-    ["Anil Madhavapeddy" "Thomas Gazagnaire" "David Sheets" "Rudi Grinberg" "Timothy Bourke"]
-    ["Anil Madhavapeddy" "Thomas Gazagnaire" "Stefanie Schirmer" "Hannes Mehnert"]
-    ["Anil Madhavapeddy" "Thomas Gazagnaire"]
-    ["Anil Madhavapeddy" "Thomas Leonard" "Thomas Gazagnaire" "Rudi Grinberg" "Romain Calascibetta"]
-    ["Anil Madhavapeddy" "Thomas Leonard" "Thomas Gazagnaire" "Rudi Grinberg"]
-    ["Anil Madhavapeddy" "Thomas Leonard" "Thomas Gazagnaire"]
-    ["Anil Madhavapeddy" "Thomas Leonard"]
-    ["Anil Madhavapeddy" "Tim Deegan" "Richard Mortier" "Haris Rotsos" "David Sheets" "Thomas Gazagnaire" "Luke Dunstan" "David Scott"]
-    ["Anil Madhavapeddy" "Tim Deegan" "Richard Mortier" "Haris Rotsos" "David Sheets" "Thomas Gazagnaire" "Luke Dunstan"]
-    ["Antoine Miné" "Xavier Leroy" "Pascal Cuoq"]
-    ["Anton Bachin <antonbachin@yahoo.com>" "Spiros Eliopoulos <spiros@inhabitedtype.com>"]
-    ["Armael" "Enjolras" "c-cube"]
-    ["Arthur Charguéraud <arthur.chargueraud@inria.fr>" "Émilie Guermeur <then at Inria>" "François Pottier <francois.pottier@inria.fr>"]
-    ["Arthur Charguéraud" "Martin Clochard" "Jean-Christophe Filliâtre" "Léon Gondelman" "Armaël Guéneau" "Xavier Leroy" "Cláudio Lourenço" "Simão Melo de Sousa" "Andrei Paskevich" "Mário Pereira" "François Pottier"]
-    ["Ashish Agarwal" "Christophe Troestler"]
-    ["Benjamin Canou (OCamlPro)" "Çağdaş Bozman (OCamlPro)" "Grégoire Henry (OCamlPro)" "Louis Gesbert (OCamlPro)" "Pierrick Couderc (OCamlPro)"]
-    ["Benjamin Farinier" "Thomas Gazagnaire"]
-    ["Benoit Rognier <benoit.rognier@edukera.com>" "Guillaume Duhamel <guillaume.duhamel@edukera.com>" "Pierre-Yves Strub <pierre-yves.strub@polytechnique.edu>"]
-    ["Benoît Vaugon <benoit.vaugon@gmail.com>" "Philippe Wang" "Emmanuel Chailloux"]
-    ["Bertrand Jeannet" "Antoine Miné" "https://github.com/antoinemine/apron/graphs/contributors"]
-    ["Bertrand Jeannet" "Nicolas Berthier"]
-    ["Bob Friesenhahn" "Lee Howard" "Frank Warmerdam"]
-    ["Brigitte Pientka" "Joshua Dunfield" "Andrew Cave" "Jacob Thomas Errington" "Junyoung Clare Jang"]
-    ["Bruce Ricard <bruce.ricard@gmail.com>" "Jesper Louis Andersen <jesper.louis.andersen@gmail.com>"]
-    ["Cagdas Bozman <cagdas.bozman@ocamlpro.com>" "Michael Laporte <michael.laporte@ocamlpro.com>" "Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>" "Maxime Levillain <maxime.levillain@ocamlpro.com>" "Alain Mebsout <alain.mebsout@ocamlpro.com>"]
-    ["Caleb Koch <cak247@cornell.edu>" "Steffen Smolka <smolka@cs.cornell.edu>" "Nate Foster <jnfoster@cs.cornell.edu>"]
-    ["Charles Chamberlain <charlespipin@gmail.com>" "Cyrus Omar <cyrus.omar@gmail.com>"]
-    ["Charles-Edouard Lecat" "Romain Calascibetta <romain.calascibetta@gmail.com>"]
-    ["Christian Lindig <lindig@eecs.harvard.edu>" "Shawn Wagner <shawnw@speakeasy.org>" "ygrek <ygrek@autistici.org>"]
-    ["Christian Lindig" "Anil Madhavapeddy"]
-    ["Christian Lindig" "David Scott" "Euan Harris" "John Else" "Jon Ludlam" "Jonathan Davies" "Marcello Seri" "Si Beaumont" "Thomas Sanders" "Vincent Bernardoff"]
-    ["Christiano F. Haesbaert <haesbaert@haesbaert.org>" "Hannes Mehnert <hannes@mehnert.org>"]
-    ["Christophe Raffalli <christophe@raffalli.eu>" "Rodolphe Lepigre <lepigre@mpi-sws.org>"]
-    ["Christophe Raffalli <christophe@raffalli.eu>" "Rodolphe Lepigre <rodolphe.lepigre@inria.fr>"]
-    ["Christophe Raffalli <raffalli@univ-savoie.fr>" "Alexandre Miquel<amiquel@fing.edu.uy>"]
-    ["Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Doug Bagley"]
-    ["Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Edgar Friendly <thelema314@gmail.com>"]
-    ["Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Kenn Knowles <kenn.knowles@gmail.com>"]
-    ["Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Pierre Hauweele <pierre@hauweele.net>" "Fabian Pijcke <fabian.pijcke@gmail.com>" "Noémie Meunier <noemie_6462@hotmail.com>" "Bertrand Desmons <bibi-6@hotmail.fr>" "Xavier Deschuyteneer <xavier.deschuyteneer@gmail.com>"]
-    ["Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Pierre Hauweele <pierre@hauweele.net>"]
-    ["Christophe Troestler" "Julie De Pril" "Marc Ducobu" "Dany Maslowski"]
-    ["Christophe Troestler" "Noémie Meunier" "Pierre Hauweele"]
-    ["Christophe Troestler" "Vincent Hugot"]
-    ["Claude Michel <claude.michel@unice.fr>" "Louis Gesbert <louis.gesbert@ocamlpro.com>"]
-    ["Claudio Sacerdoti Coen" "Enrico Tassi"]
-    ["Clement Pascutto" "Thomas Gazagnaire" "Ioana Cristescu"]
-    ["Clément Pascutto <clement@pascutto.fr>" "Mattias Roux <mattias@tarides.com>" "Thomas Gazagnaire <thomas@tarides.com>"]
-    ["Craig Ferguson <craig@tarides.com>" "Thomas Gazagnaire <thomas@tarides.com>" "Ioana Cristescu <ioana@tarides.com>" "Clément Pascutto <clement@tarides.com>"]
-    ["Cryptosense <opensource@cryptosense.com>" "Nathan Rebours <nathan.p.rebours@gmail.com>"]
-    ["D. Richard Hipp" "Dan Kennedy" "Joe Mistachkin"]
-    ["Damien Doligez" "Jacques Garrigue" "Xavier Leroy" "Didier Remy" "Ian T Zimmerman"]
-    ["Dan Williams <djwillia@us.ibm.com>" "Magnus Skjegstad <magnus@skjegstad.com>" "Martin Lucina <martin@lucina.net>"]
-    ["Dan Williams <djwillia@us.ibm.com>" "Martin Lucina <martin@lucina.net>" "Ricardo Koller <kollerr@us.ibm.com>"]
-    ["Dan Williams" "Martin Lucina"]
-    ["Daniel Bünzli" "Thomas Gazagnaire" "Nathan Rebours"]
-    ["Daniel Lowd <lowd@cs.uoregon.edu>" "Amirmohammad (Pedram) Rooshenas <pedram@cs.uoregon.edu>"]
-    ["Daniel Weil" "Hezekiah M. Carty" "Rudi Grinberg"]
-    ["Daniel de Rauglaudre" "Chet Murthy"]
-    ["Daniel de Rauglaudre" "Jean-Christophe FILLIATRE" "Cedric Cellier"]
-    ["Daniel de Rauglaudre" "Nicolas Pouillard"]
-    ["Daniel de Rauglaudre" "Xavier Leroy"]
-    ["Dave Rolsky" "Boris Zentner" "Gregory Oschwald" "Will Storey"]
-    ["Dave Scott" "Anil Madhavapeddy"]
-    ["Dave Scott" "Jon Ludlam" "John Else"]
-    ["Dave Scott" "Jon Ludlam"]
-    ["Dave Scott" "Thomas Gazagnaire" "David Allsopp"]
-    ["Dave Scott" "Thomas Gazagnaire"]
-    ["David Chemouil" "Julien Brunel" "Denis Kuperberg"]
-    ["David Chemouil" "Julien Brunel"]
-    ["David Declerck <david.declerck@ocamlpro.com>" "Steven De Oliveira <steven.de-oliveira@ocamlpro.com>"]
-    ["David Kaloper <david@numm.org>" "Hannes Mehnert <hannes@mehnert.org>" "Eric Ebinger <github@eric.theebingers.com>" "Calascibetta Romain <romain.calascibetta@gmail.com>"]
-    ["David Kaloper <david@numm.org>" "Hannes Mehnert <hannes@mehnert.org>"]
-    ["David Kaloper <dk505@cam.ac.uk>" "Hannes Mehnert <hannes@mehnert.org>"]
-    ["David Scott" "Anil Madhavapeddy" "Jerome Maloberti" "John Else" "Jon Ludlam" "Thomas Sanders" "Mike McClurg"]
-    ["David Scott" "David Sheets" "Euan Harris" "Vincent Bernardoff"]
-    ["David Scott" "David Sheets" "Thomas Leonard" "Anil Madhavapeddy"]
-    ["David Scott" "John Else"]
-    ["David Scott" "Jon Ludlam" "Si Beaumont" "Pau Ruiz Safont"]
-    ["David Scott" "Jonathan Ludlam" "Andrew Cooper" "Bob Ball" "Euan Harris" "John Else" "Mike McClurg" "Rob Hoes" "Si Beaumont" "Thomas Sanders" "Vincent Bernadoff"]
-    ["David Scott" "Rolf Neugebauer" "Anil Madhavapeddy" "Simon Ferquel"]
-    ["David Scott" "Thomas Gazagnaire"]
-    ["David Sheets <sheets@alum.mit.edu>" "Jeremy Yallop <yallop@gmail.com>"]
-    ["David Sheets <sheets@alum.mit.edu>" "Peter Zotov <whitequark@whitequark.org>" "Benjamin Canou <benjamin@ocamlpro.com>"]
-    ["David Sheets" "Anil Madhavapeddy" "Hugo Heuzard"]
-    ["David Sheets" "Jeremy Yallop"]
-    ["David Sheets" "Jonathan Protzenko"]
-    ["David Sheets" "Louis Gesbert"]
-    ["David Sheets" "Thomas Gazagnaire"]
-    ["Davide Gessa <gessadavide@gmail.com>" "Vincent Bernardoff <vb@luminar.eu.org>" "Yoichi Hirai <i@yoichihirai.com>" "Anton Trunov"]
-    ["Dennis Griffith <isanobody@gmail.com>" "Frank Pfenning <fp@cs.cmu.edu>"]
-    ["Didier Plaindoux <d.plaindoux@free.fr>" "Pierre Ruyter <grimfw@gmail.com>" "Xavier Van de Woestyne <xaviervdw@gmail.com>"]
-    ["Dmitrii Boulytchev https://github.com/dboulytchev" "Dmitrii Kosarev https://github.com/Kakadu" "Evgenii Moiseenko https://github.com/eupp" "Petr Lozov https://github.com/Lozov-Petr" "JetBrains Research https://research.jetbrains.org"]
-    ["Dmitry Grebeniuk <gdsfh1@gmail.com>" "ygrek@autistici.org"]
-    ["Dominic Mulligan" "Francesco Zappa Nardelli" "Gabriel Kerneis" "Kathy Gray" "Peter Boehm" "Peter Sewell" "Scott Owens" "Thomas Tuerk" "Brian Campbell" "Shaked Flur" "Thomas Bauereiss" "Stephen Kell" "Thomas Williams" "Lars Hupel" "Basile Clement"]
-    ["Dominik Brugger <dominikbrugger@fastmail.fm>" "Oliver Gu <gu.oliver@yahoo.com>" "Philippe Veber <philippe.veber@gmail.com>"]
-    ["Edgar Aroutiounian <edgar.factorial@gmail.com>" "Simon Cruanes"]
-    ["Egbert Ammicht <eammicht@lucent.com>" "Patrick Cousot <Patrick.Cousot@ens.fr>" "Sam Ehrlichman <sehrlichman@janestreet.com>" "Florent Hoareau <h.florent@gmail.com>" "Markus Mottl <markus.mottl@gmail.com>" "Liam Stewart <liam@cs.toronto.edu>" "Christophe Troestler <Christophe.Troestler@umons.ac.be>" "Oleg Trott <ot14@columbia.edu>" "Martin Willensdorfer <ma.wi@gmx.at>"]
-    ["Emilio Jesús Gallego Arias" "Karl Palmskog" "Clément Pit-Claudel" "Kaiyu Yang"]
-    ["Emmanuel Onzo" "Philip Blair"]
-    ["Erwan Jahier" "Pascal Raymond" "Yvan Roux"]
-    ["Erwan Jahier" "Pascal Raymond"]
-    ["Etienne Millon <me@emillon.org>" "Andres Erbsen <andreser@mit.edu>" "Google Inc." "Jade Philipoom <jadep@mit.edu> <jade.philipoom@gmail.com>" "Massachusetts Institute of Technology"]
-    ["Etienne Millon <me@emillon.org>" "INRIA and Microsoft Corporation"]
-    ["Eyyüb Sari <eyyub.sari@epitech.eu>" "Romain Calascibetta <romain.calascibetta@gmail.com>"]
-    ["Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>" "Pierre Chambart <pierre.chambart@ocamlpro.com>"]
-    ["Fabrice Le Fessant <fabrice.le_fessant@origin-labs.com>" "Léo Andrès <leo.andres@ocamlpro.com>"]
-    ["Fabrice Le Fessant" "Thomas Gazagnaire"]
-    ["Florent Monnier" "David Cadé" "Piotr Mardziel"]
-    ["Florent Monnier" "David Cadé"]
-    ["Florent Monnier" "Piotr Mardziel" "David Cadé" "Guillaume Munch-Maccagnoni"]
-    ["Florent Monnier" "Sylvain Boilard"]
-    ["Francisco Ferreira" "Fangyi Zhou" "Simon Castellan"]
-    ["Francois Berenger" "Francois Bobot"]
-    ["François Bidet" "Ismail Bennani"]
-    ["François Bobot" "Jean-Christophe Filliâtre" "Claude Marché" "Guillaume Melquiond" "Andrei Paskevich"]
-    ["François Pottier <francois.pottier@inria.fr>" "Nicolas Pouillard <np@nicolaspouillard.fr>"]
-    ["François Pottier <francois.pottier@inria.fr>" "Yann Régis-Gianas <yrg@pps.univ-paris-diderot.fr>"]
-    ["Frederic Bour <frederic.bour@lakaban.net>" "Anil Madhavapeddy <anil@recoil.org>"]
-    ["Frederic Brunel <brunel@mail.dotcom.fr>" "Luc Mazardo <luc@mazardo.com>" "Sami Mäkelä <sajuma@utu.fi>" "Olivier Andrieu <oliv__a@users.sourceforge.net>" "Julien Boulnois <jboulnois@gmail.com>"]
-    ["Frédéric Bour <frederic.bour@lakaban.net>" "Alain Frisch <alain.frisch@lexifi.com>"]
-    ["Frédéric Bour <frederic.bour@lakaban.net>" "Jérémie Dimino <jeremie@dimino.org>"]
-    ["Gabriel Belouze <gabriel.belouze@ens.psl.eu>" "Ioana Cristescu <ioana@tarides.com>"]
-    ["Gabriel Radanne <drupyog@zoho.com>" "Christopher Zimmermann <christopher@gmerlin.de>"]
-    ["Gabriel Radanne <drupyog@zoho.com>" "Petter A. Urkedal <paurkedal@gmail.com>"]
-    ["Gagandeep Singh" "Markus Püschel" "Martin Vechev"]
-    ["Gerd Stolpmann <gerd@gerd-stolpmann.de>" "David Allsopp <david.allsopp@metastack.com>"]
-    ["Ghiles Ziat <ghiles.ziat@isae-supaero.fr" "Matthieu Journault <Matthieu.journault@lip6.fr>"]
-    ["Grégoire Henry <gregoire.henry@ocamlpro.com>" "Louis Gesbert <louis.gesbert@ocamlpro.com>" "Thomas Gazagnaire <thomas@gazagnaire.org>" "Jun Furuse"]
-    ["Guillaume Baudart" "Louis Mandel" "Jérôme Siméon"]
-    ["Guillaume Baudart" "Louis Mandel"]
-    ["Guillaume Yzyquel" "Maxence Guesdon" "Philippe Veber"]
-    ["Guy Eric Schalnat" "Andreas Dilger" "John Bowler" "Glenn Randers-Pehrson"]
-    ["Hannes Mehnert <hannes@mehnert.org>" "David Kaloper <dk505@cam.ac.uk>"]
-    ["Hannes Mehnert <hannes@mehnert.org>" "Nathan Rebours <nathan.p.rebours@gmail.com>" "Clément Pascutto <clement@tarides.com>" "Etienne Millon <me@emillon.org>" "Andres Erbsen <andreser@mit.edu>" "Google Inc." "Jade Philipoom <jadep@mit.edu> <jade.philipoom@gmail.com>" "Massachusetts Institute of Technology" "Zoe Paraskevopoulou <zoe.paraskevopoulou@gmail.com>"]
-    ["Hannes Mehnert" "David Kaloper" "Anil Madhavapeddy" "Dave Scott"]
-    ["Holger Arnold <holger@harnold.org>" "Max Mouratov <mmouratov@gmail.com>"]
-    ["Isaac Hodes <isaachodes@gmail.com>" "B. Arman Aksoy <arman@aksoy.org>" "Seb Mondet <seb@mondet.org>" "Nick Zalutskiy <nick@const.fun>" "Armaël Guéneau <armael.gueneau@ens-lyon.fr>" "Tom Repetti <trepetti@cs.columbia.edu>" "Marcello Seri <m.seri@rug.nl>"]
-    ["Isaac Hodes <isaachodes@gmail.com>" "Leonid Rozenberg <leonidr@gmail.com>"]
-    ["Jacques-Henri Jourdan <jacques-henri.jourdan@normalesup.org>" "Frédéric Bour <frederic.bour@lakaban.net>"]
-    ["Jan Doms" "Joost Damad" "Romain Slootmaekers" "Nicolas Trangez"]
-    ["Jane Street Group, LLC" "Jeremie Dimino <jeremie@dimino.org>"]
-    ["Jean Krivine" "Jérôme Feret" "Pierre Boutillier" "Ioana Cristescu" "Mutaamba Maasha" "Lý Kim Quyên"]
-    ["Jean-Baptiste Rouquier" "Fabrice Le Fessant" "Maxence Guesdon"]
-    ["Jean-Christophe Filliâtre" "Claude Marché" "Yannick Moy" "Romain Bardou"]
-    ["Jean-Christophe Filliâtre" "Claude Marché"]
-    ["Jean-Christophe Filliâtre" "Clément Pascutto"]
-    ["Jean-Christophe Filliâtre" "Kalyan Krishnamani"]
-    ["Jean-Marc Alliot <jean-marc.alliot@irit.fr>" "Jean-Baptiste Gotteland <gottelan@recherche.enac.fr>" "Christophe Troestler <Christophe.Troestler@umons.ac.be>"]
-    ["Jean-loup Gailly" "Mark Adler"]
-    ["Jeffrey Dean" "Sanjay Ghemawat" "Google Inc."]
-    ["Jeremy Yallop" "David Sheets"]
-    ["Jeremy Yallop" "Demi Obenour" "Stephane Glondu" "Andreas Hauptmann"]
-    ["Jeremy Yallop" "Leo White"]
-    ["Jerome Vouillon" "Thomas Gazagnaire" "Anil Madhavapeddy" "Rudi Grinberg" "Gabriel Radanne"]
-    ["Jim Meyering" "David J. MacKenzie" "https://git.savannah.gnu.org/cgit/automake.git/tree/THANKS"]
-    ["John Billings" "Martin Jambon"]
-    ["John Else" "Simon Cruanes"]
-    ["John Whitington" "John Christopher McAlpine"]
-    ["Jon Ludlam" "Magnus Skjegstad" "Mindy Preston"]
-    ["Jonathan Ludlam" "David Scott" "Thomas Sanders"]
-    ["Jordan Walke <jordojw@gmail.com>" "Charles Chamberlain <charlespipin@gmail.com" "Cyrus Omar <cyrus.omar@gmail.com>"]
-    ["Josef Erben" "Aron Erben" "Miko Nieminen"]
-    ["Julien Sagot <ju.sagot@gmail.com>" "Nathan Holland <nholland94@gmail.com>"]
-    ["Julien Sagot <julien.sagot@geneanet.org>" "Fabien Lheureux <fabien.lheureux@gmail.com>"]
-    ["Julien Sagot" "Emmanuel Surleau" "mackwic" "Andrew Rudenko" "orbifx" "c-cube"]
-    ["Julien Signoles" "Guillaume Petiot"]
-    ["Jun Furuse" "François Pessaux" "Pierre Weis"]
-    ["Jérémie Dimino <jeremie@dimino.org>" "Anton Bachin"]
-    ["Jérôme Vouillon" "Jérémie Dimino"]
-    ["Jürgen Hötzel <juergen@hoetzel.info>" "Louis Gesbert <louis.gesbert@ocamlpro.com>"]
-    ["KC Sivaramakrishnan" "Anirudh Sunder Raj"]
-    ["KC Sivaramakrishnan" "Thomas Gazagnaire" "Benjamin Farinier"]
-    ["Kate <kit.ty.kate@disroot.org>" "Eric Stokes <letaris@me.com>"]
-    ["Kay Sievers" "Tom Gundersen"]
-    ["Keith Packard" "Carl Worth" "Behdad Esfahbod"]
-    ["Lars Nilsson" "ygrek"]
-    ["Leo White <leo@lpw25.net>" "Mark Shinwell <mshinwell@janestreet.com>"]
-    ["Leo White <lpw25@cl.cam.ac.uk>" "David Sheets <sheets@alum.mit.edu>"]
-    ["Leo White <lpw25@cl.cam.ac.uk>" "Thomas Refis <trefis@janestreet.com>"]
-    ["Liang Wang" "Jianxin Zhao"]
-    ["Louis Gesbert <louis.gesbert@ocamlpro.com>" "Anil Madhavapeddy <anil@recoil.org>"]
-    ["Louis Gesbert <louis.gesbert@ocamlpro.com>" "David Allsopp <david.allsopp@metastack.com>"]
-    ["Louis Gesbert <louis.gesbert@ocamlpro.com>" "David Sheets <sheets@alum.mit.edu>" "Jeremie Dimino <jdimino@janestreet.com>"]
-    ["Louis Gesbert <louis.gesbert@ocamlpro.com>" "David Sheets <sheets@alum.mit.edu>"]
-    ["Louis Gesbert <louis.gesbert@ocamlpro.com>" "Thomas Gazagnaire <thomas@gazagnaire.org>" "Jun Furuse"]
-    ["Louis Gesbert" "Gabriel Radanne"]
-    ["Louis Gesbert" "Thomas Gazagnaire"]
-    ["Louis Roché <louis@louisroche.net>" "Simon Cruanes <simon.cruanes.2007@m4x.org>"]
-    ["Luc Maranget <Luc.Maranget@inria.fr>" "Jade Alglave <j.alglave@ucl.ac.uk>"]
-    ["Maas-Maarten Zeeman <mmzeeman@xs4all.nl>" "ygrek <ygrek@autistici.org>"]
-    ["Maas-Maarten Zeeman" "Sylvain Le Gall"]
-    ["Marcello Seri" "Ta-Chu Calvin Kao"]
-    ["Marie Pelleau <marie.pelleau@i3s.unice.fr>" "Ghiles Ziat <ghiles.ziat@lip6.fr>"]
-    ["Markus Mottl <markus.mottl@gmail.com>" "Christian Szegedy <csdontspam@metamatix.com>"]
-    ["Martin Jambon <martin@mjambon.com>" "David Sheets <sheets@alum.mit.edu>" "Rudi Grinberg <me@rgrinberg.com>" "Ivan Jager <aij+git@mrph.org>" "Jeff Meister <nanaki@gmail.com>" "Carmelo Piccione <carmelo.piccione@gmail.com>" "Raman Varabets <roman.vorobets@gmail.com>" "Mathieu Baudet <mathieubaudet@fb.com>" "Rauan Mayemir <rauan@mayemir.io>" "Louis Roché <louis@louisroche.net>" "Brendan Long <self@brendanlong.com>" "Christophe Troestler <christophe.Troestler@umons.ac.be>" "Vincent Bernardoff <vb@luminar.eu.org>" "haoyang <haoyang@esper.co>"]
-    ["Martin Jambon" "Jean-Christophe Filliatre" "Richard W.M. Jones"]
-    ["Matt Bray <mattjbray@gmail.com>" "Simon Cruanes <simon@imandra.ai>"]
-    ["Maxence Guesdon" "Pierre-Yves Strub" "Nadji Gauthier"]
-    ["Maël Valais <mael.valais@gmail.com>" "Olivier Lezaud"]
-    ["Michael Brown" "Daniel Eisenbud" "Gershon Elber" "Marc Ewing" "Toshio Kuratomi" "marek" "Peter Mehlitz" "Dick Porter" "Eric Raymond" "Petter Reinholdtsen" "Georg Schwarz"]
-    ["Michele Alberti" "Gergö Barany" "Patrick Baudin" "François Bobot" "Richard Bonichon" "David Bühler" "Loïc Correnson" "Julien Crétin" "Pascal Cuoq" "Zaynah Dargaye" "Jean-Christophe Filliâtre" "Philippe Herrmann" "Florent Kirchner" "Tristan Le Gall" "Jean-Christophe Léchenet" "Matthieu Lemerre" "David Maison" "Claude Marché" "André Maroneze" "Benjamin Monate" "Yannick Moy" "Anne Pacalet" "Valentin Perrelle" "Guillaume Petiot" "Virgile Prevosto" "Armand Puccetti" "Muriel Roger" "Julien Signoles" "Kostyantyn Vorobyov" "Boris Yakobowski"]
-    ["Michele Alberti" "Thibaud Antignac" "Gergö Barany" "Patrick Baudin" "Allan Blanchard" "Lionel Blatter" "François Bobot" "Richard Bonichon" "Quentin Bouillaguet" "David Bühler" "Zakaria Chihani" "Loïc Correnson" "Julien Crétin" "Pascal Cuoq" "Zaynah Dargaye" "Basile Desloges" "Jean-Christophe Filliâtre" "Philippe Herrmann" "Maxime Jacquemin" "Florent Kirchner" "Tristan Le Gall" "Jean-Christophe Léchenet" "Matthieu Lemerre" "Dara Ly" "David Maison" "Claude Marché" "André Maroneze" "Thibault Martin" "Fonenantsoa Maurica" "Melody Méaulle" "Benjamin Monate" "Yannick Moy" "Anne Pacalet" "Valentin Perrelle" "Guillaume Petiot" "Dario Pinto" "Virgile Prevosto" "Armand Puccetti" "Virgile Robles" "Muriel Roger" "Julien Signoles" "Kostyantyn Vorobyov" "Boris Yakobowski"]
-    ["Mike Wells <https://github.com/mwells>" "Martin Jambon <https://github.com/mjambon>" "Bikal Lem <https://github.com/bikallem>"]
-    ["Mike Wells" "David Höppner" "Aleksandr Dinu"]
-    ["Milan Ikits" "Marcelo E. Magallon" "Lev Povalahev"]
-    ["Mindy Preston" "Hannes Mehnert" "Anil Madhavapeddy" "Thomas Gazagnaire" "Stefanie Schirmer"]
-    ["Mindy Preston" "Hannes Mehnert" "Anil Madhavapeddy" "Thomas Gazagnaire"]
-    ["Mindy Preston" "Thomas Leonard"]
-    ["Mounir Nasr Allah" "Thomas Gazagnaire"]
-    ["Namdak Tonpa @5HT" "Siegmentation Fault @siegment"]
-    ["Nathan Graule <solarliner@gmail.com>" "Arthur Correnson <arthur.correnson@gmail.com>"]
-    ["Nicolas Cannasse" "Brian Hurt" "Yamagata Yoriyuki" "Markus Mottl" "Jesse Guardiani" "John Skaller" "Bardur Arantsson" "Janne Hellsten" "Richard W.M. Jones" "ygrek" "Gabriel Scherer" "Pietro Abate"]
-    ["Nicolas Pouillard" "Berke Durak" "Cedric Pasteur" "Louis Mandel"]
-    ["Nicolas Pouillard" "Berke Durak"]
-    ["Nik Swamy <nswamy@microsoft.com>" "Jonathan Protzenko <protz@microsoft.com>" "Tahina Ramananandro <taramana@microsoft.com>"]
-    ["Nikos Mavrogiannopoulos" "Simon Josefsson"]
-    ["Niols <niols@niols.fr>" "Kerl <kerl@wkerl.me>"]
-    ["Niols “Niols” Jeannerod <niols@niols.fr>" "Martin Pépin <kerl@wkerl.me>"]
-    ["Nomadic Labs" "Ocamlpro"]
-    ["Norman Ramsey <nr@cs.tufts.edu>" "Christian Lindig <lindig@gmail.com>"]
-    ["Oliver Friedmann" "Martin Lange"]
-    ["Olivier Andrieu <oandrieu@gmail.com>" "Markus Mottl <markus.mottl@gmail.com>"]
-    ["Olivier Andrieu" "Richard Jones"]
-    ["Olivier Andrieu" "Stefano Zacchiroli"]
-    ["Owen Taylor" "Behdad Esfahbod"]
-    ["Paolo Donadeo" "Sylvain Le Gall"]
-    ["Peter Sewell" "Francesco Zappa Nardelli" "Scott Owens"]
-    ["Petter A. Urkedal <paurkedal@gmail.com>" "Gabriel Radanne <drupyog@zoho.com>"]
-    ["Petter A. Urkedal <paurkedal@gmail.com>" "James Owen <james@cryptosense.com>"]
-    ["Petter A. Urkedal <paurkedal@gmail.com>" "Nathan Rebours <nathan@cryptosense.com>"]
-    ["Philip Hazel" "Zoltan Herczeg"]
-    ["Philippe Veber <philippe.veber@gmail.com>" "Ashish Agarwal <agarwal1975@gmail.com>" "Drup <drupyog@zoho.com>"]
-    ["Philippe Wang <philippe.wang@gmail.com>" "Nicolás Ojeda Bär <n.oje.bar@gmail.com>"]
-    ["Pieter Goetschalckx <3.14.e.ter@gmail.com>" "Antonio Nuno Monteiro <anmonteiro@gmail.com>"]
-    ["Pietro Abate" "Jaap Boender" "Roberto Di Cosmo" "Johannes Schauer" "Ralf Treinen" "Stefano Zacchiroli" "Jakub Zwolakowski" "Olivier Rosello"]
-    ["Pietro Abate" "Ralf Treinen" "Jaap Boender" "Johannes Schauer Marin Rodrigues" "Roberto Di Cosmo" "Felipe Garay" "Stefano Zacchiroli" "Jakub Zwolakowski" "Olivier Rosello"]
-    ["Quentin Hocquet <mefyl@gruntech.org>" "Jane Street Group, LLC" "Jeremie Dimino <jeremie@dimino.org>"]
-    ["R. Bonichon" "D. Delahaye" "D. Doligez"]
-    ["Raman Varabets <roman.vorobets@gmail.com>" "ygrek <ygrek@autistici.org>"]
-    ["Raphaël Proust" "Oscar Hellström"]
-    ["Remy El Sibaie" "Jean-Christophe Filliâtre"]
-    ["Reuben N. S. Rowe <reuben.rowe@cantab.net>" "Hugo Férée <hugo.feree@gmail.com>"]
-    ["Reynir Bjoernsson" "Hannes Mehnert"]
-    ["Reynir Björnsson <reynir@reynir.dk>" "Hannes Mehnert <hannes@mehnert.org>"]
-    ["Richard Jones" "Christophe Troestler"]
-    ["Richard W.M. Jones <rjones@redhat.com>" "Pino Toscano <ptoscano@redhat.com>"]
-    ["Richard W.M. Jones" "Xavier R. Guérin"]
-    ["Robert Corbett" "Richard Stallman" "Wilfred Hansen" "Akim Demaille" "Paul Hilfinger" "Joel E. Denny" "Paolo Bonzini" "Alex Rozenman" "Paul Eggert"]
-    ["Robert Julien" "Von Tokarski Guillaume" "Filliatre Jean-Christophe" "Conchon Sylvain" "Le Fessant Fabrice"]
-    ["Roberto Ierusalimschy" "Waldemar Celes" "Luiz Henrique de Figueiredo"]
-    ["Roberto di Cosmo <roberto@dicosmo.org>" "Stefano Zacchiroli" "Pietro Abate"]
-    ["Rodolphe Lepigre <rodolphe.lepigre@inria.fr>" "Frédéric Blanqui <frederic.blanqui@inria.fr>"]
-    ["Romain Bardou" "Francois Bobot" "Jean-Christophe Filliâtre" "Johannes Kanig" "Stephane Lescuyer"]
-    ["Romain Calascibetta" "Christophe Troestler"]
-    ["Romain Slootmaekers <romain.slootmaekers@openvstorage.com>" "Jan Doms <jan.doms@openvstorage.com>"]
-    ["Rudi Grinberg" "Anurag Soni" "Thibaut Mattio"]
-    ["Rudi Grinberg" "Armaël Guéneau"]
-    ["Rudi Grinberg" "Simon Cruanes"]
-    ["Ryan Dahl" "Bert Belder" "et al."]
-    ["Sandstorm Development Group, Inc." "Cloudflare, Inc." "other contributors"]
-    ["Sebastien Mondet <seb@modnet.org>" "Leonid Rozenberg <leonidr@gmail.com>"]
-    ["Sebastien Mondet <seb@mondet.org>" "Leonid Rozenberg <leonidr@gmail.com>" "Arun Ahuja <aahuja11@gmail.com>" "Jeff Hammerbacher <jeff.hammerbacher@gmail.com>" "Isaac Hodes <isaachodes@gmail.com>"]
-    ["Sebastien Mondet <seb@mondet.org>" "Leonid Rozenberg <leonidr@gmail.com>" "Isaac Hodes <isaachodes@gmail.com>" "Jeff Hammerbacher <jeff.hammerbacher@gmail.com>"]
-    ["Sebastien Mondet" "Ashish Agarwal" "Philippe Veber" "Christophe Troestler" "Sergei Lebedev" "David Koppstein" "Alexander Gryzlov" "Francois Berenger"]
-    ["Shawn Wagner" "Eric Stokes"]
-    ["Shawn Wagner" "Jérémie Dimino"]
-    ["Simon Cruanes" "Andrew Ray"]
-    ["Simon Cruanes" "ELLIOTTCABLE"]
-    ["Simon Cruanes" "Gabriel Radanne"]
-    ["Simon Cruanes" "Guillaume Bury"]
-    ["Simon Cruanes" "Jasmin Blanchette"]
-    ["Simon Cruanes" "Petar Vukmirovic" "Alexander Bentkamp" "Sophie Tourret" "Visa Nummelin"]
-    ["Simon Grondin" "Will Welch"]
-    ["Soonho Kong <soonhok@cs.cmu.edu>" "Wei Chen <weichen1@andrew.cmu.edu>"]
-    ["Spiros Eliopoulos <spiros@inhabitedtype.com>" "Daniel Patterson <dbp@dbpmail.net>" "Tim McGilchrist <timmcgil@gmail.com>"]
-    ["Stefanie Schirmer @linse" "Hannes Mehnert"]
-    ["Stephen Kell" "Dominic Mulligan" "Peter Sewell"]
-    ["Sylvain Conchon" "Alain Mebsout"]
-    ["Sylvain Conchon" "Jean-Christophe Filliâtre" "Julien Signoles"]
-    ["Sylvain Le Gall" "Anil Madhavapeddy"]
-    ["Sylvain Le Gall" "Mauricio Fernandez"]
-    ["Sébastien Ailleret" "Martin Jambon"]
-    ["Thibault Suzanne" "Gabriel Scherer" "Rudi Grinberg"]
-    ["Thomas Barabosch <thomas.barabosch@fkie.fraunhofer.de>" "Ivan Gotovchits <ivg@ieee.org>"]
-    ["Thomas Barabosch <thomas.barabosch@fkie.fraunhofer.de>" "Nils-Edvin Enkelmann <nils-edvin.enkelmann@fkie.fraunhofer.de>"]
-    ["Thomas Gazagnaire <thomas@gazagnaire.org>" "Anil Madhavapeddy   <anil@recoil.org>" "Fabrice Le Fessant  <Fabrice.Le_fessant@inria.fr>" "Frederic Tuong      <tuong@users.gforge.inria.fr>" "Louis Gesbert <louis.gesbert@ocamlpro.com>" "Guillem Rieu        <guillem.rieu@ocamlpro.com>" "Vincent Bernardoff  <vb@luminar.eu.org>" "Roberto Di Cosmo    <roberto@dicosmo.org>"]
-    ["Thomas Gazagnaire <thomas@gazagnaire.org>" "Stefanie Schirmer" "Hannes Mehnert"]
-    ["Thomas Gazagnaire" "Anil Madhavapeddy" "Calascibetta Romain" "Peter Zotov"]
-    ["Thomas Gazagnaire" "Anil Madhavapeddy" "Dave Scott" "Thomas Leonard" "Gabriel Radanne"]
-    ["Thomas Gazagnaire" "Anil Madhavapeddy" "Gabriel Radanne" "Mindy Preston" "Thomas Leonard" "Nicolas Ojeda Bar" "Dave Scott" "David Kaloper" "Hannes Mehnert" "Richard Mortier"]
-    ["Thomas Gazagnaire" "Anil Madhavapeddy" "Peter Zotov"]
-    ["Thomas Gazagnaire" "Craig Ferguson"]
-    ["Thomas Gazagnaire" "Dave Scott"]
-    ["Thomas Gazagnaire" "Hannes Mehnert"]
-    ["Thomas Gazagnaire" "Richard Mortier" "David Sheets" "Anil Madhavapeddy"]
-    ["Thomas Gazagnaire" "Thomas Leonard"]
-    ["Thomas Gazagnaire" "Trevor Summers Smith"]
-    ["Thomas Leonard" "David Scott"]
-    ["Thomas Leonard" "Magnus Skjegstad" "David Scott" "Thomas Gazagnaire"]
-    ["Thomas Refis <trefis@janestreet.com>" "David Sheets <sheets@alum.mit.edu>" "Leo White <leo@lpw25.net>" "Anton Bachin <antonbachin@yahoo.com>" "Jon Ludlam <jon@recoil.org>"]
-    ["Thomas© Leonard" "Anil Madhavapeddy" "Dave Tucker" "Thomas Gazagnaire"]
-    ["Tikhon Jelvis" "Rudi Grinberg"]
-    ["Timothy Bourke <tim@tbrk.org>" "Jun Inoue <Jun.Lambda@gmail.com>" "Marc Pouzet <Marc.Pouzet@ens.fr>"]
-    ["Timothy Bourke <timothy.bourke@inria.fr>" "Marc Pouzet <marc.pouzet@ens.fr>"]
-    ["Tom Ridge <tom.j.ridge@googlemail.com>" "Thomas Tuerk <tt291@cl.cam.ac.uk>" "David Sheets <sheets@alum.mit.edu>" "Andrea Giugliano <agiugliano@live.it>"]
-    ["Valérie Ménissier-Morain" "Pierre Weis" "Xavier Leroy"]
-    ["Vighnesh Vijay" "Daniel Like" "William Goeller"]
-    ["Vincent Bernardoff <vb@luminar.eu.org>" "Anil Madhavapeddy <anil@recoil.org>"]
-    ["Vincent Bernardoff <vb@luminar.eu.org>" "Marco Stronati <marco@stronati.org>"]
-    ["Vincent Bernardoff <vb@luminar.eu.org>" "Nomadic Labs"]
-    ["Vincent Bernardoff <vb@luminar.eu.org>" "Raja Boujbel <raja.boujbel@ocamlpro.com>" "Roberto Di Cosmo <roberto@dicosmo.org>" "Thomas Gazagnaire <thomas@gazagnaire.org>" "Louis Gesbert <louis.gesbert@ocamlpro.com>" "Fabrice Le Fessant <Fabrice.Le_fessant@inria.fr>" "Anil Madhavapeddy <anil@recoil.org>" "Guillem Rieu <guillem.rieu@ocamlpro.com>" "Ralf Treinen <ralf.treinen@pps.jussieu.fr>" "Frederic Tuong <tuong@users.gforge.inria.fr>"]
-    ["Vincent Bernardoff <vb@luminar.eu.org>" "Rudi Grinberg <rgrinberg@gmail.com>"]
-    ["Vincent Bernardoff <vincent.bernardoff@ocamlpro.com>" "Pierre Chambart <pierre.chambart@ocamlpro.com>"]
-    ["Vincent Bernardoff" "Jon Ludlam" "David Scott"]
-    ["Vincent Hanquez" "Anil Madhavapeddy" "David Scott" "Jonathan Ludlam"]
-    ["Vincent Hanquez" "Jerome Maloberti"]
-    ["Vincent Hanquez" "Thomas Gazagnaire" "Dave Scott" "Anil Madhavapeddy" "Vincent Bernardoff"]
-    ["Vincent Hanquez" "Thomas Gazagnaire" "Goswin von Brederlow" "Eric Cooper" "Florent Monnier" "Forrest L Norvell" "Vincent Bernadoff" "David Scott" "Olaf Hering" "Arthur Teisseire" "Nicolás Ojeda Bär" "Christopher Zimmermann" "Thomas Leonard"]
-    ["Vincent Hugot <vincent.hugot@gmail.com>" "Simon Cruanes <simon.cruanes.2007@m4x.org"]
-    ["Vincent Simonet" "Patrick Baudin" "Mehdi Dogguy" "François Pottier" "Virgile Prevosto" "Ralf Treinen"]
-    ["Wojciech Meyer" "Jeremy Yallop"]
-    ["Xavier Clerc <bisect@x9c.fr>" "Leonid Rozenberg <leonidr@gmail.com>" "Anton Bachin <antonbachin@yahoo.com>"]
-    ["Xavier Clerc" "Codinuum"]
-    ["Xavier Leroy" "Damien Doligez" "Alain Frisch" "Jacques Garrigue" "Didier Rémy" "Jérôme Vouillon"]
-    ["Xavier Leroy" "Jun Furuse" "J-M Geffroy" "Jacob Navia" "Pierre Weis"]
-    ["Yann Régis-Gianas <yann.regis-gianas@irif.fr>" "Ralf Treinen <ralf.treinen@irif.fr>" "Nicolas Jeannerod <nicolas.jeannerod@irif.fr>"]
-    ["Yoshihiro Imai <y.imai@proof-ninja.co.jp>" "Jun Furuse <jun.furuse@dailambda.jp>"]
-    ["Yoshihiro Imai" "Jun Furuse"]
-    ["dklee@dklee.org" "orbitz@gmail.com"]
-    ["https://github.com/Lozov-Petr" "https://github.com/Kakadu" "https://github.com/dboulytchev"]
-    ["https://github.com/dboulytchev" "https://github.com/Kakadu"]
-    ["iitalics" "OhadRau <admin@ohad.space>"]
-    ["whitequark <whitequark@whitequark.org>" "The LLVM team"]
-    ["ygrek" "Mykola Stryebkov"]
-    ["yutopp <yutopp@gmail.com>" "amutake <amutake.s@gmail.com>"]
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright 2021 Diskuv, Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
