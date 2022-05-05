@@ -65,25 +65,12 @@ The preview versions 0.2.x run on **64-bit Windows** and:
 Install the latest version of Opam before using this distribution. See
 https://opam.ocaml.org/doc/Install.html for the latest instructions.
 
-## Licensing
+## License
 
-As a developer there is:
-- a [Fair Source 5 (v0.9)](https://fair.io/) license to use the *Diskuv OCaml* distribution for **free personal use** and limited commercial use for up to 5 developers, with **broad exceptions for OCaml package maintainers**.
-  See the [diskuv-ocaml LICENSE](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt) for the Fair Source license terms
-- one or more licenses covering the distribution of your final product. Those licenses
-  depend on which Opam packages you choose to include in your
-  final product. Read our [documentation](https://diskuv.gitlab.io/diskuv-ocaml/#about-ocaml) for the best way to explore those packages.
-
-School teachers and college professors may redistribute the *Diskuv OCaml* distribution to their students under the [diskuv-ocaml LICENSE](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt); each student is covered for **free personal use**.
-
-> Are you an OCaml package maintainer?
-> * Any patches we introduce will be released back to you under your existing license. If your project does not
->   have an explicit license then Diskuv will release the patches under the Apache v2.0 license.
-> * In an upcoming release we will distribute a [OSL 3.0](https://opensource.org/licenses/OSL-3.0)
->   open source distribution so you can git submodule the *Diskuv OCaml* distribution. Among other things that will
->   let your Windows users auto-install OCaml and build your library/application without coming to this website.
-
-License questions can be directed to support@diskuv.com.
+In the [first half of 2022](contributors/doc/Planning/2022-01-A-OpenSourceDiskuvOCaml.rst)
+the *Diskuv OCaml* distribution switched to an open-source, liberal
+[Apache v2 license](./LICENSE.txt). All non-free source code has been moved to
+the *Diskuv SDK* projects.
 
 ## Acknowledgements
 
