@@ -154,7 +154,7 @@ rm -f "$FILE"
 install -d contributors/_build/release-zip
 rm -rf contributors/_build/release-zip
 install -d contributors/_build/release-zip
-zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}" -x "vendor/drd/src/msys2/apps/_build/*"
+zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}"
 pushd contributors/_build/release-zip
 install -d diskuv-ocaml
 cd diskuv-ocaml

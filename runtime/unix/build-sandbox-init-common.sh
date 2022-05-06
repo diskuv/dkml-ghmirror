@@ -56,19 +56,3 @@ log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/
 
 # END opam create system switch
 # -----------------------
-
-# -----------------------
-# BEGIN install opam plugins
-
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/install-opamplugin-opam-dkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
-
-# END install opam plugins
-# -----------------------
-
-# -----------------------
-# BEGIN install dkml plugins (except vcpkg which is done in DKSDK)
-
-log_trace env DKML_FEATUREFLAG_CMAKE_PLATFORM=ON "$DKMLDIR"/vendor/drd/src/unix/private/install-dkmlplugin-withdkml.sh -p "$BUILDHOST_ARCH" -o "$OPAMHOME" -v "$OCAMLHOME"
-
-# END install dkml plugins
-# -----------------------
