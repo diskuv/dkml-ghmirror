@@ -14,6 +14,8 @@ SYNCED_PRERELEASE_VENDORS=("${SYNCED_PRERELEASE_BEFORE_APPS[@]}" "${SYNCED_PRERE
 SYNCED_RELEASE_VENDORS=(diskuv-opam-repository)
 # Which non-vendored Git projects should be synced
 GITURLS=(
+    https://github.com/diskuv/dkml-workflows.git
+    https://github.com/diskuv/dkml-installer-ocaml.git
     https://github.com/diskuv/dkml-runtime-apps.git
     https://github.com/diskuv/dkml-component-opam.git
     https://github.com/diskuv/dkml-component-ocamlrun.git
@@ -24,6 +26,8 @@ COMPONENTPATHS=(
     dkml-component-ocamlrun/dkml-component-staging-ocamlrun.opam
     dkml-component-opam/dkml-component-staging-opam32.opam
     dkml-component-opam/dkml-component-staging-opam64.opam
+    dkml-installer-ocaml/dkml-installer-network-ocaml.opam.template
+    dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
 
 # ------------------
@@ -327,6 +331,15 @@ rungit tag "v$OUT_VERSION"
 # because we can't be on 'next' branch
 rungit push
 rungit push origin "v$OUT_VERSION"
+
+# Update and push dkml-workflows
+DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
+sed -i "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
+sed -i "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
+sed -i "s/OPAM_BINARY_CACHE_KEY: [0-9a-f]*/OPAM_BINARY_CACHE_KEY: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
+rungit -C "$SRC/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
+rungit -C "$SRC/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
+rungit -C "$SRC/dkml-workflows" push
 
 # ------------------------
 # Distribution archive
