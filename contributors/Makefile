@@ -94,6 +94,11 @@ release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-s
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p
 
+.PHONY: quick-prerelease
+quick-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
+	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
+	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p -q
+
 .PHONY: release-complete
 release-complete: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \

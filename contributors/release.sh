@@ -19,18 +19,22 @@ usage() {
     echo "    release.sh -h  Display this help message." >&2
     echo "    release.sh -p  Create a prerelease." >&2
     echo "    release.sh     Create a release." >&2
+    printf "Options:\n" >&2
+    printf "  -q: Quick mode. Creates a 'new' version of the OCaml Opam Repository that is a copy of the last version.\n" >&2
+    printf "      After GitLab CI rebuilds the repository, the new version will be updated with the rebuilt contents.\n" >&2
+    printf "      Without the quick mode, only one revision of the new version (the rebuilt contents) will be made.\n" >&2
 }
 
 PRERELEASE=OFF
-while getopts ":hp" opt; do
+QUICK=OFF
+while getopts ":hpq" opt; do
     case ${opt} in
         h )
             usage
             exit 0
         ;;
-        p )
-            PRERELEASE=ON
-        ;;
+        p ) PRERELEASE=ON ;;
+        q ) QUICK=ON ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -215,21 +219,42 @@ if false; then
     CREATE_OPTS+=(--milestone "v$TARGET_VERSION")
 fi
 
-# Upload files to Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
-# GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
+# Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
-PACKAGE_REGISTRY_URL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
+DISTPORTABLE_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
+OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
+OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
+OCAMLVERS=(4.13.1 4.12.1)
+#GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
+
+# Re-upload files from Generic Packages
+
+if [ "$QUICK" = ON ]; then
+    for OCAMLVER in "${OCAMLVERS[@]}"; do
+        for OOREPO_BASENAME in "ocaml-opam-repo-$OCAMLVER.tar.gz" "ocaml-opam-repo-$OCAMLVER.zip"; do
+            # download old
+            curl -L -o "contributors/_build/$OOREPO_BASENAME" "$OOREPO_OLDURL/$OOREPO_BASENAME"
+            # upload new
+            curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+                --upload-file "contributors/_build/$OOREPO_BASENAME" \
+                "$OOREPO_NEWURL/$OOREPO_BASENAME"
+        done
+    done
+fi
+
+# Upload files to Generic Packages
+
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
      --upload-file contributors/_build/distribution-portable.zip \
-     "$PACKAGE_REGISTRY_URL/distribution-portable.zip"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (zip) [portable;FairSource-0.9]\",\"url\":\"${PACKAGE_REGISTRY_URL}/distribution-portable.zip\",\"link_type\":\"package\"}")
+     "$DISTPORTABLE_NEWURL/distribution-portable.zip"
+CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (zip) [portable;FairSource-0.9]\",\"url\":\"${DISTPORTABLE_NEWURL}/distribution-portable.zip\",\"link_type\":\"package\"}")
+
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
      --upload-file contributors/_build/distribution-portable.tar.gz \
-     "$PACKAGE_REGISTRY_URL/distribution-portable.tar.gz"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (tar.gz) [portable;FairSource-0.9]\",\"url\":\"${PACKAGE_REGISTRY_URL}/distribution-portable.tar.gz\",\"link_type\":\"package\"}")
+     "$DISTPORTABLE_NEWURL/distribution-portable.tar.gz"
+CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (tar.gz) [portable;FairSource-0.9]\",\"url\":\"${DISTPORTABLE_NEWURL}/distribution-portable.tar.gz\",\"link_type\":\"package\"}")
 
 # Reference the Generic Packages that GitLab automatically creates
-OCAMLVERS=(4.13.1 4.12.1)
 for OCAMLVER in "${OCAMLVERS[@]}"; do
     CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 64-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/v$NEW_VERSION/ocaml-$OCAMLVER-windows_x86_64.zip\"}")
     CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 32-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/v$NEW_VERSION/ocaml-$OCAMLVER-windows_x86.zip\"}")
