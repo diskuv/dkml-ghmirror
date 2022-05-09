@@ -21,7 +21,7 @@ GITURLS=(
     https://github.com/diskuv/dkml-component-ocamlrun.git
     https://github.com/diskuv/dkml-component-ocamlcompiler.git
 )
-COMPONENTPATHS=(
+OPAMPATHS=(
     dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam
     dkml-component-ocamlrun/dkml-component-staging-ocamlrun.opam
     dkml-component-opam/dkml-component-staging-opam32.opam
@@ -29,6 +29,8 @@ COMPONENTPATHS=(
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam.template
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
+# ex. OPAMPROJECTS=(dkml-component-opam dkml-component-ocamlrun ...)
+IFS=$'\n' read -r -d '' -a OPAMPROJECTS < <(for i in "${OPAMPATHS[@]}"; do dirname "$i"; done | sort -u)
 
 # ------------------
 # BEGIN Command line processing
@@ -288,11 +290,18 @@ update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam.template"
 rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" tag "v$OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$OUT_VERSION"
-#   Update and push components
-for COMPONENTPATH in "${COMPONENTPATHS[@]}"; do
-    COMPONENTDIR=$(dirname "$SRC/$COMPONENTPATH")
-    update_drc_drd "$SRC/$COMPONENTPATH"
-    rungit -C "$COMPONENTDIR" commit -a -m "dkml-runtime-{common,distribution} $OUT_VERSION"
+#   Update and push components. We want one commit if many components in project
+for i in "${OPAMPROJECTS[@]}"; do
+    COMPONENTDIR=$(dirname "$SRC/$i")
+    for COMPONENTPATH in "${OPAMPATHS[@]}"; do
+        case $COMPONENTPATH in
+            $i/*)
+                update_drc_drd "$SRC/$COMPONENTPATH"
+                rungit -C "$COMPONENTDIR" add "$SRC/$COMPONENTPATH"
+                ;;
+        esac
+    done
+    rungit -C "$COMPONENTDIR" commit -m "dkml-runtime-{common,distribution} $OUT_VERSION"
     rungit -C "$COMPONENTDIR" push origin main
 done
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
