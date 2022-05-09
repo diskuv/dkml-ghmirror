@@ -64,7 +64,7 @@ win32:build-ocaml:
     - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\ocamldist\dist.zip"
 
     # Create public packages
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/$PKGTAG"
     - echo $PACKAGE_REGISTRY_URL
     - msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVERSION}-${env:HOSTABI}${env:NAMESUFFIX}.zip"
