@@ -312,8 +312,8 @@ new_opam_package_version() {
     rungit -C "vendor/diskuv-opam-repository" add "$new_opam_package_version_NEW"
 }
 new_opam_package_version "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$DKMLRUNTIME_OLDOPAM" "packages/dkml-apps/dkml-runtime.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/dkml-apps/opam-dkml.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$DKMLRUNTIME_OLDOPAM" "packages/dkml-runtime/dkml-runtime.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW_VERSION"
 
 # Tag and push after dkml-runtime-apps
