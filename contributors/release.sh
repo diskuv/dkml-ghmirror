@@ -42,6 +42,7 @@ usage() {
     echo "    release.sh -p  Create a prerelease." >&2
     echo "    release.sh     Create a release." >&2
     printf "Options:\n" >&2
+    printf "  -f: Force tags to be recreated\n" >&2
     printf "  -q: Quick mode. Creates a 'new' version of the OCaml Opam Repository that is a copy of the last version.\n" >&2
     printf "      After GitLab CI rebuilds the repository, the new version will be updated with the rebuilt contents.\n" >&2
     printf "      Without the quick mode, only one revision of the new version (the rebuilt contents) will be made.\n" >&2
@@ -49,7 +50,8 @@ usage() {
 
 PRERELEASE=OFF
 QUICK=OFF
-while getopts ":hpq" opt; do
+FORCE=OFF
+while getopts ":hpfq" opt; do
     case ${opt} in
         h )
             usage
@@ -57,6 +59,7 @@ while getopts ":hpq" opt; do
         ;;
         p ) PRERELEASE=ON ;;
         q ) QUICK=ON ;;
+        f ) FORCE=ON ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -289,6 +292,10 @@ OPAM_NEW_VERSION=$(printf "%s" "$OUT_VERSION" | tr -d v | tr - '~')
 
 # Tag and push before dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
+    if [ "$FORCE" = "ON" ]; then
+        git -C vendor/"$v" tag -d "v$OUT_VERSION" || true
+        git -C vendor/"$v" push --delete origin "v$OUT_VERSION" || true
+    fi
     git -C vendor/"$v" tag "v$OUT_VERSION"
     git -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
 done
@@ -307,6 +314,10 @@ update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-runtime.opa
 update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/opam-dkml.opam"
 update_dune_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dune-project"
 rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $OUT_VERSION"
+if [ "$FORCE" = "ON" ]; then
+    rungit -C "$SRC/dkml-runtime-apps" tag -d "v$OUT_VERSION" || true
+    rungit -C "$SRC/dkml-runtime-apps" push --delete origin "v$OUT_VERSION" || true
+fi
 rungit -C "$SRC/dkml-runtime-apps" tag "v$OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$OUT_VERSION"
 #   Update and push components. We want one commit if many components in project
@@ -350,10 +361,18 @@ rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW
 
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
+    if [ "$FORCE" = "ON" ]; then
+        rungit -C vendor/"$v" tag -d "v$OUT_VERSION" || true
+        rungit -C vendor/"$v" push --delete origin "v$OUT_VERSION" || true
+    fi
     rungit -C vendor/"$v" tag "v$OUT_VERSION"
     rungit -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
 done
 rungit commit -a -m "Update dependencies to $OUT_VERSION"
+if [ "$FORCE" = "ON" ]; then
+    rungit tag -d "v$OUT_VERSION" || true
+    rungit push --delete origin "v$OUT_VERSION" || true
+fi
 rungit tag "v$OUT_VERSION"
 # do not use: git push --atomic origin main "v$OUT_VERSION"
 # because we can't be on 'next' branch
