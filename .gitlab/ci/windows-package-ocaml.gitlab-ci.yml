@@ -158,7 +158,7 @@ win32:oorepo-matrix-2:
     - $REPODIR = "$DEPLOYDIR\share\dkml\repro\${env:OCAMLVERSION}"
 
     # Download OCaml
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - Invoke-WebRequest -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml-reproducible/$PKGTAG/ocaml-${env:OCAMLVERSION}-${env:HOSTABI}${env:NAMESUFFIX}.zip" -OutFile "ocaml.dist.zip"
     - Expand-Archive -Path "ocaml.dist.zip" -DestinationPath "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -Force
 
@@ -198,7 +198,7 @@ win32:oorepo-matrix-2:
     - Compress-Archive -Path "$REPODIR\*" -DestinationPath "$EXTRASRC\oorepodist\dist.zip"
 
     # Create public packages
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$PKGTAG"
     - echo $PACKAGE_REGISTRY_URL
     - cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo-${env:OCAMLVERSION}.tar.gz"
