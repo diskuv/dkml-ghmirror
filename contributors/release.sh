@@ -171,16 +171,22 @@ get_new_version() {
 }
 get_new_version
 CURRENT_VERSION=$NEW_VERSION
-
 OPAM_CURRENT_VERSION=$(printf "%s" "$CURRENT_VERSION" | tr -d v | tr - '~')
-OPAM_NEW_VERSION=$(printf "%s" "$NEW_VERSION" | tr -d v | tr - '~')
-
-DKMLAPPS_OLDOPAM="vendor/diskuv-opam-repository/packages/dkml-apps/dkml-apps.$OPAM_CURRENT_VERSION/opam"
-DKMLAPPS_NEWOPAM="vendor/diskuv-opam-repository/packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
+DKMLAPPS_OLDOPAM="packages/dkml-apps/dkml-apps.$OPAM_CURRENT_VERSION/opam"
+DKMLRUNTIME_OLDOPAM="packages/dkml-runtime/dkml-runtime.$OPAM_CURRENT_VERSION/opam"
+OPAMDKML_OLDOPAM="packages/opam-dkml/opam-dkml.$OPAM_CURRENT_VERSION/opam"
 
 #   validate
-if [ ! -e "$DKMLAPPS_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$DKMLAPPS_OLDOPAM" >&2
+if [ ! -e "vendor/diskuv-opam-repository/$DKMLAPPS_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "vendor/diskuv-opam-repository/$DKMLAPPS_OLDOPAM" >&2
+    exit 1
+fi
+if [ ! -e "vendor/diskuv-opam-repository/$DKMLRUNTIME_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "vendor/diskuv-opam-repository/$DKMLRUNTIME_OLDOPAM" >&2
+    exit 1
+fi
+if [ ! -e "vendor/diskuv-opam-repository/$OPAMDKML_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "vendor/diskuv-opam-repository/$OPAMDKML_OLDOPAM" >&2
     exit 1
 fi
 
@@ -247,7 +253,7 @@ else
     git commit -m "Finish v$TARGET_VERSION release (2 of 2)" -a
 fi
 
-# Safety check version for a release
+# Safety check version for a release. Calculate final versions
 get_new_version
 if [ "$PRERELEASE" = OFF ]; then
     if [ ! "$NEW_VERSION" = "$TARGET_VERSION" ]; then
@@ -258,6 +264,7 @@ if [ "$PRERELEASE" = OFF ]; then
 else
     OUT_VERSION=$NEW_VERSION
 fi
+OPAM_NEW_VERSION=$(printf "%s" "$OUT_VERSION" | tr -d v | tr - '~')
 
 # Tag and push before dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
@@ -289,16 +296,25 @@ done
 sleep 5
 opam_source_block url "v$OUT_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
 #   Update diskuv-opam-repository
-DKMLAPPS_NEWDIR=$(dirname "$DKMLAPPS_NEWOPAM")
-install -d "$DKMLAPPS_NEWDIR"
-#       shellcheck disable=SC2002
-cat "$DKMLAPPS_OLDOPAM" | \
-    remove_opam_url_source | \
-    cat - "$WORK/dkml-runtime-apps.url" > \
-    "$DKMLAPPS_NEWOPAM".tmp
-mv "$DKMLAPPS_NEWOPAM".tmp "$DKMLAPPS_NEWOPAM"
-rungit -C "vendor/diskuv-opam-repository" add "$DKMLAPPS_NEWOPAM"
-rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps $OUT_VERSION"
+new_opam_package_version() {
+    new_opam_package_version_OLD=$1
+    shift
+    new_opam_package_version_NEW=$1
+    shift
+    new_opam_package_version_DIR=$(dirname "vendor/diskuv-opam-repository/$new_opam_package_version_NEW")
+    install -d "$new_opam_package_version_DIR"
+    #       shellcheck disable=SC2002
+    cat "vendor/diskuv-opam-repository/$new_opam_package_version_OLD" | \
+        remove_opam_url_source | \
+        cat - "$WORK/dkml-runtime-apps.url" > \
+        "vendor/diskuv-opam-repository/$new_opam_package_version_NEW".tmp
+    mv "vendor/diskuv-opam-repository/$new_opam_package_version_NEW".tmp "vendor/diskuv-opam-repository/$new_opam_package_version_NEW"
+    rungit -C "vendor/diskuv-opam-repository" add "$new_opam_package_version_NEW"
+}
+new_opam_package_version "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$DKMLRUNTIME_OLDOPAM" "packages/dkml-apps/dkml-runtime.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/dkml-apps/opam-dkml.$OPAM_NEW_VERSION/opam"
+rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW_VERSION"
 
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
