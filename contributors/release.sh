@@ -157,6 +157,20 @@ rungit() {
         git "$@"
     fi
 }
+update_opam_version() {
+    update_opam_version_VER=$1
+    shift
+    update_opam_version_FILE=$1
+    shift
+    sed -i 's#^version: .*#version: "'"$update_opam_version_VER"'"#' "$update_opam_version_FILE"
+}
+update_dune_version() {
+    update_dune_version_VER=$1
+    shift
+    update_dune_version_FILE=$1
+    shift
+    sed -i 's#^(version .*)#(version: '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
+}
 
 # Checkout or update non-vendored Git URLs
 for GITURL in "${GITURLS[@]}"; do
@@ -287,6 +301,10 @@ opam_source_block extra-source "v$OUT_VERSION" dkml-runtime-distribution "$WORK/
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam"
 update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam.template"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-apps.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-runtime.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/opam-dkml.opam"
+update_dune_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dune-project"
 rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" tag "v$OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$OUT_VERSION"
