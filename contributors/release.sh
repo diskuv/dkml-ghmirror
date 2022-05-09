@@ -30,7 +30,8 @@ OPAMPATHS=(
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
 # ex. OPAMPROJECTS=(dkml-component-opam dkml-component-ocamlrun ...)
-IFS=$'\n' read -r -d '' -a OPAMPROJECTS < <(for i in "${OPAMPATHS[@]}"; do dirname "$i"; done | sort -u)
+# ignore exit code (for some reason it fails but still sets the array)
+IFS=$'\n' read -r -d '' -a OPAMPROJECTS < <(for i in "${OPAMPATHS[@]}"; do dirname "$i"; done | sort -u) || true
 
 # ------------------
 # BEGIN Command line processing
