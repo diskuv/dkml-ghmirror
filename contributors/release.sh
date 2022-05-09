@@ -318,11 +318,15 @@ rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW
 
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
-    git -C vendor/"$v" tag "v$OUT_VERSION"
-    git -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
+    rungit -C vendor/"$v" tag "v$OUT_VERSION"
+    rungit -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
 done
-git tag "v$OUT_VERSION"
-git push --atomic origin main "v$OUT_VERSION"
+rungit commit -a -m "Update dependencies to $OUT_VERSION"
+rungit tag "v$OUT_VERSION"
+# do not use: git push --atomic origin main "v$OUT_VERSION"
+# because we can't be on 'next' branch
+rungit push
+rungit push origin "v$OUT_VERSION"
 
 # ------------------------
 # Distribution archive
