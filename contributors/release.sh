@@ -321,6 +321,7 @@ for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
     git -C vendor/"$v" tag "v$OUT_VERSION"
     git -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
 done
+git tag "v$OUT_VERSION"
 git push --atomic origin main "v$OUT_VERSION"
 
 # ------------------------
