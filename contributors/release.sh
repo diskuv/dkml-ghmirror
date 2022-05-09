@@ -238,8 +238,6 @@ for OCAMLVER in "${OCAMLVERS[@]}"; do
     CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (tar.gz) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/v$NEW_VERSION/ocaml-opam-repo-$OCAMLVER.tar.gz\"}")
     CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/v$NEW_VERSION/ocaml-opam-repo-$OCAMLVER.zip\"}")
 done
-CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 64-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/v$NEW_VERSION/opam-windows_x86_64.zip\"}")
-CREATE_OPTS+=(--assets-link "{\"name\":\"opam package manager for 32-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/opam-reproducible/v$NEW_VERSION/opam-windows_x86.zip\"}")
 
 # Create the release
 release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
