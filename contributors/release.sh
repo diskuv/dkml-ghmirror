@@ -311,7 +311,7 @@ rungit -C "$SRC/dkml-runtime-apps" tag "v$OUT_VERSION"
 rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$OUT_VERSION"
 #   Update and push components. We want one commit if many components in project
 for i in "${OPAMPROJECTS[@]}"; do
-    COMPONENTDIR=$(dirname "$SRC/$i")
+    COMPONENTDIR="$SRC/$i"
     for COMPONENTPATH in "${OPAMPATHS[@]}"; do
         case $COMPONENTPATH in
             $i/*)
