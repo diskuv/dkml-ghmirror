@@ -161,6 +161,14 @@ rungit() {
         git "$@"
     fi
 }
+update_pkgs_version() {
+    update_pkgs_version_VER=$1
+    shift
+    update_pkgs_version_FILE=$1
+    shift
+    sed -i 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+    sed -i 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+}
 update_opam_version() {
     update_opam_version_VER=$1
     shift
@@ -192,6 +200,7 @@ done
 TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg | sed 's/[-+].*//')
 get_new_version() {
     NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg)
+    OPAM_NEW_VERSION=$(printf "%s" "$NEW_VERSION" | tr -d v | tr - '~')
 }
 get_new_version
 CURRENT_VERSION=$NEW_VERSION
@@ -223,6 +232,9 @@ if [ "$PRERELEASE" = ON ]; then
     bump2version prerelease \
         --config-file .bumpversion.prerelease.cfg \
         --verbose
+    get_new_version
+    #   Update ci-pkgs.txt
+    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" add -A
@@ -230,7 +242,6 @@ if [ "$PRERELEASE" = ON ]; then
     git add -A
 
     # 2. Make a prerelease commit
-    get_new_version
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
     done
@@ -271,41 +282,40 @@ else
         --config-file .bumpversion.prerelease.cfg \
         --new-version "$TARGET_VERSION" \
         --verbose
-    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
-        git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (2 of 2)" -a
-    done
-    git commit -m "Finish v$TARGET_VERSION release (2 of 2)" -a
-fi
-
-# Safety check version for a release. Calculate final versions
-get_new_version
-if [ "$PRERELEASE" = OFF ]; then
+    get_new_version
+    #   Safety check version for a release. Calculate final versions
     if [ ! "$NEW_VERSION" = "$TARGET_VERSION" ]; then
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
         exit 1
     fi
-    OUT_VERSION=$TARGET_VERSION
-else
-    OUT_VERSION=$NEW_VERSION
+    #   Update ci-pkgs.txt
+    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
+    #   Commit
+    for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
+        git -C vendor/"$v" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
+    done
+    git commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
 fi
-OPAM_NEW_VERSION=$(printf "%s" "$OUT_VERSION" | tr -d v | tr - '~')
+
+# From this point on NEW_VERSION is the version being committed. It will be
+# different from TARGET_VERSION if we are currently doing a prerelease.
 
 # Tag and push before dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
     if [ "$FORCE" = "ON" ]; then
-        git -C vendor/"$v" tag -d "v$OUT_VERSION" || true
-        git -C vendor/"$v" push --delete origin "v$OUT_VERSION" || true
+        git -C vendor/"$v" tag -d "v$NEW_VERSION" || true
+        git -C vendor/"$v" push --delete origin "v$NEW_VERSION" || true
     fi
-    git -C vendor/"$v" tag "v$OUT_VERSION"
-    git -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
+    git -C vendor/"$v" tag "v$NEW_VERSION"
+    git -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
 done
 
 # Update, tag and push dkml-runtime-apps (and components and opam-repository)
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
 #   dkml-runtime-common|distribution GitHub tarballs are eventually consistent
 sleep 5
-opam_source_block extra-source "v$OUT_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
-opam_source_block extra-source "v$OUT_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
+opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
+opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam"
 update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam.template"
@@ -313,13 +323,13 @@ update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-runtime.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/opam-dkml.opam"
 update_dune_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dune-project"
-rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $OUT_VERSION"
+rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
-    rungit -C "$SRC/dkml-runtime-apps" tag -d "v$OUT_VERSION" || true
-    rungit -C "$SRC/dkml-runtime-apps" push --delete origin "v$OUT_VERSION" || true
+    rungit -C "$SRC/dkml-runtime-apps" tag -d "v$NEW_VERSION" || true
+    rungit -C "$SRC/dkml-runtime-apps" push --delete origin "v$NEW_VERSION" || true
 fi
-rungit -C "$SRC/dkml-runtime-apps" tag "v$OUT_VERSION"
-rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$OUT_VERSION"
+rungit -C "$SRC/dkml-runtime-apps" tag "v$NEW_VERSION"
+rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$NEW_VERSION"
 #   Update and push components. We want one commit if many components in project
 for i in "${OPAMPROJECTS[@]}"; do
     COMPONENTDIR="$SRC/$i"
@@ -331,13 +341,13 @@ for i in "${OPAMPROJECTS[@]}"; do
                 ;;
         esac
     done
-    rungit -C "$COMPONENTDIR" commit -m "dkml-runtime-{common,distribution} $OUT_VERSION"
+    rungit -C "$COMPONENTDIR" commit -m "dkml-runtime-{common,distribution} $NEW_VERSION"
     rungit -C "$COMPONENTDIR" push origin main
 done
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
 #   dkml-runtime-apps GitHub tarball is eventually consistent
 sleep 5
-opam_source_block url "v$OUT_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
+opam_source_block url "v$NEW_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
 #   Update diskuv-opam-repository
 new_opam_package_version() {
     new_opam_package_version_OLD=$1
@@ -362,22 +372,22 @@ rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
     if [ "$FORCE" = "ON" ]; then
-        rungit -C vendor/"$v" tag -d "v$OUT_VERSION" || true
-        rungit -C vendor/"$v" push --delete origin "v$OUT_VERSION" || true
+        rungit -C vendor/"$v" tag -d "v$NEW_VERSION" || true
+        rungit -C vendor/"$v" push --delete origin "v$NEW_VERSION" || true
     fi
-    rungit -C vendor/"$v" tag "v$OUT_VERSION"
-    rungit -C vendor/"$v" push --atomic origin main "v$OUT_VERSION"
+    rungit -C vendor/"$v" tag "v$NEW_VERSION"
+    rungit -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
 done
-rungit commit -a -m "Update dependencies to $OUT_VERSION"
+rungit commit -a -m "Update dependencies to $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
-    rungit tag -d "v$OUT_VERSION" || true
-    rungit push --delete origin "v$OUT_VERSION" || true
+    rungit tag -d "v$NEW_VERSION" || true
+    rungit push --delete origin "v$NEW_VERSION" || true
 fi
-rungit tag "v$OUT_VERSION"
-# do not use: git push --atomic origin main "v$OUT_VERSION"
+rungit tag "v$NEW_VERSION"
+# do not use: git push --atomic origin main "v$NEW_VERSION"
 # because we can't be on 'next' branch
 rungit push
-rungit push origin "v$OUT_VERSION"
+rungit push origin "v$NEW_VERSION"
 
 # Update and push dkml-workflows
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
@@ -430,16 +440,16 @@ CI_API_V4_URL="$CI_SERVER_URL/api/v4"
 CI_PROJECT_ID='diskuv%2Fdiskuv-ocaml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
 GLOBAL_OPTS=(--server-url "$CI_SERVER_URL" --project-id "$CI_PROJECT_ID")
 CREATE_OPTS=(
-    --tag-name "v$OUT_VERSION"
+    --tag-name "v$NEW_VERSION"
 )
 if [ "$PRERELEASE" = OFF ]; then
     CREATE_OPTS+=(
-        --name "Version $OUT_VERSION"
-        --description "contributors/changes/v$OUT_VERSION.md"
+        --name "Version $NEW_VERSION"
+        --description "contributors/changes/v$NEW_VERSION.md"
     )
 else
     CREATE_OPTS+=(
-        --name "$OUT_VERSION (alpha prerelease of $TARGET_VERSION)"
+        --name "$NEW_VERSION (alpha prerelease of $TARGET_VERSION)"
     )
 fi
 if [ -e /usr/ssl/cert.pem ]; then
@@ -458,8 +468,8 @@ fi
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
-DISTPORTABLE_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$OUT_VERSION"
-OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$OUT_VERSION"
+DISTPORTABLE_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
+OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
 OCAMLVERS=(4.13.1 4.12.1)
 #GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
@@ -493,12 +503,12 @@ CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (tar.gz) [por
 
 # Reference the Generic Packages that GitLab automatically creates
 for OCAMLVER in "${OCAMLVERS[@]}"; do
-    CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 64-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/$OUT_VERSION/ocaml-$OCAMLVER-windows_x86_64.zip\"}")
-    CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 32-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/$OUT_VERSION/ocaml-$OCAMLVER-windows_x86.zip\"}")
+    CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 64-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/$NEW_VERSION/ocaml-$OCAMLVER-windows_x86_64.zip\"}")
+    CREATE_OPTS+=(--assets-link "{\"name\":\"Vanilla OCaml $OCAMLVER for 32-bit Windows (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml-reproducible/$NEW_VERSION/ocaml-$OCAMLVER-windows_x86.zip\"}")
 done
 for OCAMLVER in "${OCAMLVERS[@]}"; do
-    CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (tar.gz) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$OUT_VERSION/ocaml-opam-repo-$OCAMLVER.tar.gz\"}")
-    CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$OUT_VERSION/ocaml-opam-repo-$OCAMLVER.zip\"}")
+    CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (tar.gz) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$NEW_VERSION/ocaml-opam-repo-$OCAMLVER.tar.gz\"}")
+    CREATE_OPTS+=(--assets-link "{\"name\":\"OCaml $OCAMLVER tailored Opam repository (zip) [reproducible;Apache-2.0]\",\"url\":\"${PACKAGE_REGISTRY_GENERIC_URL}/ocaml_opam_repo-reproducible/$NEW_VERSION/ocaml-opam-repo-$OCAMLVER.zip\"}")
 done
 
 # Create the release
