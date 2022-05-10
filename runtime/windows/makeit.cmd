@@ -346,14 +346,14 @@ SET "DKMAKE_INTERNAL_GITPATH=%%F"
 SET DKMAKE_INTERNAL_GITPATH=%DKMAKE_INTERNAL_GITPATH:"=%
 
 REM Set DKMAKE_INTERNAL_MAKE
-REM We set MSYSTEM=UCRT64 environment variable to mimic the msys2.exe launcher https://www.msys2.org/wiki/MSYS2-introduction/
+REM We set MSYSTEM=CLANG64 environment variable to mimic the msys2.exe launcher https://www.msys2.org/wiki/MSYS2-introduction/
 REM Confer https://www.msys2.org/docs/environments/
 if not defined DKMAKE_INTERNAL_MAKE (
 	SET DKMAKE_INTERNAL_MAKE=%DiskuvOCamlMSYS2Dir%\usr\bin\env.exe ^
-		MSYSTEM=UCRT64 ^
+		MSYSTEM=CLANG64 ^
 		MSYSTEM_CARCH=x86_64 ^
 		MSYSTEM_CHOST=x86_64-w64-mingw32 ^
-		MSYSTEM_PREFIX=/ucrt64 ^
+		MSYSTEM_PREFIX=/clang64 ^
 		"PATH=%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/bin:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/ninja:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/cmake/bin:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/apps:%DKMAKE_INTERNAL_GITPATH%:/usr/bin:/bin:%DKMAKE_INTERNAL_WINPATH%:%DKMAKE_INTERNAL_POWERSHELLPATH%" ^
 		make
 )

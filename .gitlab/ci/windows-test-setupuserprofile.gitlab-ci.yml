@@ -3,7 +3,7 @@
 
 .test_before: &test-before
     - date
-    - $env:MSYSTEM = 'UCRT64' # Start UCRT64 environment; https://www.msys2.org/docs/environments/
+    - $env:MSYSTEM = 'CLANG64' # Start CLANG64 environment; https://www.msys2.org/docs/environments/
     - |
       function msys_direct() {
         $path_unix = & "$env:CI_PROJECT_DIR\_ci\LocalAppData\Programs\DiskuvOCaml\0\tools\MSYS2\usr\bin\cygpath" --path "$env:PATH" ;

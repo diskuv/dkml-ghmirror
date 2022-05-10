@@ -21,7 +21,7 @@ win32:build-ocaml:
         OCAMLVERSION: ["4.13.1", "4.12.1"]
   needs: []
   script:
-    - $env:MSYSTEM = 'UCRT64' # Start UCRT64 environment; https://www.msys2.org/docs/environments/
+    - $env:MSYSTEM = 'CLANG64' # Start CLANG64 environment; https://www.msys2.org/docs/environments/
     - $DEPLOYDIR = "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" # Separate directories only so that job can be run in parallel
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
