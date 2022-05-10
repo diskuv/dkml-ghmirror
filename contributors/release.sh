@@ -169,6 +169,14 @@ update_pkgs_version() {
     sed -i 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
     sed -i 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
 }
+update_switch_version() {
+    update_switch_version_VER=$1
+    shift
+    update_switch_version_FILE=$1
+    shift
+    sed -i 's#^dkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed -i 's#^opam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+}
 update_opam_version() {
     update_opam_version_VER=$1
     shift
@@ -225,6 +233,11 @@ fi
 
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
+update_drd_src() {
+    #   Update ci-pkgs.txt and create-opam-switch.sh
+    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
+    update_switch_version "$OPAM_NEW_VERSION" vendor/drd/src/unix/create-opam-switch.sh
+}
 if [ "$PRERELEASE" = ON ]; then
     # Increment the prerelease
 
@@ -233,8 +246,8 @@ if [ "$PRERELEASE" = ON ]; then
         --config-file .bumpversion.prerelease.cfg \
         --verbose
     get_new_version
-    #   Update ci-pkgs.txt
-    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
+    #   Update drd/src
+    update_drd_src
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" add -A
@@ -288,8 +301,8 @@ else
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
         exit 1
     fi
-    #   Update ci-pkgs.txt
-    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
+    #   Update drd/src
+    update_drd_src
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
