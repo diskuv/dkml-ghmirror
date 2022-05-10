@@ -174,8 +174,8 @@ update_switch_version() {
     shift
     update_switch_version_FILE=$1
     shift
-    sed -i 's#^dkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
-    sed -i 's#^opam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed -i 's#\bdkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed -i 's#\bopam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
 update_opam_version() {
     update_opam_version_VER=$1
