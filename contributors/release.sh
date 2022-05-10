@@ -181,7 +181,7 @@ update_dune_version() {
     shift
     update_dune_version_FILE=$1
     shift
-    sed -i 's#^(version .*)#(version: '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
+    sed -i 's#^(version .*)#(version '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
 }
 
 # Checkout or update non-vendored Git URLs
