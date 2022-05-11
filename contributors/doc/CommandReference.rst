@@ -232,45 +232,6 @@ Sequence of operations
            `pkgconf <https://github.com/pkgconf/pkgconf#readme>`_
          * ``$DIR/bin`` is added to the ``PATH`` environment variable
 
-      d. (Deprecated) Stripped of all entries that contain a subdirectory ``vcpkg_installed``. For example, on Windows if the existing PATH is
-
-         .. code-block:: doscon
-
-            C:\project\vcpkg_installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
-
-         the stripped PATH will be
-
-         .. code-block:: doscon
-
-            C:\WINDOWS\system32;C:\WINDOWS
-
-      e. (Deprecated) Stripped of all entries that contain both the subdirectories ``vcpkg`` and ``installed``. For example, on Unix if the existing PATH is
-
-         .. code-block:: bash
-
-            /usr/local/share/vcpkg/installed/tools/pkg_config:/usr/bin:/bin
-
-         the stripped PATH will be
-
-         .. code-block:: bash
-
-            /usr/bin:/bin
-
-      f. (Deprecated) If and only if a vcpkg installation is found with the environment variable ``DKML_VCPKG_HOST_TRIPLET``
-         and possibly ``DKML_VCPKG_MANIFEST_DIR``, then:
-
-         * ``<vcpkg_installed>/include`` is added to the ``INCLUDE`` environment variable
-         * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment variable
-         * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment variable
-         * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment variable
-         * ``<vcpkg_installed>/lib`` is added to the
-           `LIBRARY_PATH variable of Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
-         * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment variable
-         * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment variable
-         * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment variable, for any ``<subdir>``
-           containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
-           ``tools/pkgconf/pkgconf-3.dll``.
-
 Windows - Inside MSYS2 Shell
 ----------------------------
 
