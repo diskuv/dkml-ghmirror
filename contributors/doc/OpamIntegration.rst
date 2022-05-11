@@ -32,16 +32,6 @@ that has no MinGW patches.
 The ``default`` repository is the central Opam repository. Most of your packages are unpatched and
 will come directly from this repository.
 
-Opam Root
----------
-
-Each `Opam root <http://opam.ocaml.org/doc/Manual.html#opam-root>`_ created by *Diskuv OCaml* includes
-a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
-
-It contains:
-
-* `vcpkg <https://vcpkg.io>`_ which has the C/C++ packages needed by some OCaml packages
-
 Switches
 --------
 
@@ -133,8 +123,7 @@ similar to the following:
 
     ENV_ARGS=()
     source vendor/diskuv-ocaml/vendor/drc/unix/crossplatform-functions.sh
-    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x86-windows" # if 64-bit
-    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x64-windows" # if 32-bit
+    autodetect_compiler /tmp/launcher.sh
 
     /tmp/launcher.sh bash
 

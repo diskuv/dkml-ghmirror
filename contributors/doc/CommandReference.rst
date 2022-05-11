@@ -260,10 +260,10 @@ Usage
 
         # Create the Opam switch in target directory.
         # Opam packages will be placed in `OPAMSWITCH/_opam`
-        create-opam-switch.sh [-y] -b BUILDTYPE -d OPAMSWITCH
+        create-opam-switch.sh [-y] -p DKMLPLATFORM -b BUILDTYPE -d OPAMSWITCH
 
         # [Expert] Create the dkml switch
-        create-opam-switch.sh [-y] [-b BUILDTYPE] -s
+        create-opam-switch.sh [-y] -p DKMLPLATFORM [-b BUILDTYPE] -s
 
 Option -y
     Say yes to all questions.
@@ -274,8 +274,8 @@ Argument OPAMSWITCH
     of ``OPAMSWITCH`` will be created that will contain your Opam switch packages.
     No other files or subdirectories of ``OPAMSWITCH`` will be modified.
 
-Argument PLATFORM
-    Must be ``dev``.
+Argument DKMLPLATFORM
+    An ABI like ``windows_x86_64``.
 
 Argument BUILDTYPE
     Controls how executables and libraries are created with compiler and linker flags.
