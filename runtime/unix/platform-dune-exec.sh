@@ -33,22 +33,21 @@ usage() {
     printf "%s\n" "    platform-dune-exec.sh -h                                                     Display this help message." >&2
     printf "%s\n" "    platform-dune-exec.sh -b BUILDTYPE -p PLATFORM [--] build|clean|help|...     Run the dune command." >&2
     printf "%s\n" "Options:" >&2
-    printf "%s\n" "    -p PLATFORM: (Deprecated) The target platform or 'dev'. 'dev' and -b Debug will use standard Dune _build subdirectory" >&2
-    printf "%s\n" "    -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
-    printf "%s\n" "       -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
-    printf "%s\n" "          selected which uses <STATEDIR>/dkml/_opam, and unless [-s] [-u ON] is also" >&2
-    printf "%s\n" "          selected which uses <DiskuvOCamlHome>/dkml/_opam on Windows and" >&2
-    printf "%s\n" "          <OPAMROOT>/dkml/_opam on non-Windows." >&2
-    printf "%s\n" "          Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
-    printf "%s\n" "          the non-system switch will be found if you are in <STATEDIR>" >&2
-    printf "%s\n" "       -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
-    printf "%s\n" "          Defaults to ON; ie. using Opam 2.2+ default root." >&2
-    printf "%s\n" "          Also affects the Opam switches; see [-d STATEDIR] option" >&2
-    printf "%s\n" "       -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
-    printf "%s\n" "          The bin/ subdir of the Opam home is added to the PATH" >&2
-    printf "%s\n" "       -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
-    printf "%s\n" "          Examples: 4.13.1, /usr, /opt/homebrew" >&2
-    printf "%s\n" "          The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
+    printf "%s\n" "  -p DKMLPLATFORM: The DKML platform (not 'dev')" >&2
+    printf "%s\n" "  -d STATEDIR: Use <STATEDIR>/_opam as the Opam switch prefix, unless [-s] is also" >&2
+    printf "%s\n" "     selected which uses <STATEDIR>/dkml/_opam, and unless [-s] [-u ON] is also" >&2
+    printf "%s\n" "     selected which uses <DiskuvOCamlHome>/dkml/_opam on Windows and" >&2
+    printf "%s\n" "     <OPAMROOT>/dkml/_opam on non-Windows." >&2
+    printf "%s\n" "     Opam init shell scripts search the ancestor paths for an '_opam' directory, so" >&2
+    printf "%s\n" "     the non-system switch will be found if you are in <STATEDIR>" >&2
+    printf "%s\n" "  -u ON|OFF: User mode. If OFF, sets Opam --root to <STATEDIR>/opam." >&2
+    printf "%s\n" "     Defaults to ON; ie. using Opam 2.2+ default root." >&2
+    printf "%s\n" "     Also affects the Opam switches; see [-d STATEDIR] option" >&2
+    printf "%s\n" "  -o OPAMHOME: Optional. Home directory for Opam containing bin/opam or bin/opam.exe." >&2
+    printf "%s\n" "     The bin/ subdir of the Opam home is added to the PATH" >&2
+    printf "%s\n" "  -v OCAMLVERSION_OR_HOME: Optional. The OCaml version or OCaml home (containing bin/ocaml) to use." >&2
+    printf "%s\n" "     Examples: 4.13.1, /usr, /opt/homebrew" >&2
+    printf "%s\n" "     The bin/ subdir of the OCaml home is added to the PATH; currently, passing an OCaml version does nothing" >&2
 }
 
 # no arguments should display usage
@@ -77,11 +76,7 @@ fi
 BUILDTYPE=
 PLATFORM=
 STATEDIR=
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    USERMODE=OFF
-else
-    USERMODE=ON
-fi
+USERMODE=ON
 OPAMHOME=
 OCAMLVERSION_OR_HOME=
 while getopts ":hb:p:d:u:o:v:" opt; do
@@ -96,6 +91,10 @@ while getopts ":hb:p:d:u:o:v:" opt; do
         ;;
         p )
             PLATFORM=$OPTARG
+            if [ "$PLATFORM" = dev ]; then
+                usage
+                exit 0
+            fi
         ;;
         d )
             STATEDIR=$OPTARG
@@ -156,9 +155,7 @@ autodetect_posix_shell
 autodetect_dkmlvars || true
 
 # Set TARGET_OPAMSWITCH (only used when USERMODE=ON)
-if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-    TARGET_OPAMSWITCH=
-elif cmake_flag_off "$USERMODE"; then
+if cmake_flag_off "$USERMODE"; then
     TARGET_OPAMSWITCH=
 else
     if [ -n "${DKML_BUILD_ROOT:-}" ]; then
@@ -225,28 +222,16 @@ case "$subcommand" in
         exec_in_platform dune help "$@"
     ;;
     *)
-        if [ "${DKML_FEATUREFLAG_CMAKE_PLATFORM:-OFF}" = OFF ]; then
-            install -d "$DKML_DUNE_BUILD_DIR"
-            if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
-                DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
-            elif [ -z "$BUILD_BASEPATH" ]; then
-                DUNE_OPTS+=(--build-dir "$BUILDDIR_BUILDHOST${OS_DIR_SEP}_dune") # BUILDDIR_BUILDHOST is absolute path
-            else
-                DUNE_OPTS+=(--build-dir "@@EXPAND_TOPDIR@@/$DKML_DUNE_BUILD_DIR/_dune")
-            fi
-            "$DKMLDIR"/vendor/drd/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -b "$BUILDTYPE" -p "$PLATFORM" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+        if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
+            DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
         else
-            if is_dev_platform && [ "$BUILDTYPE" = Debug ]; then
-                DUNE_OPTS+=() # no-op; use standard Dune build directory for dev-Debug
+            if [ -x /usr/bin/cygpath ]; then
+                DUNEDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$TARGET_OPAMSWITCH/_dune")
             else
-                if [ -x /usr/bin/cygpath ]; then
-                    DUNEDIR_BUILDHOST=$(/usr/bin/cygpath -aw "$TARGET_OPAMSWITCH/_dune")
-                else
-                    DUNEDIR_BUILDHOST="$TARGET_OPAMSWITCH/_dune"
-                fi
-                DUNE_OPTS+=(--build-dir "$DUNEDIR_BUILDHOST")
+                DUNEDIR_BUILDHOST="$TARGET_OPAMSWITCH/_dune"
             fi
-            "$DKMLDIR"/vendor/drd/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -p "$PLATFORM" -b "$BUILDTYPE" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
+            DUNE_OPTS+=(--build-dir "$DUNEDIR_BUILDHOST")
         fi
+        "$DKMLDIR"/vendor/drd/src/unix/private/platform-opam-exec.sh -0 "$WORK"/add-tools-to-path.sh -p "$PLATFORM" -u "$USERMODE" -t "$TARGET_OPAMSWITCH" -o "$OPAMHOME" -v "$OCAMLVERSION_OR_HOME" -d "$STATEDIR" exec -- dune "$subcommand" "${DUNE_OPTS[@]}" "$@"
     ;;
 esac

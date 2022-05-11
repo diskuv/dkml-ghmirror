@@ -555,36 +555,6 @@ buildconfig/dune/dune.env.executable: $(foreach option,$(DUNE_EXECUTABLE_OVERRID
 
 # -----------------------------------------------------------------------------
 
-.PHONY: dkml-report
-dkml-report: buildconfig/dune
-	@echo DKML Report $(DKML_BASE_VERSION)
-	@echo
-	@echo PATH = $$PATH
-	@echo
-	@. '$(DKML_DIR)/vendor/drc/unix/crossplatform-functions.sh' && \
-	autodetect_ocaml_and_opam_home && autodetect_buildhost_arch && \
-	BUILD_ROOT_UNIX="$${DKML_BUILD_ROOT:-build}" && if [ -x /usr/bin/cygpath ]; then BUILD_ROOT_UNIX=$$(/usr/bin/cygpath -u "$$BUILD_ROOT_UNIX"); fi && \
-	$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
-			if [ "$(platform)" = dev ]; then DKMLPLATFORM=$$BUILDHOST_ARCH; else DKMLPLATFORM=$(platform); fi && \
-			if [ -e "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype)/_opam/bin/dune ]; then \
-				echo; \
-				echo "$(HORIZONTAL_RULE_80COLS)"; \
-				printf "= %-38s%-38s =\n" $(buildtype) $(platform); \
-				echo "$(HORIZONTAL_RULE_80COLS)"; \
-				echo; \
-				if is_arg_linux_based_platform $(platform); then \
-				  within='$(DKML_DIR)/runtime/unix/within-sandbox.sh'; \
-				else \
-				  within='$(DKML_DIR)/vendor/drc/unix/_within_dev.sh'; \
-				fi; \
-				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON $$within -p $(platform) -b $(buildtype) uname -a || true; \
-				echo; \
-				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/vendor/drd/src/unix/private/platform-opam-exec.sh' -b $(buildtype) -t "$$BUILD_ROOT_UNIX"/$$DKMLPLATFORM/$(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" config report || true; \
-				echo; \
-				DKML_BUILD_TRACE=OFF DKML_FEATUREFLAG_CMAKE_PLATFORM=ON '$(DKML_DIR)/runtime/unix/platform-dune-exec.sh' -p $(platform) -b $(buildtype) -o "$$OPAMHOME" -v "$$OCAMLHOME" printenv --display=quiet || true; \
-			fi; \
-	))
-
 # Sleep for 5 seconds on Dune crash so that developer has plenty of time to press Ctrl-C to kill the while loop
 .PHONY: dkml-devmode
 dkml-devmode: quickbuild-dev-Debug
