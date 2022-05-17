@@ -3,6 +3,11 @@
 Beyond Basics
 =============
 
+.. sidebar:: Using a preview release?
+
+   If you are using a preview release of 0.4.0 (you would know if you are using it), then replace all ``host-tools`` with
+   ``dkml`` in this documentation.
+
 Learn OCaml - A first project
 -----------------------------
 
