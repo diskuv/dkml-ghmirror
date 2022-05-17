@@ -326,6 +326,8 @@ You may get a lot of warnings/noise, but the highlighted lines will show you tha
 
 Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
 
+After that, open the menu File > Preferences > Settings. Then select User > Extensions > OCaml Platform. Finally **UNCHECK** ``OCaml: Use OCaml Env``.
+
 Next Steps?
 -----------
 
