@@ -7,9 +7,11 @@ Learn OCaml - A first project
 -----------------------------
 
 .. note::
-    This section is almost verbatim from `A first project - Learn OCaml <https://ocaml.org/learn/tutorials/up_and_running.html#A-first-project>`_.
+    This section is almost verbatim from `A first project - Learn OCaml`_.
     Since you already installed Diskuv OCaml, almost everything else on that page is already
     done for you!
+
+.. _A first project - Learn OCaml: https://ocaml.org/learn/tutorials/up_and_running.html#A-first-project
 
 Let's begin the simplest project with Dune and OCaml. We create a new directory and ask ``dune`` to initialise a new project:
 
@@ -282,51 +284,19 @@ Installing the OCaml Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once you have Visual Studio Code, you will want the OCaml plugin.
-Open a *new* PowerShell session and type:
 
-.. code-block:: ps1con
-    :emphasize-lines: 5,8
+In the File > Preferences > Extensions view ``(Ctrl Shift X)``, type
+``ocamllabs.ocaml-platform`` in the search box to find and install:
 
-    PS1> iwr `
-            "https://github.com/diskuv/vscode-ocaml-platform/releases/download/v1.8.5-diskuvocaml/ocaml-platform.vsix" `
-            -OutFile "$env:TEMP\ocaml-platform.vsix"
-    PS1> code --install-extension "$env:TEMP\ocaml-platform.vsix"
-    >> Installing extensions...
-    >> (node:16672) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
-    >> (Use `Code --trace-deprecation ...` to show where the warning was created)
-    >> Extension 'ocaml-platform.vsix' was successfully installed.
-    >> (node:16672) UnhandledPromiseRejectionWarning: Canceled: Canceled
-    >>     at D (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:5:1157)
-    >>     at O.cancel (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:62880)
-    >>     at O.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63012)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63274)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:11:7330)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3843
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3942
-    >>     at Object.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:762)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3788)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41520
-    >>     at Map.forEach (<anonymous>)
-    >>     at Ne.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41496)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at S.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at Object.M [as main] (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:17:38649)
-    >>     at async N (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:12:13842)
-    >> (node:16672) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
-    >> (node:16672) [DEP0018] DeprecationWarning: Unhandled promise rejections are deprecated. In the future, promise rejections that are not handled will terminate the Node.js process with a non-zero exit code.
+.. code-block:: markdown
 
-You may get a lot of warnings/noise, but the highlighted lines will show you that the installation was successful.
+   #### OCaml Platform
+   * Official OCaml language extension for VSCode
 
 Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
 
-After that, open the menu File > Preferences > Settings. Then select User > Extensions > OCaml Platform. Finally **UNCHECK** ``OCaml: Use OCaml Env``.
+After that, in the File > Preferences > Settings view ``(Ctrl ,)``, select
+User > Extensions > OCaml Platform. Then **uncheck** ``OCaml: Use OCaml Env``.
 
 Next Steps?
 -----------

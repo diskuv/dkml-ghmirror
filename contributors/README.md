@@ -18,7 +18,7 @@ Install a local Conda environment with the following:
 
 ```bash
 cd contributors/ # if you are not already in this directory
-conda create -p envs -c conda-forge sphinx sphinx_rtd_theme rstcheck python-language-server bump2version docutils=0.16 python=3
+conda create -p envs -c conda-forge sphinx esbonio sphinx_rtd_theme rstcheck restructuredtext_lint python-language-server bump2version docutils=0.16 python=3
 ```
 
 ## Building Documentation
