@@ -1,15 +1,32 @@
 pages:
   extends:
     - .alpine:before-sphinx
+  variables:
+    # No submodules needed to build pages. Faster and don't have to recursively `git clean`
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "next"'
   stage: deploy
   script:
-  - echo Building Sphinx html twice so that Sphinx cross-references work ...
+  - echo Downloading all branches ...
+  - git fetch
+
+  - echo Switching to 'main' branch ...
+  - git switch main
+  - echo [main] Building Sphinx html twice so that Sphinx cross-references work ...
+  - rm -rf contributors/_build
   - make -C contributors html ; make -C contributors html O="-W"
-  - echo Copying HTML into the GitLab Pages required 'public' folder
+  - echo [main] Copying HTML into the GitLab Pages required 'public' folder
   - rsync -av contributors/_build/html/ public
+
+  - echo Switching to 'next' branch ...
+  - git switch next
+  - echo [next] Building Sphinx html twice so that Sphinx cross-references work ...
+  - rm -rf contributors/_build
+  - make -C contributors html ; make -C contributors html O="-W"
+  - echo [next] Copying HTML into the 'next' subfolder of GitLab Pages
+  - rsync -av contributors/_build/html/ public/next
   artifacts:
     paths:
     - public
     expire_in: 1 day
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
