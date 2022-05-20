@@ -86,10 +86,8 @@ For example the `Unison File Sychronizer <https://github.com/bcpierce00/unison#u
 synchronize folders between different operating systems (pretty cool!) was developed in OCaml and has been available on
 macOS, Linux and Windows for decades. Yet the
 `defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
-was deprecated in 2021. The online book
-`Real World OCaml`_ solved much of the tribal knowledge problem but you will
-likely run into some roadblocks. Several companies and groups have filled the void
-(Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
+was deprecated in 2021. Some books solved much of the tribal knowledge problems but you will
+still likely run into some roadblocks. *Diskuv OCaml* provides a few critical functions:
 
 1. A way to install a coherent set of software that has been vetted to work together. Especially but not only on Windows.
 2. A way to upgrade that software, usually in response to security patches or critical bug fixes.
@@ -97,8 +95,7 @@ likely run into some roadblocks. Several companies and groups have filled the vo
 
 .. note::
 
-  The first releases (0.1.x and 0.2.x) of Diskuv OCaml support Windows 64-bit systems only, and should be
-  considered preview releases.
+  Diskuv OCaml supports Windows **64-bit** machines.
 
 The *Diskuv OCaml* distribution includes the following OCaml components:
 
@@ -162,8 +159,6 @@ The *Diskuv OCaml* distribution will automatically install the following compone
     `Visual Studio Build Tools <https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019#desktop-development-with-c>`_,
     the official Microsoft tools for building modern C/C++ apps for Windows
 
-.. _How to Install:
-
 How to Install
 --------------
 
@@ -189,7 +184,7 @@ Installation Instructions
 
 .. warning::
 
-  **Be prepared to wait for at least 2 hours for the installer to finish.** In the meantime you can still use your
+  **Be prepared to wait an hour for the installer to finish.** In the meantime you can still use your
   computer for other things like web browsing.
 
 1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
@@ -199,21 +194,11 @@ Installation Instructions
 
       PS> [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
 
-      PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+      PS> Invoke-WebRequest -OutFile setup.exe https://github.com/diskuv/dkml-installer-ocaml/releases/download/v0.3.3/setup-diskuv-ocaml-windows_x86_64-0.3.3.exe
 
-      PS> iwr `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
-        -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"; `
-        if ($LastExitCode -ne 0) { bitsadmin /transfer downloadDiskuvOCamlJob /download /priority normal `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
-        "$env:TEMP\diskuv-ocaml-distribution.zip" };
+      PS> & .\setup.exe
 
-      PS> Expand-Archive `
-        -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
-        -DestinationPath ~\DiskuvOCamlProjects `
-        -Force;
-
-      PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress;
+      PS> Remove-Item setup.exe
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
