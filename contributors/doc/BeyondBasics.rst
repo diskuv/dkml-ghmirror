@@ -137,7 +137,7 @@ You just found that you have two switches. The first switch is the directory "dk
 The other switch says *DO NOT DELETE*. We will avoid those two switches.
 
 Let's now create our own ``playground`` switch. All we need to do is create a directory
-and run ``with-dkml OPAMSWITCH=%DiskuvOCamlHome%\dkml opam dkml init``
+and run ``opam dkml init``
 inside our new (or existing) directory:
 
    .. code-block:: doscon
@@ -146,7 +146,7 @@ inside our new (or existing) directory:
 
       C:\Users\you\DiskuvOCamlProjects>mkdir playground
       C:\Users\you\DiskuvOCamlProjects>cd playground
-      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml OPAMSWITCH=%DiskuvOCamlHome%\dkml opam dkml init
+      C:\Users\you\DiskuvOCamlProjects\playground>opam dkml init
 
       C:\Users\you\DiskuvOCamlProjects\playground>opam switch
       #  switch                                                                           compiler
@@ -224,17 +224,22 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml opam install graphics
+      C:\Users\you\DiskuvOCamlProjects\playground>opam install graphics
 
 Press **Y** when asked if you want to continue, then sit back while it compiles and
 installs the ``graphics`` package.
 
    .. warning::
 
-      When you want to use the packages from your project, always use ``with-dkml`` in front of
-      the commands ``opam``, ``ocaml``, ``ocamlc`` and ``utop``.
+      When you want to use OCaml tools from your project, use ``with-dkml``
+      to reliably get those tools to work on Windows. We already do this on your
+      behalf for ``opam`` and ``dune``, and other tools like ``ocaml``
+      and ``utop`` never needed any Windows help, but some like ``ocamlc`` and
+      ``ocamlopt`` need help to find the Microsoft compiler or UNIX tools. So
+      get in the habit of using ``with-dkml``.
 
-      So ``with-dkml opam install graphics`` rather than ``opam install graphics``. Et cetera.
+      So ``with-dkml ocamlopt -o program module1.ml module2.ml`` rather than
+      ``ocamlopt -o program module1.ml module2.ml``. Et cetera.
 
 Learn OCaml - A First Hour with OCaml
 -------------------------------------
