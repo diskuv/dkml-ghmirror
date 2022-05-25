@@ -424,7 +424,7 @@ rungit -C "$SRC/dkml-workflows" push
 # ------------------------
 
 # Define which files and directories go into distribution archive
-ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime runtime vendor .dkmlroot .gitattributes .gitignore)
+ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime vendor .dkmlroot .gitattributes .gitignore)
 
 # Make _build/distribution-portable.zip
 FILE="$DKMLDIR/contributors/_build/distribution-portable.zip"
