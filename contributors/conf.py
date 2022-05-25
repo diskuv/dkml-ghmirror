@@ -21,7 +21,7 @@ import subprocess
 
 # -- Project information -----------------------------------------------------
 
-project = 'Diskuv OCaml 0.4.0-prerel52'
+project = 'Diskuv OCaml 0.4.0-prerel53'
 copyright = '2021, Diskuv, Inc.'
 author = 'Diskuv, Inc.'
 
