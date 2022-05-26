@@ -15,12 +15,12 @@ Learn OCaml - A first project
 
 Let's begin the simplest project with Dune and OCaml. We create a new directory and ask ``dune`` to initialise a new project:
 
-1. Open the Visual Studio Command Prompt (press the Windows key ⊞, type "x64 Native Tools" and then Open ``x64 Native Tools Command Prompt for VS 2019``).
+1. Open the Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER).
 2. Type:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>cd %USERPROFILE%\DiskuvOCamlProjects
+      C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
       C:\Users\you\DiskuvOCamlProjects>mkdir helloworld
 
@@ -89,7 +89,7 @@ Try running the following:
 .. code-block:: doscon
 
    C:\Users\you\DiskuvOCamlProjects>cd helloworld
-   C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c 'X=$(cygpath -au "$DiskuvOCamlHome"); PATH="$X/tools/apps:$PATH"; while true; do dune build --watch; done'
+   C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c 'while true; do dune build --watch; sleep 1; done'
 
 and then edit your ``helloworld.ml`` to say "This is so fast!" instead of
 "Hello, World!".
@@ -116,33 +116,30 @@ called ``playground``.
 
 Let's start by finding which switches are available:
 
-1. Open the Visual Studio Command Prompt (press the Windows key ⊞, type "x64 Native Tools" and then Open ``x64 Native Tools Command Prompt for VS 2019``).
+1. Open the Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER).
 2. Type:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>opam switch
+      C:\Users\you>opam switch
       #  switch                                                      compiler
                 description
-         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
+      →  C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
                 ocaml-system.4.12.1
                 C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
-      →  diskuv-boot-DO-NOT-DELETE
-                diskuv-boot-DO-NOT-DELETE
 
       [WARNING] The environment is not in sync with the current switch.
                 You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-You just found that you have two switches. The first switch is the directory "dkml".
-The other switch says *DO NOT DELETE*. We will avoid those two switches.
+You just found that you have at least one (1) switch: the directory "dkml".
+We will avoid this reserved switch.
 
-Let's now create our own ``playground`` switch. All we need to do is create a directory
-and run ``opam dkml init``
-inside our new (or existing) directory:
+Let's create our own ``playground`` switch. All we need to do is create a directory
+and run ``opam dkml init`` inside our new (or existing) directory:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>cd %USERPROFILE%\DiskuvOCamlProjects
+      C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
       C:\Users\you\DiskuvOCamlProjects>mkdir playground
       C:\Users\you\DiskuvOCamlProjects>cd playground
@@ -154,11 +151,9 @@ inside our new (or existing) directory:
       ...
       →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
                C:\Users\you\DiskuvOCamlProjects\playground
-         diskuv-boot-DO-NOT-DELETE
-               diskuv-boot-DO-NOT-DELETE
 
       [NOTE] Current switch has been selected based on the current directory.
-            The current global system switch is diskuv-boot-DO-NOT-DELETE.
+            The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
       [WARNING] The environment is not in sync with the current switch.
                You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
@@ -181,11 +176,9 @@ Let's do that now so we learn how to do it:
       ...
       →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
                C:\Users\you\DiskuvOCamlProjects\playground
-         diskuv-boot-DO-NOT-DELETE
-               diskuv-boot-DO-NOT-DELETE
 
       [NOTE] Current switch is set locally through the OPAMSWITCH variable.
-            The current global system switch is diskuv-boot-DO-NOT-DELETE.
+            The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
 
 **Great!** You are now ready to install some packages for the playground project.
 Let's see what packages are installed with ``opam list`` and available
@@ -229,18 +222,6 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 Press **Y** when asked if you want to continue, then sit back while it compiles and
 installs the ``graphics`` package.
 
-   .. warning::
-
-      When you want to use OCaml tools from your project, use ``with-dkml``
-      to reliably get those tools to work on Windows. We already do this on your
-      behalf for ``opam`` and ``dune``, and other tools like ``ocaml``
-      and ``utop`` never needed any Windows help, but some like ``ocamlc`` and
-      ``ocamlopt`` need help to find the Microsoft compiler or UNIX tools. So
-      get in the habit of using ``with-dkml``.
-
-      So ``with-dkml ocamlopt -o program module1.ml module2.ml`` rather than
-      ``ocamlopt -o program module1.ml module2.ml``. Et cetera.
-
 Learn OCaml - A First Hour with OCaml
 -------------------------------------
 
@@ -249,13 +230,24 @@ the tutorial `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tut
 
 Before you begin that tutorial, you will need to know a few things:
 
-* You don't need to use ``rlwrap``. You already have ``utop`` installed; it is much easier to work with!
-* Eventually you will be asked to install the ``graphics`` package and the ``ocamlfind`` package. Both of them
-  are already installed, but follow along anyway! When you are asked to do ``opam`` **always**
-  use ``with-dkml opam``. So type ``with-dkml opam install graphics`` rather than ``opam install graphics``,
-  and the same thing applies to the ``ocamlfind`` package.
-* Make sure you are using the system switch. Go back to the previous section if you don't remember how to
-  select the system switch.
+* Make sure you are using the playground switch. Go back to the previous section if you don't remember how to
+  select the playground switch.
+* You don't need to use ``rlwrap``. Instead install ``utop`` in your playground switch; it is much easier to work with!
+  So do an **extra** ``opam install utop`` when it asks you to install the ``graphics`` package and the ``ocamlfind``
+  packages.
+
+.. warning::
+
+   When you want to use OCaml tools from your project, use ``with-dkml``
+   to reliably get those tools to work on Windows. We already do this on your
+   behalf for ``opam`` and ``dune``, and other tools like ``ocaml``
+   and ``utop`` don't need any help on Windows, **but** some tools like
+   ``ocamlc`` and ``ocamlopt`` need help to find the Microsoft compiler or UNIX
+   binaries. So don't guess; just get in the habit of using ``with-dkml``.
+
+   So ``with-dkml ocamlopt -o helloworld helloworld.ml`` rather than
+   ``ocamlopt -o helloworld helloworld.ml``. Et cetera.
+
 
 Now go follow `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tutorials/a_first_hour_with_ocaml.html>`_!
 
