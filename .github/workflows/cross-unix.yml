@@ -49,7 +49,6 @@ jobs:
       BUILD_TYPE: Debug
       #   OCaml 4.12.1
       OCAML_GIT_REV: 46c947827ec2f6d6da7fe5e195ae5dda1d2ad0c5
-      DKML_FEATUREFLAG_CMAKE_PLATFORM: ON
       DKML_BUILD_TRACE: ON
       DIST_DIR: dist/${{ matrix.targetabi }}-on-${{ matrix.hostabi }}
     runs-on: ${{ matrix.os }}
