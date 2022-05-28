@@ -98,7 +98,7 @@ Then open a new terminal to run:
 
 .. code-block:: doscon
 
-   C:\Users\you\DiskuvOCamlProjects\helloworld>_build/default/helloworld.exe
+   C:\Users\you\DiskuvOCamlProjects\helloworld>_build\default\helloworld.exe
    This is so fast!
 
 Anytime you edit your source code, it will recompile what has changed.
@@ -192,6 +192,7 @@ with ``opam list -a``:
       base-bigarray base        pinned to version base
       base-threads  base        pinned to version base
       base-unix     base        pinned to version base
+      conf-withdkml 1           Virtual package relying on with-dkml
       ocaml         4.12.1      pinned to version 4.12.1
       ocaml-config  3           pinned to version 3
       ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
