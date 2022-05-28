@@ -20,6 +20,7 @@ Let's begin the simplest project with Dune and OCaml. We create a new directory 
 
    .. code-block:: doscon
 
+      C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
       C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
       C:\Users\you\DiskuvOCamlProjects>mkdir helloworld
@@ -139,6 +140,7 @@ and run ``opam dkml init`` inside our new (or existing) directory:
 
    .. code-block:: doscon
 
+      C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
       C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
       C:\Users\you\DiskuvOCamlProjects>mkdir playground
