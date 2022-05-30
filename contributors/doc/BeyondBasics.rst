@@ -89,7 +89,7 @@ Try running the following:
 
 .. code-block:: doscon
 
-   C:\Users\you\DiskuvOCamlProjects>cd helloworld
+   C:\Users\you\DiskuvOCamlProjects>cd %USERPROFILE%\DiskuvOCamlProjects\helloworld
    C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c 'while true; do dune build --watch; sleep 1; done'
 
 and then edit your ``helloworld.ml`` to say "This is so fast!" instead of
