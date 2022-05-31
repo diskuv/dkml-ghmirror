@@ -26,18 +26,12 @@ endif
 
 # -----------------------
 
-ifdef DiskuvOCamlHome
-CMAKE = '$(DiskuvOCamlHome)'/tools/cmake/bin/cmake.exe
-else
-CMAKE = cmake
-endif
-
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
 
 .PHONY: clean
 clean:
-	$(CMAKE) -E remove_directory _build || $(CMAKE) -E rm -rf _build
+	rm -rf _build
 
 .PHONY: install-release-script-dependencies
 install-release-script-dependencies:

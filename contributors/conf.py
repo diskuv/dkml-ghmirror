@@ -14,7 +14,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import sphinx_rtd_theme
+# import sphinx_rtd_theme
 from pathlib import Path
 import shutil
 import subprocess
@@ -32,7 +32,7 @@ author = 'Diskuv, Inc.'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx_rtd_theme",
+    # "sphinx_rtd_theme",
     "sphinx.ext.graphviz"
 ]
 
@@ -51,6 +51,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_opam', 'envs']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_theme_path = ["themes/custom_sphinx_rtd_theme"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
