@@ -258,15 +258,24 @@ Usage
         # Help
         create-opam-switch.sh -h
 
-        # Create the Opam switch in target directory.
+        # Create the Opam switch in target directory OPAMSWITCH.
         # Opam packages will be placed in `OPAMSWITCH/_opam`
-        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE -d OPAMSWITCH
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -t OPAMSWITCH
 
-        # [Expert] Create the dkml switch
-        create-opam-switch.sh [-y] -p DKMLABI [-b BUILDTYPE] -s
+        # Create a global Opam switch named SWITCHNAME.
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -n SWITCHNAME
+
+        # [Expert] Create the [dkml] switch
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -s
 
 Option -y
     Say yes to all questions.
+
+Option -d
+    Use ``OPAMROOT`` as the Opam root.
+
+Argument OPAMNAME
+    The name of a global Opam switch.
 
 Argument OPAMSWITCH
     The target Opam switch directory ``OPAMSWITCH`` or one of its ancestors must contain
