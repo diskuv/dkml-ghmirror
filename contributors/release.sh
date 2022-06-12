@@ -103,6 +103,17 @@ cd "$DKMLDIR"
 # Commits and tags
 # ------------------------
 
+# [sed_replace COMMAND FILE] is like the GNU extension [sed -i COMMAND FILE]
+# that runs and saves the sed commands in-place in FILE.
+sed_replace() {
+    sed_replace_COMMAND=$1
+    shift
+    sed_replace_FILE=$1
+    shift
+    sed "$sed_replace_COMMAND" "$sed_replace_FILE" > "$sed_replace_FILE".$$
+    mv "$sed_replace_FILE".$$ "$sed_replace_FILE"
+    chmod +x "$sed_replace_FILE"
+}
 gitdir() {
     gitdir_URL=$1
     gitdir_DIR=$(basename "$gitdir_URL")
@@ -174,30 +185,30 @@ update_pkgs_version() {
     shift
     update_pkgs_version_FILE=$1
     shift
-    sed -i 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
-    sed -i 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+    sed_replace 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+    sed_replace 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
 }
 update_switch_version() {
     update_switch_version_VER=$1
     shift
     update_switch_version_FILE=$1
     shift
-    sed -i 's#\bdkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
-    sed -i 's#\bopam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed_replace 's#\bdkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed_replace 's#\bopam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
 update_opam_version() {
     update_opam_version_VER=$1
     shift
     update_opam_version_FILE=$1
     shift
-    sed -i 's#^version: .*#version: "'"$update_opam_version_VER"'"#' "$update_opam_version_FILE"
+    sed_replace 's#^version: .*#version: "'"$update_opam_version_VER"'"#' "$update_opam_version_FILE"
 }
 update_dune_version() {
     update_dune_version_VER=$1
     shift
     update_dune_version_FILE=$1
     shift
-    sed -i 's#^(version .*)#(version '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
+    sed_replace 's#^(version .*)#(version '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
 }
 
 # Checkout or update non-vendored Git URLs
@@ -412,9 +423,9 @@ rungit push origin "v$NEW_VERSION"
 
 # Update and push dkml-workflows
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
-sed -i "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
-sed -i "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
-sed -i "s/OPAM_BINARY_CACHE_KEY: [0-9a-f]*/OPAM_BINARY_CACHE_KEY: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
+sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
+sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
+sed_replace "s/OPAM_BINARY_CACHE_KEY: [0-9a-f]*/OPAM_BINARY_CACHE_KEY: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
 rungit -C "$SRC/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
 rungit -C "$SRC/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
 rungit -C "$SRC/dkml-workflows" push
