@@ -433,7 +433,6 @@ rungit push origin "v$NEW_VERSION"
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
 sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
 sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
-sed_replace "s/OPAM_BINARY_CACHE_KEY: [0-9a-f]*/OPAM_BINARY_CACHE_KEY: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
 rungit -C "$SRC/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
 rungit -C "$SRC/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
 rungit -C "$SRC/dkml-workflows" push
