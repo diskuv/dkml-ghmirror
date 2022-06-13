@@ -104,6 +104,7 @@ cd "$DKMLDIR"
 # ------------------------
 
 # [sed_replace COMMAND FILE] is like the GNU extension [sed -i COMMAND FILE]
+# that runs and saves the sed commands in-place in FILE. It also errors
 # if no replacements were performed.
 sed_replace() {
     sed_replace_COMMAND=$1
@@ -112,6 +113,10 @@ sed_replace() {
     shift
     sed "$sed_replace_COMMAND" "$sed_replace_FILE" > "$sed_replace_FILE".$$
     if cmp "$sed_replace_FILE".$$ "$sed_replace_FILE"; then
+        printf "ERROR: No replacements found in %s with the sed expression: %s\n" \
+            "$sed_replace_FILE" "$sed_replace_COMMAND" >&2
+        return 1
+    fi
     mv "$sed_replace_FILE".$$ "$sed_replace_FILE"
     chmod +x "$sed_replace_FILE"
 }
@@ -194,8 +199,10 @@ update_switch_version() {
     shift
     update_switch_version_FILE=$1
     shift
-    sed_replace 's#\bdkml-apps,.*#dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
-    sed_replace 's#\bopam-dkml,.*#opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    #   We do not use \b word boundary regex since \b does not
+    #   include SPACE (ASCII 32) + letter on macOS while GNU sed does.
+    sed_replace 's#^\([ ]*\)dkml-apps,.*#\1dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed_replace 's#^\([ ]*\)opam-dkml,.*#\1opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
 update_opam_version() {
     update_opam_version_VER=$1
