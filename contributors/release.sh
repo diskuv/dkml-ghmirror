@@ -104,13 +104,14 @@ cd "$DKMLDIR"
 # ------------------------
 
 # [sed_replace COMMAND FILE] is like the GNU extension [sed -i COMMAND FILE]
-# that runs and saves the sed commands in-place in FILE.
+# if no replacements were performed.
 sed_replace() {
     sed_replace_COMMAND=$1
     shift
     sed_replace_FILE=$1
     shift
     sed "$sed_replace_COMMAND" "$sed_replace_FILE" > "$sed_replace_FILE".$$
+    if cmp "$sed_replace_FILE".$$ "$sed_replace_FILE"; then
     mv "$sed_replace_FILE".$$ "$sed_replace_FILE"
     chmod +x "$sed_replace_FILE"
 }
