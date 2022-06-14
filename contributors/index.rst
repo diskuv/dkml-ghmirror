@@ -159,6 +159,16 @@ The *Diskuv OCaml* distribution will automatically install the following compone
     `Visual Studio Build Tools <https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019#desktop-development-with-c>`_,
     the official Microsoft tools for building modern C/C++ apps for Windows
 
+Sponsor
+-------
+
+.. image:: https://ocaml-sf.org/assets/ocsf_logo.svg
+  :width: 400
+  :alt: OCSF logo
+
+Thanks to the `OCaml Software Foundation <https://ocaml-sf.org>`_
+for economic support to the development of Diskuv OCaml.
+
 How to Install
 --------------
 

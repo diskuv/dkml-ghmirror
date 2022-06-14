@@ -84,3 +84,11 @@ In alphabetical order some of the critical pieces were provided by:
 * OCaml Labs and the contributors for the Visual Studio Code extension for OCaml
 * OCamlPro, Jane Street and the contributors to `opam`
 * Yaron Minsky, Anil Madhavapeddy and Jason Hickey for the book "Real World OCaml"
+
+## Sponsor
+
+<a href="https://ocaml-sf.org">
+<img align="left" alt="OCSF logo" src="https://ocaml-sf.org/assets/ocsf_logo.svg"/>
+</a>
+Thanks to the <a href="https://ocaml-sf.org">OCaml Software Foundation</a>
+for economic support to the development of Diskuv OCaml.
