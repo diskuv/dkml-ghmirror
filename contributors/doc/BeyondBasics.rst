@@ -113,7 +113,7 @@ own projects.
 Each project is a local directory with source code and its own set of OCaml packages.
 Opam will manage the OCaml packages in a local subdirectory named ``_opam``. The technical
 term for ``_opam`` is a local **switch**. In this section we will create a project
-called ``playground``.
+called ``my-first-switch``.
 
 Let's start by finding which switches are available:
 
@@ -125,17 +125,21 @@ Let's start by finding which switches are available:
       C:\Users\you>opam switch
       #  switch                                                      compiler
                 description
-      →  C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
+         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
                 ocaml-system.4.12.1
                 C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
+      →  playground
+                ocaml-system.4.12.1
+                playground
 
       [WARNING] The environment is not in sync with the current switch.
                 You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-You just found that you have at least one (1) switch: the directory "dkml".
-We will avoid this reserved switch.
+You just found that you have at least two (2) switches: the directory ``...\0\dkml``
+and the ``playground``. We will avoid the ``dkml`` reserved switch, and for now we'll
+ignore the ``playground`` switch.
 
-Let's create our own ``playground`` switch. All we need to do is create a directory
+Let's create our own ``my-first-switch`` switch. All we need to do is create a directory
 and run ``opam dkml init`` inside our new (or existing) directory:
 
    .. code-block:: doscon
@@ -143,16 +147,16 @@ and run ``opam dkml init`` inside our new (or existing) directory:
       C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
       C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
-      C:\Users\you\DiskuvOCamlProjects>mkdir playground
-      C:\Users\you\DiskuvOCamlProjects>cd playground
-      C:\Users\you\DiskuvOCamlProjects\playground>opam dkml init
+      C:\Users\you\DiskuvOCamlProjects>mkdir my-first-switch
+      C:\Users\you\DiskuvOCamlProjects>cd my-first-switch
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam dkml init
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
       #  switch                                                                           compiler
                description
       ...
-      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
-               C:\Users\you\DiskuvOCamlProjects\playground
+      →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
+               C:\Users\you\DiskuvOCamlProjects\my-first-switch
 
       [NOTE] Current switch has been selected based on the current directory.
             The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
@@ -163,32 +167,32 @@ Notice how the switch was created with ``opam dkml init``, and also notice
 how ``opam switch`` tells you in its ``[NOTE]`` that it knows which switch
 should be used based **on the current directory**.
 
-If we want our playground to be remembered regardless what the directory
+If we want our my-first-switch to be remembered regardless what the directory
 currently is, we can follow the ``[WARNING]`` and add the option ``--set-switch``.
 
 Let's do that now so we learn how to do it:
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>for /f "tokens=*" %i in ('opam env --set-switch') do @%i
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>for /f "tokens=*" %i in ('opam env --set-switch') do @%i
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
       #  switch                                                                           compiler
                description
       ...
-      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
-               C:\Users\you\DiskuvOCamlProjects\playground
+      →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
+               C:\Users\you\DiskuvOCamlProjects\my-first-switch
 
       [NOTE] Current switch is set locally through the OPAMSWITCH variable.
             The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
 
-**Great!** You are now ready to install some packages for the playground project.
+**Great!** You are now ready to install some packages for the my-first-switch project.
 Let's see what packages are installed with ``opam list`` and available
 with ``opam list -a``:
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam list
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam list
       # Packages matching: installed
       # Name        # Installed # Synopsis
       base-bigarray base        pinned to version base
@@ -199,7 +203,7 @@ with ``opam list -a``:
       ocaml-config  3           pinned to version 3
       ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam list -a
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam list -a
       # Packages matching: available
       # Name                                          # Installed                # Synopsis
       0install                                        --                         pinned to version 2.17
@@ -220,7 +224,7 @@ In Opam the package names are always lowercase, so the module ``Graphics`` will 
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam install graphics
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam install graphics
 
 Press **Y** when asked if you want to continue, then sit back while it compiles and
 installs the ``graphics`` package.
@@ -233,9 +237,9 @@ the tutorial `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tut
 
 Before you begin that tutorial, you will need to know a few things:
 
-* Make sure you are using the playground switch. Go back to the previous section if you don't remember how to
-  select the playground switch.
-* You don't need to use ``rlwrap``. Instead install ``utop`` in your playground switch; it is much easier to work with!
+* Make sure you are using the ``my-first-switch`` switch. Go back to the previous section if you don't remember how to
+  select the ``my-first-switch`` switch.
+* You don't need to use ``rlwrap``. Instead install ``utop`` in your my-first-switch switch; it is much easier to work with!
   So do an **extra** ``opam install utop`` when it asks you to install the ``graphics`` package and the ``ocamlfind``
   packages.
 
