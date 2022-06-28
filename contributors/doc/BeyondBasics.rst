@@ -3,6 +3,17 @@
 Beyond Basics
 =============
 
+.. important::
+
+  These are early days for Diskuv OCaml. We frequently update the software for bug fixes.
+  Stay informed about new features, bug fixes and security updates on Twitter:
+
+  .. image:: https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv
+    :target: https://twitter.com/diskuv
+
+  If you are a student, **talk with your instructor** before applying a major update. They will
+  likely want you to stay on your existing version until the course is complete.
+
 Learn OCaml - A first project
 -----------------------------
 
