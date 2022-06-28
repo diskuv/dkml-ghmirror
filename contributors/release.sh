@@ -29,6 +29,8 @@ OPAMPATHS=(
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam.template
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
+# Which GITURLs are synced with bump2version
+SYNCED_RELEASE_GITDIRS=(dkml-installer-ocaml)
 # ex. OPAMPROJECTS=(dkml-component-opam dkml-component-ocamlrun ...)
 # ignore exit code (for some reason it fails but still sets the array)
 IFS=$'\n' read -r -d '' -a OPAMPROJECTS < <(for i in "${OPAMPATHS[@]}"; do dirname "$i"; done | sort -u) || true
@@ -298,6 +300,11 @@ else
     for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" add -A
     done
+    #   the newly checked-out / resetted Git URLs are also safe
+    for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
+        GITDIR=$SRC/"$GITDIR"
+        git -C "$GITDIR" add -A
+    done
     git add -A
 
     # 2. Assemble the change log
@@ -313,6 +320,10 @@ else
     # 3. Make a release commit
     for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
+    done
+    for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
+        GITDIR=$SRC/"$GITDIR"
+        git -C "$GITDIR" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
     done
 	git commit -m "Finish v$TARGET_VERSION release (1 of 2)"
 
@@ -332,6 +343,10 @@ else
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
+    done
+    for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
+        GITDIR=$SRC/"$GITDIR"
+        git -C "$GITDIR" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
     done
     git commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
 fi
