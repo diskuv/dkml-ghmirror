@@ -289,8 +289,8 @@ Installing the OCaml Plugin
 
 Once you have Visual Studio Code, you will want the OCaml plugin.
 
-In the File > Preferences > Extensions view ``(Ctrl Shift X)``, type
-``ocamllabs.ocaml-platform`` in the search box to find and install:
+In the ``File`` > ``Preferences`` > ``Extensions`` view (or press ``Ctrl Shift X``),
+type ``ocamllabs.ocaml-platform`` in the search box to find and install:
 
 .. code-block:: markdown
 
@@ -299,17 +299,13 @@ In the File > Preferences > Extensions view ``(Ctrl Shift X)``, type
 
 Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
 
-After that, in the File > Preferences > Settings view ``(Ctrl ,)``, select
-User > Extensions > OCaml Platform. Then **uncheck** ``OCaml: Use OCaml Env``.
+After that, in the ``File`` > ``Preferences`` > ``Settings`` view (or press ``Ctrl ,``),
+select ``User`` > ``Extensions`` > ``OCaml Platform``.
 
-Next Steps?
------------
+Then **uncheck** ``OCaml: Use OCaml Env``.
 
-Once you feel you are an intermediate OCaml user (likely you've spent a few weeks getting comfortable with OCaml), you may want
-to create your own OCaml-based application. :ref:`SDKProjects`, which let you edit code for your application in an IDE,
-import open-source code packages and build your application, are the topic of the next section.
+.. important:: Do not forget to uncheck ``OCaml: Use OCaml Env``
 
-SDK Projects are **intermediate level difficulty**, so make sure you are comfortable with OCaml by going through:
-
-* `Learn OCaml tutorials <https://ocaml.org/learn/tutorials/>`_
-* `Part 1 of Real World OCaml <https://dev.realworldocaml.org/toc.html>`_
+   This setting is a legacy option that may disappear in future versions
+   of the OCaml Plugin. For now, if you don't uncheck the option,
+   you will *not* see your Opam switches in Visual Studio Code.
