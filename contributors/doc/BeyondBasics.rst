@@ -60,7 +60,7 @@ We can run the executable with ``dune exec`` (it's called ``helloworld.exe`` eve
 Let's look at the contents of our new directory.
 Dune has added the ``helloworld.ml`` file, which is our OCaml program.
 It has also added our ``dune`` file, which tells dune how to build the program,
-and a ``_build`` subdirectory, which is dune's working space.
+and a ``_build`` subdirectory, which is Dune's working space.
 
    .. code-block:: doscon
 
@@ -84,12 +84,57 @@ so it's easier to run with ``dune exec``. To ship the executable, we can just co
 from inside ``_build/default`` to somewhere else.
 
 Here is the contents of the automatically-generated ``dune`` file.
-When we want to add components to your project, such as third-party libraries, we edit this file.
+When we want to add components to your project, such as third-party libraries,
+we can edit this file:
 
 .. code-block:: scheme
 
     (executable
       (name helloworld))
+
+.. important::
+
+   **Editing files**
+
+   Now is a good time to talk about editing a file. *Editing* is how you change
+   the contents of a file. You probably already know how to use Microsoft Word
+   to edit Word documents: just start up Microsoft Word and then use the
+   Word menu to "Open" a Word document. But Microsoft Word only works with
+   Word documents that end with ``.doc`` or ``.docx``! On Windows you can use
+   the program ``Notepad`` (press the Windows key ⊞, and then type "notepad")
+   to edit "text" documents.
+
+   All programming languages, including OCaml, use text documents. These are
+   also called text files and source files. (We'll use the term "source file"
+   from now on.) Source files are not Word documents. In fact,
+   **you will mess up your source file if you use Microsoft Word** to edit it.
+   You have to use a text editor. Other than that difference, editing should
+   still be familiar to you:
+
+   * Open your editor (example: open Notepad)
+   * Use the editor menu to "Open" a source file, or make a "New" source file
+   * Type in your code
+   * Save the source file with an appropriate name and ending.
+
+   Click on the image below and look at the **Save As type** box:
+
+   .. image:: BeyondBasics-win32-editing.png
+      :width: 700
+      :alt: Editing with Notepad on Windows
+
+   We should always use **All file types (*.*)**, not **"Text documents (*.txt)"**,
+   because Notepad and other simple editors will add ".txt" to the ending of the
+   filename (also known as the *file extension*) without telling you!
+
+   In the image above, we actually wanted ``dune`` not ``dune.txt``. By switching
+   to **All file types (*.*)** we can see the bad ``.txt`` file extension and
+   remove it.
+
+It bears repeating:
+
+**The name, extension and location of the source file is critical!** As you go
+through this documentation make sure you Save the text file *exactly where* it
+tells you with the *exact name and extension* it tells you!
 
 Continuous building
 ~~~~~~~~~~~~~~~~~~~
@@ -106,10 +151,11 @@ Try running the following:
 and then edit your ``helloworld.ml`` to say "This is so fast!" instead of
 "Hello, World!".
 
-Then open a new terminal to run:
+Then open a new Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER) to run:
 
 .. code-block:: doscon
 
+   C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects\helloworld
    C:\Users\you\DiskuvOCamlProjects\helloworld>_build\default\helloworld.exe
    This is so fast!
 
@@ -153,26 +199,30 @@ ignore the ``playground`` switch.
 Let's create our own ``my-first-switch`` switch. All we need to do is create a directory
 and run ``opam dkml init`` inside our new (or existing) directory:
 
-   .. code-block:: doscon
+.. note::
 
-      C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
-      C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
+   Press **y** (yes) whenever you are prompted!
 
-      C:\Users\you\DiskuvOCamlProjects>mkdir my-first-switch
-      C:\Users\you\DiskuvOCamlProjects>cd my-first-switch
-      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam dkml init
+.. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
-      #  switch                                                                           compiler
-               description
-      ...
-      →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
-               C:\Users\you\DiskuvOCamlProjects\my-first-switch
+   C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
+   C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
-      [NOTE] Current switch has been selected based on the current directory.
-            The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
-      [WARNING] The environment is not in sync with the current switch.
-               You should run: for /f "tokens=*" %i in ('opam env') do @%i
+   C:\Users\you\DiskuvOCamlProjects>mkdir my-first-switch
+   C:\Users\you\DiskuvOCamlProjects>cd my-first-switch
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam dkml init
+
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
+   #  switch                                                                           compiler
+            description
+   ...
+   →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
+            C:\Users\you\DiskuvOCamlProjects\my-first-switch
+
+   [NOTE] Current switch has been selected based on the current directory.
+         The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
+   [WARNING] The environment is not in sync with the current switch.
+            You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
 Notice how the switch was created with ``opam dkml init``, and also notice
 how ``opam switch`` tells you in its ``[NOTE]`` that it knows which switch
@@ -233,12 +283,14 @@ Since this section is following the Learn OCaml tutorials, let's install the `Gr
 which gives you the `Graphics module <https://ocaml.github.io/graphics/graphics/Graphics/index.html>`_.
 In Opam the package names are always lowercase, so the module ``Graphics`` will be available in the ``graphics`` Opam package:
 
-   .. code-block:: doscon
+.. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam install graphics
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam install graphics
 
-Press **Y** when asked if you want to continue, then sit back while it compiles and
-installs the ``graphics`` package.
+.. note::
+
+   Press **y** when asked if you want to continue, then sit back while it compiles and
+   installs the ``graphics`` package.
 
 Learn OCaml - A First Hour with OCaml
 -------------------------------------
@@ -250,22 +302,22 @@ Before you begin that tutorial, you will need to know a few things:
 
 * Make sure you are using the ``my-first-switch`` switch. Go back to the previous section if you don't remember how to
   select the ``my-first-switch`` switch.
-* You don't need to use ``rlwrap``. Instead install ``utop`` in your my-first-switch switch; it is much easier to work with!
-  So do an **extra** ``opam install utop`` when it asks you to install the ``graphics`` package and the ``ocamlfind``
-  packages.
+* You don't need to use ``rlwrap``. Instead use ``with-dkml utop`` in your my-first-switch switch; it is much
+  easier to work with! Do an **extra** ``opam install utop`` when it asks you to install the ``graphics`` package
+  and the ``ocamlfind`` packages.
 
 .. warning::
 
    When you want to use OCaml tools from your project, use ``with-dkml``
    to reliably get those tools to work on Windows. We already do this on your
-   behalf for ``opam`` and ``dune``, and other tools like ``ocaml``
-   and ``utop`` don't need any help on Windows, **but** some tools like
-   ``ocamlc`` and ``ocamlopt`` need help to find the Microsoft compiler or UNIX
-   binaries. So don't guess; just get in the habit of using ``with-dkml``.
+   behalf for ``opam`` and ``dune``, **but** some tools like
+   ``ocamlc``, ``ocamlopt`` and ``utop`` need help to find the Microsoft compiler
+   or UNIX binaries or the right Windows paths. So don't guess; just get in the
+   habit of using ``with-dkml``!
 
    So ``with-dkml ocamlopt -o helloworld helloworld.ml`` rather than
-   ``ocamlopt -o helloworld helloworld.ml``. Et cetera.
-
+   ``ocamlopt -o helloworld helloworld.ml``. And ``with-dkml utop`` rather than
+   ``utop``. Et cetera.
 
 Now go follow `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tutorials/a_first_hour_with_ocaml.html>`_!
 
