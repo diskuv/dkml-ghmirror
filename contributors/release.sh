@@ -89,6 +89,11 @@ if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$US
 
 # Source dirs of git clones
 SRC="$DKMLDIR/_build/src"
+if [ -x /usr/bin/cygpath ]; then
+    SRC_MIXED=$(/usr/bin/cygpath -m "$SRC")
+else
+    SRC_MIXED="$SRC"
+fi
 install -d "$SRC"
 
 # Work directory
@@ -223,13 +228,13 @@ update_dune_version() {
 
 # Checkout or update non-vendored Git URLs
 for GITURL in "${GITURLS[@]}"; do
-    GITDIR=$SRC/$(gitdir "$GITURL")
+    GITDIR=$SRC_MIXED/$(gitdir "$GITURL")
     if [ -d "$GITDIR" ]; then
         git -C "$GITDIR" clean -d -x -f
         git -C "$GITDIR" reset --hard origin/main
         git -C "$GITDIR" pull --ff-only
     else
-        git -C "$SRC" clone "$GITURL"
+        git -C "$SRC_MIXED" clone "$GITURL"
     fi
 done
 
@@ -241,9 +246,9 @@ get_new_version() {
 }
 get_new_version
 CURRENT_VERSION=$NEW_VERSION
-DKMLAPPS_OLDOPAM="$SRC/dkml-runtime-apps/dkml-apps.opam"
-DKMLRUNTIME_OLDOPAM="$SRC/dkml-runtime-apps/dkml-runtime.opam"
-OPAMDKML_OLDOPAM="$SRC/dkml-runtime-apps/opam-dkml.opam"
+DKMLAPPS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
+DKMLRUNTIME_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
+OPAMDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
 
 #   validate
 if [ ! -e "$DKMLAPPS_OLDOPAM" ]; then
@@ -302,7 +307,7 @@ else
     done
     #   the newly checked-out / resetted Git URLs are also safe
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
-        GITDIR=$SRC/"$GITDIR"
+        GITDIR="$SRC_MIXED/$GITDIR"
         git -C "$GITDIR" add -A
     done
     git add -A
@@ -323,7 +328,7 @@ else
         git add vendor/"$v"
     done
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
-        GITDIR=$SRC/"$GITDIR"
+        GITDIR=$SRC_MIXED/"$GITDIR"
         git -C "$GITDIR" commit -m "Finish v$TARGET_VERSION release"
     done
 	git commit -m "Finish v$TARGET_VERSION release (1 of 2)"
@@ -369,27 +374,27 @@ sleep 5
 opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
 opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
-update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam"
-update_drc_drd "$SRC/dkml-runtime-apps/dkml-runtime.opam.template"
-update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-apps.opam"
-update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dkml-runtime.opam"
-update_opam_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/opam-dkml.opam"
-update_dune_version "$OPAM_NEW_VERSION" "$SRC/dkml-runtime-apps/dune-project"
-rungit -C "$SRC/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
+update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
+update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam.template"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
+update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dune-project"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
-    rungit -C "$SRC/dkml-runtime-apps" tag -d "v$NEW_VERSION" || true
-    rungit -C "$SRC/dkml-runtime-apps" push --delete origin "v$NEW_VERSION" || true
+    rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -d "v$NEW_VERSION" || true
+    rungit -C "$SRC_MIXED/dkml-runtime-apps" push --delete origin "v$NEW_VERSION" || true
 fi
-rungit -C "$SRC/dkml-runtime-apps" tag "v$NEW_VERSION"
-rungit -C "$SRC/dkml-runtime-apps" push --atomic origin main "v$NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" tag "v$NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" push --atomic origin main "v$NEW_VERSION"
 #   Update and push components. We want one commit if many components in project
 for i in "${OPAMPROJECTS[@]}"; do
-    COMPONENTDIR="$SRC/$i"
+    COMPONENTDIR="$SRC_MIXED/$i"
     for COMPONENTPATH in "${OPAMPATHS[@]}"; do
         case $COMPONENTPATH in
             $i/*)
-                update_drc_drd "$SRC/$COMPONENTPATH"
-                rungit -C "$COMPONENTDIR" add "$SRC/$COMPONENTPATH"
+                update_drc_drd "$SRC_MIXED/$COMPONENTPATH"
+                rungit -C "$COMPONENTDIR" add "$SRC_MIXED/$COMPONENTPATH"
                 ;;
         esac
     done
@@ -444,11 +449,11 @@ rungit push origin "v$NEW_VERSION"
 
 # Update and push dkml-workflows
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
-sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
-sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC/dkml-workflows/.github/workflows/setup-dkml.yml"
-rungit -C "$SRC/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
-rungit -C "$SRC/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
-rungit -C "$SRC/dkml-workflows" push
+sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC_MIXED/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
+sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC_MIXED/dkml-workflows/.github/workflows/setup-dkml.yml"
+rungit -C "$SRC_MIXED/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
+rungit -C "$SRC_MIXED/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
+rungit -C "$SRC_MIXED/dkml-workflows" push
 
 # ------------------------
 # Distribution archive
