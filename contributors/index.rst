@@ -198,8 +198,8 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
       > ─( 19:03:24 )─< command 0 >─────────────────────────────────────────{ counter: 0 }─
       > utop #
 
-3. You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore. Now
-   let us try to enter some basic OCaml expressions ... be sure to
+   *You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore.*
+3. Now let us try to enter some basic OCaml expressions ... be sure to
    include the ``;;`` and then press ENTER after each line:
 
    .. code-block:: tcshcon
@@ -228,11 +228,13 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
 
 5. Leave the ``utop`` application by typing:
 
-  .. code-block:: tcshcon
+   .. code-block:: tcshcon
 
-    utop #> #quit ;;
+     utop #> #quit ;;
 
-:ref:`BeyondBasics` is the topic of the next section.
+   *Remember that if you get harmless warnings (ex. ``failed to lock file``) you can safely ignore them.*
+
+6. :ref:`BeyondBasics` is the topic of the next section. **Please starting read it.**
 
 Indices and tables
 ==================
