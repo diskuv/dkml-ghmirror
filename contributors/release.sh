@@ -324,7 +324,7 @@ else
     done
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
         GITDIR=$SRC/"$GITDIR"
-        git -C "$GITDIR" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
+        git -C "$GITDIR" commit -m "Finish v$TARGET_VERSION release"
     done
 	git commit -m "Finish v$TARGET_VERSION release (1 of 2)"
 
@@ -344,12 +344,9 @@ else
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
+        git add vendor/"$v"
     done
-    for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
-        GITDIR=$SRC/"$GITDIR"
-        git -C "$GITDIR" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
-    done
-    git commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
+    git commit -m "Finish v$NEW_VERSION release (2 of 2)"
 fi
 
 # From this point on NEW_VERSION is the version being committed. It will be
