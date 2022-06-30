@@ -320,6 +320,7 @@ else
     # 3. Make a release commit
     for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
+        git add vendor/"$v"
     done
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
         GITDIR=$SRC/"$GITDIR"
