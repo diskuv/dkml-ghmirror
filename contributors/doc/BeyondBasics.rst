@@ -116,19 +116,22 @@ we can edit this file:
    * Type in your code
    * Save the source file with an appropriate name and ending.
 
-   Click on the image below and look at the **Save As type** box:
+   Click on the animated image below (use your mouse!) to see how to open a file:
+
+   .. image:: BeyondBasics-win32-opening.gif
+      :width: 700
+      :alt: Opening a source file with Notepad on Windows
+
+   Click on the picture below to see how you change the **Save As type** box while
+   you are saving a file:
 
    .. image:: BeyondBasics-win32-editing.png
       :width: 700
-      :alt: Editing with Notepad on Windows
+      :alt: Editing a source file with Notepad on Windows
 
-   We should always use **All file types (*.*)**, not **"Text documents (*.txt)"**,
+   We should always save with **All file types (*.*)**, not **"Text documents (*.txt)"**,
    because Notepad and other simple editors will add ".txt" to the ending of the
    filename (also known as the *file extension*) without telling you!
-
-   In the image above, we actually wanted ``dune`` not ``dune.txt``. By switching
-   to **All file types (*.*)** we can see the bad ``.txt`` file extension and
-   remove it.
 
 It bears repeating:
 
