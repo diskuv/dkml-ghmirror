@@ -6,17 +6,17 @@ Repositories
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
-1. diskuv-0.3.3
-2. fdopen-mingw-0.3.3 *only for Windows*
+1. diskuv-0.4.0
+2. fdopen-mingw-0.4.0 *only for Windows*
 3. default
 
-The ``diskuv-0.3.3`` repository has all the patches required for third-party OCaml packages
+The ``diskuv-0.4.0`` repository has all the patches required for third-party OCaml packages
 to support the Microsoft compiler. Any switch that is created by *Diskuv OCaml* will have
 pinned versions for each package in this repository. That means you will always get the
 *Diskuv OCaml* patched versions and reproducible behavior.
 
-The ``fdopen-mingw-0.3.3`` repository has all the MinGW patches for _many_ third-party OCaml packages
-to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.3.3`` the packages
+The ``fdopen-mingw-0.4.0`` repository has all the MinGW patches for _many_ third-party OCaml packages
+to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.4.0`` the packages
 are not pinned, so it is possible that a newer package version is introduced into your switch
 that has no MinGW patches.
 

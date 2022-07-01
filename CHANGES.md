@@ -1,3 +1,104 @@
+## 0.4.0 (2022-06-30)
+
+This release open-sources many of the underlying components in
+separate repositories under an Apache 2.0 license:
+
+* [dkml-runtime-common](https://github.com/diskuv/dkml-runtime-common)
+* [dkml-runtime-distribution](https://github.com/diskuv/dkml-runtime-distribution)
+* [dkml-compiler](https://github.com/diskuv/dkml-compiler)
+* [dkml-component-ocamlcompiler](http://github.com/diskuv/dkml-component-ocamlcompiler)
+* [dkml-component-ocamlrun](http://github.com/diskuv/dkml-component-ocamlrun)
+* [dkml-component-opam](http://github.com/diskuv/dkml-component-opam)
+* [dkml-component-curl](http://github.com/diskuv/dkml-component-curl)
+* [dkml-component-unixutils](http://github.com/diskuv/dkml-component-unixutils)
+* [dkml-install-api](https://diskuv.github.io/dkml-install-api/index.html)
+* [dkml-installer-ocaml](http://github.com/diskuv/dkml-installer-ocaml)
+* [diskuv-opam-repository](https://github.com/diskuv/diskuv-opam-repository)
+
+The `diskuv-ocaml` repository (what you are reading now) has also changed to
+Apache 2.0 and will be kept as the umbrella repository that manages the other
+code and Opam repositories.
+
+Opam has been upgraded from 2.1.0 to 2.1.2.
+
+A `playground` switch will automatically be created so you can get started with
+OCaml without having to create a switch.
+
+There is partial support for installing in a directory with spaces
+(ex. `C:\Users\Alice Cole\AppData\Local`). Only directories that
+are on a NTFS volume and which have DOS 8.3 shortname policy enabled
+will get the partial support; typically the Windows drive `C:` will
+meet the requirements, but USB drives will typically not.
+Windows Administrators can set a policy with
+[fsutil 8dot3name](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil)
+and non-Administrators can change individual directories they
+own with `fsutil file setshortname`.
+
+In common situations `with-dkml` does not need to be used:
+1. `opam` can be used without `with-dkml opam`
+2. `dune` can be used without `with-dkml dune` in any **new** Opam switch you create.
+3. `dune` can be used without `with-dkml dune` if you don't use Opam switches.
+
+That means you can just type `dune build` and `opam install graphics`, for example.
+
+**This new form of `dune` will not work in an existing switch.** To recreate your
+switch, assuming you have `.opam` files, do the following in PowerShell:
+
+```powershell
+cd {existing switch}
+opam switch remove $PWD
+opam dkml init
+(& opam env) -split '\r?\n' | ForEach-Object { Invoke-Expression $_ }
+opam install . --deps-only --with-test
+```
+
+The new form of Dune also gets `dune build --watch` working. We provided a
+`fswatch.exe` for Windows that Dune 2.9 uses to watch the file system.
+
+The deprecated `./makeit` scripts are no longer supported. Those scripts were
+deprecated with the introduction of `with-dkml`.
+
+The MSYS2 environment has switched from the base `MSYS` to `CLANG64`, which
+means you can install C/C++ packages that are
+[compatible with Visual Studio](https://www.msys2.org/docs/environments/) and
+have no dependency on MSYS2. The more than 2000 C/C++ packages can be discovered with
+[MSYS2 package search of the "clang64" repository](https://packages.msys2.org/package/?repo=clang64) and
+installed with [`with-dkml pacman -S <name of package>`](https://www.msys2.org/docs/package-management/).
+Just keep the `with-dkml pacman -S pkg1 pkg2 ...` command
+in a build script so your C/C++ packages can be reproduced on other machines
+or when Diskuv OCaml is upgraded.
+
+The following core packages have been upgraded:
+
+* dune.2.9.1 -> 2.9.3
+* ptime.0.8.6-msvcsupport -> 0.8.6
+* sha.1.15.1 -> 1.15.2
+* fmt.0.8.10 -> 0.9.0
+* jingoo.1.4.3 -> 1.4.4
+* utop.2.8.0 -> 2.9.0
+* (ocaml 4.13.1 only) lsp.1.9.0 -> 1.10.3
+* (ocaml 4.13.1 only) ocaml-lsp-server.1.9.0 -> 1.10.3
+* (ocaml 4.13.1 only) jsonrpc.1.9.0 -> 1.10.3
+
+All other package versions have been upgraded using the
+ocaml/opam Docker image as of [Feb 28, 2022](https://hub.docker.com/layers/ocaml/opam/windows-msvc-ltsc2022-ocaml-4.12/images/sha256-a96f023f0878154170af6471a0f57d1122f7e90ea3f43c33fef2a16e168e1776).
+
+Cygwin is no longer installed on-demand if the Opam repository inside
+ocaml/opam Docker image is not available for download. The Opam repository
+asset is generated in advance by Diskuv and expected to be downloadable.
+Similarly, jq which was used during the Opam repository generation is no
+longer installed.
+
+The switches `diskuv-host-tools` and `host-tools` are no longer in use. Instead
+the `dkml` switch provides binaries and environments for `utop` and other core
+developer tools.
+
+The vcpkg specific logic to discover `vcpkg_installed` and make use of
+`DKML_VCPKG_HOST_TRIPLET` and `DKML_VCPKG_MANIFEST_DIR` environment
+variables has been removed. `DKML_3P_PROGRAM_PATH` and `DKML_3P_PREFIX_PATH`
+are more general replacements described in the
+[with-dkml.exe documentation](https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html#with-dkml-exe)
+
 ## 0.3.3 (2022-01-14)
 
 > The *Diskuv OCaml* distribution is available under the

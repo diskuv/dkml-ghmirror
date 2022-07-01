@@ -195,7 +195,7 @@ Briefly review the following:
   that was issued by
   ``Certum Code Signing CA SHA2``.
 
-Then run the `latest Windows 64-bit installer <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v0.3.3/setup-diskuv-ocaml-windows_x86_64-0.3.3.exe>`__.
+Then run the `latest Windows 64-bit installer <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v0.4.0/setup-diskuv-ocaml-windows_x86_64-0.4.0.exe>`__.
 
 Install is done! What next?
 """""""""""""""""""""""""""
