@@ -1,4 +1,0 @@
-; This is purely for IDE support (vscode-ocaml-platform). All ocaml code is actually run through `ocaml` interpreter
-
-(library
- (name everything_in_directory))

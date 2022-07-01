@@ -34,7 +34,12 @@ If you have **all** four (4) of the following:
    * Visual Studio Enterprise
    * Visual Studio Build Tools (the compilers without the IDE)
 
-2. The `English language pack <https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2019#step-6---install-language-packs-optional>`_
+2. **If and only if** you are using vcpkg_ (the C package manager) either because you are
+   using DKSDK or because you used the ``installtime\windows\setup-machine.bat -VcpkgCompatibility``
+   option, you will need
+   the `English language pack <https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2019#step-6---install-language-packs-optional>`_.
+
+   Most open-source users of DKML will *not* need the English language pack.
 
 3. **Both** of the following:
 
@@ -43,7 +48,7 @@ If you have **all** four (4) of the following:
 
    .. note::
 
-      `vcpkg (the C package manager) <https://vcpkg.io/>` does not have the ability pick a precise version (ex. 14.26) of Visual Studio. If you are in the
+      vcpkg_ does not have the ability pick a precise version (ex. 14.26) of Visual Studio. If you are in the
       rare situation where you must have exact matching versions of the compiler, you can install
       `Visual Studio 2019 version 16.6 <https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes-v16.6>`_ which can be
       downloaded at `Visual Studio 2019 Releases <https://docs.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers>`_.
@@ -108,3 +113,5 @@ with the switch ``-SkipAutoInstallVsBuildTools`` to verify you have a correct Vi
     PS> installtime\windows\setup-machine.ps1 -SkipAutoInstallVsBuildTools
 
 The ``setup-machine.ps1`` script will error out if you are missing any required components.
+
+.. _vcpkg: https://vcpkg.io/

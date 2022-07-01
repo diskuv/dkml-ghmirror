@@ -3,27 +3,36 @@
 Beyond Basics
 =============
 
-.. sidebar:: Using a preview release?
+.. important::
 
-   If you are using a preview release of 0.4.0 (you would know if you are using it), then replace all ``host-tools`` with
-   ``dkml`` in this documentation.
+  These are early days for Diskuv OCaml. We frequently update the software for bug fixes.
+  Stay informed about new features, bug fixes and security updates on Twitter:
+
+  .. image:: https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv
+    :target: https://twitter.com/diskuv
+
+  If you are a student, **talk with your instructor** before applying a major update. They will
+  likely want you to stay on your existing version until the course is complete.
 
 Learn OCaml - A first project
 -----------------------------
 
 .. note::
-    This section is almost verbatim from `A first project - Learn OCaml <https://ocaml.org/learn/tutorials/up_and_running.html#A-first-project>`_.
+    This section is almost verbatim from `A first project - Learn OCaml`_.
     Since you already installed Diskuv OCaml, almost everything else on that page is already
     done for you!
 
+.. _A first project - Learn OCaml: https://ocaml.org/learn/tutorials/up_and_running.html#A-first-project
+
 Let's begin the simplest project with Dune and OCaml. We create a new directory and ask ``dune`` to initialise a new project:
 
-1. Open the Visual Studio Command Prompt (press the Windows key ⊞, type "x64 Native Tools" and then Open ``x64 Native Tools Command Prompt for VS 2019``).
+1. Open the Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER).
 2. Type:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>cd %USERPROFILE%\DiskuvOCamlProjects
+      C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
+      C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
       C:\Users\you\DiskuvOCamlProjects>mkdir helloworld
 
@@ -51,7 +60,7 @@ We can run the executable with ``dune exec`` (it's called ``helloworld.exe`` eve
 Let's look at the contents of our new directory.
 Dune has added the ``helloworld.ml`` file, which is our OCaml program.
 It has also added our ``dune`` file, which tells dune how to build the program,
-and a ``_build`` subdirectory, which is dune's working space.
+and a ``_build`` subdirectory, which is Dune's working space.
 
    .. code-block:: doscon
 
@@ -75,12 +84,85 @@ so it's easier to run with ``dune exec``. To ship the executable, we can just co
 from inside ``_build/default`` to somewhere else.
 
 Here is the contents of the automatically-generated ``dune`` file.
-When we want to add components to your project, such as third-party libraries, we edit this file.
+When we want to add components to your project, such as third-party libraries,
+we can edit this file:
 
 .. code-block:: scheme
 
     (executable
       (name helloworld))
+
+.. important::
+
+   **Editing files**
+
+   Now is a good time to talk about editing a file. *Editing* is how you change
+   the contents of a file. You probably already know how to use Microsoft Word
+   to edit Word documents: just start up Microsoft Word and then use the
+   Word menu to "Open" a Word document. But Microsoft Word only works with
+   Word documents that end with ``.doc`` or ``.docx``! On Windows you can use
+   the program ``Notepad`` (press the Windows key ⊞, and then type "notepad")
+   to edit "text" documents.
+
+   All programming languages, including OCaml, use text documents. These are
+   also called text files and source files. (We'll use the term "source file"
+   from now on.) Source files are not Word documents. In fact,
+   **you will mess up your source file if you use Microsoft Word** to edit it.
+   You have to use a text editor. Other than that difference, editing should
+   still be familiar to you:
+
+   * Open your editor (example: open Notepad)
+   * Use the editor menu to "Open" a source file, or make a "New" source file
+   * Type in your code
+   * Save the source file with an appropriate name and ending.
+
+   Click on the animated image below (use your mouse!) to see how to open a file:
+
+   .. image:: BeyondBasics-win32-opening.gif
+      :width: 700
+      :alt: Opening a source file with Notepad on Windows
+
+   Click on the picture below to see how you change the **Save As type** box while
+   you are saving a file:
+
+   .. image:: BeyondBasics-win32-editing.png
+      :width: 700
+      :alt: Editing a source file with Notepad on Windows
+
+   We should always save with **All file types (*.*)**, not **"Text documents (*.txt)"**,
+   because Notepad and other simple editors will add ".txt" to the ending of the
+   filename (also known as the *file extension*) without telling you!
+
+It bears repeating:
+
+**The name, extension and location of the source file is critical!** As you go
+through this documentation make sure you Save the text file *exactly where* it
+tells you with the *exact name and extension* it tells you!
+
+Continuous building
+~~~~~~~~~~~~~~~~~~~
+
+Eventually you may get tired of running ``dune build`` all the time.
+
+Try running the following:
+
+.. code-block:: doscon
+
+   C:\Users\you\DiskuvOCamlProjects>cd %USERPROFILE%\DiskuvOCamlProjects\helloworld
+   C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c 'while true; do dune build --watch; sleep 1; done'
+
+and then edit your ``helloworld.ml`` to say "This is so fast!" instead of
+"Hello, World!".
+
+Then open a new Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER) to run:
+
+.. code-block:: doscon
+
+   C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects\helloworld
+   C:\Users\you\DiskuvOCamlProjects\helloworld>_build\default\helloworld.exe
+   This is so fast!
+
+Anytime you edit your source code, it will recompile what has changed.
 
 Installing packages
 ~~~~~~~~~~~~~~~~~~~
@@ -91,98 +173,101 @@ own projects.
 Each project is a local directory with source code and its own set of OCaml packages.
 Opam will manage the OCaml packages in a local subdirectory named ``_opam``. The technical
 term for ``_opam`` is a local **switch**. In this section we will create a project
-called ``playground``.
+called ``my-first-switch``.
 
 Let's start by finding which switches are available:
 
-1. Open the Visual Studio Command Prompt (press the Windows key ⊞, type "x64 Native Tools" and then Open ``x64 Native Tools Command Prompt for VS 2019``).
+1. Open the Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER).
 2. Type:
 
    .. code-block:: doscon
 
-      C:\DiskuvOCaml\BuildTools>opam switch
+      C:\Users\you>opam switch
       #  switch                                                      compiler
                 description
-         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
+         C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
                 ocaml-system.4.12.1
-                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\host-tools
-      →  diskuv-boot-DO-NOT-DELETE
-                diskuv-boot-DO-NOT-DELETE
+                C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml
+      →  playground
+                ocaml-system.4.12.1
+                playground
 
       [WARNING] The environment is not in sync with the current switch.
                 You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-You just found that you have two switches. The first switch is the directory "host-tools".
-The other switch says *DO NOT DELETE*. We will avoid those two switches.
+You just found that you have at least two (2) switches: the directory ``...\0\dkml``
+and the ``playground``. We will avoid the ``dkml`` reserved switch, and for now we'll
+ignore the ``playground`` switch.
 
-Let's now create our own ``playground`` switch. All we need to do is create a directory
-and run ``with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init``
-inside our new (or existing) directory:
+Let's create our own ``my-first-switch`` switch. All we need to do is create a directory
+and run ``opam dkml init`` inside our new (or existing) directory:
 
-   .. code-block:: doscon
+.. note::
 
-      C:\DiskuvOCaml\BuildTools>cd %USERPROFILE%\DiskuvOCamlProjects
+   Press **y** (yes) whenever you are prompted!
 
-      C:\Users\you\DiskuvOCamlProjects>mkdir playground
-      C:\Users\you\DiskuvOCamlProjects>cd playground
-      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml OPAMSWITCH=%DiskuvOCamlHome%\host-tools opam dkml init
+.. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
-      #  switch                                                                           compiler
-               description
-      ...
-      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
-               C:\Users\you\DiskuvOCamlProjects\playground
-         diskuv-boot-DO-NOT-DELETE
-               diskuv-boot-DO-NOT-DELETE
+   C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
+   C:\Users\you>cd %USERPROFILE%\DiskuvOCamlProjects
 
-      [NOTE] Current switch has been selected based on the current directory.
-            The current global system switch is diskuv-boot-DO-NOT-DELETE.
-      [WARNING] The environment is not in sync with the current switch.
-               You should run: for /f "tokens=*" %i in ('opam env') do @%i
+   C:\Users\you\DiskuvOCamlProjects>mkdir my-first-switch
+   C:\Users\you\DiskuvOCamlProjects>cd my-first-switch
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam dkml init
+
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
+   #  switch                                                                           compiler
+            description
+   ...
+   →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
+            C:\Users\you\DiskuvOCamlProjects\my-first-switch
+
+   [NOTE] Current switch has been selected based on the current directory.
+         The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
+   [WARNING] The environment is not in sync with the current switch.
+            You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
 Notice how the switch was created with ``opam dkml init``, and also notice
 how ``opam switch`` tells you in its ``[NOTE]`` that it knows which switch
 should be used based **on the current directory**.
 
-If we want our playground to be remembered regardless what the directory
+If we want our my-first-switch to be remembered regardless what the directory
 currently is, we can follow the ``[WARNING]`` and add the option ``--set-switch``.
 
 Let's do that now so we learn how to do it:
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>for /f "tokens=*" %i in ('opam env --set-switch') do @%i
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>for /f "tokens=*" %i in ('opam env --set-switch') do @%i
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam switch
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
       #  switch                                                                           compiler
                description
       ...
-      →  C:\Users\you\DiskuvOCamlProjects\playground                                    ocaml-system.4.12.1
-               C:\Users\you\DiskuvOCamlProjects\playground
-         diskuv-boot-DO-NOT-DELETE
-               diskuv-boot-DO-NOT-DELETE
+      →  C:\Users\you\DiskuvOCamlProjects\my-first-switch                                    ocaml-system.4.12.1
+               C:\Users\you\DiskuvOCamlProjects\my-first-switch
 
       [NOTE] Current switch is set locally through the OPAMSWITCH variable.
-            The current global system switch is diskuv-boot-DO-NOT-DELETE.
+            The current global system switch is C:\Users\you\AppData\Local\Programs\DiskuvOCaml\0\dkml.
 
-**Great!** You are now ready to install some packages for the playground project.
+**Great!** You are now ready to install some packages for the my-first-switch project.
 Let's see what packages are installed with ``opam list`` and available
 with ``opam list -a``:
 
    .. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam list
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam list
       # Packages matching: installed
       # Name        # Installed # Synopsis
       base-bigarray base        pinned to version base
       base-threads  base        pinned to version base
       base-unix     base        pinned to version base
+      conf-withdkml 1           Virtual package relying on with-dkml
       ocaml         4.12.1      pinned to version 4.12.1
-      ocaml-config  2           pinned to version 2
+      ocaml-config  3           pinned to version 3
       ocaml-system  4.12.1      The OCaml compiler (system version, from outside of opam)
 
-      C:\Users\you\DiskuvOCamlProjects\playground>opam list -a
+      C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam list -a
       # Packages matching: available
       # Name                                          # Installed                # Synopsis
       0install                                        --                         pinned to version 2.17
@@ -201,19 +286,14 @@ Since this section is following the Learn OCaml tutorials, let's install the `Gr
 which gives you the `Graphics module <https://ocaml.github.io/graphics/graphics/Graphics/index.html>`_.
 In Opam the package names are always lowercase, so the module ``Graphics`` will be available in the ``graphics`` Opam package:
 
-   .. code-block:: doscon
+.. code-block:: doscon
 
-      C:\Users\you\DiskuvOCamlProjects\playground>with-dkml opam install graphics
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam install graphics
 
-Press **Y** when asked if you want to continue, then sit back while it compiles and
-installs the ``graphics`` package.
+.. note::
 
-   .. warning::
-
-      When you want to use the packages from your project, always use ``with-dkml`` in front of
-      the commands ``opam``, ``ocaml``, ``ocamlc`` and ``utop``.
-
-      So ``with-dkml opam install graphics`` rather than ``opam install graphics``. Et cetera.
+   Press **y** when asked if you want to continue, then sit back while it compiles and
+   installs the ``graphics`` package.
 
 Learn OCaml - A First Hour with OCaml
 -------------------------------------
@@ -223,13 +303,24 @@ the tutorial `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tut
 
 Before you begin that tutorial, you will need to know a few things:
 
-* You don't need to use ``rlwrap``. You already have ``utop`` installed; it is much easier to work with!
-* Eventually you will be asked to install the ``graphics`` package and the ``ocamlfind`` package. Both of them
-  are already installed, but follow along anyway! When you are asked to do ``opam`` **always**
-  use ``with-dkml opam``. So type ``with-dkml opam install graphics`` rather than ``opam install graphics``,
-  and the same thing applies to the ``ocamlfind`` package.
-* Make sure you are using the system switch. Go back to the previous section if you don't remember how to
-  select the system switch.
+* Make sure you are using the ``my-first-switch`` switch. Go back to the previous section if you don't remember how to
+  select the ``my-first-switch`` switch.
+* You don't need to use ``rlwrap``. Instead use ``with-dkml utop`` in your my-first-switch switch; it is much
+  easier to work with! Do an **extra** ``opam install utop`` when it asks you to install the ``graphics`` package
+  and the ``ocamlfind`` packages.
+
+.. warning::
+
+   When you want to use OCaml tools from your project, use ``with-dkml``
+   to reliably get those tools to work on Windows. We already do this on your
+   behalf for ``opam`` and ``dune``, **but** some tools like
+   ``ocamlc``, ``ocamlopt`` and ``utop`` need help to find the Microsoft compiler
+   or UNIX binaries or the right Windows paths. So don't guess; just get in the
+   habit of using ``with-dkml``!
+
+   So ``with-dkml ocamlopt -o helloworld helloworld.ml`` rather than
+   ``ocamlopt -o helloworld helloworld.ml``. And ``with-dkml utop`` rather than
+   ``utop``. Et cetera.
 
 Now go follow `A First Hour with OCaml - Learn OCaml <https://ocaml.org/learn/tutorials/a_first_hour_with_ocaml.html>`_!
 
@@ -263,60 +354,24 @@ Installing the OCaml Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once you have Visual Studio Code, you will want the OCaml plugin.
-Open a *new* PowerShell session and type:
 
-.. code-block:: ps1con
-    :emphasize-lines: 5,8
+In the ``File`` > ``Preferences`` > ``Extensions`` view (or press ``Ctrl Shift X``),
+type ``ocamllabs.ocaml-platform`` in the search box to find and install:
 
-    PS1> iwr `
-            "https://github.com/diskuv/vscode-ocaml-platform/releases/download/v1.8.5-diskuvocaml/ocaml-platform.vsix" `
-            -OutFile "$env:TEMP\ocaml-platform.vsix"
-    PS1> code --install-extension "$env:TEMP\ocaml-platform.vsix"
-    >> Installing extensions...
-    >> (node:16672) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
-    >> (Use `Code --trace-deprecation ...` to show where the warning was created)
-    >> Extension 'ocaml-platform.vsix' was successfully installed.
-    >> (node:16672) UnhandledPromiseRejectionWarning: Canceled: Canceled
-    >>     at D (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:5:1157)
-    >>     at O.cancel (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:62880)
-    >>     at O.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63012)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:9:63274)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:11:7330)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3843
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3942
-    >>     at Object.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:762)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3788)
-    >>     at C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41520
-    >>     at Map.forEach (<anonymous>)
-    >>     at Ne.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:14:41496)
-    >>     at d (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:3655)
-    >>     at N.clear (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4133)
-    >>     at N.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4112)
-    >>     at S.dispose (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:6:4672)
-    >>     at Object.M [as main] (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cliProcessMain.js:17:38649)
-    >>     at async N (C:\Users\you\AppData\Local\Programs\Microsoft VS Code\resources\app\out\vs\code\node\cli.js:12:13842)
-    >> (node:16672) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
-    >> (node:16672) [DEP0018] DeprecationWarning: Unhandled promise rejections are deprecated. In the future, promise rejections that are not handled will terminate the Node.js process with a non-zero exit code.
+.. code-block:: markdown
 
-You may get a lot of warnings/noise, but the highlighted lines will show you that the installation was successful.
+   #### OCaml Platform
+   * Official OCaml language extension for VSCode
 
 Now you need to quit **ALL** Visual Studio Code windows (if any), and then restart Visual Studio Code.
 
-After that, open the menu File > Preferences > Settings. Then select User > Extensions > OCaml Platform. Finally **UNCHECK** ``OCaml: Use OCaml Env``.
+After that, in the ``File`` > ``Preferences`` > ``Settings`` view (or press ``Ctrl ,``),
+select ``User`` > ``Extensions`` > ``OCaml Platform``.
 
-Next Steps?
------------
+Then **uncheck** ``OCaml: Use OCaml Env``.
 
-Once you feel you are an intermediate OCaml user (likely you've spent a few weeks getting comfortable with OCaml), you may want
-to create your own OCaml-based application. :ref:`SDKProjects`, which let you edit code for your application in an IDE,
-import open-source code packages and build your application, are the topic of the next section.
+.. important:: Do not forget to uncheck ``OCaml: Use OCaml Env``
 
-SDK Projects are **intermediate level difficulty**, so make sure you are comfortable with OCaml by going through:
-
-* `Learn OCaml tutorials <https://ocaml.org/learn/tutorials/>`_
-* `Part 1 of Real World OCaml <https://dev.realworldocaml.org/toc.html>`_
+   This setting is a legacy option that may disappear in future versions
+   of the OCaml Plugin. For now, if you don't uncheck the option,
+   you will *not* see your Opam switches in Visual Studio Code.

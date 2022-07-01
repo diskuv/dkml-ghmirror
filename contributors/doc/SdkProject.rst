@@ -3,178 +3,9 @@
 SDK Projects
 ============
 
-Starter
--------
-
-By now you have entered some OCaml code into ``utop`` but some key features
-were missing that you can get by creating/using a local project.
-
-A local project is a folder that contains your source code, one or more sets
-of packages (other people's code) and one or more build directories to store
-your compiled code and applications.
-
-By using a local project you will be able to:
-
-* Install other people's code packages
-* Edit your source code in an IDE
-* Build your source code into applications or libraries
-
-This is easiest to see with an example.
-
-1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
-2. Run the following in PowerShell:
-
-   .. code-block:: ps1con
-
-      PS1> cd ~\DiskuvOCamlProjects
-
-      PS1> git clone --recursive https://gitlab.com/diskuv/diskuv-ocaml-starter.git
-
-You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
-
-We can initialize an Opam repository, assemble an Opam
-switch and compile the source code all by running the single ``build-dev`` target:
-
-.. code-block:: ps1con
-
-    PS1> cd ~\DiskuvOCamlProjects\diskuv-ocaml-starter
-
-    PS1> ./makeit build-dev DKML_BUILD_TRACE=ON
-
-We turned on tracing (``DKML_BUILD_TRACE=ON``) so you could see what is happening;
-the three steps of ``build-dev`` are:
-
-1. Initialize an Opam repository. This takes **several minutes** but only needs to be
-   done once per user (you!) per machine.
-2. Assemble (create) an Opam switch by compiling all the third-party packages you
-   need. Any new packages you add to ``.opam`` files will be added to your Opam switch.
-   This can take **tens of minutes** but only needs to be done once per Local
-   Project.
-3. Compile your source code. This is usually in the **0-5 seconds** range unless your
-   project is large or uses C code. There is a special Makefile target called
-   ``quickbuild-dev`` that skips the first two steps and only compiles your source code.
-
-The starter application is the `Complete Program <https://dev.realworldocaml.org/guided-tour.html>`_
-example from the `Real World OCaml book <https://dev.realworldocaml.org/toc.html>`_. Let us run it.
-You will enter the numbers ``1``, ``2``, ``3`` and ``94.5``, and then stop the program by
-typing Ctrl-C or Enter + Ctrl-Z:
-
-.. code-block:: ps1con
-
-    PS1> _build/default/bin/main.exe
-    > 1
-    > 2
-    > 3
-    > 94.5
-    > Total: 100.5
-
-Recap: You fetched a SDK Project, built its code and all of its dependencies, and then ran
-the resulting application!
-
-In your own projects you will likely be making edits, and then building, and then repeating
-the edit and build steps over and over again. Since you already did ``build-dev`` once, use the
-following to "quickly" build your SDK Project:
-
-.. code-block:: ps1con
-
-    PS1> ./makeit quickbuild-dev
-
-The next section `Integrated Development Environment (IDE)` will go over how
-to automatically and almost instantaneously build your code whenever you make an edit.
-
-Visual Studio Code Development
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Launch Visual Studio Code
-2. Open the folder (File > Open Folder; or Ctrl+K Ctrl+O) ``%USERPROFILE%\DiskuvOCamlProjects\diskuv-ocaml-starter``
-3. Open a Terminal (Terminal > New Terminal; or Ctrl+Shift+`). In the terminal type:
-
-   .. code-block:: ps1con
-
-        [diskuv-ocaml-starter]$ ./makeit dkml-devmode
-        >> while true; do \
-        >>         DKML_BUILD_TRACE=OFF vendor/diskuv-ocaml/runtime/unix/platform-dune-exec.sh -p dev -b Debug \
-        >>                 build --watch --terminal-persistence=clear-on-rebuild \
-        >>                 bin lib   test ; \
-        >>         sleep 5 || exit 0; \
-        >> done
-        >> Scanned 0 directories
-        >> fswatch args = (recursive=true; event=[Removed; Updated; Created];
-        >>                 include=[];
-        >>                 exclude=[4913; /#[^#]*#$; ~$; /\..+; /_esy; /_opam; /_build];
-        >>                 exclude_auto_added=[\\#[^#]*#$; \\\..+; \\_esy; \\_opam; \\_build; \\\.git; \\_tmp];
-        >>                 paths=[.])
-        >> inotifywait loc = C:\Users\beckf\AppData\Local\Programs\DiskuvOCaml\1\tools\inotify-win\inotifywait.exe
-        >> inotifywait args = [--monitor; --format; %w\%f; --recursive; --event; delete,modify,create; --excludei; 4913|/#[^#]*#$|~$|/\..+|/_esy|/_opam|/_build|\\#[^#]*#$|\\\..+|\\_esy|\\_opam|\\_build|\\\.git|\\_tmp; .]
-        >> Done: 0/0 (jobs: 0)===> Monitoring Z:\source\diskuv-ocaml-starter -r*.* for delete, modify, create
-        >> Success, waiting for filesystem changes...
-
-   Keep this Terminal open for as long as you have the local project (in this case ``diskuv-ocaml-starter``) open.
-   It will watch your local project for any changes you make and then automatically build them.
-
-   The automatic building uses
-   `Dune's watch mode <https://dune.readthedocs.io/en/stable/usage.html#watch-mode>`_;
-   its change detection and compile times should be almost instantaneous for most
-   projects.
-
-4. Open another Terminal. In this terminal you can quickly test some pieces of your code.
-   To test ``lib/dune`` and ``lib/terminal_color.ml`` which come directly from the
-   `Variants chapter of the Real World OCaml book <https://dev.realworldocaml.org/variants.html>`_ you would type:
-
-   .. code-block:: ps1con
-
-        PS Z:\source\diskuv-ocaml-starter> ./makeit shell-dev
-        >> diskuv-ocaml-starter$
-
-   .. code-block:: shell-session
-
-        [diskuv-ocaml-starter]$ dune utop
-        > ──────────┬─────────────────────────────────────────────────────────────┬──────────
-        >           │ Welcome to utop version 2.8.0 (using OCaml version 4.12.0)! │
-        >           └─────────────────────────────────────────────────────────────┘
-        >
-        > Type #utop_help for help about using utop.
-        >
-        > ─( 06:26:11 )─< command 0 >─────────────────────────────────────────{ counter: 0 }─
-        > utop #
-   .. code-block:: tcshcon
-
-        utop #> #show Starter;;
-        > module Starter : sig module Terminal_color = Starter.Terminal_color end
-        utop #> #show Starter.Terminal_color;;
-        > module Terminal_color = Starter.Terminal_colormodule Terminal_color :
-        > sig
-        >   type basic_color =
-        >       Black
-        >     | Red
-        >     | Green
-        >     | Yellow
-        >     | Blue
-        >     | Magenta
-        >     | Cyan
-        >     | White
-        >   val basic_color_to_int : basic_color -> int
-        >   val color_by_number : int -> string -> string
-        >   val blue : string
-        > end
-        utop #> open Stdio;;
-        utop #> open Starter.Terminal_color;;
-        utop #> printf "Hello %s World!\n" blue;;
-        > Hello Blue World!
-        > - : unit = ()
-        utop #> #quit;;
-5. Open the source code ``bin/main.ml`` and ``lib/terminal_color.ml`` in the editor.
-   When you hover over the text you should see type information popup.
-6. Change the indentation of ``bin/main.ml`` and ``lib/terminal_color.ml``. Then
-   press Shift + Alt + F (or go to View > Command Palette and type "Format Document").
-   You should see your code reformatted.
-
-Finished?
-
 .. warning::
 
-    The remainder of the SDK Projects documentation is not ready for consumption.
-    And we are missing a tool to make your own SDK Project. **Stop here!**
+    The SDK Projects documentation is not ready for consumption. **Stop here!**
 
 Build Process
 -------------
@@ -252,206 +83,13 @@ You can go back and forth from OCaml to C because
 are treated as CMake targets, and DKSDK has added logic to CMake to wire together C
 and OCaml targets.
 
-Directory Layout
-----------------
-
-``diskuv-ocaml-starter`` is an example of the standard layout which looks like:
-
-::
-
-    .
-    ├── bin
-    │   ├── dune
-    │   └── main.ml
-    ├── build
-    │   ├── _tools
-    │   │   └── dev
-    │   └── dev
-    │       └── Debug
-    ├── buildconfig
-    │   └── dune
-    │       ├── .gitignore
-    │       ├── dune.env.workspace.inc
-    │       ├── executable
-    │       └── workspace
-    ├── dune
-    ├── dune-project
-    ├── dune-workspace
-    ├── lib
-    │   ├── dune
-    │   └── terminal_color.ml
-    ├── LICENSE.txt
-    ├── makeit
-    ├── makeit.cmd
-    ├── Makefile
-    ├── README.md
-    ├── opam
-    ├── test
-    │   ├── dune
-    │   └── starter.ml
-    └── vendor
-        ├── diskuv-ocaml
-        └── diskuv-sdk
-
-*TODO* Explanation of each directory and file.
-
-``Makefile``
-~~~~~~~~~~~~
-
-Configuration
-^^^^^^^^^^^^^
-
-The *Diskuv OCaml* specific configuration for your local project is at the top of your
-``Makefile``.
-
-Here is an example from the ``diskuv-ocaml-starter`` local project:
-
-.. code-block:: make
-
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    #                      RESERVED FOR DISKUV OCAML                        #
-    #                         BEGIN CONFIGURATION                           #
-    #                                                                       #
-    #     Place this section before the first target (typically 'all:')     #
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
-    # The subdirectory for the 'diskuv-ocaml' git submodule
-    DKML_DIR = vendor/diskuv-ocaml
-
-    # Verbose tracing of each command. Either ON or OFF
-    DKML_BUILD_TRACE = OFF
-
-    # The source directories. No platform-specific source code belongs here.
-    OCAML_SRC_CROSSPLATFORM = bin lib
-
-    # The test directories. No platform-specific source code belongs here.
-    OCAML_TEST_CROSSPLATFORM = test
-
-    # The names of the Windows-specific Opam packages (without the .opam suffix), if any.
-    OPAM_PKGS_WINDOWS =
-
-    # The source directories containing Windows-only source code, if any.
-    OCAML_SRC_WINDOWS =
-
-    # The test directories for Windows source code, if any.
-    OCAML_TEST_WINDOWS =
-
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    #                          END CONFIGURATION                            #
-    #                      RESERVED FOR DISKUV OCAML                        #
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
-
-Targets
-^^^^^^^
-
-The *Diskuv OCaml* specific targets for your local project are at the bottom of your
-``Makefile``.
-
-Here is an example from the ``diskuv-ocaml-starter`` local project:
-
-.. code-block:: make
-
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    #                      RESERVED FOR DISKUV OCAML                        #
-    #                            BEGIN TARGETS                              #
-    #                                                                       #
-    #         Place this section anywhere after the `all` target            #
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
-    include $(DKML_DIR)/runtime/unix/standard.mk
-
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-    #                             END TARGETS                               #
-    #                      RESERVED FOR DISKUV OCAML                        #
-    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
-``buildconfig/dune/``
-~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    .
-    └── buildconfig
-        └── dune
-            ├── .gitignore
-            ├── dune.env.workspace.inc
-            ├── executable
-            │   ├── 1-base.link_flags.sexp
-            │   ├── 2-dev-all.link_flags.sexp
-            │   ├── 3-all-Debug.link_flags.sexp
-            │   ├── 3-all-Release.link_flags.sexp
-            │   ├── 3-all-ReleaseCompatFuzz.link_flags.sexp
-            │   ├── 3-all-ReleaseCompatPerf.link_flags.sexp
-            │   ├── 4-dev-Debug.link_flags.sexp
-            │   ├── 4-dev-Release.link_flags.sexp
-            │   ├── 4-dev-ReleaseCompatFuzz.link_flags.sexp
-            │   └── 4-dev-ReleaseCompatPerf.link_flags.sexp
-            └── workspace
-                ├── 1-base.ocamlopt_flags.sexp
-                ├── 2-dev-all.ocamlopt_flags.sexp
-                ├── 3-all-Debug.ocamlopt_flags.sexp
-                ├── 3-all-Release.ocamlopt_flags.sexp
-                ├── 3-all-ReleaseCompatFuzz.ocamlopt_flags.sexp
-                ├── 3-all-ReleaseCompatPerf.ocamlopt_flags.sexp
-                ├── 4-dev-Debug.ocamlopt_flags.sexp
-                ├── 4-dev-Release.ocamlopt_flags.sexp
-                ├── 4-dev-ReleaseCompatFuzz.ocamlopt_flags.sexp
-                └── 4-dev-ReleaseCompatPerf.ocamlopt_flags.sexp
-
-Setting Up An Existing Git Repository As a SDK Project
---------------------------------------------------------
-
-The directory structure does _not_ need to look like the standard layout.
-
-The requirements are:
-
-1.  Use ``diskuv-ocaml`` as a submodule, as in:
-
-    .. code-block:: ps1con
-
-        PS1> git submodule add `
-                https://gitlab.com/diskuv/diskuv-ocaml.git `
-                vendor/diskuv-ocaml
-
-
-    You can place the submodule in any directory (not just ``vendor``) but the basename
-    should be ``diskuv-ocaml``.
-
-2. There must be a ``dune-project`` in an ancestor directory of the ``diskuv-ocaml`` Git submodule.
-   For example, it is fine to have:
-
-   ::
-
-        .git/
-        .gitmodules
-        a/
-            b/
-                dune-project
-                src/
-                    c/
-                        d/
-                            diskuv-ocaml/
-
-*TODO* Complete.
-
-Upgrading
----------
-
-Run:
-
-.. code-block:: ps1con
-
-    PS1> .\vendor\diskuv-ocaml\runtime\windows\upgrade.ps1
-
-If there is an upgrade of ``Diskuv OCaml`` available it will automate as much as possible,
-and if necessary give you further instructions to complete the upgrade.
-
 Static or Dynamic Linking
 -------------------------
 
-For Linux we use static linking, with no dependency on even the system C
-runtime library.
+For all operating systems we use dynamic linking. There is a
+`setup-dkml <https://github.com/diskuv/dkml-workflows#readme>`__
+GitHub child workflow available that will create dynamically linked, portable
+Linux applications.
 
 There is little benefit to doing static linking on Windows. Windows has
 a standard installer (``.msi`` or ``setup*.exe``) that can install any
@@ -481,35 +119,15 @@ Docker on macOS) as the build host because:
    macOS) but at the moment it is not worth the effort since Docker (aka
    Linux containers) is available on most platforms including macOS.
 
-Dev and Target Platforms
-------------------------
-
-All platforms except ``dev`` are **target** platforms. Target platforms
-are built in a Docker sandbox and may have CPU emulation to get
-different CPU architectures to work.
-
-    If you have continuous integration hardware, use the target
-    platforms!
-
-The ``dev`` platform is your own development machine. There are key
-differences from the target platforms:
-
--  When the dev platform is initialized through ``make init-dev`` extra
-   software is downloaded to support IDEs.
--  We do our best to avoid *any* need for running Docker. Why? Docker,
-   especially on Windows (and probably Apple M1s), has some difficult to
-   work around limitations like having to switch between Windows and
-   Linux containers, not having critical packages available for
-   non-Linux containers, and oftentimes being incompatible with other
-   virtualization (most of the Hyper-V incompatibilites have been fixed
-   on Windows).
+Target Platforms
+----------------
 
 +------------------+------------------------------------------+
 | Platform         | Description                              |
 +==================+==========================================+
-| dev              | Your own dev machine.                    |
+| windows\_x86\_64 | AMD/Intel 64-bit Windows.                |
 +------------------+------------------------------------------+
-| linux\_x86\_64   | AMD/Intel 64-bit Linux. Static linking   |
+| linux\_x86\_64   | AMD/Intel 64-bit Linux.                  |
 +------------------+------------------------------------------+
 
 .. warning:: 32-bit Windows
@@ -580,109 +198,6 @@ variables.
 Each build type has a corresponding `Visual Studio Code CMake Tools
 Variant <https://vector-of-bool.github.io/docs/vscode-cmake-tools/variants.html>`__.
 
-Makefile Targets
-----------------
-
-We use Makefile targets to help you keep track of everything.
-
-    In Windows you use the command ``.\make`` rather than ``make``.
-    Wherever you see ``make`` in this document you should replace it
-    with ``.\make``.
-
-For example to clean up builds:
-
--  ``make clean`` cleans all builds from all target platforms (including
-   the dev platform) and cleans all tools (*use with caution!*)
--  ``make clean-dev-all`` cleans all builds from the dev platform and
-   tools specific to the dev platform
--  ``make clean-all-Release`` cleans the Release build from all the
-   target platforms (including the dev platform)
--  ``make clean-linux_x86_64-all`` cleans all builds from the
-   linux\_x86\_64 target platform and tools specific to the target
-   platform
--  ``make clean-linux_x86_64-Release`` clean the Release build from the
-   linux\_x86\_64 target platform
-
-There are many variations of ``make build`` all of which default to the
-Debug build unless you explicitly specify:
-
--  ``make build`` builds all target platforms and all build types (but
-   since you will *likely never* want to do this as a safeguard you must
-   run ``make build FORCE_CRAZY_BUILD=ON``)
--  ``make build-all`` builds the Debug build for all target platforms
--  ``make build-dev`` builds the Debug build for the dev platform
--  ``make build-linux_x86_64`` builds the Debug build for the
-   linux\_x86\_64 target platform
--  ``make build-dev-Release`` builds the Release build for the dev
-   platform
--  ``make build-all-Release`` builds the Release build for all the
-   target platforms
--  ``make build-linux_x86_64-Release`` build the Release build for the
-   linux\_x86\_64 target platform
-
-When you don't edit any of the Docker files and you have done at least
-one ``make build-*`` you can subsequently use ``make quickbuild-*``
-(which skips Docker building and installing tools and Opam dependencies)
-for rapid development.
-
-Building will install any new dependencies you list in your ``.opam``
-files *as long as you commit those files* before running any
-``make build-*``.
-
-Building should be performed before testing. You can do:
-
--  ``make build-XXX`` followed by a ``make test-XXX`` (ex.
-   ``make build-dev`` then ``make test-dev``)
--  ``make build-XXX test-XXX`` (ex. ``make build-dev test-dev``)
--  ``make test`` which will test everything that has already been built
-   (useful when you are doing agile points burn-down development)
-
-Use ``make report`` to see what has been built and all of its compiler
-flags. If you need to send in a bug report **include the output of
-``make report``**.
-
-Build Directories
------------------
-
-The directory structure is the same regardless whether Windows or Linux
-is used as the development platform, unless noted otherwise.
-
--  ``_build``
--  ``build``
--  ``_tools``
-
-   -  ``common`` - Tools shared across all platforms, if any
-   -  ``local`` - Shared platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH
-
-   -  ``opam-bootstrap`` - Native Windows version of Opam, on Windows
-      build machines only
-
-      -  ``bin`` - Install location containing Opam executable and
-         shared DLLs
-
-   -  ``dev`` - Tools for the dev platform
-   -  ``local`` - Dev platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH if the build is for the dev platform
-      -  ``dune`` - Drop-in replacement for ``dune``
-      -  ``opam`` - Drop-in replacement for ``opam``
-
-   -  ``PLATFORM`` - Tools for a specific `target
-      platform <#target-platforms>`__
-   -  ``local`` - Target platform local installation folder
-
-      -  ``bin`` - Executables and scripts here are added to the build
-         PATH if the build is for the specific target platform
-      -  ``dune`` - Drop-in replacement for ``dune``
-      -  ``opam`` - Drop-in replacement for ``opam``
-
-*Build PATH manipulation is done in ``.\scripts\unix\within-dev.sh`` and
-``contexts\linux-build\sandbox-entrypoint.sh``*
-
 OCaml
 -----
 
@@ -691,107 +206,6 @@ Opam Packages
 
 We use `Opam <https://opam.ocaml.org/>`__ as the package manager for
 OCaml code.
-
-Each `target platform <#target-platforms>`__ has its own Opam root
-located at ``build/_tools/TARGET_PLATFORM/opam-root`` except the dev
-platform which uses the default Opam root ``~/.opam``.
-
-Each combination of `target platform <#target-platforms>`__ and `build
-type <#build-types>`__ has its own Opam switch located at
-``build/TARGET_PLATFORM/BUILD_TYPE/_opam``.
-
-Dune Builds
-~~~~~~~~~~~
-
-OCaml code is built with `Dune <https://dune.readthedocs.io/>`__.
-
-When using ``make build-dev``, which is the target used by the `IDE
-Support <#ide-support>`__, or ``make build-dev-*`` *all* Dune build
-artifacts are built. However all other ``make build-*`` targets will
-build only the public artifacts that will be installed. This corresponds
-to the ```all`` alias for the dev platform and the ``install`` alias for
-the reproducible container
-platforms <https://dune.readthedocs.io/en/stable/usage.html#built-in-aliases>`__.
-We expect a development lifecycle that looks like:
-
--  You develop new executables and new libraries, build it and test it
-   from your IDE and from the command line with
-   ``make build-dev test-dev``
--  When the new executables and libraries are ready to be cross-platform
-   tested, you can add a ``(public_name ...)`` to your `executable
-   stanza <https://dune.readthedocs.io/en/stable/dune-files.html#executable>`__
-   and/or your `library
-   stanza <https://dune.readthedocs.io/en/stable/dune-files.html#library>`__.
-   Any support files they need at runtime should be present with a
-   `install
-   stanza <https://dune.readthedocs.io/en/stable/dune-files.html#install>`__
-   or by `defining a
-   site <https://dune.readthedocs.io/en/stable/sites.html>`__.
-
-The ``scripts/unix/platform-dune-exec.sh`` script is used to launch all
-Dune builds:
-
--  It sets the Dune profile to ``TARGET_PLATFORM-BUILD_TYPE`` (ex.
-   ``dune --profile linux_x86_64-Release ...``) so that Makefile, CMake
-   and Dune can share the `target platform <#target-platforms>`__ and
-   `build type <#build-types>`__. By default the profile is
-   ``dev-Debug`` which is the "profile" setting in ``dune-workspace`` so
-   that when you or and IDE runs ``dune ...`` *without*
-   platform-dune-exec.sh Dune will use the Debug settings.
--  It sets the build directory (ex. ``dune --build-dir XXX ...``) to
-   place the Dune build files in:
--  the standard ``_build`` directory for the ``dev-Debug`` platform.
--  ``build/dev/BUILD_TYPE/_dune`` for all non-\ ``Debug`` dev platforms
--  ``build/TARGET_PLATFORM/BUILD_TYPE/_dune`` for a reproducible
-   container platform
-
-    Typing ``dune clean`` from the command line will only clean the
-    ``dev-Debug`` target! Since it can be insanely expensive to rebuild
-    other CPU architectures through CPU emulation and compile with the
-    Release optimizations, this is a good side-effect we intend to keep.
-    Instead use one of several ``make clean-*`` targets described in the
-    `Makefile Targets sections <#makefile-targets>`__
-
-dune.env.workspace.inc
-^^^^^^^^^^^^^^^^^^^^^^
-
-We provide Dune our `target platform <#target-platforms>`__ and `build
-type <#build-types>`__ specific compiler settings by including
-``dune.env.workspace.inc`` in our ``dune`` files. For example the
-``ocamlopt`` native code compiler will use the ``-O3`` flag when the
-build type is `Release <#build-types>`__. ``dune.env.workspace.inc`` is
-an autogenerated file produced by ``make dune.env.workspace.inc`` and
-which gets generated automatically for any ``make init-dev``,
-``make build-dev`` or ``make build-dev-Debug``.
-
-``make dune.env.workspace.inc`` is responsible for generating an empty
-compiler setting file in ``cmake/dune/*/*.sexp`` if there is a
-permutation of `target platform <#target-platforms>`__ and `build
-type <#build-types>`__ missing. **But** ultimately CMake is responsible
-for placing it own C compiler settings into some critical .sexp files
-(in particular the ``*all*.sexp``) files.
-
-You are welcome to tweak any compiler setting file that does *not* have
-a warning that it is autogenerated by CMake. For your and others sanity
-please include a comment and a date on a separate line for any tweak in
-a ``.sexp`` file. An example:
-
-.. code:: lisp
-
-    (-ccopt -static) ; Used in dune.env.workspace.inc.
-    ; 2021-08-04: yourname@ - Static compilation makes executables portable across Linux.
-
-That will make it easy to search for any tweaks (ex.
-``grep -C10 '^[^(]' buildconfig/dune/*/*.sexp``).
-
-    The compiler setting ``.sexp`` files are numbered in order of
-    precedence. So ``1-*.ocamlopt_flags.sexp`` are included before
-    ``2-*.ocamlopt_flags.sexp`` when Dune creates the flags for the
-    ``ocamlopt`` native code compiler.
-
-    In VS Code you can set the Language Mode to ``dune (dune)`` for
-    syntax highlighting. Scheme and Lisp syntax highlighting should also
-    work in other IDEs.
 
 IDE Support
 ~~~~~~~~~~~
@@ -810,7 +224,17 @@ introspection and auto-completion.
 context is providing Merlin introspection and which Opam switch will be
 introspected:
 
-``text   Dune context:   { name = "default"   ; kind = "default"   ; profile = User_defined "Release"   ; merlin = true   ...   ; findlib_path =       [ External           "/home/user/source/diskuv-net-api/build/dev/Release/_opam/lib"       ]``
+.. code-block:: text
+
+   Dune context:
+    { name = "default"
+    ; kind = "default"
+    ; profile = User_defined "Release"
+    ; merlin = true
+    ; ...
+    ; findlib_path =       [ External           "/home/user/source/example/build/dev/Release/_opam/lib"       ]
+    ; ...
+    }
 
 `Querying Merlin
 configuration <https://dune.readthedocs.io/en/stable/usage.html#querying-merlin-configuration>`__
@@ -821,27 +245,6 @@ selected Opam switch (which can be saved in ``~/.vscode/settings.json``
 as the ``"ocaml.sandbox":{"kind": "opam","switch": "..."}`` property) is
 expected to contain the `the ocaml-lsp-server IDE Language
 Server <https://github.com/ocaml/ocaml-lsp#readme>`__.
-
-We provide IDE support by doing the following:
-
--  All the ``dev`` and ``dev-*`` targets (ie. run
-   ``make build-dev-Release``) are accessible to VS Code (see point [2]
-   above) by using the default Opam root ``~/.opam`` to register the
-   Opam switches.
--  The ``dev`` target (an alias to the ``dev-Debug`` which you can run
-   with ``make build-dev`` or ``make build-dev-Debug``) uses the default
-   Dune ``_build/`` subdirectory of the project folder
-   (``${workspaceFolder}`` in VS Code). This isn't strictly required for
-   the VS Code OCaml extension but may help other IDEs and other VS Code
-   extensions.
--  We do **not** define a ``./dune-workspace`` file containing "(context
-   ...)" because doing so would require us to list *all* valid contexts.
-   That is because if even one "(context ...)" is defined then
-   ``dune build`` will ignore the Opam switch in the environment
-   variable OPAMSWITCH we set based on the build type. So we do not
-   define entries like the following:
-
-``lisp   (context   (opam     (switch build/dev/Release)     (name dev-Release)     (merlin)     (profile Release)   ))``
 
 C Code
 ------
@@ -1055,28 +458,6 @@ So inside the AMD64 Docker container we build a chroot sandbox called
 the **Build Sandbox** with a musl-based filesystem **from the target
 architecture**.
 
-Build Sandbox
-~~~~~~~~~~~~~
-
-The Build Sandbox is a musl-based chroot sandbox is simply an Alpine
-distribution `which comes with simple instructions to create an
-architecture specific
-sandbox <https://wiki.alpinelinux.org/wiki/Alpine_Linux_in_a_chroot>`__.
-
-See the `last section <#userland>`__ for how the Build Sandbox is carved
-out of the container's userland.
-
-We add Alpine packages that we need that include the executables:
-
--  being able to install new packages (ex. ``apk`` or ``apt-get``)
--  ``bash`` and ``make`` which are required for Opam
--  ``gcc`` / ``g++`` which is required for CMake and OCaml native
-   compilation (ocamlopt)
-
-Opam will need to be configured to *not* do sandboxing which would `fail
-because nested sandboxes are poorly
-supported <https://github.com/ocaml/opam/issues/4120>`__.
-
 Limitations on Hardware Architecture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1153,10 +534,3 @@ Installing is:
 .. code:: bash
 
     cmake --build $BUILDDIR --target install
-
-Inspecting a build sandbox is (you can change the PLATFORM and BUILDTYPE
-arguments):
-
-.. code:: bash
-
-    scripts/unix/within-sandbox.sh -p linux_arm64 -b Debug

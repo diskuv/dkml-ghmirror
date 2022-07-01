@@ -6,17 +6,17 @@ Repositories
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
-1. diskuv-0.3.3
-2. fdopen-mingw-0.3.3 *only for Windows*
+1. diskuv-0.4.0
+2. fdopen-mingw-0.4.0 *only for Windows*
 3. default
 
-The ``diskuv-0.3.3`` repository has all the patches required for third-party OCaml packages
+The ``diskuv-0.4.0`` repository has all the patches required for third-party OCaml packages
 to support the Microsoft compiler. Any switch that is created by *Diskuv OCaml* will have
 pinned versions for each package in this repository. That means you will always get the
 *Diskuv OCaml* patched versions and reproducible behavior.
 
-The ``fdopen-mingw-0.3.3`` repository has all the MinGW patches for _many_ third-party OCaml packages
-to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.3.3`` the packages
+The ``fdopen-mingw-0.4.0`` repository has all the MinGW patches for _many_ third-party OCaml packages
+to work with MinGW (an alternative compiler popular on Linux). Unlike ``diskuv-0.4.0`` the packages
 are not pinned, so it is possible that a newer package version is introduced into your switch
 that has no MinGW patches.
 
@@ -31,16 +31,6 @@ that has no MinGW patches.
 
 The ``default`` repository is the central Opam repository. Most of your packages are unpatched and
 will come directly from this repository.
-
-Opam Root
----------
-
-Each `Opam root <http://opam.ocaml.org/doc/Manual.html#opam-root>`_ created by *Diskuv OCaml* includes
-a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
-
-It contains:
-
-* `vcpkg <https://vcpkg.io>`_ which has the C/C++ packages needed by some OCaml packages
 
 Switches
 --------
@@ -61,8 +51,8 @@ This switch is reserved for future use so do not delete it.
     known as 'local') Opam switches because ``opam var root`` failed.
     With a global switch that problem goes away.
 
-``diskuv-host-tools`` Local Switch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``dkml`` Local Switch
+~~~~~~~~~~~~~~~~~~~~~
 
 OCaml package directories, C header "include" directories and other
 critical locations are hardcoded into essential OCaml executables like
@@ -70,7 +60,7 @@ critical locations are hardcoded into essential OCaml executables like
 move the Opam switch that contains ``ocamlc`` many of your OCaml builds
 will break.
 
-``diskuv-host-tools`` is the Opam switch for ``ocamlc`` and other essentials
+``dkml`` is the Opam switch for ``ocamlc`` and other essentials
 that is built in its final resting place during installation and never
 moved after. If and when we need to deploy new versions of the
 essentials we use a new directory and rebuild all of the OCaml packages
@@ -107,7 +97,7 @@ The global variables that will be present in a Diskuv OCaml installation are:
     sys-ocaml-arch    x86_64                                                     # Target architecture of the OCaml compiler present on your system
     sys-ocaml-cc      msvc                                                       # Host C Compiler type of the OCaml compiler present on your system
     sys-ocaml-libc    msvc                                                       # Host C Runtime Library type of the OCaml compiler present on your system
-    sys-ocaml-version 4.12.0                                                     # OCaml version present on your system independently of opam, if any
+    sys-ocaml-version 4.12.1                                                     # OCaml version present on your system independently of opam, if any
 
 C Compiler
 ----------
@@ -132,9 +122,8 @@ similar to the following:
 .. code-block:: bash
 
     ENV_ARGS=()
-    source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
-    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x86-windows" # if 64-bit
-    autodetect_compiler /tmp/launcher.sh "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.3.3/installed/x64-windows" # if 32-bit
+    source vendor/diskuv-ocaml/vendor/drc/unix/crossplatform-functions.sh
+    autodetect_compiler /tmp/launcher.sh
 
     /tmp/launcher.sh bash
 
@@ -164,8 +153,8 @@ This comes from ``ocamlc -config`` (yours will vary slightly):
 .. code-block:: c-objdump
 
     version: 4.12.0
-    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
-    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/host-tools/_opam/lib/ocaml
+    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/dkml/_opam/lib/ocaml
+    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/dkml/_opam/lib/ocaml
     ccomp_type: msvc
     c_compiler: cl
     ocamlc_cflags: -nologo -O2 -Gy- -MD

@@ -1,11 +1,12 @@
 variables:
   OPAM_SYS_DEPLOY_FOLDER_WINDOWS:  'C:\DiskuvOCaml\OpamSys'
+  GIT_SUBMODULE_STRATEGY: recursive
 
-default:
+.alpine:before-sphinx:
   image: python:3.9-alpine
 
   before_script:
-    - apk add --no-cache make rsync
+    - apk add --no-cache git make rsync graphviz
     - pip install -U sphinx sphinx_rtd_theme
 
 stages:
@@ -19,5 +20,4 @@ include:
   - local: .gitlab/ci/unix-package-ocaml.gitlab-ci.yml
   - local: .gitlab/ci/windows.gitlab-ci.yml
   - local: .gitlab/ci/windows-package-ocaml.gitlab-ci.yml
-  - local: .gitlab/ci/windows-package-opam.gitlab-ci.yml
   - local: .gitlab/ci/windows-test-setupuserprofile.gitlab-ci.yml

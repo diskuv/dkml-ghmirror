@@ -21,7 +21,7 @@ win32:build-ocaml:
         OCAMLVERSION: ["4.13.1", "4.12.1"]
   needs: []
   script:
-    - $env:MSYSTEM = 'MSYS2' # Start MSYS2 (not MinGW 32 or 64 bit) environments
+    - $env:MSYSTEM = 'CLANG64' # Start CLANG64 environment; https://www.msys2.org/docs/environments/
     - $DEPLOYDIR = "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" # Separate directories only so that job can be run in parallel
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
@@ -43,14 +43,14 @@ win32:build-ocaml:
     - if ($env:OCAMLVERSION -eq "5.00.0+dev0-2021-11-05") { $COMMITID = "284834d31767d323aae1cee4ed719cc36aa1fb2c" }
     - msys (
       'env'
-      + ' TOPDIR=$PWD/installtime/none/emptytop'
-      + ' installtime/unix/private/reproducible-compile-ocaml-1-setup.sh'
+      + ' TOPDIR=$PWD/vendor/drc/all/emptytop'
+      + ' vendor/dkml-compiler/src/r-c-ocaml-1-setup.sh'
       + " -d '" + "$PWD" + "'"
       + " -t '" + "$DEPLOYDIR" + "'"
       + " -v '$COMMITID'"
       + " -e " + "$env:HOSTABI"
       )
-    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100-compile-ocaml/installtime/unix/private/reproducible-compile-ocaml-2-build_host-noargs.sh')
+    - msys ("cd '" + "$DEPLOYDIR" + ''' && share/dkml/repro/100co/vendor/dkml-compiler/src/r-c-ocaml-2-build_host-noargs.sh')
     - if (!(Test-Path -Path "$DEPLOYDIR\bin\ocaml.exe")) { throw "Build failed" }
 
     # Clean up excess files, including git submodules and cross-compiled targets
@@ -64,7 +64,7 @@ win32:build-ocaml:
     - Compress-Archive -Path "$DEPLOYDIR\*" -DestinationPath "$EXTRASRC\ocamldist\dist.zip"
 
     # Create public packages
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml-reproducible/$PKGTAG"
     - echo $PACKAGE_REGISTRY_URL
     - msys "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/ocamldist/dist.zip    '$PACKAGE_REGISTRY_URL'/ocaml-${env:OCAMLVERSION}-${env:HOSTABI}${env:NAMESUFFIX}.zip"
@@ -86,7 +86,6 @@ win32:oorepo-fetch-1:
   cache:
     key:
       files:
-        - contributors\.userprofile.cachekey
         - .dkmlroot
     paths:
       - _ci\moby
@@ -102,7 +101,7 @@ win32:oorepo-fetch-1:
 
     # Setup and Fetch
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/installtime/none/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/drc/all/emptytop' vendor/drd/src/unix/private/r-f-oorepo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
@@ -111,10 +110,10 @@ win32:oorepo-fetch-1:
         )
     # Because Cygwin has a max 260 character limit of absolute file names, we place the working directories in /tmp, and override moby/.
     # Because we want to make the full repository as an artifact, we override opamroot/.
-    - cygwin ('export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
+    - cygwin ('export DKML_TMP_PARENTDIR=$(mktemp -d /tmp/dkmlp.XXXXX)'
         + " ; export DKML_MOBYDIR='$env:CI_PROJECT_DIR/_ci/moby'"
-        + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-2-build-noargs.sh"
-        + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
+        + " && cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/drd/src/unix/private/r-f-oorepo-2-build-noargs.sh"
+        + ' ; ec=$?; rm -rf "$DKML_TMP_PARENTDIR"; exit $ec')
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
     # Package artifacts
@@ -159,7 +158,7 @@ win32:oorepo-matrix-2:
     - $REPODIR = "$DEPLOYDIR\share\dkml\repro\${env:OCAMLVERSION}"
 
     # Download OCaml
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - Invoke-WebRequest -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml-reproducible/$PKGTAG/ocaml-${env:OCAMLVERSION}-${env:HOSTABI}${env:NAMESUFFIX}.zip" -OutFile "ocaml.dist.zip"
     - Expand-Archive -Path "ocaml.dist.zip" -DestinationPath "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -Force
 
@@ -174,7 +173,7 @@ win32:oorepo-matrix-2:
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/installtime/none/emptytop' installtime/unix/private/reproducible-fetch-ocaml-opam-repo-1-setup.sh"
+        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/drc/all/emptytop' vendor/drd/src/unix/private/r-f-oorepo-1-setup.sh"
         + " -d '" + "$env:CI_PROJECT_DIR" + "'"
         + " -t '" + "$DEPLOYDIR" + "'"
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
@@ -188,9 +187,9 @@ win32:oorepo-matrix-2:
 
     # Trim
     - date
-    - cygwin ('export TMPPARENTDIR_BUILDHOST=$(mktemp -d /tmp/dkmlp.XXXXX)'
-        + " ; cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/installtime/unix/private/reproducible-fetch-ocaml-opam-repo-9-trim-noargs.sh"
-        + ' ; ec=$?; rm -rf "$TMPPARENTDIR_BUILDHOST"; exit $ec')
+    - cygwin ('export DKML_TMP_PARENTDIR=$(mktemp -d /tmp/dkmlp.XXXXX)'
+        + " ; cd '$DEPLOYDIR' && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/drd/src/unix/private/r-f-oorepo-9-trim-noargs.sh"
+        + ' ; ec=$?; rm -rf "$DKML_TMP_PARENTDIR"; exit $ec')
     - if (!(Test-Path -Path "$REPODIR\pins.txt")) { throw "Trim failed" }
 
     # Create .tar.gz and .zip
@@ -199,7 +198,7 @@ win32:oorepo-matrix-2:
     - Compress-Archive -Path "$REPODIR\*" -DestinationPath "$EXTRASRC\oorepodist\dist.zip"
 
     # Create public packages
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG" }
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - $PACKAGE_REGISTRY_URL = "$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$PKGTAG"
     - echo $PACKAGE_REGISTRY_URL
     - cygwin "curl --fail --header '$GLAB_CURL_HEADER' --upload-file _ci/oorepodist/dist.tar.gz '$PACKAGE_REGISTRY_URL'/ocaml-opam-repo-${env:OCAMLVERSION}.tar.gz"

@@ -1,4 +1,6 @@
 test:
+  extends:
+    - .alpine:before-sphinx
   stage: test
   script:
   - echo Building Sphinx html twice so that Sphinx cross-references work ...

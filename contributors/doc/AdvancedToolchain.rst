@@ -362,26 +362,26 @@ And then we create the Opam file and patch file from the `Creating your own pack
 
 `Creating your own package patches`_ shows where to place these ``/tmp/opam`` and ``/tmp/custom.patch``
 files, and you can see the final results in
-https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/etc/opam-repositories/diskuv-opam-repo/packages/core_kernel/core_kernel.v0.14.2
+https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/vendor/diskuv-opam-repository/packages/core_kernel/core_kernel.v0.14.2
 
 The last step is to update the Opam package repository with our newly copied patches:
 
 .. code-block:: shell-session
 
-    [core_kernel.v0.14.2]$ opam update diskuv-0.3.3
+    [core_kernel.v0.14.2]$ opam update diskuv-0.4.0
 
 Creating your own package patches
 ---------------------------------
 
     This procedure **will not work** if the package already has a patch.
     For example you can't use this procedure if the package is present
-    in ``etc/opam-repositories/diskuv-opam-repo`` and has
+    in ``vendor/diskuv-opam-repository`` and has
     ``patches: [...]`` in its ``opam`` file. You may be able to remove
     the ``patches`` clause and then do a
-    ``opam update diskuv-0.3.3 && opam upgrade`` before doing any of these
+    ``opam update diskuv-0.4.0 && opam upgrade`` before doing any of these
     instructions, but that procedure has not been tested.
 
-The https://gitlab.com/diskuv/diskuv-ocaml repository has a `etc/opam-repositories/diskuv-opam-repo` folder
+The https://gitlab.com/diskuv/diskuv-ocaml repository has a `vendor/diskuv-opam-repository` folder
 containing all of the patches necessary for the Microsoft Visual Studio toolchain on MSYS2 to work.
 Your local project vendors that repository as a git submodule at `vendor/diskuv-ocaml` (run `git submodule status`
 to see it). You can fork the https://gitlab.com/diskuv/diskuv-ocaml repository (assuming you meet the license requirements
@@ -439,7 +439,7 @@ squashed in the SIXTH step.
 
 Repeat until you get a successful install.
 
-FIFTH, remove your edits so they do not hide the ``diskuv-opam-repo``
+FIFTH, remove your edits so they do not hide the ``diskuv-opam-repository``
 repository:
 
 .. code:: bash
@@ -465,38 +465,37 @@ SEVENTH, create a self-contained ``opam`` file:
 There should be a ``url { src: "..." checksum: "" }`` in your file.
 If not, make sure you ran ``opam pin remove PACKAGE_NAME``
 
-EIGHTH, create/modify the ``diskuv-opam-repo`` directory (on Windows PowerShell look in
-``$env:DiskuvOCamlHome\etc\opam-repositories``; in general look wherever
+EIGHTH, create/modify the ``diskuv-opam-repository`` directory (on Windows PowerShell look in
+``$env:DiskuvOCamlHome\vendor\drd\repos``; in general look wherever
 ``opam repo list --all | awk '$1=="diskuv"{print $2}'`` tells you):
 
 .. code:: text
 
     etc
-    └── opam-repositories
-        └── diskuv-opam-repo
+    └── repos
+        └── diskuv-opam-repository
             ├── packages
             │   └── <PACKAGE_NAME>
             │       └── <PACKAGE_NAME.PACKAGE_VERSION>
             │           ├── files
             │           │   └── custom.patch           <==  Copy /tmp/custom.patch
             │           └── opam                       <==  Copy /tmp/opam
-            ├── README-diskuv-opam-repo.md             <==> You are reading this!
             └── repo
 
     For more details visit
     https://opam.ocaml.org/doc/Manual.html#Package-definitions
 
-NINTH, update your Opam switch with your new ``diskuv-opam-repo`` patch:
+NINTH, update your Opam switch with your new ``diskuv-opam-repository`` patch:
 
 .. code:: bash
 
-    opam update diskuv-0.3.3
+    opam update diskuv-0.4.0
 
 *See `Troubleshooting: opam update diskuv <#opam-update-diskuv>`__ if
 this fails*
 
 TENTH, add your new package to the "PINNED\_PACKAGES" variable in
-``installtime/unix/create-opam-switch.sh`` if it is not there already.
+``vendor/drd/src/unix/create-opam-switch.sh`` if it is not there already.
 
 Done! Go ahead and continue with your normal build.
 If your patches are useful to the open source community, please consider
@@ -510,14 +509,14 @@ Troubleshooting
 opam update diskuv
 ^^^^^^^^^^^^^^^^^^
 
-If after ``opam update diskuv-0.3.3`` you get:
+If after ``opam update diskuv-0.4.0`` you get:
 
 .. code:: text
 
-    [diskuv] synchronised from file://Z:/somewhere/etc/opam-repositories/diskuv-opam-repo
+    [diskuv] synchronised from file://Z:/somewhere/vendor/diskuv-opam-repository
     [ERROR] Could not update repository "diskuv": "Z:\\somewhere\\build\\_tools\\common\\MSYS2\\usr\\bin\\patch.exe -p1 -i C:\\Users\\user\\.opam\\log\\patch-28544-5495c0" exited with code 1
 
-then rerun the command as ``opam update diskuv-0.3.3 -vv``. That will give you
+then rerun the command as ``opam update diskuv-0.4.0 -vv``. That will give you
 something like:
 
 .. code:: text
@@ -543,7 +542,7 @@ showing a broken package. Just remove the broken package with
     opam remove dune-configurator
     opam pin remove dune-configurator
 
-    opam update diskuv-0.3.3
+    opam update diskuv-0.4.0
 
 in the example above.
 
@@ -551,13 +550,13 @@ If that still doesn't work just do:
 
 .. code:: bash
 
-    opam repository remove diskuv-0.3.3 --all
+    opam repository remove diskuv-0.4.0 --all
 
     # On Windows do: ./makeit init-dev
     make init-dev
 
-    opam repository priority diskuv-0.3.3 1 --all
-    opam update diskuv-0.3.3
+    opam repository priority diskuv-0.4.0 1 --all
+    opam update diskuv-0.4.0
 
 which will rebuild your repository.
 

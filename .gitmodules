@@ -1,0 +1,12 @@
+[submodule "vendor/diskuv-opam-repository"]
+	path = vendor/diskuv-opam-repository
+	url = https://github.com/diskuv/diskuv-opam-repository.git
+[submodule "vendor/dkml-compiler"]
+	path = vendor/dkml-compiler
+	url = https://github.com/diskuv/dkml-compiler.git
+[submodule "vendor/drd"]
+	path = vendor/drd
+	url = https://github.com/diskuv/dkml-runtime-distribution.git
+[submodule "vendor/drc"]
+	path = vendor/drc
+	url = https://github.com/diskuv/dkml-runtime-common.git

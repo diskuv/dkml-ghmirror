@@ -30,45 +30,32 @@ the *Diskuv OCaml* distribution installed on your system.
 About OCaml
 -----------
 
-There are a few webpage that you should have bookmarked as you learn about OCaml. The first is
-the official OCaml website's `What's OCaml? <https://ocaml.org/learn/description.html>`_ which has a comprehensive list of features
+There are a few webpages that you should have bookmarked as you learn about OCaml. The first is
+the official OCaml website's `About OCaml <https://ocaml.org/about>`_ which has a comprehensive list of features
 that OCaml provides (the sales pitch!), and a good summary of OCaml:
 
-    OCaml is a general purpose programming language with an emphasis on expressiveness and safety. Developed
-    for more than 20 years at `Inria <http://www.inria.fr/en>`_ by a group of leading researchers, it has an
-    advanced type system that helps catch your mistakes without getting in your way. It's used in environments
-    where `a single mistake can cost millions and speed matters <https://ocaml.org/learn/companies.html>`_, is
-    supported by an active community, and has a rich set of libraries and development tools.
+    OCaml mixes power and pragmatism in a way that makes it ideal for building complex software systems. What
+    makes OCaml special is that it occupies a sweet spot in programming language design. It provides a
+    combination of efficiency, expressiveness, and practicality that is matched by no other language. That is
+    in large part because OCaml is an elegant combination of language features that have been developed over
+    the last 40 years.
 
-Then we recommend reading *Part 1* of the free online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html>`_. It will guide you through the language and
-explore each of OCaml's major features. However Windows users will not be able to run the book's code. Instead
-we suggest you install *Diskuv OCaml* (discussed next section) and then follow along in our :ref:`BeyondBasics`
-section.
+Then we recommend reading the first five chapters of the online textbook
+`OCaml Programming - Correct + Efficient + Beautiful`_. The textbook has
+Youtube videos that can be watched independently of the book.
+The textbook and the videos will guide you through the language and
+explore each of OCaml's major features.
 
 Once you start writing your own code you will need to know where to look to find libraries (called **packages** in
-OCaml). We recommend just browsing the packages at
-`OCamlPro's OCaml Documentation Hub <https://docs.ocaml.pro/about.html>`_ since it is fairly comprehensive,
-reasonably up-to-date and has links to most package's documentation. Just click on its
-`Packages tab <https://docs.ocaml.pro/packages.html>`_ and do a text search with Ctrl-F or ⌘-F:
-
-.. image:: https://docs.ocaml.pro/static/imgs/index-page.png
-  :width: 400
-  :alt: OCamlPro OCaml Documentation Hub Main Index
-
-|
-
-.. image:: https://docs.ocaml.pro/static/imgs/package-page.png
-  :width: 400
-  :alt: OCamlPro OCaml Documentation Hub Package Info for AHROCKSDB.0.3.3
-
-|
+OCaml). We recommend browsing the packages at
+`OCaml Packages <https://v3.ocaml.org/packages>`_ since it is official,
+reasonably up-to-date and has most package's documentation.
 
 Finally, if you hit a roadblock the best place to go is the `Discord chat rooms <https://tinyurl.com/discord-ocaml>`_
 and ask your question on the ``#beginners`` channel:
 
 .. image:: doc/Intro-discord.jpg
-  :width: 400
+  :width: 500
   :alt: Discord Server chat room
 
 |
@@ -76,29 +63,30 @@ and ask your question on the ``#beginners`` channel:
 About Diskuv OCaml
 ------------------
 
-*Diskuv OCaml* is an OCaml distribution focused on a) secure, cross-platform software development and b) ease of use
-for language learners and professional developers.
+The Diskuv OCaml distribution is an open-source set of software
+that supports software development in pure OCaml. The distribution's
+strengths are its:
 
-Diskuv, a company creating safe communications solutions, adopted the OCaml language because OCaml is the thought
-leader for formally verified software (a fancy term for proving that software is secure) while being
-portable due to compatibility with the C language. However, OCaml development used to require a lot of tribal knowledge.
-For example the `Unison File Sychronizer <https://github.com/bcpierce00/unison#unison-file-synchronizer>`_ which can
-synchronize folders between different operating systems (pretty cool!) was developed in OCaml and has been available on
-macOS, Linux and Windows for decades. Yet the
-`defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
-was deprecated in 2021. The online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html>`_ solved much of the tribal knowledge problem but you will
-likely run into some roadblocks. Several companies and groups have filled the void
-(Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
+* full compatibility with OCaml standards like Opam, Dune and ocamlfind
+* laser focus on "native" development (desktop software, mobile apps and embedded software) through support for the standard native compilers like Visual Studio
+  and Xcode
+* ease-of-use through simplified installers and simple productivity commands; high school students should be able to use it
+* security through reproducibility, versioning and from-source builds
 
-1. A way to install a coherent set of software that has been vetted to work together. Especially but not only on Windows.
-2. A way to upgrade that software, usually in response to security patches or critical bug fixes.
-3. A support channel when things go wrong.
+These alternatives may be better depending on your use case:
+
+* Developing in a Javascript first environment? Have a look at `Esy and Reason <https://esy.sh/>`_
+* Developing operating system kernels? Have a look at `Mirage OS <https://mirage.io/>`_
+* Developing Linux server software like web servers? Plain old `OCaml on Debian, etc. <https://ocaml.org/docs/up-and-running>`_ works well
+* Writing compilers or proofs? Plain old OCaml works really well
+* Wanting quick installations? *Use anything but Diskuv OCaml!* Diskuv OCaml will conduct
+  from-source builds unless it can guarantee (and code sign) the binaries are
+  reproducible. Today that means a lot of compiling.
 
 .. note::
 
-  The first releases (0.1.x and 0.2.x) of Diskuv OCaml support Windows 64-bit systems only, and should be
-  considered preview releases.
+  Diskuv OCaml officially supports Windows **64-bit** machines and will soon
+  support macOS machines.
 
 The *Diskuv OCaml* distribution includes the following OCaml components:
 
@@ -144,15 +132,6 @@ The *Diskuv OCaml* distribution includes the following OCaml components:
 - flexdll
     `FlexDLL <https://github.com/alainfrisch/flexdll#readme>`_ for expert users who are creating dynamic plugins
 
-and it also includes some C-language components for the cross-platform tooling we will be releasing in the future:
-
-- cmake
-    `CMake <https://cmake.org/>`_, the standard high-level build tool for C and C++ projects
-- ninja
-    `Ninja <https://ninja-build.org/>`_, a low level build tool primarily for C projects
-- vcpkg
-    `vcpkg <https://vcpkg.io>`_, a C/C++ package manager for acquiring and managing libraries
-
 The *Diskuv OCaml* distribution will automatically install the following components if missing from your system:
 
 - git
@@ -162,7 +141,15 @@ The *Diskuv OCaml* distribution will automatically install the following compone
     `Visual Studio Build Tools <https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019#desktop-development-with-c>`_,
     the official Microsoft tools for building modern C/C++ apps for Windows
 
-.. _How to Install:
+Sponsor
+-------
+
+.. image:: https://ocaml-sf.org/assets/ocsf_logo.svg
+  :width: 400
+  :alt: OCSF logo
+
+Thanks to the `OCaml Software Foundation <https://ocaml-sf.org>`_
+for economic support to the development of Diskuv OCaml.
 
 How to Install
 --------------
@@ -187,41 +174,28 @@ Requirements
 Installation Instructions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
+Briefly review the following:
 
-  **Be prepared to wait for at least 2 hours for the installer to finish.** In the meantime you can still use your
-  computer for other things like web browsing.
+* You need to **stay at your computer** and press "Yes" for any Windows security popups;
+  after the DKML installer finishes with two programs (``Visual Studio Installer``
+  and ``Git for Windows``) you can leave your computer for the remaining one (1) hour.
 
-1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
-2. Run the following in PowerShell to download and install the distribution from its Git repository:
+* First time installations may get a notification printed in red. If you see it, reboot your
+  computer and then restart your installation so that Visual Studio Installer
+  can complete. The notification looks like:
 
-   .. code-block:: ps1con
+  .. code-block:: diff
 
-      PS> [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+    - FATAL [118acf2a]. The machine needs rebooting.
+    - ...
+    - >>> The machine needs rebooting. <<<
 
-      PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory);
+* You may be asked to accept a certificate from
+  ``Open Source Developer, Gerardo Grignoli`` for the ``gsudo`` executable
+  that was issued by
+  ``Certum Code Signing CA SHA2``.
 
-      PS> iwr `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
-        -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"; `
-        if ($LastExitCode -ne 0) { bitsadmin /transfer downloadDiskuvOCamlJob /download /priority normal `
-        "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/distribution-portable/0.3.3/distribution-portable.zip" `
-        "$env:TEMP\diskuv-ocaml-distribution.zip" };
-
-      PS> Expand-Archive `
-        -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
-        -DestinationPath ~\DiskuvOCamlProjects `
-        -Force;
-
-      PS> ~\DiskuvOCamlProjects\diskuv-ocaml\installtime\windows\install-world.bat -SkipProgress;
-
-   Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
-   to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
-   Administator has not installed those two programs already. The rest of the installation is completely
-   click-free:
-
-   .. image:: doc/Intro-install-world.png
-      :width: 600
+Then run the `latest Windows 64-bit installer <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v0.4.0/setup-diskuv-ocaml-windows_x86_64-0.4.0.exe>`__.
 
 Install is done! What next?
 """""""""""""""""""""""""""
@@ -236,7 +210,7 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
 
       PS> utop
       > ──────────┬─────────────────────────────────────────────────────────────┬──────────
-      >           │ Welcome to utop version 2.8.0 (using OCaml version 4.12.0)! │
+      >           │ Welcome to utop version 2.9.0 (using OCaml version 4.12.1)! │
       >           └─────────────────────────────────────────────────────────────┘
       >
       > Type #utop_help for help about using utop.
@@ -244,8 +218,8 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
       > ─( 19:03:24 )─< command 0 >─────────────────────────────────────────{ counter: 0 }─
       > utop #
 
-3. You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore. Now
-   let us try to enter some basic OCaml expressions ... be sure to
+   *You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore.*
+3. Now let us try to enter some basic OCaml expressions ... be sure to
    include the ``;;`` and then press ENTER after each line:
 
    .. code-block:: tcshcon
@@ -264,21 +238,23 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
 4. You probably want to do a lot more than that! You may want to edit your code in a easy-to-use editor
    with syntax highlighting, type inspection and auto-complete
    (an "integrated development environment" or more simply an **IDE**). You may also want to use other
-   people's code packages. Right now if you tried to use the ``Base`` package, for example, you will get
+   people's code packages. Right now if you tried to use the ``Graphics`` package, for example, you will get
    an error:
 
    .. code-block:: tcshcon
 
-      utop #> open Base ;;
-      > Error: Unbound module Base
+      utop #> open Graphics ;;
+      > Error: Unbound module Graphics
 
 5. Leave the ``utop`` application by typing:
 
-  .. code-block:: tcshcon
+   .. code-block:: tcshcon
 
-    utop #> #quit ;;
+     utop #> #quit ;;
 
-:ref:`BeyondBasics` is the topic of the next section.
+   *Remember that if you get harmless warnings (ex. ``failed to lock file``) you can safely ignore them.*
+
+6. :ref:`BeyondBasics` is the topic of the next section. **Please starting read it.**
 
 Indices and tables
 ==================
@@ -286,3 +262,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _OCaml Programming - Correct + Efficient + Beautiful: https://cs3110.github.io/textbook/cover.html

@@ -24,7 +24,7 @@
   - $ErrorActionPreference = 'Stop'
   - $ProgressPreference = 'SilentlyContinue'
 
-  - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)installtime\windows"
+  - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)vendor\drd\src\windows"
   - Import-Module DeploymentVersion # Use the same $DV_ variables as 'installtime' scripts
   - Import-Module UnixInvokers      # Use Invoke-CygwinCommand and Invoke-MSYS2Command
 
@@ -74,8 +74,9 @@
   # ----------- setup-machine.ps1 -----------
   # Timing: 15 seconds if nothing needs to be installed
 
-  - installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin $ExtraSetupMachineOpts
-  - date
+  # TODO: When setup.exe is done, use that instead.
+  # - vendor\diskuv-ocaml\installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin $ExtraSetupMachineOpts
+  # - date
 
   - $CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
   - $CompatibleVisualStudios

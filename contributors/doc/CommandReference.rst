@@ -232,45 +232,6 @@ Sequence of operations
            `pkgconf <https://github.com/pkgconf/pkgconf#readme>`_
          * ``$DIR/bin`` is added to the ``PATH`` environment variable
 
-      d. (Deprecated) Stripped of all entries that contain a subdirectory ``vcpkg_installed``. For example, on Windows if the existing PATH is
-
-         .. code-block:: doscon
-
-            C:\project\vcpkg_installed\tools\pkg_config;C:\WINDOWS\system32;C:\WINDOWS
-
-         the stripped PATH will be
-
-         .. code-block:: doscon
-
-            C:\WINDOWS\system32;C:\WINDOWS
-
-      e. (Deprecated) Stripped of all entries that contain both the subdirectories ``vcpkg`` and ``installed``. For example, on Unix if the existing PATH is
-
-         .. code-block:: bash
-
-            /usr/local/share/vcpkg/installed/tools/pkg_config:/usr/bin:/bin
-
-         the stripped PATH will be
-
-         .. code-block:: bash
-
-            /usr/bin:/bin
-
-      f. (Deprecated) If and only if a vcpkg installation is found with the environment variable ``DKML_VCPKG_HOST_TRIPLET``
-         and possibly ``DKML_VCPKG_MANIFEST_DIR``, then:
-
-         * ``<vcpkg_installed>/include`` is added to the ``INCLUDE`` environment variable
-         * ``<vcpkg_installed>/include`` is added to the ``CPATH`` environment variable
-         * ``<vcpkg_installed>/include`` is added to the ``COMPILER_PATH`` environment variable
-         * ``<vcpkg_installed>/lib`` is added to the ``LIB`` environment variable
-         * ``<vcpkg_installed>/lib`` is added to the
-           `LIBRARY_PATH variable of Apple's 'clang' compiler <https://reviews.llvm.org/D65880>`_
-         * ``<vcpkg_installed>/lib/pkgconfig`` is added to the ``PKG_CONFIG_PATH`` environment variable
-         * ``<vcpkg_installed>/bin`` is added to the ``PATH`` environment variable
-         * ``<vcpkg_installed>/tools/<subdir>`` is added to the ``PATH`` environment variable, for any ``<subdir>``
-           containing an ``.exe`` or ``.dll``. For example, ``tools/pkgconf/pkgconf.exe`` and
-           ``tools/pkgconf/pkgconf-3.dll``.
-
 Windows - Inside MSYS2 Shell
 ----------------------------
 
@@ -297,15 +258,24 @@ Usage
         # Help
         create-opam-switch.sh -h
 
-        # Create the Opam switch in target directory.
+        # Create the Opam switch in target directory OPAMSWITCH.
         # Opam packages will be placed in `OPAMSWITCH/_opam`
-        create-opam-switch.sh [-y] -b BUILDTYPE -d OPAMSWITCH
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -t OPAMSWITCH
 
-        # [Expert] Create the diskuv-host-tools switch
-        create-opam-switch.sh [-y] [-b BUILDTYPE] -s
+        # Create a global Opam switch named SWITCHNAME.
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -n SWITCHNAME
+
+        # [Expert] Create the [dkml] switch
+        create-opam-switch.sh [-y] -p DKMLABI -b BUILDTYPE [-d OPAMROOT] -s
 
 Option -y
     Say yes to all questions.
+
+Option -d
+    Use ``OPAMROOT`` as the Opam root.
+
+Argument OPAMNAME
+    The name of a global Opam switch.
 
 Argument OPAMSWITCH
     The target Opam switch directory ``OPAMSWITCH`` or one of its ancestors must contain
@@ -313,8 +283,8 @@ Argument OPAMSWITCH
     of ``OPAMSWITCH`` will be created that will contain your Opam switch packages.
     No other files or subdirectories of ``OPAMSWITCH`` will be modified.
 
-Argument PLATFORM
-    Must be ``dev``.
+Argument DKMLABI
+    An ABI like ``windows_x86_64``.
 
 Argument BUILDTYPE
     Controls how executables and libraries are created with compiler and linker flags.

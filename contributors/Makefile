@@ -26,27 +26,12 @@ endif
 
 # -----------------------
 
-ifdef DiskuvOCamlHome
-CMAKE = '$(DiskuvOCamlHome)'/tools/cmake/bin/cmake.exe
-else
-CMAKE = cmake
-endif
-
-.PHONY: .userprofile.cachekey # always rerun
-.userprofile.cachekey: install-powershell
-ifdef COMSPEC
-	../installtime/windows/setup-userprofile.bat -OnlyOutputCacheKey | /usr/bin/dos2unix > $@.tmp
-else
-	pwsh ../installtime/windows/setup-userprofile.ps1 -OnlyOutputCacheKey > $@.tmp
-endif
-	mv $@.tmp $@
-
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
 
 .PHONY: clean
 clean:
-	$(CMAKE) -E remove_directory _build || $(CMAKE) -E rm -rf _build
+	rm -rf _build
 
 .PHONY: install-release-script-dependencies
 install-release-script-dependencies:
@@ -64,7 +49,7 @@ auth-github-cli: install-github-cli
 auth-gitlab-cli: install-gitlab-cli
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; if which glab.exe >/dev/null 2>&1; then GLAB=glab.exe; else GLAB=glab; fi; \
 	$$GLAB auth status; \
-	if ! $$GLAB auth status 2>&1 | grep -q "Token:"; then \
+	if $$GLAB auth status 2>&1 | grep -q "api call failed" || ! $$GLAB auth status 2>&1 | grep -q "Token:"; then \
         if [ -n "$(DiskuvOCamlHome)" ]; then SUFFIX=" DiskuvOCamlHome/`basename '$(DiskuvOCamlHome)'`"; else SUFFIX=; fi; \
 		echo "Suggested Personal Access Token name: glab.exe `hostname` $(USERNAME)$$SUFFIX"; \
 		echo "* Choose default git protocol HTTPS"; \
@@ -101,7 +86,12 @@ release-start-patch:
 .PHONY: release-prerelease
 release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
-	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p
+	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p -f
+
+.PHONY: quick-prerelease
+quick-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
+	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
+	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p -q -f
 
 .PHONY: release-complete
 release-complete: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
