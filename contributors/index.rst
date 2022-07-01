@@ -189,6 +189,11 @@ Briefly review the following:
     - FATAL [118acf2a]. The machine needs rebooting.
     - ...
     - >>> The machine needs rebooting. <<<
+    -         ...
+    -         FATAL [5f927a8b].
+    -         A transient failure occurred.
+    -         ...
+    -         >>> A transient failure occurred. <<<
 
 * You may be asked to accept a certificate from
   ``Open Source Developer, Gerardo Grignoli`` for the ``gsudo`` executable
