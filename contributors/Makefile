@@ -57,7 +57,7 @@ auth-gitlab-cli: install-gitlab-cli
 		$$GLAB auth login; \
 	fi
 
-NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n> The *Diskuv OCaml* distribution is available under the\n[diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).\nOther assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;\nin particular source code files that prominently display a\n[Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).\n\n
+NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n
 
 .PHONY: release-start-major
 release-start-major:
