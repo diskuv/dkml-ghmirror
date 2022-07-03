@@ -485,10 +485,10 @@ rm -f "$FILE"
 if tar -cf contributors/_build/probe.tar --no-xattrs --owner root /dev/null >/dev/null 2>/dev/null; then GNUTAR=ON; fi # test to see if GNU tar
 if [ "${GNUTAR:-}" = ON ]; then
     # GNU tar
-    tar cvfz "$FILE" --owner root --group root --exclude _build --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+    tar cvfz "$FILE" --owner root --group root --exclude _build --exclude _opam --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 else
     # BSD tar
-    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --exclude _build --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --exclude _build --exclude _opam --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 fi
 
 # Set GitLab options
