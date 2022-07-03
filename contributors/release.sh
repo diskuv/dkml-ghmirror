@@ -472,6 +472,7 @@ ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime vendor .dkmlroot .gitattrib
 # because we may blow away IDE settings and other build information.
 for v in "${ALL_VENDORS[@]}"; do
     git -C vendor/"$v" clean -x -d -f
+    rm -rf vendor/"$v"/_opam
 done
 
 # Make _build/distribution-portable.zip
