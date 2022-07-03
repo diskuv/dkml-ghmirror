@@ -12,6 +12,11 @@ SYNCED_PRERELEASE_BEFORE_APPS=(drc drd)
 SYNCED_PRERELEASE_AFTER_APPS=(diskuv-opam-repository)
 SYNCED_PRERELEASE_VENDORS=("${SYNCED_PRERELEASE_BEFORE_APPS[@]}" "${SYNCED_PRERELEASE_AFTER_APPS[@]}")
 SYNCED_RELEASE_VENDORS=(diskuv-opam-repository)
+ALL_VENDORS=(
+    "${SYNCED_PRERELEASE_VENDORS[@]}"
+    "${SYNCED_RELEASE_VENDORS[@]}"
+    dkml-compiler
+)
 # Which non-vendored Git projects should be synced
 GITURLS=(
     https://github.com/diskuv/dkml-workflows.git
@@ -462,6 +467,13 @@ rungit -C "$SRC_MIXED/dkml-workflows" push
 # Define which files and directories go into distribution archive
 ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime vendor .dkmlroot .gitattributes .gitignore)
 
+# Remove git ignored files from submodules for distribution archive. ARCHIVE_MEMBERS
+# is already a good filter for this repository (diskuv-ocaml), and we do not clean it
+# because we may blow away IDE settings and other build information.
+for v in "${ALL_VENDORS[@]}"; do
+    git -C vendor/"$v" clean -x -d -f
+done
+
 # Make _build/distribution-portable.zip
 FILE="$DKMLDIR/contributors/_build/distribution-portable.zip"
 rm -f "$FILE"
@@ -485,10 +497,10 @@ rm -f "$FILE"
 if tar -cf contributors/_build/probe.tar --no-xattrs --owner root /dev/null >/dev/null 2>/dev/null; then GNUTAR=ON; fi # test to see if GNU tar
 if [ "${GNUTAR:-}" = ON ]; then
     # GNU tar
-    tar cvfz "$FILE" --owner root --group root --exclude _build --exclude _opam --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+    tar cvfz "$FILE" --owner root --group root --exclude _build --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 else
     # BSD tar
-    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --exclude _build --exclude _opam --no-xattrs "${ARCHIVE_MEMBERS[@]}"
+    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --exclude _build --no-xattrs "${ARCHIVE_MEMBERS[@]}"
 fi
 
 # Set GitLab options
