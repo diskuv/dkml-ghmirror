@@ -230,16 +230,20 @@ update_dune_version() {
     shift
     sed_replace 's#^(version .*)#(version '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
 }
-
 # Checkout main branches of vendored directories. If `git submodule` shows
 # the submodules are tracking a detached HEAD or other branch, our release
 # procedure will not be able to see the commits from the submodules with
 # `git commit -a`.
-git submodule update --init
-for v in "${ALL_VENDORS[@]}"; do
-    git -C vendor/"$v" pull --ff-only origin main
-    git -C vendor/"$v" switch main
-done
+update_submodules_to_main() {
+    git submodule update --init
+    for v in "${ALL_VENDORS[@]}"; do
+        git -C vendor/"$v" pull --ff-only origin main
+        git -C vendor/"$v" switch main
+    done
+}
+
+# Use main branches of vendored dirs.
+update_submodules_to_main
 
 # Checkout or update non-vendored Git URLs
 for GITURL in "${GITURLS[@]}"; do
@@ -380,7 +384,6 @@ for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
     fi
     git -C vendor/"$v" tag "v$NEW_VERSION"
     git -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
-    git -C vendor/"$v" switch main
 done
 
 # Update, tag and push dkml-runtime-apps (and components and opam-repository)
@@ -451,8 +454,8 @@ for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
     fi
     rungit -C vendor/"$v" tag "v$NEW_VERSION"
     rungit -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
-    rungit -C vendor/"$v" switch main
 done
+update_submodules_to_main
 rungit commit -a -m "Update dependencies to $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
     rungit tag -d "v$NEW_VERSION" || true
