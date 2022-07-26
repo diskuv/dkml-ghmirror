@@ -231,6 +231,16 @@ update_dune_version() {
     sed_replace 's#^(version .*)#(version '"$update_dune_version_VER"')#' "$update_dune_version_FILE"
 }
 
+# Checkout main branches of vendored directories. If `git submodule` shows
+# the submodules are tracking a detached HEAD or other branch, our release
+# procedure will not be able to see the commits from the submodules with
+# `git commit -a`.
+git submodule update --init
+for v in "${ALL_VENDORS[@]}"; do
+    git -C vendor/"$v" pull --ff-only origin main
+    git -C vendor/"$v" switch main
+done
+
 # Checkout or update non-vendored Git URLs
 for GITURL in "${GITURLS[@]}"; do
     GITDIR=$SRC_MIXED/$(gitdir "$GITURL")
