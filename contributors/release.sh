@@ -380,6 +380,7 @@ for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
     fi
     git -C vendor/"$v" tag "v$NEW_VERSION"
     git -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
+    git -C vendor/"$v" switch main
 done
 
 # Update, tag and push dkml-runtime-apps (and components and opam-repository)
@@ -450,6 +451,7 @@ for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
     fi
     rungit -C vendor/"$v" tag "v$NEW_VERSION"
     rungit -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
+    rungit -C vendor/"$v" switch main
 done
 rungit commit -a -m "Update dependencies to $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
