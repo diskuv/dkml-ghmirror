@@ -11,12 +11,14 @@ DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 SYNCED_PRERELEASE_BEFORE_APPS=(drc drd)
 SYNCED_PRERELEASE_AFTER_APPS=(diskuv-opam-repository)
 SYNCED_PRERELEASE_VENDORS=("${SYNCED_PRERELEASE_BEFORE_APPS[@]}" "${SYNCED_PRERELEASE_AFTER_APPS[@]}")
-SYNCED_RELEASE_VENDORS=(diskuv-opam-repository)
+SYNCED_RELEASE_VENDORS=()
+set +u # workaround bash 'unbound variable' triggered on empty arrays
 ALL_VENDORS=(
     "${SYNCED_PRERELEASE_VENDORS[@]}"
     "${SYNCED_RELEASE_VENDORS[@]}"
     dkml-compiler
 )
+set -u
 # Which non-vendored Git projects should be synced
 GITURLS=(
     https://github.com/diskuv/dkml-workflows.git
@@ -321,9 +323,11 @@ else
         --new-version "$TARGET_VERSION" \
         --verbose
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
+    set +u # workaround bash 'unbound variable' triggered on empty arrays
     for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" add -A
     done
+    set -u
     #   the newly checked-out / resetted Git URLs are also safe
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
         GITDIR="$SRC_MIXED/$GITDIR"
@@ -342,10 +346,12 @@ else
     git add CHANGES.md "contributors/changes/v$TARGET_VERSION.md"
 
     # 3. Make a release commit
+    set +u # workaround bash 'unbound variable' triggered on empty arrays
     for v in "${SYNCED_RELEASE_VENDORS[@]}"; do
         git -C vendor/"$v" commit -m "Finish v$TARGET_VERSION release (1 of 2)"
         git add vendor/"$v"
     done
+    set -u
     for GITDIR in "${SYNCED_RELEASE_GITDIRS[@]}"; do
         GITDIR=$SRC_MIXED/"$GITDIR"
         git -C "$GITDIR" commit -m "Finish v$TARGET_VERSION release"
