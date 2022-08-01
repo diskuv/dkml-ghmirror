@@ -1,3 +1,11 @@
+## 0.4.1 (2022-08-01)
+
+Changes:
+
+* [BUG] Fix support for installing to directories with spaces. https://github.com/diskuv/dkml-installer-ocaml/issues/2
+* [DEBT] Full sync with the pre-2.2 Opam source code except one OPAMROOT patch. https://github.com/ocaml/opam/issues/3766#issuecomment-1201415069
+
+
 ## 0.4.0 (2022-06-30)
 
 This release open-sources many of the underlying components in
