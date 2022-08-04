@@ -63,39 +63,39 @@ NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n
 release-start-major:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version major --config-file .bumpversion.prerelease.cfg --no-tag --verbose && \
-	git add . && git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
+	cd .. && bump2version major --config-file .bumpversion.prerelease.cfg --no-tag --verbose && git add . && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md && git add contributors/changes/v$$NEW_VERSION.md && \
 	git -C vendor/drc commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
+	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
 	git commit --message "Start v$$NEW_VERSION release"
 
 .PHONY: release-start-minor
 release-start-minor:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version minor --config-file .bumpversion.prerelease.cfg --no-tag --verbose && \
-	git add . && git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
+	cd .. && bump2version minor --config-file .bumpversion.prerelease.cfg --no-tag --verbose && git add . && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md && git add contributors/changes/v$$NEW_VERSION.md && \
 	git -C vendor/drc commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
+	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
 	git commit --message "Start v$$NEW_VERSION release"
 
 .PHONY: release-start-patch
 release-start-patch:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version patch --config-file .bumpversion.prerelease.cfg --no-tag --verbose && \
-	git add . && git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
+	cd .. && bump2version patch --config-file .bumpversion.prerelease.cfg --no-tag --verbose && git add . && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md && git add contributors/changes/v$$NEW_VERSION.md && \
 	git -C vendor/drc commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
+	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
 	git commit --message "Start v$$NEW_VERSION release"
 
 .PHONY: release-prerelease
