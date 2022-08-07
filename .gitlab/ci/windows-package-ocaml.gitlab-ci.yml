@@ -75,7 +75,7 @@ win32:oorepo-fetch-1:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
-    # - if: '$CI_COMMIT_BRANCH == "next"'
+    - if: '$CI_COMMIT_BRANCH == "next"'
   needs: []
   variables:
     # We have to specify an arbitrary but real OCAMLVERSION in this step because the reproducible setup scripts require it
@@ -100,24 +100,7 @@ win32:oorepo-fetch-1:
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
 
     # Setup and Fetch
-    - cygwin (
-        "env TOPDIR='$env:CI_PROJECT_DIR/vendor/drc/all/emptytop' vendor/drd/src/unix/private/r-f-oorepo-1-setup.sh"
-        + " -d '" + "$env:CI_PROJECT_DIR" + "'"
-        + " -t '" + "$DEPLOYDIR" + "'"
-        + " -v '" + $DV_WindowsMsvcDockerImage + "'"
-        + " -a amd64"
-        + " -b '$env:OCAMLVERSION'"
-        )
-    # Because Cygwin has a max 260 character limit of absolute file names, we place the working directories in /tmp, and override moby/.
-    # Because we want to make the full repository as an artifact, we override opamroot/.
-    - cygwin ('export DKML_TMP_PARENTDIR=$(mktemp -d /tmp/dkmlp.XXXXX)'
-        + " ; export DKML_MOBYDIR='$env:CI_PROJECT_DIR/_ci/moby'"
-        + " ; export DKML_BUILD_TRACE=ON; export DKML_BUILD_TRACE_LEVEL=2"
-        + " && cd '$DEPLOYDIR' && set +e && share/dkml/repro/200-fetch-oorepo-${env:OCAMLVERSION}/vendor/drd/src/unix/private/r-f-oorepo-2-build-noargs.sh"
-        + ' ; ec=$?; '
-        + 'rm -rf "$DKML_TMP_PARENTDIR"; '
-        + 'if [ $ec = 103 ]; then echo "Possible cache corruption. Deleting Moby cache."; rm -rf "$DKML_MOBYDIR"; fi; '
-        + 'exit $ec')
+    - cygwin ("'$env:CI_PROJECT_DIR/.gitlab/ci/oorepo/setup-fetch.sh' '$env:CI_PROJECT_DIR' '$DEPLOYDIR' '$DV_WindowsMsvcDockerImage' '$env:OCAMLVERSION'")
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
     # Package artifacts
