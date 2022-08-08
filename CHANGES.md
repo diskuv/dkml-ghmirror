@@ -1,3 +1,10 @@
+## 1.0.0 (2022-08-08)
+
+Changes from v0.4.1:
+* Uninstaller available
+* PATH will no longer have functionally duplicated DOS 8.3 short paths and
+  Windows full paths for the binaries installed by Diskuv OCaml
+
 ## 0.4.1 (2022-08-01)
 
 Changes:
