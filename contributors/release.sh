@@ -248,11 +248,19 @@ update_submodules_to_main() {
 update_submodules_to_main
 
 # Checkout or update non-vendored Git URLs
+#   dkml-workflows-prerelease.git: v0 branch
 for GITURL in "${GITURLS[@]}"; do
-    GITDIR=$SRC_MIXED/$(gitdir "$GITURL")
+    GITRELDIR=$(gitdir "$GITURL")
+    GITDIR=$SRC_MIXED/$GITRELDIR
     if [ -d "$GITDIR" ]; then
         git -C "$GITDIR" clean -d -x -f
-        git -C "$GITDIR" reset --hard origin/main
+        case "$GITRELDIR" in
+            dkml-workflows-prerelease)
+                git -C "$GITDIR" reset --hard origin/v0
+                ;;
+            *)
+                git -C "$GITDIR" reset --hard origin/main
+        esac
         git -C "$GITDIR" pull --ff-only
     else
         git -C "$SRC_MIXED" clone "$GITURL"
@@ -277,8 +285,12 @@ if [ ! -e "$DKMLAPPS_OLDOPAM" ]; then
     printf "FATAL: Could not find %s\n" "$DKMLAPPS_OLDOPAM" >&2
     exit 1
 fi
-if [ ! -e "$DKMLRUNTIME_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$DKMLRUNTIME_OLDOPAM" >&2
+if [ ! -e "$DKMLRUNTIMESCRIPTS_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "$DKMLRUNTIMESCRIPTS_OLDOPAM" >&2
+    exit 1
+fi
+if [ ! -e "$DKMLRUNTIMELIB_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "$DKMLRUNTIMELIB_OLDOPAM" >&2
     exit 1
 fi
 if [ ! -e "$OPAMDKML_OLDOPAM" ]; then
