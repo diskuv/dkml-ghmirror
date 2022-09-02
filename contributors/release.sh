@@ -21,7 +21,7 @@ ALL_VENDORS=(
 set -u
 # Which non-vendored Git projects should be synced
 GITURLS=(
-    https://github.com/diskuv/dkml-workflows.git
+    https://github.com/diskuv/dkml-workflows-prerelease.git
     https://github.com/diskuv/dkml-installer-ocaml.git
     https://github.com/diskuv/dkml-runtime-apps.git
     https://github.com/diskuv/dkml-component-opam.git
@@ -473,13 +473,13 @@ rungit tag "v$NEW_VERSION"
 rungit push
 rungit push origin "v$NEW_VERSION"
 
-# Update and push dkml-workflows
+# Update and push dkml-workflows-prerelease
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
-sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC_MIXED/dkml-workflows/.github/workflows/scripts/localdev/windows_vars.source.sh"
-sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/" "$SRC_MIXED/dkml-workflows/.github/workflows/setup-dkml.yml"
-rungit -C "$SRC_MIXED/dkml-workflows" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
-rungit -C "$SRC_MIXED/dkml-workflows" commit -m "diskuv-opam-repository#$DOR"
-rungit -C "$SRC_MIXED/dkml-workflows" push
+sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/"    "$SRC_MIXED/dkml-workflows-prerelease/.github/workflows/scripts/localdev/windows_vars.source.sh"
+sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/"                "$SRC_MIXED/dkml-workflows-prerelease/.github/workflows/setup-dkml.yml"
+rungit -C "$SRC_MIXED/dkml-workflows-prerelease" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
+rungit -C "$SRC_MIXED/dkml-workflows-prerelease" commit -m "diskuv-opam-repository#$DOR"
+rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push
 
 # ------------------------
 # Distribution archive
@@ -608,5 +608,6 @@ release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 # Messaging
 echo
 echo
-echo 'Go to https://gitlab.com/diskuv/diskuv-ocaml/-/pipelines and make sure that the pipeline succeeds'
+echo '1. Go to https://gitlab.com/diskuv/diskuv-ocaml/-/pipelines and make sure that the pipeline succeeds'
+echo '2. Do a merge to https://github.com/diskuv/dkml-workflows.git from https://github.com/diskuv/dkml-workflows-prerelease.git'
 echo
