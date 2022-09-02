@@ -268,7 +268,8 @@ get_new_version() {
 get_new_version
 CURRENT_VERSION=$NEW_VERSION
 DKMLAPPS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
-DKMLRUNTIME_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
+DKMLRUNTIMESCRIPTS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
+DKMLRUNTIMELIB_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 OPAMDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
 
 #   validate
@@ -399,10 +400,11 @@ sleep 5
 opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
 opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
-update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
-update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam.template"
+update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
+update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam.template"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
-update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtime.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
 update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dune-project"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
@@ -448,7 +450,8 @@ new_opam_package_version() {
     rungit -C "vendor/diskuv-opam-repository" add "$new_opam_package_version_NEW"
 }
 new_opam_package_version "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$DKMLRUNTIME_OLDOPAM" "packages/dkml-runtime/dkml-runtime.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$DKMLRUNTIMESCRIPTS_OLDOPAM" "packages/dkml-runtimescripts/dkml-runtimescripts.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$DKMLRUNTIMELIB_OLDOPAM" "packages/dkml-runtimelib/dkml-runtimelib.$OPAM_NEW_VERSION/opam"
 new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW_VERSION"
 
