@@ -418,6 +418,7 @@ update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
 update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dune-project"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
