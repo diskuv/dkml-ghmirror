@@ -207,6 +207,7 @@ update_pkgs_version() {
     shift
     sed_replace 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
     sed_replace 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+    sed_replace 's#^with-dkml\..*#with-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
 }
 update_switch_version() {
     update_switch_version_VER=$1
@@ -217,6 +218,7 @@ update_switch_version() {
     #   include SPACE (ASCII 32) + letter on macOS while GNU sed does.
     sed_replace 's#^\([ ]*\)dkml-apps,.*#\1dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
     sed_replace 's#^\([ ]*\)opam-dkml,.*#\1opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed_replace 's#^\([ ]*\)with-dkml,.*#\1with-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
 update_opam_version() {
     update_opam_version_VER=$1
@@ -279,6 +281,7 @@ DKMLAPPS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 DKMLRUNTIMESCRIPTS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
 DKMLRUNTIMELIB_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 OPAMDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
+WITHDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
 
 #   validate
 if [ ! -e "$DKMLAPPS_OLDOPAM" ]; then
@@ -295,6 +298,10 @@ if [ ! -e "$DKMLRUNTIMELIB_OLDOPAM" ]; then
 fi
 if [ ! -e "$OPAMDKML_OLDOPAM" ]; then
     printf "FATAL: Could not find %s\n" "$OPAMDKML_OLDOPAM" >&2
+    exit 1
+fi
+if [ ! -e "$WITHDKML_OLDOPAM" ]; then
+    printf "FATAL: Could not find %s\n" "$WITHDKML_OLDOPAM" >&2
     exit 1
 fi
 
@@ -466,6 +473,7 @@ new_opam_package_version "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM
 new_opam_package_version "$DKMLRUNTIMESCRIPTS_OLDOPAM" "packages/dkml-runtimescripts/dkml-runtimescripts.$OPAM_NEW_VERSION/opam"
 new_opam_package_version "$DKMLRUNTIMELIB_OLDOPAM" "packages/dkml-runtimelib/dkml-runtimelib.$OPAM_NEW_VERSION/opam"
 new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
+new_opam_package_version "$WITHDKML_OLDOPAM" "packages/with-dkml/with-dkml.$OPAM_NEW_VERSION/opam"
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW_VERSION"
 
 # Tag and push after dkml-runtime-apps
