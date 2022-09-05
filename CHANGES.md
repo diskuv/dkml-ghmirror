@@ -538,24 +538,6 @@ Changes:
 * Fix inotify-win not being compiled, which is used by `./makeit dkml-devmode`
 * Pin `ppxlib` to `0.22.0` to remove the need for https://github.com/janestreet/ppx_variants_conv/pull/9
 * `ctypes.0.19.2-windowssupport-r3` -> `ctypes.0.19.2-windowssupport-r4` fixes thread local storage
-# Changes
-
-
-## 0.1.0 (2021-08-25)
-
-Initial release. Only available for Windows 64-bit.
-
-Enjoy!
-
-## 0.1.1 (2021-09-02)
-
-Bug fixes:
-
-* Fix `Installation fails when Windows locale/culture has commas in its number format`. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/1
-
-License changes:
-
-* Add Eduardo Rafael (maintainer of Esy)
 
 ## 0.2.0 (2021-09-13)
 
@@ -708,3 +690,19 @@ MSYS2 changes:
 * Cygwin is no longer automatically installed.
   * Cygwin will still be downloaded on the rare occasion where the `ocaml/opam` package has not yet released on Diskuv's
     GitLab release page.
+
+## 0.1.1 (2021-09-02)
+
+Bug fixes:
+
+* Fix `Installation fails when Windows locale/culture has commas in its number format`. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/1
+
+License changes:
+
+* Add Eduardo Rafael (maintainer of Esy)
+
+## 0.1.0 (2021-08-25)
+
+Initial release. Only available for Windows 64-bit.
+
+Enjoy!
