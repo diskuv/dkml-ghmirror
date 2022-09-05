@@ -1,4 +1,4 @@
-# Diskuv OCaml 1.0.0
+# Diskuv OCaml 1.0.1
 
 The Diskuv OCaml distribution is an open-source set of software
 that supports software development in pure OCaml. The distribution's
