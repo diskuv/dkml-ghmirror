@@ -258,7 +258,7 @@ for GITURL in "${GITURLS[@]}"; do
         git -C "$GITDIR" clean -d -x -f
         case "$GITRELDIR" in
             dkml-workflows-prerelease)
-                git -C "$GITDIR" reset --hard origin/v0
+                git -C "$GITDIR" reset --hard origin/v1
                 ;;
             *)
                 git -C "$GITDIR" reset --hard origin/main
@@ -500,7 +500,7 @@ rungit push origin "v$NEW_VERSION"
 # Update and push dkml-workflows-prerelease
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
 sed_replace "s/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/export DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/"    "$SRC_MIXED/dkml-workflows-prerelease/.github/workflows/scripts/localdev/windows_vars.source.sh"
-sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: .*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG: $DOR/"                "$SRC_MIXED/dkml-workflows-prerelease/.github/workflows/setup-dkml.yml"
+sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/"                  "$SRC_MIXED/dkml-workflows-prerelease/src/scripts/setup-dkml.sh"
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" add .github/workflows/setup-dkml.yml .github/workflows/scripts/localdev/windows_vars.source.sh
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" commit -m "diskuv-opam-repository#$DOR"
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push
