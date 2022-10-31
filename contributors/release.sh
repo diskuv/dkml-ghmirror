@@ -308,9 +308,11 @@ fi
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
 update_drd_src() {
-    #   Update ci-pkgs.txt and create-opam-switch.sh
+    #   Update ci-pkgs.txt, create-opam-switch.sh, dune-project and .opam
     update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
     update_switch_version "$OPAM_NEW_VERSION" vendor/drd/src/unix/create-opam-switch.sh
+    update_dune_version "$OPAM_NEW_VERSION" vendor/drd/dune-project
+    update_opam_version "$OPAM_NEW_VERSION" vendor/drd/dkml-runtime-distribution.opam
 }
 if [ "$PRERELEASE" = ON ]; then
     # Increment the prerelease
