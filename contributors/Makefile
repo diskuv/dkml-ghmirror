@@ -70,7 +70,11 @@ release-start-major:
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
 	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
-	git commit --message "Start v$$NEW_VERSION release"
+	git commit --message "Start v$$NEW_VERSION release" && \
+	git -C vendor/drc push && \
+	git -C vendor/drd push && \
+	git -C vendor/diskuv-opam-repository push && \
+	git push
 
 .PHONY: release-start-minor
 release-start-minor:
@@ -83,7 +87,11 @@ release-start-minor:
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
 	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
-	git commit --message "Start v$$NEW_VERSION release"
+	git commit --message "Start v$$NEW_VERSION release" && \
+	git -C vendor/drc push && \
+	git -C vendor/drd push && \
+	git -C vendor/diskuv-opam-repository push && \
+	git push
 
 .PHONY: release-start-patch
 release-start-patch:
@@ -96,7 +104,11 @@ release-start-patch:
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
 	git add vendor/drc vendor/drd vendor/diskuv-opam-repository && \
-	git commit --message "Start v$$NEW_VERSION release"
+	git commit --message "Start v$$NEW_VERSION release" && \
+	git -C vendor/drc push && \
+	git -C vendor/drd push && \
+	git -C vendor/diskuv-opam-repository push && \
+	git push
 
 .PHONY: release-prerelease
 release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
