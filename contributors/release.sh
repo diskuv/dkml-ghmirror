@@ -512,9 +512,6 @@ rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push
 # Distribution archive
 # ------------------------
 
-# Define which files and directories go into distribution archive
-ARCHIVE_MEMBERS=(LICENSE.txt README.md etc buildtime vendor .dkmlroot .gitattributes .gitignore)
-
 # Remove git ignored files from submodules for distribution archive. ARCHIVE_MEMBERS
 # is already a good filter for this repository (diskuv-ocaml), and we do not clean it
 # because we may blow away IDE settings and other build information.
@@ -522,35 +519,6 @@ for v in "${ALL_VENDORS[@]}"; do
     git -C vendor/"$v" clean -x -d -f
     rm -rf vendor/"$v"/_opam
 done
-
-# Make _build/distribution-portable.zip
-FILE="$DKMLDIR/contributors/_build/distribution-portable.zip"
-rm -f "$FILE"
-install -d contributors/_build/release-zip
-rm -rf contributors/_build/release-zip
-install -d contributors/_build/release-zip
-zip -r "$FILE" "${ARCHIVE_MEMBERS[@]}"
-pushd contributors/_build/release-zip
-install -d diskuv-ocaml
-cd diskuv-ocaml
-unzip "$FILE"
-cd ..
-rm -f "$FILE"
-zip -r "$FILE" diskuv-ocaml
-popd
-
-# Make _build/distribution-portable.tar.gz
-FILE="$DKMLDIR/contributors/_build/distribution-portable.tar.gz"
-install -d contributors/_build
-rm -f "$FILE"
-if tar -cf contributors/_build/probe.tar --no-xattrs --owner root /dev/null >/dev/null 2>/dev/null; then GNUTAR=ON; fi # test to see if GNU tar
-if [ "${GNUTAR:-}" = ON ]; then
-    # GNU tar
-    tar cvfz "$FILE" --owner root --group root --exclude _build --transform 's,^,diskuv-ocaml/,' --no-xattrs "${ARCHIVE_MEMBERS[@]}"
-else
-    # BSD tar
-    tar cvfz "$FILE" -s ',^,diskuv-ocaml/,' --uname root --gname root --exclude _build --no-xattrs "${ARCHIVE_MEMBERS[@]}"
-fi
 
 # Set GitLab options
 CI_SERVER_URL=https://gitlab.com
@@ -586,7 +554,6 @@ fi
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
-DISTPORTABLE_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/distribution-portable/$NEW_VERSION"
 OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
 OCAMLVERS=(4.13.1 4.12.1)
@@ -607,17 +574,7 @@ if [ "$QUICK" = ON ]; then
     done
 fi
 
-# Upload files to Generic Packages
-
-curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-     --upload-file contributors/_build/distribution-portable.zip \
-     "$DISTPORTABLE_NEWURL/distribution-portable.zip"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (zip) [portable;FairSource-0.9]\",\"url\":\"${DISTPORTABLE_NEWURL}/distribution-portable.zip\",\"link_type\":\"package\"}")
-
-curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-     --upload-file contributors/_build/distribution-portable.tar.gz \
-     "$DISTPORTABLE_NEWURL/distribution-portable.tar.gz"
-CREATE_OPTS+=(--assets-link "{\"name\":\"Diskuv OCaml distribution (tar.gz) [portable;FairSource-0.9]\",\"url\":\"${DISTPORTABLE_NEWURL}/distribution-portable.tar.gz\",\"link_type\":\"package\"}")
+# Upload files to Generic Packages (historical; none for now)
 
 # Reference the Generic Packages that GitLab automatically creates
 for OCAMLVER in "${OCAMLVERS[@]}"; do
