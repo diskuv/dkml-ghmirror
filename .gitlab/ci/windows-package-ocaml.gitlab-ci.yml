@@ -1,5 +1,6 @@
 variables:
   OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS: '_ci\OOR'
+  OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS: '_ci\BC'
   OCAML_SYS_DEPLOY_FOLDER_WINDOWS: 'C:\DiskuvOCaml\OcamlSys'
 
 win32:oorepo-fetch-1:
@@ -27,19 +28,42 @@ win32:oorepo-fetch-1:
     name: "ocaml-opam-repo-full"
     paths:
       - '$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS\full-opam-root.7z'
+      - '$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun.7z'
+      - vendor\drd\src\ml\ocaml_opam_repo_trim.bc
 
   script:
     - $DEPLOYDIR = "$env:OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS"
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
+    - if (!(Test-Path "$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS")) { New-Item -Path "$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS" -ItemType Directory }
+
+    # Download OCaml bytecode runner (can we produce smaller bytecode runner tarballs!)
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
+    - Invoke-WebRequest `
+        -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.12.1-v1.0.2/dkml-component-staging-ocamlrun.tar.gz" `
+        -OutFile "ocamlrun.tar.gz"
+    - if (!(Test-Path "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun")) { New-Item -Path "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\$ocamlrun" -ItemType Directory }
+    - cygwin ("tar xCfz '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' ocamlrun.tar.gz --strip-components 3 staging-files/$env:HOSTABI")
+
+    # Download support bytecode that was uploaded by release.sh
+    - Invoke-WebRequest `
+        -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
+        -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
 
     # Setup and Fetch
-    - cygwin ("'$env:CI_PROJECT_DIR/.gitlab/ci/oorepo/setup-fetch.sh' '$env:CI_PROJECT_DIR' '$DEPLOYDIR' '$DV_WindowsMsvcDockerImage' '$env:OCAMLVERSION'")
+    - cygwin ("'$env:CI_PROJECT_DIR\.gitlab\ci\oorepo\setup-fetch.sh' '$env:CI_PROJECT_DIR' '$DEPLOYDIR' '$DV_WindowsMsvcDockerImage' '$env:OCAMLVERSION' ''$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' vendor/drd/src/ml/ocaml_opam_repo_trim.bc")
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
     # Package artifacts
     - |
       cd $DEPLOYDIR
       7z a -t7z full-opam-root.7z full-opam-root\ -r -y
+
+      cd "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS"
+      7z a -t7z ocamlrun.7z "ocamlrun\" -r y
+
+      cd "$env:CI_PROJECT_DIR"
+      cd "$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS"
+      7z a -t7z ocamlrun.7z
 
   after_script:
     # Don't waste space and time caching MOBY/tmp folder created by moby-extract-opam-root.sh
@@ -76,28 +100,20 @@ win32:oorepo-matrix-2:
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
     - $REPODIR = "$DEPLOYDIR\share\dkml\repro\${env:OCAMLVERSION}"
 
-    # Download OCaml bytecode runner (can we produce smaller bytecode runner tarballs!)
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
-    - Invoke-WebRequest `
-        -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.12.1-v1.0.2/dkml-component-staging-ocamlrun.tar.gz" `
-        -OutFile "ocamlrun.tar.gz"
-    - if (!(Test-Path "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI")) { New-Item -Path "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -ItemType Directory }
-    - cygwin ("tar xCfz '$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI' ocamlrun.tar.gz --strip-components 3 staging-files/$env:HOSTABI")
-    - Expand-Archive -Path "ocaml.dist.zip" -DestinationPath "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -Force
-
-    # Download support bytecode that was uploaded by release.sh
-    - Invoke-WebRequest `
-        -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
-        -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
-
     # Unpackage artifacts
     - |
       cd "$DEPLOYDIR"
       7z x full-opam-root.7z -y
+
       cd "$env:CI_PROJECT_DIR"
-      dir _ci
-      dir _ci\OOR
       dir "$DEPLOYDIR"
+    - |
+      cd "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS"
+      7z x ocamlrun.7z -y
+
+      cd "$env:CI_PROJECT_DIR"
+      dir "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS"
+    - dir _ci
 
     # Setup (again, but this is a new CI job without the artifacts from the first setup.sh, and this time we use the right OCAMLVERSION)
     - cygwin (
@@ -107,7 +123,7 @@ win32:oorepo-matrix-2:
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         + " -b '$env:OCAMLVERSION'"
-        + " -c '$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI'"
+        + " -c '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun'"
         + " -e vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
         )
 

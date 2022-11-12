@@ -8,6 +8,10 @@ DV_WindowsMsvcDockerImage=$1
 shift
 OCAMLVERSION=$1
 shift
+OCAML_BC_HOME=$1
+shift
+OOREPO_TRIM_BYTECODE=$1
+shift
 
 # SETUP
 # -----
@@ -17,7 +21,9 @@ env TOPDIR="${CI_PROJECT_DIR}/vendor/drc/all/emptytop" vendor/drd/src/unix/priva
     -t "$DEPLOYDIR" \
     -v "$DV_WindowsMsvcDockerImage" \
     -a amd64 \
-    -b "$OCAMLVERSION"
+    -b "$OCAMLVERSION" \
+    -c "$OCAML_BC_HOME" \
+    -e "$OOREPO_TRIM_BYTECODE"
 
 # BUILD (FETCH)
 # -------------
