@@ -17,7 +17,7 @@ jobs:
             os: macos-latest
             targetabi: darwin_arm64
             targetbits: 64
-            ocamlconfigure: vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
             expectfile: Mach-O 64-bit executable arm64
 
           - name: "[android] aarch64 on [linux] x86_64"
@@ -90,7 +90,7 @@ jobs:
           -v "${{ env.OCAML_GIT_REV }}" \
           -e "${{ matrix.hostabi }}" \
           -a "${{ matrix.targetabi }}=${{ matrix.ocamlconfigure }}" \
-          -k vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
+          -k vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
 
     - name: Build ${{ env.BUILD_TYPE }} OCaml for host ${{ matrix.hostabi }} ABI
       run: cd "${{ env.DIST_DIR }}" && share/dkml/repro/100co/vendor/dkml-compiler/src/r-c-ocaml-2-build_host-noargs.sh

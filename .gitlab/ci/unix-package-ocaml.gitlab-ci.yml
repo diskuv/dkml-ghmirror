@@ -12,7 +12,7 @@ macos:build-ocaml:
     matrix:
       - HOSTABI: darwin_x86_64
         NAMESUFFIX: -cross-arm64
-        TARGETABIS: darwin_arm64=vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
+        TARGETABIS: darwin_arm64=vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
         OCAMLVER: ["4.13.1", "4.12.1"]
   needs: []
   rules:
@@ -35,7 +35,7 @@ macos:build-ocaml:
         -d . -t _ci/tree -v "$COMMITID" \
         -a "$TARGETABIS" \
         -e "$HOSTABI" \
-        -k vendor/dkml-compiler/src/standard-compiler-env-to-ocaml-configure-env.sh
+        -k vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
     - cd _ci/tree && share/dkml/repro/100co/vendor/dkml-compiler/src/r-c-ocaml-2-build_host-noargs.sh
     - cd _ci/tree && share/dkml/repro/100co/vendor/dkml-compiler/src/r-c-ocaml-3-build_cross-noargs.sh
 
