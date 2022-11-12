@@ -418,7 +418,7 @@ for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
         git -C vendor/"$v" tag -d "$NEW_VERSION" || true
         git -C vendor/"$v" push --delete origin "$NEW_VERSION" || true
     fi
-    git -C vendor/"$v" tag "$NEW_VERSION"
+    git -C vendor/"$v" tag -a "$NEW_VERSION" -m "$OPAM_NEW_VERSION"
     git -C vendor/"$v" push --atomic origin main "$NEW_VERSION"
 done
 
@@ -442,7 +442,7 @@ if [ "$FORCE" = "ON" ]; then
     rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -d "$NEW_VERSION" || true
     rungit -C "$SRC_MIXED/dkml-runtime-apps" push --delete origin "$NEW_VERSION" || true
 fi
-rungit -C "$SRC_MIXED/dkml-runtime-apps" tag "$NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -a "$NEW_VERSION" -m "$OPAM_NEW_VERSION"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" push --atomic origin main "$NEW_VERSION"
 #   Update and push components. We want one commit if many components in project
 for i in "${OPAMPROJECTS[@]}"; do
@@ -492,7 +492,7 @@ for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
         rungit -C vendor/"$v" tag -d "$NEW_VERSION" || true
         rungit -C vendor/"$v" push --delete origin "$NEW_VERSION" || true
     fi
-    rungit -C vendor/"$v" tag "$NEW_VERSION"
+    rungit -C vendor/"$v" tag -a "$NEW_VERSION" -m "$OPAM_NEW_VERSION"
     rungit -C vendor/"$v" push --atomic origin main "$NEW_VERSION"
 done
 update_submodules_to_main
@@ -501,7 +501,7 @@ if [ "$FORCE" = "ON" ]; then
     rungit tag -d "$NEW_VERSION" || true
     rungit push --delete origin "$NEW_VERSION" || true
 fi
-rungit tag "$NEW_VERSION"
+rungit tag -a "$NEW_VERSION" -m "$OPAM_NEW_VERSION"
 # do not use: git push --atomic origin main "$NEW_VERSION"
 # because we can't be on 'next' branch
 rungit push
