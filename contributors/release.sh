@@ -395,10 +395,10 @@ else
     update_drd_src
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
-        git -C vendor/"$v" commit -m "Finish v$NEW_VERSION release (2 of 2)" -a
+        git -C vendor/"$v" commit -m "Finish $NEW_VERSION release (2 of 2)" -a
         git add vendor/"$v"
     done
-    git commit -m "Finish v$NEW_VERSION release (2 of 2)"
+    git commit -m "Finish $NEW_VERSION release (2 of 2)"
 fi
 
 # From this point on NEW_VERSION is the version being committed. It will be
@@ -407,19 +407,19 @@ fi
 # Tag and push before dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_BEFORE_APPS[@]}"; do
     if [ "$FORCE" = "ON" ]; then
-        git -C vendor/"$v" tag -d "v$NEW_VERSION" || true
-        git -C vendor/"$v" push --delete origin "v$NEW_VERSION" || true
+        git -C vendor/"$v" tag -d "$NEW_VERSION" || true
+        git -C vendor/"$v" push --delete origin "$NEW_VERSION" || true
     fi
-    git -C vendor/"$v" tag "v$NEW_VERSION"
-    git -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
+    git -C vendor/"$v" tag "$NEW_VERSION"
+    git -C vendor/"$v" push --atomic origin main "$NEW_VERSION"
 done
 
 # Update, tag and push dkml-runtime-apps (and components and opam-repository)
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
 #   dkml-runtime-common|distribution GitHub tarballs are eventually consistent
 sleep 5
-opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
-opam_source_block extra-source "v$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
+opam_source_block extra-source "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
+opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
 update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam.template"
@@ -431,11 +431,11 @@ update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/with-dkml.
 update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dune-project"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
-    rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -d "v$NEW_VERSION" || true
-    rungit -C "$SRC_MIXED/dkml-runtime-apps" push --delete origin "v$NEW_VERSION" || true
+    rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -d "$NEW_VERSION" || true
+    rungit -C "$SRC_MIXED/dkml-runtime-apps" push --delete origin "$NEW_VERSION" || true
 fi
-rungit -C "$SRC_MIXED/dkml-runtime-apps" tag "v$NEW_VERSION"
-rungit -C "$SRC_MIXED/dkml-runtime-apps" push --atomic origin main "v$NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" tag "$NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-runtime-apps" push --atomic origin main "$NEW_VERSION"
 #   Update and push components. We want one commit if many components in project
 for i in "${OPAMPROJECTS[@]}"; do
     COMPONENTDIR="$SRC_MIXED/$i"
@@ -453,7 +453,7 @@ done
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
 #   dkml-runtime-apps GitHub tarball is eventually consistent
 sleep 5
-opam_source_block url "v$NEW_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
+opam_source_block url "$NEW_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
 #   Update diskuv-opam-repository
 new_opam_package_version() {
     new_opam_package_version_OLD=$1
@@ -481,23 +481,23 @@ rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
     if [ "$FORCE" = "ON" ]; then
-        rungit -C vendor/"$v" tag -d "v$NEW_VERSION" || true
-        rungit -C vendor/"$v" push --delete origin "v$NEW_VERSION" || true
+        rungit -C vendor/"$v" tag -d "$NEW_VERSION" || true
+        rungit -C vendor/"$v" push --delete origin "$NEW_VERSION" || true
     fi
-    rungit -C vendor/"$v" tag "v$NEW_VERSION"
-    rungit -C vendor/"$v" push --atomic origin main "v$NEW_VERSION"
+    rungit -C vendor/"$v" tag "$NEW_VERSION"
+    rungit -C vendor/"$v" push --atomic origin main "$NEW_VERSION"
 done
 update_submodules_to_main
 rungit commit -a -m "Update dependencies to $NEW_VERSION"
 if [ "$FORCE" = "ON" ]; then
-    rungit tag -d "v$NEW_VERSION" || true
-    rungit push --delete origin "v$NEW_VERSION" || true
+    rungit tag -d "$NEW_VERSION" || true
+    rungit push --delete origin "$NEW_VERSION" || true
 fi
-rungit tag "v$NEW_VERSION"
-# do not use: git push --atomic origin main "v$NEW_VERSION"
+rungit tag "$NEW_VERSION"
+# do not use: git push --atomic origin main "$NEW_VERSION"
 # because we can't be on 'next' branch
 rungit push
-rungit push origin "v$NEW_VERSION"
+rungit push origin "$NEW_VERSION"
 
 # Update and push dkml-workflows-prerelease
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
@@ -526,7 +526,7 @@ CI_API_V4_URL="$CI_SERVER_URL/api/v4"
 CI_PROJECT_ID='diskuv%2Fdiskuv-ocaml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
 GLOBAL_OPTS=(--server-url "$CI_SERVER_URL" --project-id "$CI_PROJECT_ID")
 CREATE_OPTS=(
-    --tag-name "v$NEW_VERSION"
+    --tag-name "$NEW_VERSION"
 )
 if [ "$PRERELEASE" = OFF ]; then
     CREATE_OPTS+=(
