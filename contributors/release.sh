@@ -307,6 +307,10 @@ fi
 
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
+update_drc_src() {
+    #   Update .opam
+    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
+}
 update_drd_src() {
     #   Update ci-pkgs.txt, create-opam-switch.sh, dune-project and .opam
     update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
@@ -322,7 +326,9 @@ if [ "$PRERELEASE" = ON ]; then
         --config-file .bumpversion.prerelease.cfg \
         --verbose
     get_new_version
-    #   Update drd/src
+    #   Update drc
+    update_drc_src
+    #   Update drd
     update_drd_src
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
@@ -391,7 +397,9 @@ else
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
         exit 1
     fi
-    #   Update drd/src
+    #   Update drc
+    update_drc_src
+    #   Update drd
     update_drd_src
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
