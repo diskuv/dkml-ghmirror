@@ -4,6 +4,7 @@ set -euf
 # Really only needed for MSYS2 if we are calling from a MSYS2/usr/bin/make.exe rather than a full shell
 export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$PATH"
 
+CONTRIBDIR=$(pwd)
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
@@ -305,6 +306,14 @@ if [ ! -e "$WITHDKML_OLDOPAM" ]; then
     exit 1
 fi
 
+# Build ocaml_opam_repo_trim.bc
+OPAMSWITCH="$CONTRIBDIR"
+if [ -x /usr/bin/cygpath ]; then
+    OPAMSWITCH=$(/usr/bin/cygpath -aw "$OPAMSWITCH")
+fi
+opam exec -- dune build --root vendor/drd/src/ml ocaml_opam_repo_trim.bc
+DUNE_BUILDDIR=vendor/drd/src/ml/_build/default
+
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
 update_drc_src() {
@@ -562,6 +571,7 @@ fi
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
+SUPPORT_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-support/$NEW_VERSION"
 OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
 OCAMLVERS=(4.13.1 4.12.1)
@@ -582,7 +592,11 @@ if [ "$QUICK" = ON ]; then
     done
 fi
 
-# Upload files to Generic Packages (historical; none for now)
+# Upload support files to Generic Packages
+
+curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+     --upload-file "$DUNE_BUILDDIR/ocaml_opam_repo_trim.bc" \
+     "$SUPPORT_NEWURL/ocaml_opam_repo_trim.bc"
 
 # Reference the Generic Packages that GitLab automatically creates
 for OCAMLVER in "${OCAMLVERS[@]}"; do

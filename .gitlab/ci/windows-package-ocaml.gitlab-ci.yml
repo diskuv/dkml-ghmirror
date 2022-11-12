@@ -52,9 +52,8 @@ win32:oorepo-matrix-2:
   rules:
     - if: '$CI_COMMIT_TAG'
     # - if: '$CI_COMMIT_BRANCH == "next"'
-  needs: ["win32:oorepo-fetch-1", "win32:build-ocaml"]
+  needs: ["win32:oorepo-fetch-1"]
   dependencies:
-    - win32:build-ocaml
     # We do not want to update the Moby cache because we do a destructive trimming operation in this step, but we do want the
     # full-opam-root/ available to us as an input
     - win32:oorepo-fetch-1
@@ -77,10 +76,19 @@ win32:oorepo-matrix-2:
     - if (!(Test-Path "$DEPLOYDIR")) { New-Item -Path "$DEPLOYDIR" -ItemType Directory }
     - $REPODIR = "$DEPLOYDIR\share\dkml\repro\${env:OCAMLVERSION}"
 
-    # Download OCaml
+    # Download OCaml bytecode runner (can we produce smaller bytecode runner tarballs!)
     - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
-    - Invoke-WebRequest -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml-reproducible/$PKGTAG/ocaml-${env:OCAMLVERSION}-${env:HOSTABI}${env:NAMESUFFIX}.zip" -OutFile "ocaml.dist.zip"
+    - Invoke-WebRequest `
+        -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.12.1-v1.0.2/dkml-component-staging-ocamlrun.tar.gz" `
+        -OutFile "ocamlrun.tar.gz"
+    - if (!(Test-Path "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI")) { New-Item -Path "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -ItemType Directory }
+    - cygwin ("tar xCfz '$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI' ocamlrun.tar.gz --strip-components 3 staging-files/$env:HOSTABI")
     - Expand-Archive -Path "ocaml.dist.zip" -DestinationPath "$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI" -Force
+
+    # Download support bytecode that was uploaded by release.sh
+    - Invoke-WebRequest `
+        -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
+        -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
 
     # Unpackage artifacts
     - |
@@ -100,6 +108,7 @@ win32:oorepo-matrix-2:
         + " -a amd64"
         + " -b '$env:OCAMLVERSION'"
         + " -c '$env:OCAML_SYS_DEPLOY_FOLDER_WINDOWS\$env:HOSTABI'"
+        + " -e vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
         )
 
     # No Fetch needed because we have full-opam-root from [dependencies:]

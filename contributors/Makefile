@@ -26,6 +26,25 @@ endif
 
 # -----------------------
 
+## -----------------------------------------------------------
+## BEGIN Opam and Dune basics
+
+create-switch: _opam/.opam-switch/switch-config
+.PHONY: create-switch
+
+_opam/.opam-switch/switch-config:
+	opam switch create . 4.12.1 \
+	  --yes \
+	  --deps-only \
+	  --repo default=https://opam.ocaml.org
+
+_opam/bin/dune: _opam/.opam-switch/switch-config
+	OPAMSWITCH="$$PWD" && if [ -x /usr/bin/cygpath ]; then OPAMSWITCH=$$(/usr/bin/cygpath -aw "$$OPAMSWITCH"); fi && \
+	  opam install dune --yes
+
+## END Opam and Dune basics
+## -----------------------------------------------------------
+
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
 ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
 
@@ -111,17 +130,17 @@ release-start-patch:
 	git push
 
 .PHONY: release-prerelease
-release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
+release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies _opam/bin/dune
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p -f
 
 .PHONY: quick-prerelease
-quick-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
+quick-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies _opam/bin/dune
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p -q -f
 
 .PHONY: release-complete
-release-complete: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies
+release-complete: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies _opam/bin/dune
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh
 
