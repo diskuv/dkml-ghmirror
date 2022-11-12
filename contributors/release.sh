@@ -501,10 +501,10 @@ rungit push origin "v$NEW_VERSION"
 
 # Update and push dkml-workflows-prerelease
 DOR=$(rungit -C "vendor/diskuv-opam-repository" rev-parse HEAD)
-sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=.*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC_MIXED/dkml-workflows-prerelease/src/scripts/setup-dkml.sh"
+sed_replace "s/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=[a-f0-9]*/DEFAULT_DISKUV_OPAM_REPOSITORY_TAG=$DOR/" "$SRC_MIXED/dkml-workflows-prerelease/src/scripts/setup-dkml.sh"
 sed_replace 's#"PIN_DKML_APPS", *"[^"]*"#"PIN_DKML_APPS", "'"$NEW_VERSION"'"#' "$SRC_MIXED/dkml-workflows-prerelease/src/logic/model.ml"
 sed_replace 's#"PIN_WITH_DKML", *"[^"]*"#"PIN_WITH_DKML", "'"$NEW_VERSION"'"#' "$SRC_MIXED/dkml-workflows-prerelease/src/logic/model.ml"
-rungit -C "$SRC_MIXED/dkml-workflows-prerelease" add .github/workflows/setup-dkml.yml src/logic/model.ml
+rungit -C "$SRC_MIXED/dkml-workflows-prerelease" add src/scripts/setup-dkml.sh src/logic/model.ml
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" commit -m "Bump diskuv-opam-repository and dkml-apps"
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push
 
