@@ -52,7 +52,11 @@ win32:oorepo-fetch-1:
         -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
 
     # Setup and Fetch
-    - cygwin (".gitlab/ci/oorepo/setup-fetch.sh '$env:CI_PROJECT_DIR' '$DEPLOYDIR' '$DV_WindowsMsvcDockerImage' '$env:OCAMLVERSION' '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' vendor/drd/src/ml/ocaml_opam_repo_trim.bc")
+    - cygwin (".gitlab/ci/oorepo/setup-fetch.sh " +
+        "'$env:CI_PROJECT_DIR' '$DEPLOYDIR' '$DV_WindowsMsvcDockerImage' " +
+        "'$env:OCAMLVERSION' " +
+        "'$env:CI_PROJECT_DIR\$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' " +
+        "vendor/drd/src/ml/ocaml_opam_repo_trim.bc")
     - if (!(Test-Path -Path "$DEPLOYDIR\full-opam-root\msvc-amd64")) { throw "Build failed" }
 
     # Package artifacts
@@ -120,7 +124,7 @@ win32:oorepo-matrix-2:
         + " -v '" + $DV_WindowsMsvcDockerImage + "'"
         + " -a amd64"
         + " -b '$env:OCAMLVERSION'"
-        + " -c '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun'"
+        + " -c '$env:CI_PROJECT_DIR\$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun'"
         + " -e vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
         )
 
