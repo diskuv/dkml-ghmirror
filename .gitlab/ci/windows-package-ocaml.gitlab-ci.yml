@@ -9,7 +9,6 @@ win32:oorepo-fetch-1:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH == "next"'
   needs: []
   variables:
     # We have to specify an arbitrary but real OCAMLVERSION in this step because the reproducible setup scripts require it
@@ -39,7 +38,6 @@ win32:oorepo-fetch-1:
     - if (!(Test-Path "$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS")) { New-Item -Path "$OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS" -ItemType Directory }
 
     # Download OCaml bytecode runner (can we produce smaller bytecode runner tarballs!)
-    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - Invoke-WebRequest `
         -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.12.1-v1.0.2/dkml-component-staging-ocamlrun.tar.gz" `
         -OutFile "ocamlrun.tar.gz"
@@ -47,6 +45,10 @@ win32:oorepo-fetch-1:
     - cygwin ("tar xCfz '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' ocamlrun.tar.gz --strip-components 3 ./staging-files/$env:HOSTABI")
 
     # Download support bytecode that was uploaded by release.sh
+    # TODO: Since this only works when uploaded to Windows (since bytecode is not compatible between Windows and Unix when +unix library used),
+    # need to either revamp the oorepo package selection process -or- use setup-dkml to build an executable -or- use setup-dkml to build
+    # 4 types of bytecode (32/64 bit, Windows/Unix).
+    - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - Invoke-WebRequest `
         -Uri "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
         -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
@@ -81,7 +83,6 @@ win32:oorepo-matrix-2:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
-    # - if: '$CI_COMMIT_BRANCH == "next"'
   needs: ["win32:oorepo-fetch-1"]
   dependencies:
     # We do not want to update the Moby cache because we do a destructive trimming operation in this step, but we do want the
