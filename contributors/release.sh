@@ -267,17 +267,21 @@ update_submodules_to_main() {
 update_submodules_to_main
 
 # Checkout or update non-vendored Git URLs
-#   dkml-workflows-prerelease.git: v0 branch
+#   dkml-workflows-prerelease.git: v1 branch
+WORKFLOWS_PRERELEASE_BRANCH=v1
 for GITURL in "${GITURLS[@]}"; do
     GITRELDIR=$(gitdir "$GITURL")
     GITDIR=$SRC_MIXED/$GITRELDIR
     if [ -d "$GITDIR" ]; then
         git -C "$GITDIR" clean -d -x -f
+        git -C "$GITDIR" fetch
         case "$GITRELDIR" in
             dkml-workflows-prerelease)
-                git -C "$GITDIR" reset --hard origin/v1
+                git -C "$GITDIR" switch --discard-changes "$WORKFLOWS_PRERELEASE_BRANCH"
+                git -C "$GITDIR" reset --hard "origin/$WORKFLOWS_PRERELEASE_BRANCH"
                 ;;
             *)
+                git -C "$GITDIR" switch --discard-changes main
                 git -C "$GITDIR" reset --hard origin/main
         esac
         git -C "$GITDIR" pull --ff-only
@@ -536,7 +540,7 @@ sed_replace 's#"PIN_DKML_APPS", *"[^"]*"#"PIN_DKML_APPS", "'"$OPAM_NEW_VERSION"'
 sed_replace 's#"PIN_WITH_DKML", *"[^"]*"#"PIN_WITH_DKML", "'"$OPAM_NEW_VERSION"'"#' "$SRC_MIXED/dkml-workflows-prerelease/src/logic/model.ml"
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" add src/scripts/setup-dkml.sh src/logic/model.ml
 rungit -C "$SRC_MIXED/dkml-workflows-prerelease" commit -m "Bump diskuv-opam-repository and dkml-apps"
-rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push
+rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push origin "$WORKFLOWS_PRERELEASE_BRANCH"
 
 # ------------------------
 # Distribution archive
