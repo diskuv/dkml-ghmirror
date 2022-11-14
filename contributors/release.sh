@@ -9,15 +9,14 @@ DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 
 # Which vendor/<dir> should be version synced with this
-SYNCED_PRERELEASE_BEFORE_APPS=(drc drd)
+SYNCED_PRERELEASE_BEFORE_APPS=(dkml-compiler drc drd)
 SYNCED_PRERELEASE_AFTER_APPS=(diskuv-opam-repository)
 SYNCED_PRERELEASE_VENDORS=("${SYNCED_PRERELEASE_BEFORE_APPS[@]}" "${SYNCED_PRERELEASE_AFTER_APPS[@]}")
 SYNCED_RELEASE_VENDORS=()
 set +u # workaround bash 'unbound variable' triggered on empty arrays
 ALL_VENDORS=(
     "${SYNCED_PRERELEASE_VENDORS[@]}"
-    "${SYNCED_RELEASE_VENDORS[@]}"
-    dkml-compiler
+    "${SYNCED_RELEASE_VENDORS[@]}"    
 )
 set -u
 # Which non-vendored Git projects should be synced
@@ -134,7 +133,7 @@ sed_replace() {
     sed_replace_FILE=$1
     shift
     sed "$sed_replace_COMMAND" "$sed_replace_FILE" > "$sed_replace_FILE".$$
-    if cmp "$sed_replace_FILE".$$ "$sed_replace_FILE"; then
+    if cmp -s "$sed_replace_FILE".$$ "$sed_replace_FILE"; then
         printf "ERROR: No replacements found in %s with the sed expression: %s\n" \
             "$sed_replace_FILE" "$sed_replace_COMMAND" >&2
         return 1
@@ -235,6 +234,16 @@ update_opam_version() {
     shift
     sed_replace 's#^version: .*#version: "'"$update_opam_version_VER"'"#' "$update_opam_version_FILE"
 }
+update_dkmlbasecompiler_version() {
+    update_dkmlbasecompiler_version_VER=$1
+    shift
+    update_dkmlbasecompiler_version_FILE=$1
+    shift
+    # ex. version: "4.12.1~v1.0.2~prerel9"
+    sed_replace 's#^version: "\([0-9.]*\)~v.*"#version: "\1~v'"$update_dkmlbasecompiler_version_VER"'"#' "$update_dkmlbasecompiler_version_FILE"
+    # ex. "dkml-runtime-common" {= "1.0.1"}
+    sed_replace 's#^\([ ]*\)"dkml-runtime-common" {= ".*"}#\1"dkml-runtime-common" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
+}
 update_dune_version() {
     update_dune_version_VER=$1
     shift
@@ -315,6 +324,10 @@ fi
 
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
+update_dkmlcompiler_src() {
+    update_opam_version "$OPAM_NEW_VERSION" vendor/dkml-compiler/dkml-compiler-env.opam
+    update_dkmlbasecompiler_version "$OPAM_NEW_VERSION" vendor/dkml-compiler/dkml-base-compiler.opam
+}
 update_drc_src() {
     #   Update .opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
@@ -334,9 +347,9 @@ if [ "$PRERELEASE" = ON ]; then
         --config-file .bumpversion.prerelease.cfg \
         --verbose
     get_new_version
-    #   Update drc
+    #   Update dkml-compiler/, drc/ and drd/
+    update_dkmlcompiler_src
     update_drc_src
-    #   Update drd
     update_drd_src
     #   the prior bump2version checked if the Git working directory was clean, so this is safe
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
@@ -405,9 +418,9 @@ else
         echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
         exit 1
     fi
-    #   Update drc
+    #   Update dkml-compiler/, drc/ and drd/
+    update_dkmlcompiler_src
     update_drc_src
-    #   Update drd
     update_drd_src
     #   Commit
     for v in "${SYNCED_PRERELEASE_VENDORS[@]}"; do
