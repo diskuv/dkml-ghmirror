@@ -329,8 +329,9 @@ update_dkmlcompiler_src() {
     update_dkmlbasecompiler_version "$OPAM_NEW_VERSION" vendor/dkml-compiler/dkml-base-compiler.opam
 }
 update_drc_src() {
-    #   Update .opam
+    #   Update META and .opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
+    sed_replace 's#^version *= *".*"#version = "'"$OPAM_NEW_VERSION"'"#' vendor/drc/META
 }
 update_drd_src() {
     #   Update ci-pkgs.txt, create-opam-switch.sh, dune-project and .opam
