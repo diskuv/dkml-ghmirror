@@ -25,7 +25,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_arm64v8a
             targetbits: 64
-            ocamlconfigure: vendor/dkml-compiler/src/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-compiler/env/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 
           - name: "[android] armv7a on [linux] x86"
@@ -33,7 +33,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_arm32v7a
             targetbits: 32
-            ocamlconfigure: vendor/dkml-compiler/src/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-compiler/env/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, with debug_info, not stripped
 
           - name: "[android] x86_64 on [linux] x86_64"
@@ -41,7 +41,7 @@ jobs:
             os: ubuntu-latest
             targetabi: android_x86_64
             targetbits: 64
-            ocamlconfigure: vendor/dkml-compiler/src/ci/github-actions-ci-to-ocaml-configure-env.sh
+            ocamlconfigure: vendor/dkml-compiler/env/github-actions-ci-to-ocaml-configure-env.sh
             expectfile: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 
     name: ${{ matrix.name }}
