@@ -31,8 +31,6 @@ GITURLS=(
 OPAMPATHS=(
     dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam
     dkml-component-ocamlrun/dkml-component-staging-ocamlrun.opam
-    dkml-component-opam/dkml-component-staging-opam32.opam
-    dkml-component-opam/dkml-component-staging-opam64.opam
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam.template
     dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
