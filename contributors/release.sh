@@ -240,7 +240,8 @@ update_dkmlbasecompiler_version() {
     # ex. version: "4.12.1~v1.0.2~prerel9"
     sed_replace 's#^version: "\([0-9.]*\)~v.*"#version: "\1~v'"$update_dkmlbasecompiler_version_VER"'"#' "$update_dkmlbasecompiler_version_FILE"
     # ex. "dkml-runtime-common" {= "1.0.1"}
-    sed_replace 's#^\([ ]*\)"dkml-runtime-common" {= ".*"}#\1"dkml-runtime-common" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
+    # ex. "dkml-runtime-common" {>= "1.0.1"}
+    sed_replace 's#^\([ ]*\)"dkml-runtime-common" {>?= ".*"}#\1"dkml-runtime-common" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
 }
 update_dune_version() {
     update_dune_version_VER=$1
