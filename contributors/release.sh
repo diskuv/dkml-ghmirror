@@ -31,8 +31,6 @@ GITURLS=(
 OPAMPATHS=(
     dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam
     dkml-component-ocamlrun/dkml-component-staging-ocamlrun.opam
-    dkml-installer-ocaml/dkml-installer-network-ocaml.opam.template
-    dkml-installer-ocaml/dkml-installer-network-ocaml.opam
 )
 # Which GITURLs are synced with bump2version
 SYNCED_RELEASE_GITDIRS=(dkml-installer-ocaml)
