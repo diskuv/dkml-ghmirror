@@ -28,15 +28,8 @@ GITURLS=(
     https://github.com/diskuv/dkml-component-ocamlrun.git
     https://github.com/diskuv/dkml-component-ocamlcompiler.git
 )
-OPAMPATHS=(
-    dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam
-    dkml-component-ocamlrun/dkml-component-staging-ocamlrun.opam
-)
 # Which GITURLs are synced with bump2version
 SYNCED_RELEASE_GITDIRS=(dkml-installer-ocaml)
-# ex. OPAMPROJECTS=(dkml-component-opam dkml-component-ocamlrun ...)
-# ignore exit code (for some reason it fails but still sets the array)
-IFS=$'\n' read -r -d '' -a OPAMPROJECTS < <(for i in "${OPAMPATHS[@]}"; do dirname "$i"; done | sort -u) || true
 
 # ------------------
 # BEGIN Command line processing
@@ -469,20 +462,6 @@ if [ "$FORCE" = "ON" ]; then
 fi
 rungit -C "$SRC_MIXED/dkml-runtime-apps" tag -a "$NEW_VERSION" -m "$OPAM_NEW_VERSION"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" push --atomic origin main "$NEW_VERSION"
-#   Update and push components. We want one commit if many components in project
-for i in "${OPAMPROJECTS[@]}"; do
-    COMPONENTDIR="$SRC_MIXED/$i"
-    for COMPONENTPATH in "${OPAMPATHS[@]}"; do
-        case $COMPONENTPATH in
-            $i/*)
-                update_drc_drd "$SRC_MIXED/$COMPONENTPATH"
-                rungit -C "$COMPONENTDIR" add "$SRC_MIXED/$COMPONENTPATH"
-                ;;
-        esac
-    done
-    rungit -C "$COMPONENTDIR" commit -m "dkml-runtime-{common,distribution} $NEW_VERSION"
-    rungit -C "$COMPONENTDIR" push origin main
-done
 #   Calculate new extra-source blocks; wait 5 seconds to make sure
 #   dkml-runtime-apps GitHub tarball is eventually consistent
 sleep 5
