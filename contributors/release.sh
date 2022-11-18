@@ -239,9 +239,9 @@ update_dkmlbasecompiler_version() {
     shift
     # ex. version: "4.12.1~v1.0.2~prerel9"
     sed_replace 's#^version: "\([0-9.]*\)~v.*"#version: "\1~v'"$update_dkmlbasecompiler_version_VER"'"#' "$update_dkmlbasecompiler_version_FILE"
-    # ex. "dkml-runtime-common" {= "1.0.1"}
-    # ex. "dkml-runtime-common" {>= "1.0.1"}
-    sed_replace 's#^\([ ]*\)"dkml-runtime-common" {>?= ".*"}#\1"dkml-runtime-common" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
+    # ex. "dkml-runtime-common-native" {= "1.0.1"}
+    # ex. "dkml-runtime-common-native" {>= "1.0.1"}
+    sed_replace 's#^\([ ]*\)"dkml-runtime-common-native" {>?= ".*"}#\1"dkml-runtime-common-native" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
 }
 update_dune_version() {
     update_dune_version_VER=$1
@@ -334,6 +334,8 @@ update_dkmlcompiler_src() {
 update_drc_src() {
     #   Update META and .opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
+    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-shell.opam
+    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-dune.opam
     sed_replace 's#^version *= *".*"#version = "'"$OPAM_NEW_VERSION"'"#' vendor/drc/META
 }
 update_drd_src() {
