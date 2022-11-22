@@ -232,7 +232,8 @@ update_dkmlbasecompiler_version() {
     sed_replace 's#^version: "\([0-9.]*\)~v.*"#version: "\1~v'"$update_dkmlbasecompiler_version_VER"'"#' "$update_dkmlbasecompiler_version_FILE"
     # ex. "dkml-runtime-common-native" {= "1.0.1"}
     # ex. "dkml-runtime-common-native" {>= "1.0.1"}
-    sed_replace 's#^\([ ]*\)"dkml-runtime-common-native" {>?= ".*"}#\1"dkml-runtime-common-native" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
+    # note: the * operator (0-inf) works in basic (non-extended) sed, unlike the ? operator (0-1).
+    sed_replace 's#^\([ ]*\)"dkml-runtime-common-native" {>*= ".*"}#\1"dkml-runtime-common-native" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
 }
 update_dune_version() {
     update_dune_version_VER=$1
