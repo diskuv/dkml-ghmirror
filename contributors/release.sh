@@ -326,8 +326,7 @@ update_dkmlcompiler_src() {
 update_drc_src() {
     #   Update META and .opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
-    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-shell.opam
-    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-dune.opam
+    update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-native.opam
     sed_replace 's#^version *= *".*"#version = "'"$OPAM_NEW_VERSION"'"#' vendor/drc/META
 }
 update_drd_src() {
