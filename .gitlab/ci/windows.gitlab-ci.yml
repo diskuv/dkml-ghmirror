@@ -105,7 +105,7 @@
   - |
     function msys() {
       $path_unix = C:\msys64\usr\bin\cygpath --path "$env:PATH" ;
-      Invoke-MSYS2Command -MSYS2Dir C:\msys64 -Command ("set -eufx -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
+      Invoke-MSYS2Command -MSYS2Dir C:\msys64 -Command "bash" -ArgumentList @("-eufxc", ("set -o pipefail; $VS_EXPORT_CMDS; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0]))
     }
   - msys_direct 'pacman -Sy --noconfirm --needed
       diffutils
