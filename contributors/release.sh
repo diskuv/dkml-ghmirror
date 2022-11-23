@@ -447,8 +447,6 @@ sleep 5
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
-update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
-update_drc_drd "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam.template"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
