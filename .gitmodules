@@ -14,3 +14,4 @@
 	path = vendor/drd
 	url = https://github.com/diskuv/dkml-runtime-distribution.git
 	branch = main
+	update = rebase
