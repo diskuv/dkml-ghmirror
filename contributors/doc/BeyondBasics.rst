@@ -206,6 +206,11 @@ and run ``opam dkml init`` inside our new (or existing) directory:
 
    Press **y** (yes) whenever you are prompted!
 
+.. note::
+
+   The very first time you run ``opam dkml init`` it can take 15 minutes.
+   After the first time ``opam dkml init`` will run much faster.
+
 .. code-block:: doscon
 
    C:\Users\you>if not exist "%USERPROFILE%\DiskuvOCamlProjects" mkdir %USERPROFILE%\DiskuvOCamlProjects
