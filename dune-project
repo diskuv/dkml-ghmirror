@@ -1,3 +1,3 @@
 (lang dune 2.9)
-(version 1.0.2-prerel23)
+(version 1.0.2-prerel24)
 (cram enable)
