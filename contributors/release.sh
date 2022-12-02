@@ -283,28 +283,26 @@ DKMLRUNTIMESCRIPTS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opa
 DKMLRUNTIMELIB_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 OPAMDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
 WITHDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
-
+DKMLRUNTIMECOMMONNATIVE_OLDOPAM="vendor/drc/dkml-runtime-common-native.opam"
+DKMLRUNTIMECOMMON_OLDOPAM="vendor/drc/dkml-runtime-common.opam"
+DKMLRUNTIMEDISTRIBUTION_OLDOPAM="vendor/drd/dkml-runtime-distribution.opam"
 #   validate
-if [ ! -e "$DKMLAPPS_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$DKMLAPPS_OLDOPAM" >&2
-    exit 1
-fi
-if [ ! -e "$DKMLRUNTIMESCRIPTS_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$DKMLRUNTIMESCRIPTS_OLDOPAM" >&2
-    exit 1
-fi
-if [ ! -e "$DKMLRUNTIMELIB_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$DKMLRUNTIMELIB_OLDOPAM" >&2
-    exit 1
-fi
-if [ ! -e "$OPAMDKML_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$OPAMDKML_OLDOPAM" >&2
-    exit 1
-fi
-if [ ! -e "$WITHDKML_OLDOPAM" ]; then
-    printf "FATAL: Could not find %s\n" "$WITHDKML_OLDOPAM" >&2
-    exit 1
-fi
+OLDOPAM_ARR=(
+    "$DKMLAPPS_OLDOPAM"
+    "$DKMLRUNTIMESCRIPTS_OLDOPAM"
+    "$DKMLRUNTIMELIB_OLDOPAM"
+    "$OPAMDKML_OLDOPAM"
+    "$WITHDKML_OLDOPAM"
+    "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM"
+    "$DKMLRUNTIMECOMMON_OLDOPAM"
+    "$DKMLRUNTIMEDISTRIBUTION_OLDOPAM"
+)
+for oldopam_item in "${OLDOPAM_ARR[@]}"; do
+    if [ ! -e "$oldopam_item" ]; then
+        printf "FATAL: Could not find %s\n" "$oldopam_item" >&2
+        exit 1
+    fi
+done
 
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
@@ -435,6 +433,8 @@ done
 sleep 5
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
+opam_source_block url "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.url"
+opam_source_block url "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.url"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
@@ -455,6 +455,8 @@ sleep 5
 opam_source_block url "$NEW_VERSION" dkml-runtime-apps "$WORK/dkml-runtime-apps.url"
 #   Update diskuv-opam-repository
 new_opam_package_version() {
+    new_opam_package_version_URL=$1
+    shift
     new_opam_package_version_OLD=$1
     shift
     new_opam_package_version_NEW=$1
@@ -465,17 +467,22 @@ new_opam_package_version() {
     cat "$new_opam_package_version_OLD" | \
         remove_opam_url_source | \
         remove_opam_nonrepo_fields | \
-        cat - "$WORK/dkml-runtime-apps.url" > \
+        cat - "$WORK/$new_opam_package_version_URL.url" > \
         "vendor/diskuv-opam-repository/$new_opam_package_version_NEW".tmp
     mv "vendor/diskuv-opam-repository/$new_opam_package_version_NEW".tmp "vendor/diskuv-opam-repository/$new_opam_package_version_NEW"
     rungit -C "vendor/diskuv-opam-repository" add "$new_opam_package_version_NEW"
 }
-new_opam_package_version "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$DKMLRUNTIMESCRIPTS_OLDOPAM" "packages/dkml-runtimescripts/dkml-runtimescripts.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$DKMLRUNTIMELIB_OLDOPAM" "packages/dkml-runtimelib/dkml-runtimelib.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
-new_opam_package_version "$WITHDKML_OLDOPAM" "packages/with-dkml/with-dkml.$OPAM_NEW_VERSION/opam"
-rungit -C "vendor/diskuv-opam-repository" commit -m "dkml-runtime-apps.$OPAM_NEW_VERSION"
+new_opam_package_version dkml-runtime-apps "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-apps "$DKMLRUNTIMESCRIPTS_OLDOPAM" "packages/dkml-runtimescripts/dkml-runtimescripts.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-apps "$DKMLRUNTIMELIB_OLDOPAM" "packages/dkml-runtimelib/dkml-runtimelib.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-apps "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-apps "$WITHDKML_OLDOPAM" "packages/with-dkml/with-dkml.$OPAM_NEW_VERSION/opam"
+
+new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM" "packages/dkml-runtime-common-native/dkml-runtime-common-native.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMON_OLDOPAM" "packages/dkml-runtime-common/dkml-runtime-common.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-distribution "$DKMLRUNTIMEDISTRIBUTION_OLDOPAM" "packages/dkml-runtime-distribution/dkml-runtime-distribution.$OPAM_NEW_VERSION/opam"
+
+rungit -C "vendor/diskuv-opam-repository" commit -m "dkml $OPAM_NEW_VERSION"
 
 # Tag and push after dkml-runtime-apps
 for v in "${SYNCED_PRERELEASE_AFTER_APPS[@]}"; do
