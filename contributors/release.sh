@@ -286,6 +286,8 @@ WITHDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
 DKMLRUNTIMECOMMONNATIVE_OLDOPAM="vendor/drc/dkml-runtime-common-native.opam"
 DKMLRUNTIMECOMMON_OLDOPAM="vendor/drc/dkml-runtime-common.opam"
 DKMLRUNTIMEDISTRIBUTION_OLDOPAM="vendor/drd/dkml-runtime-distribution.opam"
+DKMLBASECOMPILER_OLDOPAM="vendor/dkml-compiler/dkml-base-compiler.opam"
+DKMLCOMPILERENV_OLDOPAM="vendor/dkml-compiler/dkml-base-compiler.opam"
 #   validate
 OLDOPAM_ARR=(
     "$DKMLAPPS_OLDOPAM"
@@ -296,6 +298,8 @@ OLDOPAM_ARR=(
     "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM"
     "$DKMLRUNTIMECOMMON_OLDOPAM"
     "$DKMLRUNTIMEDISTRIBUTION_OLDOPAM"
+    "$DKMLBASECOMPILER_OLDOPAM"
+    "$DKMLCOMPILERENV_OLDOPAM"
 )
 for oldopam_item in "${OLDOPAM_ARR[@]}"; do
     if [ ! -e "$oldopam_item" ]; then
@@ -481,6 +485,13 @@ new_opam_package_version dkml-runtime-apps "$WITHDKML_OLDOPAM" "packages/with-dk
 new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM" "packages/dkml-runtime-common-native/dkml-runtime-common-native.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMON_OLDOPAM" "packages/dkml-runtime-common/dkml-runtime-common.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-distribution "$DKMLRUNTIMEDISTRIBUTION_OLDOPAM" "packages/dkml-runtime-distribution/dkml-runtime-distribution.$OPAM_NEW_VERSION/opam"
+
+#   nit: today we support 4.12.1. There should only be one opam file even when we introduce 4.13.1 and/or multiple other versions!
+#   Instead the logic inside the build:[] commands should parse the opam version (ex. POSIX case/esac statements) and fork the
+#   behavior if it needs to. That way we can always submit several versions at once to the repository, and bug fixes are applied
+#   to historical version, and running 'opam install ./dkml-base-compiler.opam' inside dkml-compiler/ just works.
+new_opam_package_version dkml-compiler "$DKMLBASECOMPILER_OLDOPAM" "packages/dkml-base-compiler/dkml-base-compiler.4.12.1~v$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-compiler "$DKMLCOMPILERENV_OLDOPAM" "packages/dkml-compiler-env/dkml-compiler-env.$OPAM_NEW_VERSION/opam"
 
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml $OPAM_NEW_VERSION"
 
