@@ -439,6 +439,7 @@ opam_source_block extra-source "$NEW_VERSION" dkml-runtime-common       "$WORK/d
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
 opam_source_block url "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.url"
 opam_source_block url "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.url"
+opam_source_block url "$NEW_VERSION" dkml-compiler             "$WORK/dkml-compiler.url"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
