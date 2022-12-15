@@ -92,6 +92,7 @@ win32:oorepo-matrix-2:
     matrix:
       - OCAMLVERSION: 4.12.1
       - OCAMLVERSION: 4.13.1
+      - OCAMLVERSION: 4.14.0
   artifacts: # The artifact is not needed, except for browsing the repository at https://gitlab.com/diskuv/diskuv-ocaml/-/jobs to troubleshoot what package versions are picked
     name: "ocaml-opam-repo-${OCAMLVERSION}"
     paths:
