@@ -575,7 +575,8 @@ PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/ge
 SUPPORT_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-support/$NEW_VERSION"
 OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
-OCAMLVERS=(4.14.0 4.13.1 4.12.1)
+#OCAMLVERS=(4.14.0 4.13.1 4.12.1)
+OCAMLVERS=(4.14.0 4.12.1)
 #GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
 
 # Re-upload files from Generic Packages
