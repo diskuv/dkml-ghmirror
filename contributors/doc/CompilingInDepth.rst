@@ -738,3 +738,10 @@ created by:
    word size (ie. 32 or 64) must match because ``flexlink.exe`` bundles a word
    size + compiler named object file ``flexdll_msvc.obj``, ``flexdll_mingw64.obj``,
    etc. into the final executable.
+3. If `function sections are not supported <https://github.com/ocaml/ocaml/pull/8526>`__ on the host
+   (ex. always disabled on macOS since macOS' Mach-O binary format limits section names), but
+   are supported on the target at OCaml ./configure time, then cross-compiling will fail during
+   stdlib because the target OCaml compile will expect the ``ocamlopt -function-sections``
+   command to work. This host/target combination appears when compiling Android targets that
+   support function section on a macOS host which does not support function sections. The
+   solution is to disable function sections for the target with ``./configure --disable-function-sections``
