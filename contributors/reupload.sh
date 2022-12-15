@@ -67,7 +67,7 @@ OUT_VERSION=0.4.0-prerel26
 # Set GitLab options
 CI_SERVER_URL=https://gitlab.com
 CI_API_V4_URL="$CI_SERVER_URL/api/v4"
-CI_PROJECT_ID='diskuv%2Fdiskuv-ocaml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
+CI_PROJECT_ID='diskuv-ocaml%2Fdistributions%2Fdkml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
