@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euf
 
+RELEASE_OCAML_VERSION=4.14.0
+#OCAMLVERS=(4.14.0 4.13.1 4.12.1)
+OCAMLVERS=("$RELEASE_OCAML_VERSION" 4.12.1)
+
 # Really only needed for MSYS2 if we are calling from a MSYS2/usr/bin/make.exe rather than a full shell
 export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$PATH"
 
@@ -321,8 +325,8 @@ update_drc_src() {
     sed_replace 's#^version *= *".*"#version = "'"$OPAM_NEW_VERSION"'"#' vendor/drc/META
 }
 update_drd_src() {
-    #   Update ci-pkgs.txt, create-opam-switch.sh, dune-project and .opam
-    update_pkgs_version "$OPAM_NEW_VERSION" vendor/drd/src/none/ci-pkgs.txt
+    #   Update ci-4.14.0-pkgs.txt, create-opam-switch.sh, dune-project and .opam
+    update_pkgs_version "$OPAM_NEW_VERSION" "vendor/drd/src/none/ci-$RELEASE_OCAML_VERSION-pkgs.txt"
     update_switch_version "$OPAM_NEW_VERSION" vendor/drd/src/unix/create-opam-switch.sh
     update_dune_version "$OPAM_NEW_VERSION" vendor/drd/dune-project
     update_opam_version "$OPAM_NEW_VERSION" vendor/drd/dkml-runtime-distribution.opam
@@ -491,7 +495,7 @@ new_opam_package_version dkml-runtime-distribution "$DKMLRUNTIMEDISTRIBUTION_OLD
 #   Instead the logic inside the build:[] commands should parse the opam version (ex. POSIX case/esac statements) and fork the
 #   behavior if it needs to. That way we can always submit several versions at once to the repository, and bug fixes are applied
 #   to historical version, and running 'opam install ./dkml-base-compiler.opam' inside dkml-compiler/ just works.
-new_opam_package_version dkml-compiler "$DKMLBASECOMPILER_OLDOPAM" "packages/dkml-base-compiler/dkml-base-compiler.4.14.0~v$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-compiler "$DKMLBASECOMPILER_OLDOPAM" "packages/dkml-base-compiler/dkml-base-compiler.$RELEASE_OCAML_VERSION~v$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-compiler "$DKMLCOMPILERENV_OLDOPAM" "packages/dkml-compiler-env/dkml-compiler-env.$OPAM_NEW_VERSION/opam"
 
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml $OPAM_NEW_VERSION"
@@ -575,8 +579,6 @@ PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/ge
 SUPPORT_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-support/$NEW_VERSION"
 OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
-#OCAMLVERS=(4.14.0 4.13.1 4.12.1)
-OCAMLVERS=(4.14.0 4.12.1)
 #GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
 
 # Re-upload files from Generic Packages
