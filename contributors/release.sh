@@ -620,6 +620,6 @@ release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 # Messaging
 echo
 echo
-echo '1. Go to https://gitlab.com/diskuv/diskuv-ocaml/-/pipelines and make sure that the pipeline succeeds'
+echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds'
 echo '2. Do a merge to https://github.com/diskuv/dkml-workflows.git from https://github.com/diskuv/dkml-workflows-prerelease.git'
 echo

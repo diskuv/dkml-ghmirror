@@ -3,7 +3,7 @@
 Windows Administrator Installation
 ==================================
 
-The *Diskuv OCaml* distribution includes a `setup-machine.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/setup-machine.ps1>`_
+The *Diskuv OCaml* distribution includes a `setup-machine.ps1 <https://github.com/diskuv/dkml-component-ocamlcompiler/blob/main/assets/staging-files/win32/setup-machine.ps>`_
 PowerShell script that will ask for elevated
 Administrator permissions to install the Microsoft C compiler (the "MSBuild" components of Visual Studio).
 As an Administrator you can run the following commands in PowerShell with ``Run as Administrator``, and
@@ -59,8 +59,7 @@ If you have **all** four (4) of the following:
    which is also known as the 19H1 SDK or May 2019 Update SDK.
 
 then the *Diskuv OCaml* distribution will not automatically try to install its own Visual Studio Build Tools.
-That means when your users run `install-world.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/install-world.ps1>`_
-or `setup-machine.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/setup-machine.ps1>`_
+That means when your users run `setup-machine.ps1 <https://github.com/diskuv/dkml-component-ocamlcompiler/blob/main/assets/staging-files/win32/setup-machine.ps1>`_
 they will not need Administrator privileges.
 
 .. note::
@@ -100,7 +99,7 @@ including the correct Windows 10 SDK:
     to install the older Windows 10 SDK 18362.
 
 After you have installed all the required components of Visual Studio, you can run
-`setup-machine.ps1 <https://gitlab.com/diskuv/diskuv-ocaml/blob/main/installtime/windows/setup-machine.ps1>`_
+`setup-machine.ps1 <https://github.com/diskuv/dkml-component-ocamlcompiler/blob/main/assets/staging-files/win32/setup-machine.ps1>`_
 with the switch ``-SkipAutoInstallVsBuildTools`` to verify you have a correct Visual Studio installation:
 
 .. code-block:: ps1con
