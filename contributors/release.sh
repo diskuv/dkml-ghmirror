@@ -487,11 +487,11 @@ new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM" 
 new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMON_OLDOPAM" "packages/dkml-runtime-common/dkml-runtime-common.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-distribution "$DKMLRUNTIMEDISTRIBUTION_OLDOPAM" "packages/dkml-runtime-distribution/dkml-runtime-distribution.$OPAM_NEW_VERSION/opam"
 
-#   nit: today we support 4.12.1. There should only be one opam file even when we introduce 4.13.1 and/or multiple other versions!
+#   nit: today we support 4.14.0. There should only be one opam file even when we introduce 4.13.1 and/or multiple other versions!
 #   Instead the logic inside the build:[] commands should parse the opam version (ex. POSIX case/esac statements) and fork the
 #   behavior if it needs to. That way we can always submit several versions at once to the repository, and bug fixes are applied
 #   to historical version, and running 'opam install ./dkml-base-compiler.opam' inside dkml-compiler/ just works.
-new_opam_package_version dkml-compiler "$DKMLBASECOMPILER_OLDOPAM" "packages/dkml-base-compiler/dkml-base-compiler.4.12.1~v$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-compiler "$DKMLBASECOMPILER_OLDOPAM" "packages/dkml-base-compiler/dkml-base-compiler.4.14.0~v$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-compiler "$DKMLCOMPILERENV_OLDOPAM" "packages/dkml-compiler-env/dkml-compiler-env.$OPAM_NEW_VERSION/opam"
 
 rungit -C "vendor/diskuv-opam-repository" commit -m "dkml $OPAM_NEW_VERSION"
@@ -575,7 +575,7 @@ PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/ge
 SUPPORT_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-support/$NEW_VERSION"
 OOREPO_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$NEW_VERSION"
 OOREPO_OLDURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-reproducible/$CURRENT_VERSION"
-OCAMLVERS=(4.13.1 4.12.1)
+OCAMLVERS=(4.14.0 4.13.1 4.12.1)
 #GITLAB_TARGET_VERSION=$(printf "%s" "$TARGET_VERSION" | tr +- ..) # replace -prerelM and +commitN with .prerelM and .commitN
 
 # Re-upload files from Generic Packages
