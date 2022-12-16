@@ -39,7 +39,7 @@ win32:oorepo-fetch-1:
 
     # Download OCaml bytecode runner (can we produce smaller bytecode runner tarballs!)
     - Invoke-WebRequest `
-        -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.12.1-v1.0.2/dkml-component-staging-ocamlrun.tar.gz" `
+        -Uri "https://github.com/diskuv/dkml-component-ocamlrun/releases/download/4.14.0-v1.1.0-prerel1/dkml-component-staging-ocamlrun.tar.gz" `
         -OutFile "ocamlrun.tar.gz"
     - if (!(Test-Path "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun")) { New-Item -Path "$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun" -ItemType Directory }
     - cygwin ("tar xCfz '$env:OCAML_OPAM_REPO_BYTECODE_FOLDER_WINDOWS\ocamlrun' ocamlrun.tar.gz --strip-components 3 ./staging-files/$env:HOSTABI")
