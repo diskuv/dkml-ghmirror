@@ -597,6 +597,7 @@ if [ "$QUICK" = ON ]; then
 fi
 
 # Build ocaml_opam_repo_trim.bc (after the vendor/drd/ is cleaned, and just before upload)
+opam exec -- dune clean --root vendor/drd/src/ml
 opam exec -- dune build --root vendor/drd/src/ml ocaml_opam_repo_trim.bc
 DUNE_BUILDDIR=vendor/drd/src/ml/_build/default
 
