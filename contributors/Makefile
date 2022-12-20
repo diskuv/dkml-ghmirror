@@ -33,10 +33,10 @@ create-switch: _opam/.opam-switch/switch-config
 .PHONY: create-switch
 
 _opam/.opam-switch/switch-config:
-	opam switch create . 4.12.1 \
+	opam switch create . --formula '"dkml-base-compiler" { >= "4.14.0~" & < "4.14.1~" }' \
 	  --yes \
 	  --deps-only \
-	  --repo default=https://opam.ocaml.org
+	  --repos diskuv=git+https://github.com/diskuv/diskuv-opam-repository.git#main,default=https://opam.ocaml.org
 
 _opam/bin/dune: _opam/.opam-switch/switch-config
 	OPAMSWITCH="$$PWD" && if [ -x /usr/bin/cygpath ]; then OPAMSWITCH=$$(/usr/bin/cygpath -aw "$$OPAMSWITCH"); fi && \
