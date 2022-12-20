@@ -68,7 +68,7 @@ PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/ge
 SUPPORT_NEWURL="$PACKAGE_REGISTRY_GENERIC_URL/ocaml_opam_repo-support/$NEW_VERSION"
 
 # Build ocaml_opam_repo_trim.bc (after the vendor/drd/ is cleaned, and just before upload)
-opam exec -- dune clean --root vendor/drd/src/ml
+rm -rf vendor/drd/src/ml/_build
 opam exec -- dune build --root vendor/drd/src/ml ocaml_opam_repo_trim.bc
 DUNE_BUILDDIR=vendor/drd/src/ml/_build/default
 
