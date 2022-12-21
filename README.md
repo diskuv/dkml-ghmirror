@@ -24,7 +24,7 @@ the Diskuv OCaml distribution. Windows is ready today; macOS will be available s
 For news about Diskuv OCaml, 
 [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv)](https://twitter.com/diskuv) on Twitter.
 
-**Please visit our documentation at https://diskuv.gitlab.io/diskuv-ocaml/**
+**Please visit our documentation at https://diskuv-ocaml.gitlab.io/distributions/dkml/**
 
 ## License
 
