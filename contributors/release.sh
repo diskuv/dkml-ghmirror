@@ -292,7 +292,7 @@ DKMLRUNTIMECOMMONNATIVE_OLDOPAM="vendor/drc/dkml-runtime-common-native.opam"
 DKMLRUNTIMECOMMON_OLDOPAM="vendor/drc/dkml-runtime-common.opam"
 DKMLRUNTIMEDISTRIBUTION_OLDOPAM="vendor/drd/dkml-runtime-distribution.opam"
 DKMLBASECOMPILER_OLDOPAM="vendor/dkml-compiler/dkml-base-compiler.opam"
-DKMLCOMPILERENV_OLDOPAM="vendor/dkml-compiler/dkml-base-compiler.opam"
+DKMLCOMPILERENV_OLDOPAM="vendor/dkml-compiler/dkml-compiler-env.opam"
 #   validate
 OLDOPAM_ARR=(
     "$DKMLAPPS_OLDOPAM"
