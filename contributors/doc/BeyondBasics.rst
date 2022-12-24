@@ -200,7 +200,7 @@ and the ``playground``. We will avoid the ``dkml`` reserved switch, and for now 
 ignore the ``playground`` switch.
 
 Let's create our own ``my-first-switch`` switch. All we need to do is create a directory
-and run ``opam dkml init`` inside our new (or existing) directory:
+and run ``dkml init`` inside our new (or existing) directory:
 
 .. note::
 
@@ -208,8 +208,8 @@ and run ``opam dkml init`` inside our new (or existing) directory:
 
 .. note::
 
-   The very first time you run ``opam dkml init`` it can take 15 minutes.
-   After the first time ``opam dkml init`` will run much faster.
+   The very first time you run ``dkml init`` it can take 15 minutes.
+   After the first time ``dkml init`` will run much faster.
 
 .. code-block:: doscon
 
@@ -218,7 +218,7 @@ and run ``opam dkml init`` inside our new (or existing) directory:
 
    C:\Users\you\DiskuvOCamlProjects>mkdir my-first-switch
    C:\Users\you\DiskuvOCamlProjects>cd my-first-switch
-   C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam dkml init
+   C:\Users\you\DiskuvOCamlProjects\my-first-switch>dkml init
 
    C:\Users\you\DiskuvOCamlProjects\my-first-switch>opam switch
    #  switch                                                                           compiler
@@ -232,7 +232,7 @@ and run ``opam dkml init`` inside our new (or existing) directory:
    [WARNING] The environment is not in sync with the current switch.
             You should run: for /f "tokens=*" %i in ('opam env') do @%i
 
-Notice how the switch was created with ``opam dkml init``, and also notice
+Notice how the switch was created with ``dkml init``, and also notice
 how ``opam switch`` tells you in its ``[NOTE]`` that it knows which switch
 should be used based **on the current directory**.
 

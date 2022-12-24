@@ -195,7 +195,7 @@ update_pkgs_version() {
     update_pkgs_version_FILE=$1
     shift
     sed_replace 's#^dkml-apps\..*#dkml-apps.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
-    sed_replace 's#^opam-dkml\..*#opam-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
+    sed_replace 's#^dkml-exe\..*#dkml-exe.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
     sed_replace 's#^with-dkml\..*#with-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
 }
 update_switch_version() {
@@ -206,7 +206,7 @@ update_switch_version() {
     #   We do not use \b word boundary regex since \b does not
     #   include SPACE (ASCII 32) + letter on macOS while GNU sed does.
     sed_replace 's#^\([ ]*\)dkml-apps,.*#\1dkml-apps,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
-    sed_replace 's#^\([ ]*\)opam-dkml,.*#\1opam-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
+    sed_replace 's#^\([ ]*\)dkml-exe,.*#\1dkml-exe,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
     sed_replace 's#^\([ ]*\)with-dkml,.*#\1with-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
 update_opam_version() {
@@ -285,7 +285,7 @@ CURRENT_VERSION=$NEW_VERSION
 DKMLAPPS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 DKMLRUNTIMESCRIPTS_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
 DKMLRUNTIMELIB_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
-OPAMDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
+DKMLEXE_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/dkml-exe.opam"
 WITHDKML_OLDOPAM="$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
 DKMLRUNTIMECOMMONNATIVE_OLDOPAM="vendor/drc/dkml-runtime-common-native.opam"
 DKMLRUNTIMECOMMON_OLDOPAM="vendor/drc/dkml-runtime-common.opam"
@@ -297,7 +297,7 @@ OLDOPAM_ARR=(
     "$DKMLAPPS_OLDOPAM"
     "$DKMLRUNTIMESCRIPTS_OLDOPAM"
     "$DKMLRUNTIMELIB_OLDOPAM"
-    "$OPAMDKML_OLDOPAM"
+    "$DKMLEXE_OLDOPAM"
     "$WITHDKML_OLDOPAM"
     "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM"
     "$DKMLRUNTIMECOMMON_OLDOPAM"
@@ -448,7 +448,7 @@ opam_source_block url "$NEW_VERSION" dkml-compiler             "$WORK/dkml-compi
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimescripts.opam"
-update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/opam-dkml.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-exe.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/with-dkml.opam"
 update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dune-project"
 rungit -C "$SRC_MIXED/dkml-runtime-apps" commit -a -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
@@ -484,7 +484,7 @@ new_opam_package_version() {
 new_opam_package_version dkml-runtime-apps "$DKMLAPPS_OLDOPAM" "packages/dkml-apps/dkml-apps.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-apps "$DKMLRUNTIMESCRIPTS_OLDOPAM" "packages/dkml-runtimescripts/dkml-runtimescripts.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-apps "$DKMLRUNTIMELIB_OLDOPAM" "packages/dkml-runtimelib/dkml-runtimelib.$OPAM_NEW_VERSION/opam"
-new_opam_package_version dkml-runtime-apps "$OPAMDKML_OLDOPAM" "packages/opam-dkml/opam-dkml.$OPAM_NEW_VERSION/opam"
+new_opam_package_version dkml-runtime-apps "$DKMLEXE_OLDOPAM" "packages/dkml-exe/dkml-exe.$OPAM_NEW_VERSION/opam"
 new_opam_package_version dkml-runtime-apps "$WITHDKML_OLDOPAM" "packages/with-dkml/with-dkml.$OPAM_NEW_VERSION/opam"
 
 new_opam_package_version dkml-runtime-common "$DKMLRUNTIMECOMMONNATIVE_OLDOPAM" "packages/dkml-runtime-common-native/dkml-runtime-common-native.$OPAM_NEW_VERSION/opam"
