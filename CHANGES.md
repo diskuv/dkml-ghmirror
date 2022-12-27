@@ -1,3 +1,151 @@
+## 1.1.0 (2022-12-27)
+
+Quick Links:
+|             |                                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Installer   | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe     |
+| Uninstaller | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0/uninstall-diskuv-ocaml-windows_x86_64-1.1.0.exe |
+
+**Upgrading?**
+* Uninstall the old version first! On Windows you can go to the
+  "Add or remove programs" utility in your Control Panel and remove
+  the "Diskuv OCaml" program. You can also use the standalone uninstaller
+  that will automatically remove any old versions.
+
+New features:
+* The system OCaml is 4.14.0 (was 4.12.1)
+* The system includes ocamlnat, the experimental native toplevel. It should be
+  run using `with-dkml ocamlnat` so native code is compiled with Visual Studio.
+* Add odoc 2.1.0 to user PATH, to align with the [OCaml Platform](https://ocaml.org/docs/platform).
+* Relocatable native binaries are installed rather than compiled into place.
+  Installations should be quicker, which is a pre-requisite for `winget install`
+  on Windows.
+* Add opam global variable `sys-pkg-manager-cmd-msys2` for future compatibility
+  with opam 2.2 depext support of MSYS2
+* The `opam dkml init` command is now `dkml init`. The `dkml` executable is
+  precompiled and shaves ~20 minutes of installation time.
+
+New security:
+* (Advanced; experimental) If you are behind a corporate firewall that uses
+  man-in-the-middle (MITM) TLS proxying, you can install your corporate CA chain
+  so DKML, in particular MSYS2, does not reject connections. Only persons with
+  write access to `$env:ProgramData\DiskuvOCaml\conf\unixutils.sexp` will be
+  able to define the allowed MITM TLS chain; you may need access
+  from your corporate Administrator. An example `unixutils.sexp` is:
+
+  ```scheme
+  (
+      (trust_anchors ("C:\\conf\\my.pem" "D:\\conf\\my.cer"))
+  )
+  ```
+
+  You specify one or more `.pem` or `.cer` CA files, making sure to use two
+  backslashes to escape your paths. Your Administrator may have already placed
+  the CA files on your machine; otherwise use the guide at
+  https://www.msys2.org/docs/faq/#how-can-i-make-msys2pacman-trust-my-companys-custom-tls-ca-certificate
+  to copy them from your web browsers.
+
+Not so good problems:
+* Many opam packages do not work with the MSVC compiler or with Windows.
+  It will take a long time (months, years) to substantially improve Windows
+  coverage. When you do find a package that fails to compile on Windows, please
+  file an issue with whoever owns the package expressing interest in the
+  package working on Windows. Please be patient: some package owners may want
+  to see several people express interest before deciding the extra work is
+  justified.
+
+Breaking changes:
+* Cross-compiling on macOS with dkml-base-compiler now requires you to be explicit
+  which CPU architecture you are targeting. Before using `dune -x darwin_arm64`
+  would always cross-compile both Intel and Silicon. Now Silicon developers
+  need to use `dune -x darwin_x86_64` and Intel developers need to use
+  `dune -x darwin_arm64`. The change was necessary to not rely on the presence
+  of optional Rosetta2 translation. *Since this cross-compiling feature is little used, it does not warrant a breaking version bump*.
+
+Documentation changes:
+* The documentation site has moved to
+  https://diskuv-ocaml.gitlab.io/distributions/dkml/. Please update your
+  bookmarks!
+
+Bug fixes:
+* The dune.exe shim uses a cache containing the expensive-to-compute MSVC environment
+  settings. A race condition populating the cache has been fixed.
+* Repetitive opam repository updates, a source of slowness, were eliminated
+  during installation.
+* ocaml-crunch upgraded (pinned) from 3.2.0 to 3.3.1 to fix Windows/Unix path
+  inconsistency and handling of CRLF. That and other changed package versions
+  are:
+
+  | Package             | Old Version | New Version  |
+  | ------------------- | ----------- | ------------ |
+  | dune                | 2.9.3       | 3.6.2        |
+  | ocaml-crunch        | 3.2.0       | 3.3.1        |
+  | cmdliner            | 1.0.4       | 1.1.1        |
+  | uuidm               | 0.9.7       | 0.9.8        |
+  | ptime               | 0.8.6       | 1.1.0        |
+  | sexplib             | v0.14.0     | v0.15.1      |
+  | lsp                 | 1.9.0       | 1.10.3       |
+  | ocaml-lsp-server    | 1.9.0       | 1.10.3       |
+  | jsonrpc             | 1.9.0       | 1.10.3       |
+  | odoc                | 2.1.0       | 2.2.0        |
+  | odoc-parser         | 0.9.0       | 1.0.1        |
+  | stdio               | v0.14.0     | v0.15.0      |
+  | base                | v0.14.2     | v0.15.1      |
+  | mdx                 | 2.0.0       | 2.1.0        |
+  | ocamlformat         | 0.19.0      | 0.23.0       |
+  | ocamlformat-rpc     | 0.19.0      | *not pinned* |
+  | ocamlformat-rpc-lib | 0.19.0      | 0.23.0       |
+
+* The Visual Studio installation cleans up aborted previous installations.
+* The Visual Studio installation, on failure, writes error logs to a location
+  that isn't immediately erased.
+
+Component changes:
+* opam.exe is compiled directly from the opam master branch; no patches! There is
+  still a shim but that shim just sets up environment variables and delegates
+  to the authoritative (unpatched) opam.
+* MSYS2 setup program is bundled inside the installer to lessen download TLS problems
+  when a proxy is present (common with corporate/school Windows PCs).
+  Resolves https://github.com/diskuv/dkml-installer-ocaml/issues/19
+
+Reproducibility features:
+* Packages promoted to central Opam repository:
+  * dkml-runtime-common
+  * dkml-runtime-distribution
+  * dkml-component-opam
+* Introduce simple spec for which package+versions are installed and/or compiled
+  as part of the DKML distribution (in dkml-runtime-distribution). Eventually it
+  will become authoritative.
+* Introduce dkml-component-desktop which does CI for changes to that spec (aka.
+  testing new package versions for Windows using MSVC), and builds all relocatable
+  binaries like dune and ocp-indent used in the Windows installer. It is not
+  yet in the central Opam repository.
+* During installation any `CAMLLIB` environment variable (in addition to
+  `OCAMLLIB` which was already checked) is renamed to deconflict with a new
+  OCaml installation. Among other things, this provides an upgrade from
+  CamlLight to OCaml. https://github.com/diskuv/dkml-installer-ocaml/issues/13
+
+Usability tweaks:
+* When building DKML packages like dkml-base-compiler, limit dump of Opam
+  logs used for troubleshooting to 4 hours
+
+Feature flags:
+* Enable `--enable-imprecise-c99-float-ops` during OCaml compilation by setting
+
+  ```scheme
+  (
+    (feature_flag_imprecise_c99_float_ops)
+  )
+  ```
+
+  in `$env:ProgramData\DiskuvOCaml\conf\ocamlcompiler.sexp`
+
+Internal changes:
+* with-dkml.exe is now configured as a opam wrapper relative to the
+  installation directory ($DiskuvOCamlHome) rather than the tools opam switch.
+  That change decouples your new switches (aka. opam dkml init) from another
+  opam switch.
+
 ## 1.0.1 (2022-09-04)
 
 * The installer now checks whether files are in use when overwriting a
