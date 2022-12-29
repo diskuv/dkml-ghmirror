@@ -9,6 +9,9 @@ strengths are its:
 * ease-of-use through simplified installers and simple productivity commands; high school students should be able to use it
 * security through reproducibility, versioning and from-source builds
 
+Do not use this distribution if you have a space in your username
+(ex. `C:\Users\Jane Smith`).
+
 These alternatives may be better depending on your use case:
 * Developing in a Javascript first environment? Have a look at [Esy and Reason](https://esy.sh/)
 * Developing operating system kernels? Have a look at [Mirage OS](https://mirage.io/)
@@ -20,6 +23,12 @@ These alternatives may be better depending on your use case:
 
 The DKML Installer for OCaml generates and distributes installers for 
 the Diskuv OCaml distribution. Windows is ready today; macOS will be available soon.
+
+Commercial tools and support are available from Diskuv for mixed OCaml/C
+development; however, this pure OCaml distribution only has limited support
+for mixed OCaml/C. For example, the `ctypes` opam package has been patched
+to work with Visual Studio but is out-dated. Contact
+support AT diskuv.com if you need OCaml/C development.
 
 For news about Diskuv OCaml, 
 [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv)](https://twitter.com/diskuv) on Twitter.

@@ -176,10 +176,12 @@ Installation Instructions
 
 Briefly review the following:
 
+* Do not use the installer if you have a space in your username
+  (ex. ``C:\Users\Jane Smith``).
 * You need to **stay at your computer** and press "Yes" for any Windows security popups;
   after the DKML installer finishes with two programs (``Visual Studio Installer``
-  and ``Git for Windows``) you can leave your computer for the remaining two (2) hours.
-
+  and ``Git for Windows``) you can leave your computer for the remaining one and
+  a half (1.5) hours.
 * First time installations may get a notification printed in red. If you see it, reboot your
   computer and then restart your installation so that Visual Studio Installer
   can complete. The notification looks like:
