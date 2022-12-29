@@ -204,6 +204,12 @@ Briefly review the following:
 
 Then run the `latest Windows 64-bit installer <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe>`__.
 
+Any existing opam repositories on your machine will be silently upgraded and may
+take tens of minutes to convert. Be patient with the step at:
+
+.. image:: doc/silent-opam-repository-upgrade.png
+    :width: 600
+
 Install is done! What next?
 """""""""""""""""""""""""""
 
