@@ -3,17 +3,38 @@
 Quick Links:
 |             |                                                                                                                         |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Installer   | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe     |
-| Uninstaller | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0/uninstall-diskuv-ocaml-windows_x86_64-1.1.0.exe |
+| Installer   | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe     |
+| Uninstaller | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/uninstall-diskuv-ocaml-windows_x86_64-1.1.0.exe |
 
-**Upgrading?**
-* Uninstall the old version first! On Windows you can go to the
-  "Add or remove programs" utility in your Control Panel and remove
-  the "Diskuv OCaml" program. You can also use the standalone uninstaller
-  that will automatically remove any old versions.
+**Upgrading from 1.0.1?**
+1. Uninstall the old version first with the uninstaller above!
+2. After uninstalling the old version, run the following in PowerShell:
+   ```powershell
+   if (Test-Path "$env:LOCALAPPDATA\opam\playground") { Remove-Item -Path "$env:LOCALAPPDATA\opam\playground" -Force -Recurse }
+   ```
+3. Exit Visual Studio Code and any `utop` or `ocaml` sessions. Then
+   use the installer above.
+4. After installing the new version, run the following in PowerShell **in each directory that has a local opam switch** to upgrade to
+   OCaml 4.14.0 and all the other package versions that come with DKML 1.1.0:
+   ```powershell
+   # Sometimes `dkml init` can fail, but you are OK as long as you see:
+   # ...  upgrade   ocaml-system                       4.12.1 to 4.14.0
+   dkml init
 
-Do not use this distribution if you have a space in your username
-(ex. `C:\Users\Jane Smith`).
+   opam upgrade
+   opam install . --deps-only --with-test
+   ```
+
+Cautions:
+* Do not use this distribution if you have a space in your username
+  (ex. `C:\Users\Jane Smith`). Sorry, but the broader OCaml ecosystem does not
+  yet consistently support spaces in directories.
+* Your Windows anti-virus may play havoc with the installer. If possible,
+  temporarily disable your anti-virus (the "realtime protection",
+  "exploit protection" and/or "malware protection" options). Some anti-virus
+  products include a button to temporarily disable AV protection for two hours;
+  do that. *If you forget and the installer fails, you will need to disable
+  AV protection, run the uninstaller, and then rerun the installer!*
 
 New features:
 * The system OCaml is 4.14.0 (was 4.12.1)
@@ -56,11 +77,6 @@ Not so good problems:
   package working on Windows. Please be patient: some package owners may want
   to see several people express interest before deciding the extra work is
   justified.
-* opam 2.2 can silently upgrade any existing pre-2.2 opam repositories you have
-  on your machine. Depending on the size and number of opam repositories, this
-  can take tens of minutes. If you experience a stall during the following
-  steps you will just have to be patient:
-  ![Image of opam repository upgrade stalling in silence](https://gitlab.com/diskuv-ocaml/distributions/dkml/-/raw/20ca20a41db7db9deb692318f2171838d49cc68d/contributors/doc/silent-opam-repository-upgrade.png?inline=false)
 
 Breaking changes:
 * Cross-compiling on macOS with dkml-base-compiler now requires you to be explicit
