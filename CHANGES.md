@@ -12,6 +12,9 @@ Quick Links:
   the "Diskuv OCaml" program. You can also use the standalone uninstaller
   that will automatically remove any old versions.
 
+Do not use this distribution if you have a space in your username
+(ex. `C:\Users\Jane Smith`).
+
 New features:
 * The system OCaml is 4.14.0 (was 4.12.1)
 * The system includes ocamlnat, the experimental native toplevel. It should be
@@ -53,6 +56,11 @@ Not so good problems:
   package working on Windows. Please be patient: some package owners may want
   to see several people express interest before deciding the extra work is
   justified.
+* opam 2.2 can silently upgrade any existing pre-2.2 opam repositories you have
+  on your machine. Depending on the size and number of opam repositories, this
+  can take tens of minutes. If you experience a stall during the following
+  steps you will just have to be patient:
+  ![Image of opam repository upgrade stalling in silence](https://gitlab.com/diskuv-ocaml/distributions/dkml/-/raw/20ca20a41db7db9deb692318f2171838d49cc68d/contributors/doc/silent-opam-repository-upgrade.png?inline=false)
 
 Breaking changes:
 * Cross-compiling on macOS with dkml-base-compiler now requires you to be explicit
@@ -138,7 +146,16 @@ Feature flags:
   )
   ```
 
-  in `$env:ProgramData\DiskuvOCaml\conf\ocamlcompiler.sexp`
+  in `$env:ProgramData\DiskuvOCaml\conf\ocamlcompiler.sexp`. This is sometimes
+  needed inside virtual machines like Vagrant
+
+Licensing:
+* Diskuv OCaml is fully open-source, and is targeted for pure OCaml development.
+  Commercial tools and support are available from Diskuv for mixed OCaml/C
+  development; however, Diskuv OCaml only has limited support
+  for mixed OCaml/C. For example, the `ctypes` opam package has been patched
+  to work with Visual Studio but is out-dated. Contact
+  support AT diskuv.com if you need OCaml/C development.
 
 Internal changes:
 * with-dkml.exe is now configured as a opam wrapper relative to the
