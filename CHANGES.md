@@ -70,6 +70,10 @@ New security:
   to copy them from your web browsers.
 
 Not so good problems:
+* [Known bug #21](https://github.com/diskuv/dkml-installer-ocaml/issues/21) To
+  install the OCaml language server in a new switch you will
+  need to first do `opam pin remove fiber omd stdune dyn ordering --no-action`
+  before doing `opam install ocaml-lsp-server`.
 * Many opam packages do not work with the MSVC compiler or with Windows.
   It will take a long time (months, years) to substantially improve Windows
   coverage. When you do find a package that fails to compile on Windows, please

@@ -380,3 +380,14 @@ Then **uncheck** ``OCaml: Use OCaml Env``.
    This setting is a legacy option that may disappear in future versions
    of the OCaml Plugin. For now, if you don't uncheck the option,
    you will *not* see your Opam switches in Visual Studio Code.
+
+Now when you edit any ``.ml`` file, you will see an OCaml option on the bottom toolbar
+of Visual Studio. You can click on it (it typically is labelled as ``Global OCaml``)
+and select your opam switch. The ``dkml`` switch is usually what you want. However if you
+created your own switch for a project you should use that instead; just make sure
+you have first done:
+
+.. code-block:: ocaml
+   
+   opam pin remove fiber omd stdune dyn ordering --no-action
+   opam install ocaml-lsp-server
