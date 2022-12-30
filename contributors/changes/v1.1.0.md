@@ -125,9 +125,10 @@ Bug fixes:
   that isn't immediately erased.
 
 Component changes:
-* opam.exe is compiled directly from the opam master branch; no patches! There is
-  still a shim but that shim just sets up environment variables and delegates
-  to the authoritative (unpatched) opam.
+* ~~opam.exe is compiled directly from the opam master branch; no patches! There
+  is still a shim but that shim just sets up environment variables and delegates
+  to the authoritative (unpatched) opam.~~ There is one patch for opam on top of
+  the opam master branch (opam 2.2) dated 2022-12-21.  
 * MSYS2 setup program is bundled inside the installer to lessen download TLS problems
   when a proxy is present (common with corporate/school Windows PCs).
   Resolves https://github.com/diskuv/dkml-installer-ocaml/issues/19
