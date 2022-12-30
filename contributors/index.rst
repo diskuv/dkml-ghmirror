@@ -167,7 +167,7 @@ Requirements
 - Administrator access on your computer to install the Microsoft C compilers. If you use a shared or restricted PC,
   please ask your PC administrator if they can follow the :ref:`Advanced - Windows Administrator` instructions; after that you
   and others on the PC can install without Administrator access.
-- You don't need to watch the installation, but you do need to keep your computer powered on for at least 2 (two)
+- You don't need to watch the installation, but you do need to keep your computer powered on for at least one and a half (1.5)
   hours. The *Diskuv OCaml* installer will be downloading and doing intensive compilation during these hours,
   and you are free to do other things on your computer while it downloads and compiles.
 
