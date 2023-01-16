@@ -31,6 +31,7 @@ GITURLS=(
     https://github.com/diskuv/dkml-component-opam.git
     https://github.com/diskuv/dkml-component-ocamlrun.git
     https://github.com/diskuv/dkml-component-ocamlcompiler.git
+    https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop.git
 )
 # Which GITURLs are synced with bump2version
 SYNCED_RELEASE_GITDIRS=(dkml-installer-ocaml)
@@ -448,6 +449,28 @@ opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/d
 opam_source_block url "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.url"
 opam_source_block url "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.url"
 opam_source_block url "$NEW_VERSION" dkml-compiler             "$WORK/dkml-compiler.url"
+#   Update and push dkml-component-desktop which embeds dkml-runtime-common and
+#   dkml-runtime-distribution in its "global-install" of the dkml-exe package.
+#   It is a "prepare" (-prep) because it needs its CI to finish building the binary
+#   assets, and then it has its own update procedure described at end of release.sh.
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-build-desktop.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-common-desktop.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-desktop-maintain.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-offline-desktop-ci.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-offline-desktop-full.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-staging-desktop-ci.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-staging-desktop-compile.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-staging-desktop-full.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-staging-dkmlconfdir.opam"
+update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dkml-component-staging-withdkml.opam"
+update_dune_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-desktop/dune-project"
+rungit -C "$SRC_MIXED/dkml-component-desktop" commit -a -m "Prepare version: $CURRENT_VERSION → $NEW_VERSION"
+if [ "$FORCE" = "ON" ]; then
+    rungit -C "$SRC_MIXED/dkml-component-desktop" tag -d "$NEW_VERSION-prep" || true
+    rungit -C "$SRC_MIXED/dkml-component-desktop" push --delete origin "$NEW_VERSION-prep" || true
+fi
+rungit -C "$SRC_MIXED/dkml-component-desktop" tag -a "$NEW_VERSION-prep" -m "Build of $OPAM_NEW_VERSION binary assets"
+rungit -C "$SRC_MIXED/dkml-component-desktop" push --atomic origin main "$NEW_VERSION-prep"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
@@ -633,22 +656,27 @@ release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 # Messaging
 echo
 echo
+echo 'Note: You can do the steps 1, 2 and 3 in parallel below!'
+echo
 echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds'
+echo '2. https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop/-/pipelines is running to prepare binary'
+echo "   assets for $NEW_VERSION."
 if [ "$PRERELEASE" = ON ]; then
-  echo '2. diskuv-component-desktop must be rebuilt if any of the desktop binaries change. Specifically,'
+  echo '   You must complete the release for new binary assets if any of the desktop binaries change. Specifically,'
   echo '   create-opam-switch.sh, _common_tool.sh, _within_dev.sh, platform-opam-exec.sh, '
   echo '   standard-compiler-env-to-ocaml-configure-env.sh, crossplatform-functions.sh, and '
   echo '   standard-compiler-env-to-ocaml-configure-launcher.sh are embedded into dkml.exe '
-  echo '   which is a "global-install" built for dkml-component-staging-desktop-{ci,full}.opam. '
+  echo '   which is a "global-install" of the dkml-exe package built in'
+  echo '   dkml-component-staging-desktop-{ci,full}.opam. '
   echo '   ALSO if any versions of dune, ocamlformat, ocamllsp, ocp-indent, odoc are any '
   echo '   other "global-install" changes, then diskuv-component-desktop must be rebuilt. '
-  echo '   Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow'
-  echo '   its README.md for "Upgrading binary assets"'
+  echo '   So WAIT for its CI and then follow its README.md for "Upgrading binary assets"; the -prep tag has'
+  echo '   already been done'
 else
-  echo '2. Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow its README.md for '
-  echo '   "Upgrading binary assets". That will make "dkml.exe version" report the expected major version, but'
+  echo '   WAIT for its CI and then follow its README.md for "Upgrading binary assets" (the -prep tag is already'
+  echo '   done). That will make "dkml.exe version" report the expected major version, but'
   echo '   more important is that "dkml.exe init" will have correct embedded diskuv-runtime-common and'
-  echo '   diskuv-runtime-distribution since dkml.exe is a "global-install"'
+  echo '   diskuv-runtime-distribution since dkml.exe is a "global-install" of the dkml-exe package'
 fi
 echo '3. Follow the "Upgrading after a DKML (pre)release" instructions of dkml-installer-ocaml. Those CI updates will make'
 echo '   the CI pin to the latest diskuv-opam-repository, which has available the latest dkml-runtime-common and'
