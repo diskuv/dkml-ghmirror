@@ -634,5 +634,23 @@ release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 echo
 echo
 echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds'
-echo '2. Do a merge to https://github.com/diskuv/dkml-workflows.git from https://github.com/diskuv/dkml-workflows-prerelease.git'
+if [ "$PRERELEASE" = ON ]; then
+  echo '2. (If desktop binaries change) Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow'
+  echo '   its README.md'
+else
+  echo '2. Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow its README.md. That will make'
+  echo '   "dkml.exe version" report the expected major version.'
+fi
+echo '3. Follow the "Upgrading after a DKML (pre)release" instructions of dkml-installer-ocaml. Those CI updates will make'
+echo '   the CI pin to the latest diskuv-opam-repository, which has available the latest dkml-runtime-common and'
+echo '   dkml-runtime-distribution. dkml-runtime-common in particular has a template.dkmlroot file that must be the latest'
+echo '   prerelease or release since dkml-component-ocamlcompiler uses template.dkmlroot as its .dkmlroot for creating'
+echo '   the staging directory tree. That staging tree is used at install time as -DkmlPath to setup-userprofile.ps1, which'
+echo '   sets the dkml_root_version used (which assets to download, DiskuvOCamlVersion for creating a switch and selecting'
+echo '   its repository, etc.) in all the installation commands.'
+echo "4. Tag dkml-installer-ocaml with $NEW_VERSION. Wait for its CI"
+if [ "$PRERELEASE" = OFF ]; then
+  echo "5. Sign with contributors/ in dkml-installer-ocaml"
+  echo '6. Do a merge to https://github.com/diskuv/dkml-workflows.git from https://github.com/diskuv/dkml-workflows-prerelease.git'
+fi
 echo
