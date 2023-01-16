@@ -682,13 +682,13 @@ else
   echo '   more important is that "dkml.exe init" will have correct embedded diskuv-runtime-common and'
   echo '   diskuv-runtime-distribution since dkml.exe is a "global-install" of the dkml-exe package'
 fi
-echo '3. Follow the "Upgrading after a DKML (pre)release" instructions of dkml-installer-ocaml. Those CI updates will make'
-echo '   the CI pin to the latest diskuv-opam-repository, which has available the latest dkml-runtime-common and'
-echo '   dkml-runtime-distribution. dkml-runtime-common in particular has a template.dkmlroot file that must be the latest'
-echo '   prerelease or release since dkml-component-ocamlcompiler uses template.dkmlroot as its .dkmlroot for creating'
-echo '   the staging directory tree. That staging tree is used at install time as -DkmlPath to setup-userprofile.ps1, which'
-echo '   sets the dkml_root_version used (which assets to download, DiskuvOCamlVersion for creating a switch and selecting'
-echo '   its repository, etc.) in all the installation commands.'
+echo '3. Follow the "Upgrading after a DKML (pre)release" DEVELOPER.md instructions of dkml-installer-ocaml. Those CI'
+echo '   updates will make the CI pin to the latest diskuv-opam-repository, which has available the latest'
+echo '   dkml-runtime-common and dkml-runtime-distribution. dkml-runtime-common in particular has a template.dkmlroot file'
+echo '   that must be the latest prerelease or release since dkml-component-ocamlcompiler uses template.dkmlroot as its'
+echo '   .dkmlroot for creating the staging directory tree. That staging tree is used at install time as -DkmlPath to'
+echo '   setup-userprofile.ps1, which sets the dkml_root_version used (which assets to download, DiskuvOCamlVersion for'
+echo '   creating a switch and selecting its repository, etc.) in all the installation commands.'
 echo "4. Tag dkml-installer-ocaml with $NEW_VERSION. Wait for its CI"
 if [ "$PRERELEASE" = OFF ]; then
   echo "5. Sign with contributors/ in dkml-installer-ocaml"
