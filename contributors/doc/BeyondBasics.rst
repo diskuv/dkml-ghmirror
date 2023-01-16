@@ -24,7 +24,9 @@ Learn OCaml - A first project
 
 .. _A first project - Learn OCaml: https://ocaml.org/learn/tutorials/up_and_running.html#A-first-project
 
-Let's begin the simplest project with Dune and OCaml. We create a new directory and ask ``dune`` to initialise a new project:
+Let's begin the simplest project with Dune and OCaml. We create a new directory,
+create a single-line file called ``dune-project``, and ask Dune to create
+the source code for your first executable:
 
 1. Open the Command Prompt (press the Windows key ⊞ and ``R``, and then type "cmd" and ENTER).
 2. Type:
@@ -37,6 +39,8 @@ Let's begin the simplest project with Dune and OCaml. We create a new directory 
       C:\Users\you\DiskuvOCamlProjects>mkdir helloworld
 
       C:\Users\you\DiskuvOCamlProjects>cd helloworld/
+
+      C:\Users\you\DiskuvOCamlProjects\helloworld>with-dkml sh -c "echo '(lang dune 2.9)' > dune-project"
 
       C:\Users\you\DiskuvOCamlProjects\helloworld>dune init exe helloworld
       Success: initialized executable component named helloworld
@@ -388,6 +392,6 @@ created your own switch for a project you should use that instead; just make sur
 you have first done:
 
 .. code-block:: ocaml
-   
+
    opam pin remove fiber omd stdune dyn ordering --no-action
    opam install ocaml-lsp-server
