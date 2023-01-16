@@ -657,11 +657,14 @@ release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 set +x
 echo
 echo
-echo 'Note: You can do the steps 1, 2 and 3 in parallel below!'
+echo 'Note: You can do the steps 1, 2 and perhaps 3 in parallel below! If you are told to WAIT in step 2'
+echo 'then you must do step 3 only after you complete the release steps of step 2.'
 echo
-echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds'
+echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds.'
+echo "   You can save compute by canceling the [next] branch job; only keep the [$NEW_VERSION] tag job."
 echo '2. https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop/-/pipelines is running to prepare binary'
 echo "   assets for $NEW_VERSION."
+echo "   You can save compute by canceling the [main] branch job; only keep the [$NEW_VERSION-prep] tag job."
 if [ "$PRERELEASE" = ON ]; then
   echo '   You must complete the release for new binary assets if any of the desktop binaries change. Specifically,'
   echo '   create-opam-switch.sh, _common_tool.sh, _within_dev.sh, platform-opam-exec.sh, '
