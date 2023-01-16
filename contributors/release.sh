@@ -654,6 +654,7 @@ done
 release-cli "${GLOBAL_OPTS[@]}" create "${CREATE_OPTS[@]}"
 
 # Messaging
+set +x
 echo
 echo
 echo 'Note: You can do the steps 1, 2 and 3 in parallel below!'
