@@ -643,10 +643,12 @@ if [ "$PRERELEASE" = ON ]; then
   echo '   ALSO if any versions of dune, ocamlformat, ocamllsp, ocp-indent, odoc are any '
   echo '   other "global-install" changes, then diskuv-component-desktop must be rebuilt. '
   echo '   Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow'
-  echo '   its README.md'
+  echo '   its README.md for "Upgrading binary assets"'
 else
-  echo '2. Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow its README.md. That will make'
-  echo '   "dkml.exe version" report the expected major version.'
+  echo '2. Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow its README.md for '
+  echo '   "Upgrading binary assets". That will make "dkml.exe version" report the expected major version, but'
+  echo '   more important is that "dkml.exe init" will have correct embedded diskuv-runtime-common and'
+  echo '   diskuv-runtime-distribution since dkml.exe is a "global-install"'
 fi
 echo '3. Follow the "Upgrading after a DKML (pre)release" instructions of dkml-installer-ocaml. Those CI updates will make'
 echo '   the CI pin to the latest diskuv-opam-repository, which has available the latest dkml-runtime-common and'
