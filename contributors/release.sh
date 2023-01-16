@@ -635,7 +635,14 @@ echo
 echo
 echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds'
 if [ "$PRERELEASE" = ON ]; then
-  echo '2. (If desktop binaries change) Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow'
+  echo '2. diskuv-component-desktop must be rebuilt if any of the desktop binaries change. Specifically,'
+  echo '   create-opam-switch.sh, _common_tool.sh, _within_dev.sh, platform-opam-exec.sh, '
+  echo '   standard-compiler-env-to-ocaml-configure-env.sh, crossplatform-functions.sh, and '
+  echo '   standard-compiler-env-to-ocaml-configure-launcher.sh are embedded into dkml.exe '
+  echo '   which is a "global-install" built for dkml-component-staging-desktop-{ci,full}.opam. '
+  echo '   ALSO if any versions of dune, ocamlformat, ocamllsp, ocp-indent, odoc are any '
+  echo '   other "global-install" changes, then diskuv-component-desktop must be rebuilt. '
+  echo '   Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow'
   echo '   its README.md'
 else
   echo '2. Tag diskuv-component-desktop with a new -prep tag. Wait for its CI and then follow its README.md. That will make'
