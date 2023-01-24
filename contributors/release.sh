@@ -477,7 +477,6 @@ update_opam_version "$RELEASE_OCAML_VERSION~$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-
 #       shellcheck disable=SC2002
 cat "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam" | \
     remove_opam_extra_source dkml-compiler | \
-    remove_opam_nonrepo_fields | \
     cat - "$WORK/dkml-compiler.extra-source" > \
     "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp"
 mv "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp" \
