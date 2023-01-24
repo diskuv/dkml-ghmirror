@@ -446,6 +446,7 @@ done
 sleep 5
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.extra-source"
 opam_source_block extra-source "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.extra-source"
+opam_source_block extra-source "$NEW_VERSION" dkml-compiler             "$WORK/dkml-compiler.extra-source"
 opam_source_block url "$NEW_VERSION" dkml-runtime-common       "$WORK/dkml-runtime-common.url"
 opam_source_block url "$NEW_VERSION" dkml-runtime-distribution "$WORK/dkml-runtime-distribution.url"
 opam_source_block url "$NEW_VERSION" dkml-compiler             "$WORK/dkml-compiler.url"
@@ -471,6 +472,25 @@ if [ "$FORCE" = "ON" ]; then
 fi
 rungit -C "$SRC_MIXED/dkml-component-desktop" tag -a "$NEW_VERSION-prep" -m "Build of $OPAM_NEW_VERSION binary assets"
 rungit -C "$SRC_MIXED/dkml-component-desktop" push --atomic origin main "$NEW_VERSION-prep"
+#   Update and push dkml-component-ocamlcompiler
+update_opam_version "$RELEASE_OCAML_VERSION~$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam"
+#       shellcheck disable=SC2002
+cat "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam" | \
+    remove_opam_extra_source dkml-compiler | \
+    remove_opam_nonrepo_fields | \
+    cat - "$WORK/dkml-compiler.extra-source" > \
+    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp"
+mv "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp" \
+    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam"
+rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" \
+    commit -m "dkml-compiler $RELEASE_OCAML_VERSION: $CURRENT_VERSION → $NEW_VERSION" \
+    "dkml-component-network-ocamlcompiler.opam"
+if [ "$FORCE" = "ON" ]; then
+    rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" tag -d "$RELEASE_OCAML_VERSION-$NEW_VERSION" || true
+    rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" push --delete origin "$RELEASE_OCAML_VERSION-$NEW_VERSION" || true
+fi
+rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" tag -a "$RELEASE_OCAML_VERSION-$NEW_VERSION" -m "$RELEASE_OCAML_VERSION~$OPAM_NEW_VERSION"
+rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" push --atomic origin main "$RELEASE_OCAML_VERSION-$NEW_VERSION"
 #   Update and push dkml-runtime-apps which is used by diskuv-opam-repository
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-apps.opam"
 update_opam_version "$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-runtime-apps/dkml-runtimelib.opam"
