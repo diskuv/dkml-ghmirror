@@ -1,3 +1,81 @@
+## 1.2.0 (2023-01-24)
+
+Callout to **VirtualBox** users: You'll need a workaround for [a not-yet backported FMA fix](https://github.com/ocaml/ocaml/issues/11487) by doing the following in a PowerShell terminal inside VirtualBox _before_ running the installer:
+> ```powershell
+> mkdir C:\ProgramData\DiskuvOCaml\conf\
+> Set-Content -Path "C:\ProgramData\DiskuvOCaml\conf\ocamlcompiler.sexp" -Value "((feature_flag_imprecise_c99_float_ops))"
+> ```
+
+Critical changes:
+* Switch from the official MSYS2 `msys2-base` install, plus a set of MSYS2
+  Internet updates, to a standalone
+  [msys2-dkml-base](https://gitlab.com/diskuv-ocaml/distributions/msys2-dkml-base#msys2-dkml-base)
+  that has all the MSYS2 packages needed during installation. That removes the
+  Internet, GPG keys, proxies, etc. as a source of failures during the MSYS2
+  sub-installation.
+* Special handling for Scoop package manager on Windows which comingles a
+  conflicting bash.exe and git.exe in the same directory. A prior
+  `scoop install git` should no longer present a problem during installation.
+
+Performance improvements:
+* Plumb the number of cpus to the compiler jobs. [@edwintorok]
+* Skip over cross-compiling support when no target ABIs specified.
+* Overall shaved ~15 minutes from installation on a 3-CPU machine (80m instead
+  of 95m), with additional savings if you have more CPUs.
+  Timings in https://github.com/diskuv/dkml-runtime-common/pull/1
+
+Component upgrades:
+* Bump utop from `2.9.0` to `2.10.0`.
+* ocurrent ocaml/opam CI Docker image (a source of pins)
+  updated from 2022-02-28 to 2022-11-22; numerous pins updated.
+
+Bug fixes:
+* `dkml-runtime-common-native` works with spaces in the Windows home directory
+* Removed incorrect `ptime.0.8.6` pin during `dkml init`; now `ptime.1.1.0`
+
+Doc fixes:
+* Create `dune-project` in Beyond Basics documentation alongside existing
+  `dune init exe` to adhere to Dune 3.x behavior. (Dune 3.6 was added
+  in DKML 1.1.0)
+
+Deprecations:
+* The `dkml --build-type` build type option will be removed next release. It was
+  originally created for Linux builds (perf and AFL variants), and can be
+  resurrected and simplified if and when Linux support is added.
+
+Internal changes:
+* Added Jane Street's `base` package to global `utop`. In particular, `base` is
+  now part of the `dkml` switch created during installation. *`core` is too
+  expensive (52 packages) to install automatically, but you can install utop
+  and core in your own switch.*
+  > For now this is not that useful. The `lib/stublibs` directory of the `dkml`
+  > switch needs to be in the PATH for `#require "base";;` to work in global
+  > `utop`. That would help readers of the Real World OCaml book. A future
+  > release will automate the PATH change.
+* Removed `digestif.1.1.2+msvc` pin since MSVC changes upstreamed to 1.1.3.
+* The bytecode `*.bc` embedded in the installer is compiled with 4.14.0
+  and its embedded runtime is also 4.14.0.
+* When using `opam option setenv+=` stop removing the `environment` file to
+  force a rebuild of the environment.
+* Pin `omd.1.3.1`
+* Print timestamp for many logging operations to aid performance comparisons
+
+Patches:
+* `base_bigstring.v0.15.0` for MSVC and MinGW (same in fdopen and esy).
+  upstream: https://github.com/janestreet/base_bigstring/pull/3
+* `time_now.v0.15.0` for MSVC.
+  upstream: https://github.com/janestreet/time_now/issues/3
+* `core.v0.15.1` for MSVC.
+  upstream: https://github.com/janestreet/core/pull/161
+* `core_kernel.v0.15.0` for MSVC.
+  upstream: https://github.com/janestreet/core_kernel/pull/107
+* `alcotest.1.6.0` for MSVC.
+  upstream: https://github.com/mirage/alcotest/pull/369
+* `curly.0.2.0` for Windows and MSVC (pending release; already unblocked).
+  upstream: https://github.com/rgrinberg/curly/issues/10
+* `base.v0.15.1` for MSVC 32-bit. Already merged; in v0.16~preview.127.22+307.
+  upstream: https://github.com/janestreet/base/pull/128
+
 ## 1.1.0 (2022-12-27)
 
 Quick Links:
