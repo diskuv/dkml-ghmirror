@@ -76,7 +76,7 @@ auth-gitlab-cli: install-gitlab-cli
 		$$GLAB auth login; \
 	fi
 
-NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n
+NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n**Upgrading?** First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.\n\n
 
 .PHONY: release-start-major
 release-start-major:
