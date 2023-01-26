@@ -261,7 +261,7 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
 
    *Remember that if you get harmless warnings (ex. ``failed to lock file``) you can safely ignore them.*
 
-6. :ref:`BeyondBasics` is the topic of the next section. **Please starting read it.**
+6. Continue with :ref:`BeyondBasics`, which is the next topic. **It will tell you how to do important things like setting up your IDE. Please starting read it!**
 
 Indices and tables
 ==================
