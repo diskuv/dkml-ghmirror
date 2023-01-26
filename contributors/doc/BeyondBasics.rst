@@ -393,5 +393,4 @@ you have first done:
 
 .. code-block:: ocaml
 
-   opam pin remove fiber omd stdune dyn ordering --no-action
    opam install ocaml-lsp-server
