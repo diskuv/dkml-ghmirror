@@ -79,12 +79,12 @@ auth-gitlab-cli: install-gitlab-cli
 NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\
 	\n\n\#\#\# Upgrading?\n\nFirst uninstall the old Diskuv OCaml version using \"Add or remove programs\" in the Control Panel.\
 	\n\n\#\#\# What do I do after the install is complete?\
-	\n\nYou SHOULD read the \"Install is done! What next?\" at https://diskuv-ocaml.gitlab.io/distributions/dkml/\#install-is-done-what-next documentation.\
+	\n\nYou SHOULD read the \"Install is done! What next?\" at <https://diskuv-ocaml.gitlab.io/distributions/dkml/#install-is-done-what-next> documentation.\
 	\n\nIf you had any existing local switches, upgrade them by doing `dkml init`, `opam upgrade` and `opam install . --deps-only` in the local switch directories.\
 	\n\n
 
 print-change-header:
-	@printf '>>>START<<<\n$(NEW_CHANGE_HEADER)\n>>>END<<<\n'
+	@printf '>>>START<<<\n$(NEW_CHANGE_HEADER)\n>>>END<<<\n' | sed 's/ *$$//g'
 
 .PHONY: release-start-major
 release-start-major:
@@ -92,7 +92,8 @@ release-start-major:
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version major --config-file .bumpversion.prerelease.cfg --no-tag --verbose && git add . && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
-	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md && git add contributors/changes/v$$NEW_VERSION.md && \
+	printf '## %s $(NEW_CHANGE_HEADER)' $$NEW_VERSION | sed 's/ *$$//g' > contributors/changes/v$$NEW_VERSION.md && \
+	git add contributors/changes/v$$NEW_VERSION.md && \
 	git -C vendor/drc commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/drd commit -a --message "Start v$$NEW_VERSION release" && \
 	git -C vendor/diskuv-opam-repository commit -a --message "Start v$$NEW_VERSION release" && \
