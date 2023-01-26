@@ -76,7 +76,10 @@ auth-gitlab-cli: install-gitlab-cli
 		$$GLAB auth login; \
 	fi
 
-NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n**Upgrading?** First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.\n\n
+NEW_CHANGE_HEADER = (@@YYYYMMDD@@)\n\n**Upgrading?** First uninstall the old Diskuv OCaml version using \"Add or remove programs\" in the Control Panel.\n\n**What do I do after the install is complete?** You SHOULD read the \"Install is done! What next?\" at https://diskuv-ocaml.gitlab.io/distributions/dkml/\#install-is-done-what-next documentation.\n\n
+
+print-change-header:
+	@printf '>>>START<<<\n$(NEW_CHANGE_HEADER)\n>>>END<<<\n'
 
 .PHONY: release-start-major
 release-start-major:
