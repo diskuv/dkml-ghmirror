@@ -708,7 +708,8 @@ echo '   that must be the latest prerelease or release since dkml-component-ocam
 echo '   .dkmlroot for creating the staging directory tree. That staging tree is used at install time as -DkmlPath to'
 echo '   setup-userprofile.ps1, which sets the dkml_root_version used (which assets to download, DiskuvOCamlVersion for'
 echo '   creating a switch and selecting its repository, etc.) in all the installation commands.'
-echo "4. Tag dkml-installer-ocaml with $NEW_VERSION. Wait for its CI"
+echo "4. Update the '.opam' and '.opam.template' of dkml-installer-ocaml with new commit ids, and tag with $NEW_VERSION."
+echo '   Wait for its CI'
 if [ "$PRERELEASE" = OFF ]; then
   echo "5. Sign with contributors/ in dkml-installer-ocaml"
   echo '6. Do a merge to https://github.com/diskuv/dkml-workflows.git from https://github.com/diskuv/dkml-workflows-prerelease.git'
