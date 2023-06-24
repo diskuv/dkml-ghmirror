@@ -1,3 +1,6 @@
 _ci/
 _build/
 .vagrant/
+
+# CMake
+build/

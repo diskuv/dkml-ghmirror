@@ -1,0 +1,7 @@
+name: DkMLPackaging
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - 'python>=3.8'
+  - bump2version

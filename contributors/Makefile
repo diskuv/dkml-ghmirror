@@ -46,7 +46,7 @@ _opam/bin/dune: _opam/.opam-switch/switch-config
 ## -----------------------------------------------------------
 
 PUBLISHDOCS_WORKDIR  = _build/.publishdocs
-ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime installtime runtime .dkmlroot .gitattributes .gitignore
+ARCHIVE_MEMBERS = LICENSE.txt README.md etc buildtime dependencies installtime packaging runtime version.cmake .gitattributes .gitignore
 
 .PHONY: clean
 clean:

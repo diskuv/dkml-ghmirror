@@ -190,6 +190,7 @@ rungit() {
         git "$@"
     fi
 }
+# PORTED: DkMLReleaseParticipant_PkgsReplace()
 update_pkgs_version() {
     update_pkgs_version_VER=$1
     shift
@@ -199,6 +200,7 @@ update_pkgs_version() {
     sed_replace 's#^dkml-exe\..*#dkml-exe.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
     sed_replace 's#^with-dkml\..*#with-dkml.'"$update_pkgs_version_VER"'#' "$update_pkgs_version_FILE"
 }
+# DkMLReleaseParticipant_CreateOpamSwitchReplace()
 update_switch_version() {
     update_switch_version_VER=$1
     shift
@@ -210,6 +212,7 @@ update_switch_version() {
     sed_replace 's#^\([ ]*\)dkml-exe,.*#\1dkml-exe,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
     sed_replace 's#^\([ ]*\)with-dkml,.*#\1with-dkml,'"$update_switch_version_VER"'#' "$update_switch_version_FILE"
 }
+# PORTED: DkMLReleaseParticipant_OpamReplace()
 update_opam_version() {
     update_opam_version_VER=$1
     shift
@@ -217,6 +220,7 @@ update_opam_version() {
     shift
     sed_replace 's#^version: .*#version: "'"$update_opam_version_VER"'"#' "$update_opam_version_FILE"
 }
+# PORTED: DkMLReleaseParticipant_DkmlBaseCompilerReplace()
 update_dkmlbasecompiler_version() {
     update_dkmlbasecompiler_version_VER=$1
     shift
@@ -229,6 +233,7 @@ update_dkmlbasecompiler_version() {
     # note: the * operator (0-inf) works in basic (non-extended) sed, unlike the ? operator (0-1).
     sed_replace 's#^\([ ]*\)"dkml-runtime-common-native" {>*= ".*"}#\1"dkml-runtime-common-native" {= "'"$update_dkmlbasecompiler_version_VER"'"}#' "$update_dkmlbasecompiler_version_FILE"
 }
+# PORTED: DkMLReleaseParticipant_DuneProjectReplace
 update_dune_version() {
     update_dune_version_VER=$1
     shift
@@ -319,17 +324,17 @@ done
 
 # Do release commits
 autodetect_system_binaries # find DKMLSYS_CURL
-update_dkmlcompiler_src() {
+update_dkmlcompiler_src() { # PORTED
     update_opam_version "$OPAM_NEW_VERSION" vendor/dkml-compiler/dkml-compiler-env.opam
     update_dkmlbasecompiler_version "$OPAM_NEW_VERSION" vendor/dkml-compiler/dkml-base-compiler.opam
 }
-update_drc_src() {
+update_drc_src() { # PORTED
     #   Update META and .opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common.opam
     update_opam_version "$OPAM_NEW_VERSION" vendor/drc/dkml-runtime-common-native.opam
     sed_replace 's#^version *= *".*"#version = "'"$OPAM_NEW_VERSION"'"#' vendor/drc/META
 }
-update_drd_src() {
+update_drd_src() { # PORTED
     #   Update ci-4.14.0-pkgs.txt, create-opam-switch.sh, dune-project and .opam
     update_pkgs_version "$OPAM_NEW_VERSION" "vendor/drd/src/none/ci-$RELEASE_OCAML_VERSION-pkgs.txt"
     update_switch_version "$OPAM_NEW_VERSION" vendor/drd/src/unix/create-opam-switch.sh

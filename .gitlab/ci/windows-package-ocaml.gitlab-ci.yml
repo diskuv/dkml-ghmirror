@@ -21,7 +21,7 @@ win32:oorepo-fetch-1:
   cache:
     key:
       files:
-        - .dkmlroot
+        - version.cmake
     paths:
       - _ci\moby
     when: 'always' # keep the Moby cache even on failure (perhaps partial download)
