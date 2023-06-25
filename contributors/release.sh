@@ -341,7 +341,7 @@ update_drd_src() { # PORTED
     update_dune_version "$OPAM_NEW_VERSION" vendor/drd/dune-project
     update_opam_version "$OPAM_NEW_VERSION" vendor/drd/dkml-runtime-distribution.opam
 }
-if [ "$PRERELEASE" = ON ]; then
+if [ "$PRERELEASE" = ON ]; then # PORTED
     # Increment the prerelease
 
     # 1. Bump everything, including vendored submodules, but do not commit

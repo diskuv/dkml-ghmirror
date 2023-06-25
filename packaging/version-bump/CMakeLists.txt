@@ -29,7 +29,11 @@ function(set_new_prerelease_version)
 endfunction()
 
 function(set_new_patch_version)
-    math(EXPR new_patch "${DKML_VERSION_PATCH} + 1")
+    if(DKML_VERSION_PRERELEASE)
+        set(new_patch "${DKML_VERSION_PATCH}") # Pre-releases are _before_ a non-prerelease
+    else()
+        math(EXPR new_patch "${DKML_VERSION_PATCH} + 1") # No pre-release
+    endif()
 
     set(DKML_VERSION_CMAKEVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
     set(DKML_VERSION_SEMVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
@@ -46,12 +50,30 @@ file(CONFIGURE OUTPUT new-PATCH-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PATCH@"
 
 # ----------------
 #
-function(stage_self_PlainReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
+function(stage_self_VersionReplace BUMP_LEVEL NEW_VERSION_CMAKEVER NEW_PUBLICVERSION_CMAKEVER OUTPUT_LIST_VARIABLE REL_FILENAME)
     file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
-    string(REPLACE "${DKML_VERSION_CMAKEVER}" "${DKML_VERSION_CMAKEVER_NEW_PRERELEASE}" contents_NEW "${contents}")
+    set(contents_NEW "${contents}")
+
+    string(REPLACE
+        "DKML_VERSION_CMAKEVER \"${DKML_VERSION_CMAKEVER}\""
+        "DKML_VERSION_CMAKEVER \"${NEW_VERSION_CMAKEVER}\""
+        contents_NEW "${contents_NEW}")
 
     if(contents STREQUAL "${contents_NEW}")
-        message(FATAL_ERROR "The old version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+        message(FATAL_ERROR "The version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+    endif()
+
+    if(NOT(BUMP_LEVEL STREQUAL "PRERELEASE"))
+        # PATCH, MINOR or MAJOR
+        set(contents_LAST ${contents_NEW})
+        string(REPLACE
+            "DKML_PUBLICVERSION_CMAKEVER \"${DKML_PUBLICVERSION_CMAKEVER}\""
+            "DKML_PUBLICVERSION_CMAKEVER \"${NEW_PUBLICVERSION_CMAKEVER}\""
+            contents_NEW "${contents_NEW}")
+
+        if(contents_LAST STREQUAL "${contents_NEW}")
+            message(FATAL_ERROR "The public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+        endif()
     endif()
 
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
@@ -62,9 +84,9 @@ function(stage_self_PlainReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
     set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-function(stage_self_DkMLReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
+function(stage_self_DkMLReplace BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE REL_FILENAME)
     file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
-    string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${DKML_VERSION_SEMVER_NEW_PRERELEASE}" contents_NEW "${contents}")
+    string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${NEW_VERSION_SEMVER}" contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
         message(FATAL_ERROR "A DkML version was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
@@ -93,9 +115,10 @@ function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
         set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_MAJMINPAT}-[0-9]+")
         set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_MAJMINPAT}[~]prerel[0-9]+")
     else()
-        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_OPAMVER}")
+        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_SEMVER}")
         set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_OPAMVER}")
     endif()
+
     string(REPLACE "." "[.]" regex_DKML_VERSION_SEMVER "${regex_DKML_VERSION_SEMVER}")
     string(REPLACE "." "[.]" regex_DKML_VERSION_OPAMVER "${regex_DKML_VERSION_OPAMVER}")
 
@@ -166,10 +189,24 @@ endfunction()
 
 function(add_version_bump_target BUMP_LEVEL)
     set(selfModifications)
-    stage_self_PlainReplace(${BUMP_LEVEL} selfModifications version.cmake)
 
-    if(NOT(BUMP_LEVEL STREQUAL "PRERELEASE"))
-        stage_self_DkMLReplace(${BUMP_LEVEL} selfModifications README.md)
+    if(BUMP_LEVEL STREQUAL "PRERELEASE")
+        # PRERELEASE bump
+        stage_self_VersionReplace(${BUMP_LEVEL}
+            ${DKML_VERSION_CMAKEVER_NEW_${BUMP_LEVEL}}
+
+            # No change to the public version
+            ${DKML_PUBLICVERSION_CMAKEVER}
+            selfModifications version.cmake)
+    else()
+        # PATCH, MINOR or MAJOR bump
+        stage_self_VersionReplace(${BUMP_LEVEL}
+            ${DKML_VERSION_CMAKEVER_NEW_${BUMP_LEVEL}}
+            ${DKML_VERSION_CMAKEVER_NEW_${BUMP_LEVEL}}
+            selfModifications version.cmake)
+        stage_self_DkMLReplace(${BUMP_LEVEL}
+            ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}
+            selfModifications README.md)
     endif()
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${BUMP_LEVEL}
