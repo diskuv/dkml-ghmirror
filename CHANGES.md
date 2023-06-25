@@ -1,14 +1,18 @@
+# CHANGES
+
 ## 1.2.0 (2023-01-24)
 
 **Upgrading?** First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.
 
 Callout to **VirtualBox** users: You'll need a workaround for [a not-yet backported FMA fix](https://github.com/ocaml/ocaml/issues/11487) by doing the following in a PowerShell terminal inside VirtualBox _before_ running the installer:
+
 > ```powershell
 > mkdir C:\ProgramData\DiskuvOCaml\conf\
 > Set-Content -Path "C:\ProgramData\DiskuvOCaml\conf\ocamlcompiler.sexp" -Value "((feature_flag_imprecise_c99_float_ops))"
 > ```
 
 Critical changes:
+
 * Switch from the official MSYS2 `msys2-base` install, plus a set of MSYS2
   Internet updates, to a standalone
   [msys2-dkml-base](https://gitlab.com/diskuv-ocaml/distributions/msys2-dkml-base#msys2-dkml-base)
@@ -20,32 +24,38 @@ Critical changes:
   `scoop install git` should no longer present a problem during installation.
 
 Performance improvements:
+
 * Plumb the number of cpus to the compiler jobs. [@edwintorok]
 * Skip over cross-compiling support when no target ABIs specified.
 * Overall shaved ~15 minutes from installation on a 3-CPU machine (80m instead
   of 95m), with additional savings if you have more CPUs.
-  Timings in https://github.com/diskuv/dkml-runtime-common/pull/1
+  Timings in <https://github.com/diskuv/dkml-runtime-common/pull/1>
 
 Component upgrades:
+
 * Bump utop from `2.9.0` to `2.10.0`.
 * ocurrent ocaml/opam CI Docker image (a source of pins)
   updated from 2022-02-28 to 2022-11-22; numerous pins updated.
 
 Bug fixes:
+
 * `dkml-runtime-common-native` works with spaces in the Windows home directory
 * Removed incorrect `ptime.0.8.6` pin during `dkml init`; now `ptime.1.1.0`
 
 Doc fixes:
+
 * Create `dune-project` in Beyond Basics documentation alongside existing
   `dune init exe` to adhere to Dune 3.x behavior. (Dune 3.6 was added
   in DKML 1.1.0)
 
 Deprecations:
+
 * The `dkml --build-type` build type option will be removed next release. It was
   originally created for Linux builds (perf and AFL variants), and can be
   resurrected and simplified if and when Linux support is added.
 
 Internal changes:
+
 * Added Jane Street's `base` package to global `utop`. In particular, `base` is
   now part of the `dkml` switch created during installation. *`core` is too
   expensive (52 packages) to install automatically, but you can install utop
@@ -63,39 +73,44 @@ Internal changes:
 * Print timestamp for many logging operations to aid performance comparisons
 
 Patches:
+
 * `base_bigstring.v0.15.0` for MSVC and MinGW (same in fdopen and esy).
-  upstream: https://github.com/janestreet/base_bigstring/pull/3
+  upstream: <https://github.com/janestreet/base_bigstring/pull/3>
 * `time_now.v0.15.0` for MSVC.
-  upstream: https://github.com/janestreet/time_now/issues/3
+  upstream: <https://github.com/janestreet/time_now/issues/3>
 * `core.v0.15.1` for MSVC.
-  upstream: https://github.com/janestreet/core/pull/161
+  upstream: <https://github.com/janestreet/core/pull/161>
 * `core_kernel.v0.15.0` for MSVC.
-  upstream: https://github.com/janestreet/core_kernel/pull/107
+  upstream: <https://github.com/janestreet/core_kernel/pull/107>
 * `alcotest.1.6.0` for MSVC.
-  upstream: https://github.com/mirage/alcotest/pull/369
+  upstream: <https://github.com/mirage/alcotest/pull/369>
 * `curly.0.2.0` for Windows and MSVC (pending release; already unblocked).
-  upstream: https://github.com/rgrinberg/curly/issues/10
+  upstream: <https://github.com/rgrinberg/curly/issues/10>
 * `base.v0.15.1` for MSVC 32-bit. Already merged; in v0.16~preview.127.22+307.
-  upstream: https://github.com/janestreet/base/pull/128
+  upstream: <https://github.com/janestreet/base/pull/128>
 
 ## 1.1.0 (2022-12-27)
 
 Quick Links:
-|             |                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Installer   | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe     |
-| Uninstaller | https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/uninstall-diskuv-ocaml-windows_x86_64-1.1.0.exe |
+|             |                                                                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Installer   | <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/setup-diskuv-ocaml-windows_x86_64-1.1.0.exe>     |
+| Uninstaller | <https://github.com/diskuv/dkml-installer-ocaml/releases/download/v1.1.0_r2/uninstall-diskuv-ocaml-windows_x86_64-1.1.0.exe> |
 
 **Upgrading from 1.0.1?**
+
 1. Uninstall the old version first with the uninstaller above!
 2. After uninstalling the old version, run the following in PowerShell:
+
    ```powershell
    if (Test-Path "$env:LOCALAPPDATA\opam\playground") { Remove-Item -Path "$env:LOCALAPPDATA\opam\playground" -Force -Recurse }
    ```
+
 3. Exit Visual Studio Code and any `utop` or `ocaml` sessions. Then
    use the installer above.
 4. After installing the new version, run the following in PowerShell **in each directory that has a local opam switch** to upgrade to
    OCaml 4.14.0 and all the other package versions that come with DKML 1.1.0:
+
    ```powershell
    # Sometimes `dkml init` can fail, but you are OK as long as you see:
    # ...  upgrade   ocaml-system                       4.12.1 to 4.14.0
@@ -106,6 +121,7 @@ Quick Links:
    ```
 
 Cautions:
+
 * Do not use this distribution if you have a space in your username
   (ex. `C:\Users\Jane Smith`). Sorry, but the broader OCaml ecosystem does not
   yet consistently support spaces in directories.
@@ -117,6 +133,7 @@ Cautions:
   AV protection, run the uninstaller, and then rerun the installer!*
 
 New features:
+
 * The system OCaml is 4.14.0 (was 4.12.1)
 * The system includes ocamlnat, the experimental native toplevel. It should be
   run using `with-dkml ocamlnat` so native code is compiled with Visual Studio.
@@ -130,6 +147,7 @@ New features:
   precompiled and shaves ~20 minutes of installation time.
 
 New security:
+
 * (Advanced; experimental) If you are behind a corporate firewall that uses
   man-in-the-middle (MITM) TLS proxying, you can install your corporate CA chain
   so DKML, in particular MSYS2, does not reject connections. Only persons with
@@ -146,10 +164,11 @@ New security:
   You specify one or more `.pem` or `.cer` CA files, making sure to use two
   backslashes to escape your paths. Your Administrator may have already placed
   the CA files on your machine; otherwise use the guide at
-  https://www.msys2.org/docs/faq/#how-can-i-make-msys2pacman-trust-my-companys-custom-tls-ca-certificate
+  <https://www.msys2.org/docs/faq/#how-can-i-make-msys2pacman-trust-my-companys-custom-tls-ca-certificate>
   to copy them from your web browsers.
 
 Not so good problems:
+
 * [Known bug #21](https://github.com/diskuv/dkml-installer-ocaml/issues/21) To
   install the OCaml language server in a new switch you will
   need to first do `opam pin remove fiber omd stdune dyn ordering --no-action`
@@ -163,19 +182,22 @@ Not so good problems:
   justified.
 
 Breaking changes:
+
 * Cross-compiling on macOS with dkml-base-compiler now requires you to be explicit
   which CPU architecture you are targeting. Before using `dune -x darwin_arm64`
   would always cross-compile both Intel and Silicon. Now Silicon developers
   need to use `dune -x darwin_x86_64` and Intel developers need to use
   `dune -x darwin_arm64`. The change was necessary to not rely on the presence
-  of optional Rosetta2 translation. *Since this cross-compiling feature is little used, it does not warrant a breaking version bump*.
+  of optional Rosetta2 translation. _Since this cross-compiling feature is little used, it does not warrant a breaking version bump_.
 
 Documentation changes:
+
 * The documentation site has moved to
-  https://diskuv-ocaml.gitlab.io/distributions/dkml/. Please update your
+  <https://diskuv-ocaml.gitlab.io/distributions/dkml/>. Please update your
   bookmarks!
 
 Bug fixes:
+
 * The dune.exe shim uses a cache containing the expensive-to-compute MSVC environment
   settings. A race condition populating the cache has been fixed.
 * Repetitive opam repository updates, a source of slowness, were eliminated
@@ -201,7 +223,7 @@ Bug fixes:
   | base                | v0.14.2     | v0.15.1      |
   | mdx                 | 2.0.0       | 2.1.0        |
   | ocamlformat         | 0.19.0      | 0.23.0       |
-  | ocamlformat-rpc     | 0.19.0      | *not pinned* |
+  | ocamlformat-rpc     | 0.19.0      | _not pinned_ |
   | ocamlformat-rpc-lib | 0.19.0      | 0.23.0       |
 
 * The Visual Studio installation cleans up aborted previous installations.
@@ -209,15 +231,17 @@ Bug fixes:
   that isn't immediately erased.
 
 Component changes:
+
 * ~~opam.exe is compiled directly from the opam master branch; no patches! There
   is still a shim but that shim just sets up environment variables and delegates
   to the authoritative (unpatched) opam.~~ There is one patch for opam on top of
   the opam master branch (opam 2.2) dated 2022-12-21.  
 * MSYS2 setup program is bundled inside the installer to lessen download TLS problems
   when a proxy is present (common with corporate/school Windows PCs).
-  Resolves https://github.com/diskuv/dkml-installer-ocaml/issues/19
+  Resolves <https://github.com/diskuv/dkml-installer-ocaml/issues/19>
 
 Reproducibility features:
+
 * Packages promoted to central Opam repository:
   * dkml-runtime-common
   * dkml-runtime-distribution
@@ -232,13 +256,15 @@ Reproducibility features:
 * During installation any `CAMLLIB` environment variable (in addition to
   `OCAMLLIB` which was already checked) is renamed to deconflict with a new
   OCaml installation. Among other things, this provides an upgrade from
-  CamlLight to OCaml. https://github.com/diskuv/dkml-installer-ocaml/issues/13
+  CamlLight to OCaml. <https://github.com/diskuv/dkml-installer-ocaml/issues/13>
 
 Usability tweaks:
+
 * When building DKML packages like dkml-base-compiler, limit dump of Opam
   logs used for troubleshooting to 4 hours
 
 Feature flags:
+
 * Enable `--enable-imprecise-c99-float-ops` during OCaml compilation by setting
 
   ```scheme
@@ -251,6 +277,7 @@ Feature flags:
   needed inside virtual machines like Vagrant
 
 Licensing:
+
 * Diskuv OCaml is fully open-source, and is targeted for pure OCaml development.
   Commercial tools and support are available from Diskuv for mixed OCaml/C
   development; however, Diskuv OCaml only has limited support
@@ -259,6 +286,7 @@ Licensing:
   support AT diskuv.com if you need OCaml/C development.
 
 Internal changes:
+
 * with-dkml.exe is now configured as a opam wrapper relative to the
   installation directory ($DiskuvOCamlHome) rather than the tools opam switch.
   That change decouples your new switches (aka. opam dkml init) from another
@@ -268,10 +296,10 @@ Internal changes:
 
 * The installer now checks whether files are in use when overwriting a
   previous installation just like the uninstaller already did.
-* Fix Dune shim so `dune build` works consistently on Windows. https://github.com/diskuv/dkml-installer-ocaml/issues/6
+* Fix Dune shim so `dune build` works consistently on Windows. <https://github.com/diskuv/dkml-installer-ocaml/issues/6>
 * Fix detection of Jane Street package versions so `ppx_jane` dependencies like `fieldslib`, and other JS packages,
   are pinned to versions like `v0.14.0` (etc.). Also pin transitive dependencies of `ppx_jane`.
-  https://github.com/diskuv/dkml-installer-ocaml/issues/8
+  <https://github.com/diskuv/dkml-installer-ocaml/issues/8>
 * MSYS2 variables are available as Opam global variables. See [below](#msys2-variables---101)
 * Fix version in Add/Remove Programs that was `dev` instead of `1.0.1` (etc.)
 
@@ -290,21 +318,21 @@ MSYS2 environment variables:
 | `mingw-prefix`         | `/clang64`               | `MINGW_PREFIX`             |
 | `mingw-package-prefix` | `mingw-w64-clang-x86_64` | `MINGW_PACKAGE_PREFIX`     |
 
-
-> The MSYS2 environment variable values are listed at https://www.msys2.org/docs/environments/.
-> The authoritative source is https://github.com/msys2/MSYS2-packages/blob/1ff9c79a6b6b71492c4824f9888a15314b85f5fa/filesystem/msystem
+> The MSYS2 environment variable values are listed at <https://www.msys2.org/docs/environments/>.
+> The authoritative source is <https://github.com/msys2/MSYS2-packages/blob/1ff9c79a6b6b71492c4824f9888a15314b85f5fa/filesystem/msystem>
 
 | Global Variable   | Typical Value                                                      | MSYS2 Command Line |
 | ----------------- | ------------------------------------------------------------------ | ------------------ |
-| `msys2-nativedir` | `C:\Users\vagrant\AppData\Local\Programs\DiskuvOCaml\tools\MSYS2\` | *`cygpath -aw /`*  |
+| `msys2-nativedir` | `C:\Users\vagrant\AppData\Local\Programs\DiskuvOCaml\tools\MSYS2\` | _`cygpath -aw /`_  |
 
 In addition, `with-dkml.exe` and the Opam and Dune shims now automatically set the `MINGW_{CHOST,PREFIX,PACKAGE_PREFIX}`
 environment variables that were missing from prior Diskuv OCaml releases.
 
 These variables let you:
+
 * in Bash (`with-dkml bash`) you can use `pacman -S ${MINGW_PACKAGE_PREFIX}-gcc` to install GCC compiler or
   `pacman -S ${MINGW_PACKAGE_PREFIX}-clang` to install the Clang compiler. Thousands of other packages are
-  available at https://packages.msys2.org/package/?repo=clang64
+  available at <https://packages.msys2.org/package/?repo=clang64>
 * in Opam files (`opam` and `*.opam`) you can use `%{mingw-package-prefix}%`, etc.
 
 *A future release of Diskuv OCaml may automatically install pacman packages using Opam [depext](https://opam.ocaml.org/blog/opam-2-1-0/)*
@@ -312,6 +340,7 @@ These variables let you:
 ## 1.0.0 (2022-08-08)
 
 Changes from v0.4.1:
+
 * Uninstaller available
 * PATH will no longer have functionally duplicated DOS 8.3 short paths and
   Windows full paths for the binaries installed by Diskuv OCaml
@@ -320,9 +349,8 @@ Changes from v0.4.1:
 
 Changes:
 
-* [BUG] Fix support for installing to directories with spaces. https://github.com/diskuv/dkml-installer-ocaml/issues/2
-* [DEBT] Full sync with the pre-2.2 Opam source code except one OPAMROOT patch. https://github.com/ocaml/opam/issues/3766#issuecomment-1201415069
-
+* [BUG] Fix support for installing to directories with spaces. <https://github.com/diskuv/dkml-installer-ocaml/issues/2>
+* [DEBT] Full sync with the pre-2.2 Opam source code except one OPAMROOT patch. <https://github.com/ocaml/opam/issues/3766#issuecomment-1201415069>
 
 ## 0.4.0 (2022-06-30)
 
@@ -361,6 +389,7 @@ and non-Administrators can change individual directories they
 own with `fsutil file setshortname`.
 
 In common situations `with-dkml` does not need to be used:
+
 1. `opam` can be used without `with-dkml opam`
 2. `dune` can be used without `with-dkml dune` in any **new** Opam switch you create.
 3. `dune` can be used without `with-dkml dune` if you don't use Opam switches.
@@ -427,13 +456,14 @@ are more general replacements described in the
 
 ## 0.3.3 (2022-01-14)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
+
 * Windows installer would fail when Diskuv zip assets could not be downloaded. Restored behavior
   from earlier versions that would install Cygwin and build the reproducible assets when
   downloads fail.
@@ -442,41 +472,45 @@ Changes:
 
 ## 0.3.2 (2021-12-15)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
+
 * Windows fixes for older .NET installations and older Windows Server versions. May be a solution for [Intermittent installation failures when installing MSYS2 from mainland China](https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6)
 
 ## 0.3.1 (2021-12-13)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
+
 * Fix [Toplevel file for ocamlfind is not installed in tools system switch, causing hardcoded paths to local switches](https://gitlab.com/diskuv/diskuv-ocaml/-/issues/8)
 * Fix [Opam symbolic links on Windows failing without Run as Administrator](https://github.com/ocaml/opam/pull/4962)
 
 ## 0.3.0 (2021-11-29)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Breaking Changes:
+
 * [ocamlformat](https://github.com/ocaml-ppx/ocamlformat#should-i-use-ocamlformat) has been upgraded from
   0.18.0 to 0.19.0. Your code formatting will change, and you will need to change your versioned `.ocamlformat`
   configuration. See Upgrading instructions below for how to change `.ocamlformat`.
 
 Changes:
+
 * There is a new Opam plugin you run with `opam dkml`.  Run it alone to get help. You can use `opam dkml init` to
   initialize/upgrade a `_opam` subdirectory from zero or more `*.opam` files (also known as creating a local Opam
   switch). Other commands may be added which should closely follow the command naming of [Yarn](https://yarnpkg.com/cli/init)
@@ -493,8 +527,9 @@ Changes:
   `ocaml-format.0.19.0`, `ocaml-format-rpc.0.19.0`, `ocaml-format-rpc-lib.0.19.0`
 
 Known issues:
+
 * Installing from mainline China frequently errors out. A short term fix is available at
-  https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601
+  <https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601>
 
 ### Upgrading from v0.2.0/.../v0.2.6 to v0.3.0
 
@@ -517,13 +552,13 @@ Expand-Archive `
 
 SECOND, any `.ocamlformat` files in your projects that have:
 
-```
+```ini
 version=0.18.0
 ```
 
 will need to be changed to:
 
-```
+```ini
 version=0.19.0
 ```
 
@@ -546,18 +581,19 @@ git commit -m "Upgrade diskuv-ocaml to 0.3.0" vendor/diskuv-ocaml
 
 ## 0.2.6 (2021-11-22)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
+
 * OCaml has been upgraded from 4.12.0 to [4.12.1](https://ocaml.org/releases/4.12.1.html).
   [4.13.1](https://ocaml.org/releases/4.13.1.html) is also available but is not yet supported by Diskuv.
 * The `system` switch has been renamed to `host-tools` to lessen confusion.
   You can remove the `system` switch after upgrading to save space.
-* Introduce "Vanilla OCaml" zip archives for 32-bit and 64-bit at https://gitlab.com/diskuv/diskuv-ocaml/-/releases. Contains
+* Introduce "Vanilla OCaml" zip archives for 32-bit and 64-bit at <https://gitlab.com/diskuv/diskuv-ocaml/-/releases>. Contains
   `ocaml.exe`, `ocamlc.opt.exe`, the other `ocaml*.exe` and `flexlink.exe`. Since the standard library directories are hardcoded
   by `ocamlc -config` as `C:/DiskuvOCaml/OcamlSys/32/lib/ocaml` and `C:/DiskuvOCaml/OcamlSys/64/lib/ocaml` the most useful scenario
   is continuous integration (GitHub Actions, etc.) where you can extract the archive to `C:\DiskuvOCaml\OcamlSys\{32|64}`. The archive
@@ -571,20 +607,22 @@ Changes:
   * Add feature flag DKML_FEATUREFLAG_CMAKE_PLATFORM=ON environment variable to support passing of compiler settings from CMake
     into Opam and Dune through `with-dkml.exe`
   * Deprecate vcpkg environment variables that influence `with-dkml.exe`; instead any third-party libraries can be accepted
-    using the documentation at https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html
+    using the documentation at <https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html>
 * Introduce vagrant to simplify testing Windows installations even on Linux machines. Assuming you have VirtualBox and
   Vagrant installed, just do `cd vagrant/win32 ; vagrant up ; vagrant ssh` to open a Command Prompt terminal. From there you can do
   `with-dkml dune build`, `with-dkml ocamlc ...`, etc. to build and test your application
 
 Known issues:
+
 * Installing from mainline China frequently errors out. A short term fix is available at
-  https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601
+  <https://gitlab.com/diskuv/diskuv-ocaml/-/issues/6#note_726814601>
 
 ### Upgrading from v0.2.0/.../v0.2.5 to v0.2.6
 
 You will need to:
-* *(Windows only)* upgrade your *Diskuv OCaml* system
-* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+
+* _(Windows only)_ upgrade your _Diskuv OCaml_ system
+* _(Windows, Linux, macOS)_ upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
   which can be done at your leisure **before** the next system upgrade
 
 FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
@@ -615,13 +653,14 @@ git commit -m "Upgrade diskuv-ocaml to 0.2.6" vendor/diskuv-ocaml
 
 ## 0.2.5 (2021-10-13)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
+
 * (Windows) New binary `with-dkml` will drop you into a MSYS2 shell (ex. `with-dkml bash`) or do a build
   (ex. `with-dkml dune build`) directly from a Command Prompt or PowerShell. The MSVC compiler
   chosen at installation time will be available for use
@@ -633,8 +672,9 @@ Changes:
 ### Upgrading from v0.2.0/.../v0.2.4 to v0.2.5
 
 You will need to:
-* *(Windows only)* upgrade your *Diskuv OCaml* system
-* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+
+* _(Windows only)_ upgrade your _Diskuv OCaml_ system
+* _(Windows, Linux, macOS)_ upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
   which can be done at your leisure **before** the next system upgrade
 
 FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
@@ -665,16 +705,18 @@ git commit -m "Upgrade diskuv-ocaml to 0.2.5" vendor/diskuv-ocaml
 
 ## 0.2.4 (2021-10-10)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Bug Fixes:
-* (Windows) Remove old OCaml installations as best as can be found from your user environment. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/4
+
+* (Windows) Remove old OCaml installations as best as can be found from your user environment. <https://gitlab.com/diskuv/diskuv-ocaml/-/issues/4>
 
 Changes:
+
 * Fix broken `./makeit shell-dev`
 * Fix broken builds when a Local Project has `vcpkg.json` manifests
 * Add `ocamlformat-rpc.exe` to PATH so OCaml Language Server can format language type snippets
@@ -683,8 +725,9 @@ Changes:
 ### Upgrading from v0.2.0/.../v0.2.3 to v0.2.4
 
 You will need to:
-* *(Windows only)* upgrade your *Diskuv OCaml* system
-* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+
+* _(Windows only)_ upgrade your _Diskuv OCaml_ system
+* _(Windows, Linux, macOS)_ upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
   which can be done at your leisure **before** the next system upgrade
 
 FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
@@ -715,9 +758,9 @@ git commit -m "Upgrade diskuv-ocaml to 0.2.4" vendor/diskuv-ocaml
 
 ## 0.2.3 (2021-10-08)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
@@ -730,8 +773,9 @@ See the [full list of changes in v0.2.2](https://gitlab.com/diskuv/diskuv-ocaml/
 ### Upgrading from v0.2.0, v0.2.1 or v0.2.2 to v0.2.3
 
 You will need to:
-* *(Windows only)* upgrade your *Diskuv OCaml* system
-* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+
+* _(Windows only)_ upgrade your _Diskuv OCaml_ system
+* _(Windows, Linux, macOS)_ upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
   which can be done at your leisure **before** the next system upgrade
 
 FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
@@ -762,15 +806,15 @@ git commit -m "Upgrade diskuv-ocaml to 0.2.3" vendor/diskuv-ocaml
 
 ## 0.2.2 (2021-10-07)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 Changes:
 
-* Visual Studio fixes. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/3
+* Visual Studio fixes. <https://gitlab.com/diskuv/diskuv-ocaml/-/issues/3>
   * Detect and require English language pack for Visual Studio.
   * Fix regression introduced in 0.2.x: Auto-installation of Visual Studio has the Windows 10 SDK but not the Visual Studio compiler.
   * Auto-install Visual Studio VC.Tools component for vcpkg use, in addition to VC.14.26 for OCaml use, if the existing installation is not Visual Studio 16.6.
@@ -789,9 +833,9 @@ Sharp edges:
 
 ## 0.2.1 (2021-09-17)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different licenses;
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different licenses;
 in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
@@ -802,21 +846,21 @@ Changes:
   installation or `Microsoft.VisualStudio.Component.VC.14.26.x86.x64` from any Visual Studio 2015 Update 3 or later
   installation.
 * Fix inotify-win not being compiled, which is used by `./makeit dkml-devmode`
-* Pin `ppxlib` to `0.22.0` to remove the need for https://github.com/janestreet/ppx_variants_conv/pull/9
+* Pin `ppxlib` to `0.22.0` to remove the need for <https://github.com/janestreet/ppx_variants_conv/pull/9>
 * `ctypes.0.19.2-windowssupport-r3` -> `ctypes.0.19.2-windowssupport-r4` fixes thread local storage
 
 ## 0.2.0 (2021-09-13)
 
-> The *Diskuv OCaml* distribution is available under the
+> The _Diskuv OCaml_ distribution is available under the
 [diskuv-ocaml Fair Source 0.9 license](https://gitlab.com/diskuv/diskuv-ocaml/-/raw/main/LICENSE.txt).
-Other assets available on https://gitlab.com/diskuv/diskuv-ocaml/-/releases may have different
+Other assets available on <https://gitlab.com/diskuv/diskuv-ocaml/-/releases> may have different
 licenses; in particular source code files that prominently display a
 [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ### Backwards incompatible changes
 
 Backwards incompatible changes requiring the equivalent of a major version bump
-(*using semver minor bump since version is still less than 1.0.0*):
+(_using semver minor bump since version is still less than 1.0.0_):
 
 * [Windows only] Changed OPAMROOT from `$env:USERPROFILE/.opam` to `$env:LOCALAPPDATA/opam`
   New and upgraded local projects will automatically use the new OPAMROOT after you have
@@ -830,8 +874,9 @@ Backwards incompatible changes requiring the equivalent of a major version bump
 ### Upgrading from v0.1.0 or v0.1.1 to v0.2.0
 
 You will need to:
-* *(Windows only)* upgrade your *Diskuv OCaml* system
-* *(Windows, Linux, macOS)* upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
+
+* _(Windows only)_ upgrade your _Diskuv OCaml_ system
+* _(Windows, Linux, macOS)_ upgrade your Local Projects (ex. [diskuv-ocaml-starter](https://gitlab.com/diskuv/diskuv-ocaml-starter))
   which can be done at your leisure **before** the next system upgrade
 
 FIRST, to upgrade the system (only necessary on Windows!) run the following in PowerShell:
@@ -882,17 +927,20 @@ New features:
 * [Windows only] Remove restriction on spaces in directory names
 
 Security enhancements:
+
 * [Windows only] The 'opam package manager for 32/bit + 64-bit Windows' and 'opam repository of ocaml/opam Docker base image' packages on [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases) include reproducible build scripts for auditing and validation. Much of the reproducibility is already provided by Opam; other pieces include downloading from Git tags and Docker checksum image tags. Since Git tags is a weak form of reproducibility, and since the reproducible build scripts are missing SHA2 checksum validation at each build step, please checksum the artifacts yourself if you need this feature.
 
 Productivity improvements:
+
 * Speed up creating switches by not auto-installing pinned packages simply because
-  they have *Diskuv OCaml* patches
-* [Windows only] Speed up *Diskuv OCaml* installation by removing the automatic download of ocaml/opam Docker images and instead using recompiled, much smaller [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases). More details in *Removed* section below
-* [Windows only] Removed two of six commands needed to install *Diskuv OCaml* on Windows from scratch.
+  they have _Diskuv OCaml_ patches
+* [Windows only] Speed up _Diskuv OCaml_ installation by removing the automatic download of ocaml/opam Docker images and instead using recompiled, much smaller [diskuv-ocaml Releases](https://gitlab.com/diskuv/diskuv-ocaml/-/releases). More details in _Removed_ section below
+* [Windows only] Removed two of six commands needed to install _Diskuv OCaml_ on Windows from scratch.
 
 Known issues:
-* During `opam install` the local fdopen-mingw repository ~20MB tarball may be repackaged. If you have several packages and their dependencies to install, this disk I/O may significantly slow down your installation. Some of the performance degradation will be improved with the future trimming of that repository; see the *Deprecated* section below for more details.
-* The initial `vcpkg install` may take more than an hour to complete its commands; on most machines it should initially only take a couple minutes. The problem looks related to https://github.com/microsoft/vcpkg/issues/10468 and https://github.com/microsoft/vcpkg/issues/13890 which were prematurely closed without adequate explanation.
+
+* During `opam install` the local fdopen-mingw repository ~20MB tarball may be repackaged. If you have several packages and their dependencies to install, this disk I/O may significantly slow down your installation. Some of the performance degradation will be improved with the future trimming of that repository; see the _Deprecated_ section below for more details.
+* The initial `vcpkg install` may take more than an hour to complete its commands; on most machines it should initially only take a couple minutes. The problem looks related to <https://github.com/microsoft/vcpkg/issues/10468> and <https://github.com/microsoft/vcpkg/issues/13890> which were prematurely closed without adequate explanation.
 
 New additions for the C language:
 
@@ -902,7 +950,7 @@ New additions for the C language:
 * [Windows only] To work around a LINK.EXE bug during 32-bit builds, two
   compiler versions are installed rather than one. The
   `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` ("MSVC v142 - VS 2019 C++ x64/x86 build tools (Latest)")
-  compiler used in *Diskuv OCaml* 0.1.x is necessary for vcpkg and as such is still installed in 0.2.x, but there is now a second compiler `Microsoft.VisualStudio.Component.VC.14.26.x86.x64` ("MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26)") used for C compiling in Opam packages.
+  compiler used in _Diskuv OCaml_ 0.1.x is necessary for vcpkg and as such is still installed in 0.2.x, but there is now a second compiler `Microsoft.VisualStudio.Component.VC.14.26.x86.x64` ("MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.26)") used for C compiling in Opam packages.
 
 New patches:
 
@@ -913,17 +961,18 @@ New patches:
   used consistently
 
 MSYS2 changes:
+
 * `pkg-config` was removed from MSYS2 and replaced with the native Windows `pkgconf` from vcpkg.
   `pkgconf` supplies C headers and libraries to the Microsoft compiler and linker with Windows paths.
 
 ### Patches only for OCaml package maintainers
 
-> The packages listed below are patched in *Diskuv OCaml* and are available in any
-> [*Diskuv OCaml* created switch](https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html#opt-diskuv-ocaml-installtime-create-opam-switch-sh)
+> The packages listed below are patched in _Diskuv OCaml_ and are available in any
+> [_Diskuv OCaml_ created switch](https://diskuv.gitlab.io/diskuv-ocaml/doc/CommandReference.html#opt-diskuv-ocaml-installtime-create-opam-switch-sh)
 > and in any Local Project.
 > They either have open PRs or have not been released to Opam, so they are **highly unstable**
 > and _not_ meant for public consumption. They have been provided so that downstream OCaml packages
-> (packages that consume *Diskuv OCaml* patched packages) can be tested by
+> (packages that consume _Diskuv OCaml_ patched packages) can be tested by
 > downstream OCaml package maintainers.
 
 * `ctypes.0.19.2-windowssupport-r3` which is a few commits past `ctypes.0.19.1`
@@ -961,7 +1010,7 @@ MSYS2 changes:
 
 Bug fixes:
 
-* Fix `Installation fails when Windows locale/culture has commas in its number format`. https://gitlab.com/diskuv/diskuv-ocaml/-/issues/1
+* Fix `Installation fails when Windows locale/culture has commas in its number format`. <https://gitlab.com/diskuv/diskuv-ocaml/-/issues/1>
 
 License changes:
 

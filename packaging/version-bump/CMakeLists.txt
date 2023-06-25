@@ -100,6 +100,27 @@ function(stage_self_DkMLReplace BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIAB
     set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
+function(stage_self_Changes BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE)
+    file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md versionChanges)
+    file(READ ${PROJECT_SOURCE_DIR}/CHANGES.md priorChanges)
+
+    # First line in CHANGES.md should be a top-level heading "# CHANGES" to
+    # be valid Markdown. So strip it so we can add it back.
+    string(REGEX REPLACE "^# CHANGES[^\n]*\n" "" priorChanges "${priorChanges}")
+
+    string(TIMESTAMP now_YYYYMMDD "%Y-%m-%d")
+    string(REPLACE "@@YYYYMMDD@@" ${now_YYYYMMDD} versionChanges "${versionChanges}")
+
+    string(STRIP "${versionChanges}" versionChanges)
+    string(STRIP "${priorChanges}" priorChanges)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/CHANGES.md "# CHANGES\n\n${versionChanges}\n\n${priorChanges}")
+
+    # Add to list
+    set(retval ${OUTPUT_LIST_VARIABLE})
+    list(APPEND retval ${PROJECT_SOURCE_DIR}/CHANGES.md)
+    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+endfunction()
+
 function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
     set(retval ${${OUTPUT_LIST_VARIABLE}})
 
@@ -207,6 +228,9 @@ function(add_version_bump_target BUMP_LEVEL)
         stage_self_DkMLReplace(${BUMP_LEVEL}
             ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}
             selfModifications README.md)
+        stage_self_Changes(${BUMP_LEVEL}
+            ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}
+            selfModifications)
     endif()
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${BUMP_LEVEL}

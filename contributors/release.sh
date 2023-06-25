@@ -364,7 +364,7 @@ if [ "$PRERELEASE" = ON ]; then # PORTED
         git -C vendor/"$v" commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION"
     done
 	git commit -m "Bump version: $CURRENT_VERSION → $NEW_VERSION" -a
-else
+else # PORTED
     # We are doing a target release, not a prerelease ...
 
     # 1. There are a couple files that should have a "stable" link that only change when the release is
