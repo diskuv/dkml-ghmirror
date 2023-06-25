@@ -11,7 +11,9 @@ set(syncedProjects
     dkml-runtime-distribution
 )
 
-# Calculate what the new prerelease would be
+# ----------------
+#
+# Pre-calculate content for new prerelease,patch,etc. bumped versions
 function(set_new_prerelease_version)
     if(DKML_VERSION_PRERELEASE)
         math(EXPR new_prerelease "${DKML_VERSION_PRERELEASE} + 1")
@@ -26,50 +28,57 @@ function(set_new_prerelease_version)
     set(DKML_VERSION_OPAMVER_NEW_PRERELEASE ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch}~prerel${new_prerelease} PARENT_SCOPE)
 endfunction()
 
+function(set_new_patch_version)
+    math(EXPR new_patch "${DKML_VERSION_PATCH} + 1")
+
+    set(DKML_VERSION_CMAKEVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
+    set(DKML_VERSION_SEMVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
+    set(DKML_VERSION_OPAMVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
+endfunction()
+
 set_new_prerelease_version()
-file(CONFIGURE OUTPUT new-version CONTENT "@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
+set_new_patch_version()
+file(CONFIGURE OUTPUT new-PRERELEASE-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
+file(CONFIGURE OUTPUT new-PATCH-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PATCH@" @ONLY NEWLINE_STYLE UNIX)
 
 # ----------------
 #
-set(versionBumpTargetDepends)
 
 # ----------------
 #
-
-# Stage a new version of version.cmake and README.md
-set(version.cmake_STAGED_PRERELEASE ${CMAKE_CURRENT_BINARY_DIR}/version-new_prerelease.cmake)
-set(README_STAGED_PRERELEASE ${CMAKE_CURRENT_BINARY_DIR}/README-new_prerelease.md)
-
-function(stage_self REL_FILENAME)
+function(stage_self_PlainReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
     file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
     string(REPLACE "${DKML_VERSION_CMAKEVER}" "${DKML_VERSION_CMAKEVER_NEW_PRERELEASE}" contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
-        message(FATAL_ERROR "The old version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/version.cmake")
+        message(FATAL_ERROR "The old version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
     endif()
 
-    file(WRITE ${PROJECT_SOURCE_DIR}/${REL_FILENAME} "${contents_NEW}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
+
+    # Add to list
+    set(retval ${${OUTPUT_LIST_VARIABLE}})
+    list(APPEND retval ${PROJECT_SOURCE_DIR}/${REL_FILENAME})
+    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-stage_self(version.cmake)
-stage_self(README.md)
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-version
-    COMMAND ${CMAKE_COMMAND} -E copy ${version.cmake_STAGED_PRERELEASE} version.cmake
-    COMMAND ${CMAKE_COMMAND} -E copy ${README_STAGED_PRERELEASE} README.md
-    COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add version.cmake README.md
-    COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_PRERELEASE}"
-    VERBATIM)
+function(stage_self_DkMLReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
+    file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
+    string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${DKML_VERSION_SEMVER_NEW_PRERELEASE}" contents_NEW "${contents}")
 
-list(APPEND versionBumpTargetDepends ${CMAKE_CURRENT_BINARY_DIR}/self/committed)
+    if(contents STREQUAL "${contents_NEW}")
+        message(FATAL_ERROR "A DkML version was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+    endif()
 
-#
-# ----------------
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
 
-# ----------------
-#
-function(bump_synced_projects)
+    # Add to list
+    set(retval ${OUTPUT_LIST_VARIABLE})
+    list(APPEND retval ${PROJECT_SOURCE_DIR}/${REL_FILENAME})
+    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+endfunction()
+
+function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/${proj})
 
@@ -82,52 +91,82 @@ function(bump_synced_projects)
         endif()
 
         if(NOT EXISTS ${srcDir}/bump-version.cmake)
-            message(STATUS "Skipping prerelease bump of ${proj} since it has no bump-version.cmake")
+            message(STATUS "Skipping ${BUMP_LEVEL} bump of ${proj} since it has no bump-version.cmake")
             continue()
         endif()
 
-        add_custom_command(OUTPUT ${outputDir}/bumped-prerelease
+        add_custom_command(OUTPUT ${outputDir}/bumped-${BUMP_LEVEL}
             WORKING_DIRECTORY ${srcDir}
-            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-version
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver
             COMMAND ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
+            -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
+            -D "DKML_RELEASE_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake"
             -D DKML_VERSION_OPAMVER=${DKML_VERSION_OPAMVER}
             -D DKML_VERSION_SEMVER=${DKML_VERSION_SEMVER}
             -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_PRERELEASE}
             -D DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_PRERELEASE}
-            -D "DKML_RELEASE_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake"
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -P bump-version.cmake
             VERBATIM
             USES_TERMINAL
         )
 
-        add_custom_command(OUTPUT ${outputDir}/tagged
-            MAIN_DEPENDENCY ${outputDir}/bumped-prerelease
-            WORKING_DIRECTORY ${srcDir}
-            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-version
+        set(tag_COMMANDS)
 
+        if(BUMP_LEVEL STREQUAL PRERELEASE)
             # Prereleases can always be overwritten, so delete the tag if present
-            COMMAND ${CMAKE_COMMAND}
-            --log-context
-            -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
-            -D GIT_TAG_TO_DELETE=${DKML_VERSION_SEMVER_NEW_PRERELEASE}
-            -P ${CMAKE_CURRENT_LIST_DIR}/delete-tag-if-present.cmake
+            list(APPEND tag_COMMANDS
+                COMMAND ${CMAKE_COMMAND}
+                --log-context
+                -D CMAKE_MESSAGE_CONTEXT=${proj}
+                -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+                -D GIT_TAG_TO_DELETE=${DKML_VERSION_SEMVER_NEW_PRERELEASE}
+                -P ${CMAKE_CURRENT_LIST_DIR}/delete-tag-if-present.cmake)
+        endif()
+
+        add_custom_command(OUTPUT ${outputDir}/tagged-${BUMP_LEVEL}
+            MAIN_DEPENDENCY ${outputDir}/bumped-${BUMP_LEVEL}
+            WORKING_DIRECTORY ${srcDir}
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver
+
+            ${tag_COMMANDS}
             COMMAND ${GIT_EXECUTABLE} tag -a ${DKML_VERSION_SEMVER_NEW_PRERELEASE} -m ${DKML_VERSION_OPAMVER_NEW_PRERELEASE}
             COMMAND ${GIT_EXECUTABLE} push --atomic origin main ${DKML_VERSION_SEMVER_NEW_PRERELEASE}
             VERBATIM
             USES_TERMINAL
         )
 
-        # list(APPEND versionBumpTargetDepends ${outputDir}/tagged)
+        # Add to list
+        set(retval ${${OUTPUT_LIST_VARIABLE}})
+        list(APPEND retval ${outputDir}/tagged-${BUMP_LEVEL})
+        set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
     endforeach()
 endfunction()
 
-bump_synced_projects()
+function(add_version_bump_target BUMP_LEVEL)
+    set(selfModifications)
+    stage_self_PlainReplace(${BUMP_LEVEL} selfModifications version.cmake)
+    if(NOT BUMP_LEVEL STREQUAL PRERELEASE)
+        stage_self_DkMLReplace(${BUMP_LEVEL} selfModifications README.md)
+    endif()
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${BUMP_LEVEL}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL} .
+        COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
+        COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}"
+        VERBATIM)
 
-add_custom_target(VersionBumpPrelease
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-version ${versionBumpTargetDepends}
-    VERBATIM)
+    set(versionBumpTargetDepends ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${BUMP_LEVEL})
+
+    add_bump_commands_for_synced_projects(${BUMP_LEVEL} versionBumpTargetDepends)
+    add_custom_target(VersionBump-${BUMP_LEVEL}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${versionBumpTargetDepends}
+        VERBATIM)
+endfunction()
+
+add_version_bump_target(PRERELEASE)
+add_version_bump_target(PATCH)
