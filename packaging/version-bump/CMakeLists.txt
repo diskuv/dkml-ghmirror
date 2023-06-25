@@ -81,6 +81,24 @@ endfunction()
 function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
     set(retval ${${OUTPUT_LIST_VARIABLE}})
 
+    # For PRERELEASE we want fuzzy matching on any prior PRERELEASE because
+    # we expect partial completions during PRERELEASE.
+    #
+    # For example, a PRERELEASE bump could be successful for half of
+    # the packages, but then terminated due to a failure (perhaps this script
+    # has a bug!). The failure would get fixed. Then a new PRERELEASE bump
+    # occurs. Once it finishes end-to-end without failures ... only then
+    # do you do a PATCH (or MINOR or MAJOR) bump.
+    if(BUMP_LEVEL STREQUAL "PRERELEASE")
+        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_MAJMINPAT}-[0-9]+")
+        set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_MAJMINPAT}[~]prerel[0-9]+")
+    else()
+        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_OPAMVER}")
+        set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_OPAMVER}")
+    endif()
+    string(REPLACE "." "[.]" regex_DKML_VERSION_SEMVER "${regex_DKML_VERSION_SEMVER}")
+    string(REPLACE "." "[.]" regex_DKML_VERSION_OPAMVER "${regex_DKML_VERSION_OPAMVER}")
+
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/${proj})
 
@@ -105,8 +123,8 @@ function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
             -D CMAKE_MESSAGE_CONTEXT=${proj}
             -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
             -D "DKML_RELEASE_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake"
-            -D DKML_VERSION_OPAMVER=${DKML_VERSION_OPAMVER}
-            -D DKML_VERSION_SEMVER=${DKML_VERSION_SEMVER}
+            -D regex_DKML_VERSION_OPAMVER=${regex_DKML_VERSION_OPAMVER}
+            -D regex_DKML_VERSION_SEMVER=${regex_DKML_VERSION_SEMVER}
             -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_PRERELEASE}
             -D DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_PRERELEASE}
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
