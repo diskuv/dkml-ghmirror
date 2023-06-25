@@ -54,7 +54,7 @@ function(stage_self_PlainReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
         message(FATAL_ERROR "The old version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
     endif()
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
 
     # Add to list
     set(retval ${${OUTPUT_LIST_VARIABLE}})
@@ -70,7 +70,7 @@ function(stage_self_DkMLReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
         message(FATAL_ERROR "A DkML version was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
     endif()
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
 
     # Add to list
     set(retval ${OUTPUT_LIST_VARIABLE})
@@ -79,6 +79,8 @@ function(stage_self_DkMLReplace BUMP_LEVEL OUTPUT_LIST_VARIABLE REL_FILENAME)
 endfunction()
 
 function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
+    set(retval ${${OUTPUT_LIST_VARIABLE}})
+
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/${proj})
 
@@ -137,24 +139,25 @@ function(add_bump_commands_for_synced_projects BUMP_LEVEL OUTPUT_LIST_VARIABLE)
             VERBATIM
             USES_TERMINAL
         )
-
-        # Add to list
-        set(retval ${${OUTPUT_LIST_VARIABLE}})
         list(APPEND retval ${outputDir}/tagged-${BUMP_LEVEL})
-        set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
     endforeach()
+
+    # Add to list
+    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
 function(add_version_bump_target BUMP_LEVEL)
     set(selfModifications)
     stage_self_PlainReplace(${BUMP_LEVEL} selfModifications version.cmake)
-    if(NOT BUMP_LEVEL STREQUAL PRERELEASE)
+
+    if(NOT(BUMP_LEVEL STREQUAL "PRERELEASE"))
         stage_self_DkMLReplace(${BUMP_LEVEL} selfModifications README.md)
     endif()
+
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${BUMP_LEVEL}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/replacements/${BUMP_LEVEL} .
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL} .
         COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
         COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}"
         VERBATIM)
