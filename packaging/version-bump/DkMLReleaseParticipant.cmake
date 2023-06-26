@@ -31,8 +31,12 @@ function(DkMLReleaseParticipant_PlainReplace REL_FILENAME)
         contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_SEMVER} was not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_SEMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
+        string(FIND "${contents_NEW}" "${DKML_VERSION_SEMVER_NEW}" idempotent)
+
+        if(idempotent LESS 0)
+            cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
+            message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_SEMVER} was not found in ${FILENAME_ABS} or unchanged from new version ${DKML_VERSION_SEMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
+        endif()
     endif()
 
     file(WRITE ${REL_FILENAME} "${contents_NEW}")
@@ -40,6 +44,22 @@ function(DkMLReleaseParticipant_PlainReplace REL_FILENAME)
     message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_SEMVER_NEW}")
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
+
+macro(_DkMLReleaseParticipant_Finish_OPAMVER_Replace)
+    if(contents STREQUAL "${contents_NEW}")
+        string(FIND "${contents_NEW}" "${DKML_VERSION_OPAMVER_NEW}" idempotent)
+
+        if(idempotent LESS 0)
+            cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
+            message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
+        endif()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endmacro()
 
 # version: "1.2.1~prerel2" -> version: "1.2.1~prerel3"
 function(DkMLReleaseParticipant_OpamReplace REL_FILENAME)
@@ -50,16 +70,7 @@ function(DkMLReleaseParticipant_OpamReplace REL_FILENAME)
         "(^|\n)version: \"${regex_DKML_VERSION_OPAMVER}\""
         "\\1version: \"${DKML_VERSION_OPAMVER_NEW}\""
         contents_NEW "${contents_NEW}")
-
-    if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
-    endif()
-
-    file(WRITE ${REL_FILENAME} "${contents_NEW}")
-
-    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+    _DkMLReleaseParticipant_Finish_OPAMVER_Replace()
 endfunction()
 
 # (version 1.2.1~prerel2) -> (version 1.2.1~prerel3)
@@ -71,16 +82,7 @@ function(DkMLReleaseParticipant_DuneProjectReplace REL_FILENAME)
         "(^|\n)[(]version ${regex_DKML_VERSION_OPAMVER}[)]"
         "\\1(version ${DKML_VERSION_OPAMVER_NEW})"
         contents_NEW "${contents_NEW}")
-
-    if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
-    endif()
-
-    file(WRITE ${REL_FILENAME} "${contents_NEW}")
-
-    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+    _DkMLReleaseParticipant_Finish_OPAMVER_Replace()
 endfunction()
 
 # dkml-apps,1.2.1~prerel2 -> dkml-apps,1.2.1~prerel3
@@ -101,15 +103,7 @@ function(_DkMLReleaseParticipant_HelperApps REL_FILENAME SEPARATOR)
             contents_NEW "${contents_NEW}")
     endforeach()
 
-    if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
-    endif()
-
-    file(WRITE ${REL_FILENAME} "${contents_NEW}")
-
-    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+    _DkMLReleaseParticipant_Finish_OPAMVER_Replace()
 endfunction()
 
 # dkml-apps,1.2.1~prerel2 -> dkml-apps,1.2.1~prerel3
@@ -136,15 +130,7 @@ function(DkMLReleaseParticipant_MetaReplace REL_FILENAME)
         "\\1version = \"${DKML_VERSION_OPAMVER_NEW}\""
         contents_NEW "${contents_NEW}")
 
-    if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old versions ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
-    endif()
-
-    file(WRITE ${REL_FILENAME} "${contents_NEW}")
-
-    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+    _DkMLReleaseParticipant_Finish_OPAMVER_Replace()
 endfunction()
 
 # version: "4.14.0~v1.2.1~prerel2" -> version: "4.14.0~v1.2.1~prerel3"
@@ -164,19 +150,15 @@ function(DkMLReleaseParticipant_DkmlBaseCompilerReplace REL_FILENAME)
         "\\1\"dkml-runtime-common-native\" {= \"${DKML_VERSION_OPAMVER_NEW}\"}"
         contents_NEW "${contents_NEW}")
 
-    if(contents STREQUAL "${contents_NEW}")
-        cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
-        message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_OPAMVER} were not found in ${FILENAME_ABS}, or unchanged from new version ${DKML_VERSION_OPAMVER_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
-    endif()
-
-    file(WRITE ${REL_FILENAME} "${contents_NEW}")
-
-    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_OPAMVER_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+    _DkMLReleaseParticipant_Finish_OPAMVER_Replace()
 endfunction()
 
 function(DkMLReleaseParticipant_GitAddAndCommit)
     if(DRYRUN)
+        return()
+    endif()
+
+    if(NOT relFiles)
         return()
     endif()
 

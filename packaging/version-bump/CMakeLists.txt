@@ -10,20 +10,38 @@ set(BUMP2VERSION_EXECUTABLE "${CONDA_EXECUTABLE}" run -n "${CONDA_ENVIRONMENT}" 
 
 set(preProjects
 
-    # These are the projects that are required to build an OCaml
-    # compiler in a new switch
-    diskuv-opam-repository
+    # These are the projects that are required to a) create a switch
+    # with b) an OCaml compiler. See note in [syncedProjects] about
+    # [diskuv-opam-repository].
     dkml-compiler
     dkml-runtime-common
-    dkml-runtime-distribution
+    dkml-runtime-distribution # contains create-opam-switch.sh
 )
 set(syncedProjects
     ${preProjects}
 
+    # Technically [diskuv-opam-repository] belongs in [preProjects],
+    # however the repository must be updated after all the other
+    # projects are updated (or else it can't get their checksums).
+    # AFAIK this should not affect anything ... this VersionBump logic
+    # uses pinning for all projects, so it is irrelevant if
+    # [diskuv-opam-repository] is stale all the way until the end
+    # of VersionBump.
+    diskuv-opam-repository
+
+    # All these others will be modified but aren't need to build the compiler
     # dkml-component-desktop
     # dkml-installer-ocaml
     # dkml-runtime-apps
 )
+set(self_BRANCH next-cmake) # self is [dkml]
+set(diskuv-opam-repository_BRANCH main)
+set(dkml-compiler_BRANCH main)
+set(dkml-runtime-common_BRANCH main)
+set(dkml-runtime-distribution_BRANCH main)
+set(dkml-component-desktop_BRANCH main)
+set(dkml-installer-ocaml_BRANCH main)
+set(dkml-runtime-apps_BRANCH main)
 
 # ----------------
 #
@@ -143,17 +161,10 @@ function(add_GitTag_command)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    set(tag_COMMANDS)
-
+    set(tar_ARGS)
     if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
-        # Prereleases can always be overwritten, so delete the tag if present
-        list(APPEND tag_COMMANDS
-            COMMAND ${CMAKE_COMMAND}
-            --log-context
-            -D CMAKE_MESSAGE_CONTEXT=${ARG_CONTEXT}
-            -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
-            -D GIT_TAG_TO_DELETE=${DKML_VERSION_SEMVER_NEW_PRERELEASE}
-            -P ${CMAKE_CURRENT_LIST_DIR}/delete-tag-if-present.cmake)
+        # Prereleases can always be overwritten, so force overwrite the git tag if present.
+        list(APPEND tar_ARGS --force)
     endif()
 
     add_custom_command(OUTPUT ${ARG_OUTPUT_FILE}
@@ -162,8 +173,13 @@ function(add_GitTag_command)
         ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver
         ${ARG_DEPENDS}
 
-        ${tag_COMMANDS}
-        COMMAND ${GIT_EXECUTABLE} tag -a ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}} -m ${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+        -D "BUMP_LEVEL=${ARG_BUMP_LEVEL}"
+        -D "DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}"
+        -D "DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${BUMP_LEVEL}}"
+        -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/idempotent-tag.cmake
         VERBATIM
         USES_TERMINAL
     )
@@ -215,11 +231,13 @@ function(add_VersionBump_commands_for_synced_projects)
             if(NOT(proj IN_LIST preProjects))
                 continue()
             endif()
+
             string(APPEND outputDir /PRE)
         elseif(ARG_FILTER STREQUAL POST)
             if(proj IN_LIST preProjects)
                 continue()
             endif()
+
             string(APPEND outputDir /POST)
         endif()
 
@@ -257,9 +275,35 @@ endfunction()
 
 function(add_GitPush_command)
     set(noValues)
-    set(singleValues SOURCE_DIR BUMP_LEVEL OUTPUT_FILE)
+    set(singleValues SOURCE_DIR BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    set(refspec ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}})
+
+    if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
+        # Prereleases can always be overwritten, so add a leading +
+        # (similar to --force) to force overwrite the git tag if present.
+        # We don't use --force since that would apply to the [<currentBranch>]
+        # branch as well (which we want to fail if it is not a fast-forward
+        # commit).
+        string(PREPEND refspec "+")
+    endif()
+
+    execute_process(
+        WORKING_DIRECTORY ${ARG_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} branch --show-current
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE currentBranch)
+
+    if(currentBranch)
+        # Safety check
+        if(NOT(currentBranch STREQUAL "${ARG_BRANCH}"))
+            message(FATAL_ERROR "The expected branch was ${ARG_BRANCH} in ${ARG_SOURCE_DIR}, but is actually ${currentBranch}. Change ${CMAKE_CURRENT_FUNCTION_LIST_FILE} if the expected branch is wrong")
+        endif()
+    else()
+        message(FATAL_ERROR "There is no branch (likely a detached HEAD) in ${ARG_SOURCE_DIR}")
+    endif()
 
     add_custom_command(OUTPUT ${ARG_OUTPUT_FILE}
         WORKING_DIRECTORY ${ARG_SOURCE_DIR}
@@ -267,7 +311,7 @@ function(add_GitPush_command)
         ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver
         ${ARG_DEPENDS}
 
-        COMMAND ${GIT_EXECUTABLE} push --atomic origin main ${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}
+        COMMAND ${GIT_EXECUTABLE} push --atomic origin ${currentBranch} ${refspec}
         VERBATIM
         USES_TERMINAL
     )
@@ -275,7 +319,7 @@ endfunction()
 
 function(add_GitPush_commands_for_synced_projects)
     set(noValues)
-    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE)
+    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE INTENDED_TARGET)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
@@ -287,15 +331,22 @@ function(add_GitPush_commands_for_synced_projects)
         # Set <proj>_SOURCE_DIR
         FetchContent_GetProperties(${proj})
         set(srcDir ${${proj}_SOURCE_DIR})
+        set(branch ${${proj}_BRANCH})
 
         if(NOT srcDir)
             message(FATAL_ERROR "No FetchContent_MakeAvailable(${proj}) has been performed in dependencies/")
+        endif()
+
+        if(NOT branch)
+            message(FATAL_ERROR "No set(${proj}_BRANCH) was set in ${CMAKE_CURRENT_FUNCTION_LIST_FILE}")
         endif()
 
         add_GitPush_command(
             BUMP_LEVEL ${ARG_BUMP_LEVEL}
             SOURCE_DIR ${srcDir}
             OUTPUT_FILE ${outputDir}/pushed-${ARG_BUMP_LEVEL}
+            BRANCH ${branch}
+            INTENDED_TARGET ${ARG_INTENDED_TARGET}
             DEPENDS
             ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver
             ${ARG_DEPENDS})
@@ -393,8 +444,10 @@ function(add_OpamSwitch_target BUMP_LEVEL)
     cmake_path(GET GIT_EXECUTABLE PARENT_PATH GIT_EXECUTABLE_DIR)
     FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
     FetchContent_GetProperties(dkml-compiler) # Used by upsert-dkml-pkgs-core
-    FetchContent_GetProperties(dkml-runtime-common)
+    FetchContent_GetProperties(dkml-runtime-common) # Used by upsert-dkml-pkgs-core
     FetchContent_GetProperties(dkml-runtime-distribution)
+    set(dkml-compiler_OPAMVER_NEW ${DKML_VERSION_OPAMVER_NEW_${BUMP_LEVEL}})
+    set(dkml-runtime-common_OPAMVER_NEW ${DKML_VERSION_OPAMVER_NEW_${BUMP_LEVEL}})
     execute_process(
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-dkmlroot ${DKML_ROOT_DIR}/.dkmlroot
 
@@ -434,7 +487,10 @@ function(add_OpamSwitch_target BUMP_LEVEL)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${opamsw}/.ci/o/dkml/bin/ocamlc${CMAKE_EXECUTABLE_SUFFIX}
-        DEPENDS ${opamsw}/.ci/o/dkml/.opam-switch/switch-config
+        DEPENDS
+        ${opamsw}/.ci/o/dkml/.opam-switch/switch-config
+        ${dkml-runtime-common_SOURCE_DIR}/dkml-runtime-common-native.opam
+        ${dkml-compiler_SOURCE_DIR}/dkml-base-compiler.opam
         COMMENT "Creating/updating ${BUMP_LEVEL} [dkml] compiler"
         COMMAND ${upsert_dkml_pkgs_core_COMMAND}
         VERBATIM
@@ -449,6 +505,7 @@ endfunction()
 
 function(add_all_targets BUMP_LEVEL)
     set(selfModifications)
+    set(INTENDED_TARGET_GIT_PUSH Package-${BUMP_LEVEL}-Stage4-GitPush)
 
     if(BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
@@ -488,6 +545,8 @@ function(add_all_targets BUMP_LEVEL)
     add_GitPush_command(
         BUMP_LEVEL ${BUMP_LEVEL}
         SOURCE_DIR ${PROJECT_SOURCE_DIR}
+        BRANCH ${self_BRANCH}
+        INTENDED_TARGET ${INTENDED_TARGET_GIT_PUSH}
         OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/self/pushed-${BUMP_LEVEL}
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/self/tagged-${BUMP_LEVEL})
 
@@ -506,6 +565,7 @@ function(add_all_targets BUMP_LEVEL)
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE gitPushTargetDepends
+        INTENDED_TARGET ${INTENDED_TARGET_GIT_PUSH}
         DEPENDS ${versionBumpPreTargetDepends} ${versionBumpPostTargetDepends})
 
     add_custom_target(Package-${BUMP_LEVEL}-Stage1-VersionBump
@@ -519,11 +579,11 @@ function(add_all_targets BUMP_LEVEL)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${versionBumpPostTargetDepends}
         VERBATIM)
     add_dependencies(Package-${BUMP_LEVEL}-Stage3-VersionBump Package-${BUMP_LEVEL}-Stage2-OpamSwitch)
-    add_custom_target(Package-${BUMP_LEVEL}-Stage4-GitPush
+    add_custom_target(${INTENDED_TARGET_GIT_PUSH}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${gitPushTargetDepends}
         VERBATIM)
-    add_dependencies(Package-${BUMP_LEVEL}-Stage4-GitPush Package-${BUMP_LEVEL}-Stage3-VersionBump)
+    add_dependencies(${INTENDED_TARGET_GIT_PUSH} Package-${BUMP_LEVEL}-Stage3-VersionBump)
 endfunction()
 
 add_all_targets(PRERELEASE)
