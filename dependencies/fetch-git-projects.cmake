@@ -67,6 +67,18 @@ FetchGit(dkml-compiler
     GIT_REPOSITORY https://github.com/diskuv/dkml-compiler.git
     GIT_TAG main # fd73aa1567099344e5d12c7acbc2a13cf1a9cd20 # 1.2.1-prerel1 + commits
 )
+FetchGit(dkml-component-desktop
+    GIT_REPOSITORY https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop.git
+    GIT_TAG main
+)
+FetchGit(dkml-installer-ocaml
+    GIT_REPOSITORY https://github.com/diskuv/dkml-installer-ocaml.git
+    GIT_TAG main
+)
+FetchGit(dkml-runtime-apps
+    GIT_REPOSITORY https://github.com/diskuv/dkml-runtime-apps.git
+    GIT_TAG main
+)
 FetchGit(dkml-runtime-common
     GIT_REPOSITORY https://github.com/diskuv/dkml-runtime-common.git
     GIT_TAG main # 90426df0bdda1e0cb7675b6f746aa152b222c6c8 # 1.2.1-prerel1 + commits
@@ -82,4 +94,8 @@ FetchGit(dkml-component-opam
 FetchGit(dkml-c-probe
     GIT_REPOSITORY https://github.com/diskuv/dkml-c-probe.git
     GIT_TAG main # 20802884d9f5da9030d368cf48aec3f8ddf63c76 # Past v3.0.0
+)
+FetchGit(dkml-workflows
+    # GIT_REPOSITORY https://github.com/diskuv/dkml-workflows.git GIT_TAG v1
+    GIT_REPOSITORY https://github.com/diskuv/dkml-workflows-prerelease.git GIT_TAG 36e82632d9a4a789817dcadb23bf81755a7c9dd1 # has SKIP_OPAM_MODIFICATIONS
 )

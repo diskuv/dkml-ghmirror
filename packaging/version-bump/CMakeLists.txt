@@ -1,14 +1,28 @@
 set(DKML_RELEASE_OCAML_VERSION 4.14.0)
 include(${PROJECT_SOURCE_DIR}/version.cmake)
 
+if(CMAKE_HOST_WIN32)
+    find_program(POWERSHELL_EXECUTABLE NAMES pwsh powershell REQUIRED)
+endif()
+
 find_program(GIT_EXECUTABLE NAMES git DOC "Git" REQUIRED)
 set(BUMP2VERSION_EXECUTABLE "${CONDA_EXECUTABLE}" run -n "${CONDA_ENVIRONMENT}" --live-stream bump2version)
 
-set(syncedProjects
+set(preProjects
+
+    # These are the projects that are required to build an OCaml
+    # compiler in a new switch
     diskuv-opam-repository
     dkml-compiler
     dkml-runtime-common
     dkml-runtime-distribution
+)
+set(syncedProjects
+    ${preProjects}
+
+    # dkml-component-desktop
+    # dkml-installer-ocaml
+    # dkml-runtime-apps
 )
 
 # ----------------
@@ -44,6 +58,8 @@ set_new_prerelease_version()
 set_new_patch_version()
 file(CONFIGURE OUTPUT new-PRERELEASE-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
 file(CONFIGURE OUTPUT new-PATCH-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PATCH@" @ONLY NEWLINE_STYLE UNIX)
+file(CONFIGURE OUTPUT new-PRERELEASE-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
+file(CONFIGURE OUTPUT new-PATCH-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_PATCH@" @ONLY NEWLINE_STYLE UNIX)
 
 # ----------------
 #
@@ -155,7 +171,7 @@ endfunction()
 
 function(add_VersionBump_commands_for_synced_projects)
     set(noValues)
-    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE)
+    set(singleValues BUMP_LEVEL FILTER OUTPUT_LIST_VARIABLE)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
@@ -193,6 +209,18 @@ function(add_VersionBump_commands_for_synced_projects)
 
         if(NOT EXISTS ${srcDir}/bump-version.cmake)
             message(FATAL_ERROR "${proj} has no bump-version.cmake")
+        endif()
+
+        if(ARG_FILTER STREQUAL PRE)
+            if(NOT(proj IN_LIST preProjects))
+                continue()
+            endif()
+            string(APPEND outputDir /PRE)
+        elseif(ARG_FILTER STREQUAL POST)
+            if(proj IN_LIST preProjects)
+                continue()
+            endif()
+            string(APPEND outputDir /POST)
         endif()
 
         add_custom_command(OUTPUT ${outputDir}/bumped-${ARG_BUMP_LEVEL}
@@ -278,6 +306,147 @@ function(add_GitPush_commands_for_synced_projects)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
+# The OpamSwitch target create two switches:
+#
+# 1. The "dkml" switch which has their own compiler and DKML repository; we
+# don't try to sync its compilers + repository with the ones we FetchContent
+# from in CMake. Those non-synced compilers and repositories are only used for
+# initial build of OpamSwitch target; subsequent CMake targets will
+# add pins (ex. dkml-base-compiler) and repository
+# (ex. our FetchContent diskuv-opam-repository) and rebuild the
+# switch as necessary. *Yes, that is wasteful, but presently setup-dkml does
+# not support local pinning. More importantly, we won't have a chicken-and-egg
+# problem ... dkml-component-desktop needs a working [dune build *.opam] to
+# update its own .opam files. Using a stable, unsynced dkml switch lets us do
+# that*.
+# 2. The "two" switch has the tools like [dkml-runtime-distribution] that
+# can introspect and figure out which packages need to be installed in "dkml".
+# The "two" switch will have local pins to [dkml-runtime-common] and
+# [dkml-runtime-distribution].
+#
+# This logic is the same performed by dkml-component-desktop. See its README.md
+# for how it works.
+function(add_OpamSwitch_target BUMP_LEVEL)
+    FetchContent_GetProperties(dkml-workflows)
+
+    set(opamsw ${CMAKE_CURRENT_BINARY_DIR}/OpamSwitch/${BUMP_LEVEL})
+    set(setupAdditionalOutput)
+
+    function(anyrun SCRIPT OUTVAR)
+        set(${OUTVAR} "${opamsw}/anyrun.sh" ${SCRIPT} PARENT_SCOPE)
+    endfunction()
+
+    if(CMAKE_HOST_WIN32)
+        set(DKML_HOST_ABI windows_x86_64)
+        set(setupScript "${POWERSHELL_EXECUTABLE}" "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-windows_x86_64.ps1")
+        list(APPEND setupAdditionalOutput ${opamsw}/msys64/usr/bin/bash.exe)
+
+        function(anyrun SCRIPT OUTVAR)
+            # [build] Finished setup.
+            # [build]
+            # [build] To continue your testing, run in PowerShell:
+            # [build]   $env:CHERE_INVOKING = "yes"
+            # [build]   $env:MSYSTEM = "CLANG64"
+            # [build]   $env:dkml_host_abi = "windows_x86_64"
+            # [build]   $env:abi_pattern = "win32-windows_x86_64"
+            # [build]   $env:opam_root = "Z:/source/dkml/build/packaging/version-bump/opamsw/.ci/o"
+            # [build]   $env:exe_ext = ".exe"
+            set(${OUTVAR}
+                ${CMAKE_COMMAND} -E env CHERE_INVOKING=yes MSYSTEM=CLANG64 MSYS2_ARG_CONV_EXCL=*
+                "${opamsw}/msys64/usr/bin/bash.exe" -l "${opamsw}/anyrun.sh" "${SCRIPT}"
+                PARENT_SCOPE)
+        endfunction()
+    elseif(CMAKE_HOST_APPLE)
+        set(DKML_HOST_ABI darwin_x86_64)
+        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-darwin_x86_64.ps1")
+    else()
+        set(DKML_HOST_ABI linux_x86_64)
+        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-linux_x86_64.ps1")
+    endif()
+
+    file(MAKE_DIRECTORY ${opamsw})
+    add_custom_command(
+        WORKING_DIRECTORY ${opamsw}
+        OUTPUT
+        ${opamsw}/.ci/sd4/opamrun/cmdrun
+        ${opamsw}/.ci/sd4/opamrun/opamrun
+        ${setupAdditionalOutput}
+        COMMENT "Creating ${BUMP_LEVEL} [cmdrun] script"
+        COMMAND
+        ${setupScript}
+        -PC_PROJECT_DIR "${opamsw}"
+
+        # Same as dkml-component-desktop's .gitlab-ci.yml [variables:]
+        -SECONDARY_SWITCH true
+
+        # We go further than current (2023-06) dkml-component-desktop by
+        # setup-dkml not installing _any_ switches. We do that entirely with
+        # CMake so we can set the FetchContent based local pins.
+        -SKIP_OPAM_MODIFICATIONS true
+
+        # -DISKUV_OPAM_REPOSITORY main
+        VERBATIM
+        USES_TERMINAL
+    )
+
+    set(DKML_ROOT_DIR ${opamsw}/dkmldir)
+    cmake_path(GET GIT_EXECUTABLE PARENT_PATH GIT_EXECUTABLE_DIR)
+    FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
+    FetchContent_GetProperties(dkml-compiler) # Used by upsert-dkml-pkgs-core
+    FetchContent_GetProperties(dkml-runtime-common)
+    FetchContent_GetProperties(dkml-runtime-distribution)
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-dkmlroot ${DKML_ROOT_DIR}/.dkmlroot
+
+        # Needed by create-opam-switch.sh and init-opam-root.sh
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory ${dkml-runtime-common_SOURCE_DIR} ${DKML_ROOT_DIR}/vendor/drc
+
+        # Needed by create-opam-switch.sh
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory ${dkml-runtime-distribution_SOURCE_DIR} ${DKML_ROOT_DIR}/vendor/drd
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    foreach(p IN ITEMS anyrun upsert-dkml-switch upsert-dkml-pkgs-core)
+        configure_file(${p}.in.sh ${opamsw}/${p}.sh
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            @ONLY NEWLINE_STYLE UNIX)
+    endforeach()
+
+    anyrun(${opamsw}/upsert-dkml-switch.sh upsert_dkml_switch_COMMAND)
+    anyrun(${opamsw}/upsert-dkml-pkgs-core.sh upsert_dkml_pkgs_core_COMMAND)
+    add_custom_command(
+        WORKING_DIRECTORY ${opamsw}
+        OUTPUT ${opamsw}/.ci/o/dkml/.opam-switch/switch-config
+        DEPENDS
+        ${opamsw}/.ci/sd4/opamrun/cmdrun
+        ${setupAdditionalOutput}
+        COMMENT "Creating/updating ${BUMP_LEVEL} [dkml] opam switch"
+
+        # We don't make a separate CMake command for creating the opam root
+        # because there is no good way (in CMake) to tell if the opam root
+        # has been completed successfully. The best is checking whether the
+        # repositories exist, but opam may at its own discretion use a .tar.gz
+        # rather than a directory for its copy of the repository.
+        COMMAND ${upsert_dkml_switch_COMMAND}
+        VERBATIM
+        USES_TERMINAL
+    )
+    add_custom_command(
+        WORKING_DIRECTORY ${opamsw}
+        OUTPUT ${opamsw}/.ci/o/dkml/bin/ocamlc${CMAKE_EXECUTABLE_SUFFIX}
+        DEPENDS ${opamsw}/.ci/o/dkml/.opam-switch/switch-config
+        COMMENT "Creating/updating ${BUMP_LEVEL} [dkml] compiler"
+        COMMAND ${upsert_dkml_pkgs_core_COMMAND}
+        VERBATIM
+        USES_TERMINAL
+    )
+
+    add_custom_target(Package-${BUMP_LEVEL}-Stage2-OpamSwitch
+        DEPENDS ${opamsw}/.ci/o/dkml/bin/ocamlc${CMAKE_EXECUTABLE_SUFFIX}
+        VERBATIM
+    )
+endfunction()
+
 function(add_all_targets BUMP_LEVEL)
     set(selfModifications)
 
@@ -322,26 +491,39 @@ function(add_all_targets BUMP_LEVEL)
         OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/self/pushed-${BUMP_LEVEL}
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/self/tagged-${BUMP_LEVEL})
 
-    set(versionBumpTargetDepends ${CMAKE_CURRENT_BINARY_DIR}/self/tagged-${BUMP_LEVEL})
+    set(versionBumpPreTargetDepends)
+    set(versionBumpPostTargetDepends ${CMAKE_CURRENT_BINARY_DIR}/self/tagged-${BUMP_LEVEL})
     set(gitPushTargetDepends ${CMAKE_CURRENT_BINARY_DIR}/self/pushed-${BUMP_LEVEL})
 
     add_VersionBump_commands_for_synced_projects(
         BUMP_LEVEL ${BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE versionBumpTargetDepends)
+        FILTER PRE
+        OUTPUT_LIST_VARIABLE versionBumpPreTargetDepends)
+    add_VersionBump_commands_for_synced_projects(
+        BUMP_LEVEL ${BUMP_LEVEL}
+        FILTER POST
+        OUTPUT_LIST_VARIABLE versionBumpPostTargetDepends)
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE gitPushTargetDepends
-        DEPENDS ${versionBumpTargetDepends})
+        DEPENDS ${versionBumpPreTargetDepends} ${versionBumpPostTargetDepends})
 
     add_custom_target(Package-${BUMP_LEVEL}-Stage1-VersionBump
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${versionBumpTargetDepends}
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${versionBumpPreTargetDepends}
         VERBATIM)
+    add_OpamSwitch_target(${BUMP_LEVEL})
+    add_dependencies(Package-${BUMP_LEVEL}-Stage2-OpamSwitch Package-${BUMP_LEVEL}-Stage1-VersionBump)
+    add_custom_target(Package-${BUMP_LEVEL}-Stage3-VersionBump
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${versionBumpPostTargetDepends}
+        VERBATIM)
+    add_dependencies(Package-${BUMP_LEVEL}-Stage3-VersionBump Package-${BUMP_LEVEL}-Stage2-OpamSwitch)
     add_custom_target(Package-${BUMP_LEVEL}-Stage4-GitPush
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/new-${BUMP_LEVEL}-semver ${gitPushTargetDepends}
         VERBATIM)
-    add_dependencies(Package-${BUMP_LEVEL}-Stage4-GitPush Package-${BUMP_LEVEL}-Stage1-VersionBump)
+    add_dependencies(Package-${BUMP_LEVEL}-Stage4-GitPush Package-${BUMP_LEVEL}-Stage3-VersionBump)
 endfunction()
 
 add_all_targets(PRERELEASE)
@@ -349,7 +531,9 @@ add_all_targets(PATCH)
 
 # TODO:
 
-# 1. Save the [git push] of all the synced projects until step [2] and [3] are done.
+# 0. {DONE} Save the [git push] of all the synced projects until step [2] and [3] are done.
+
+# 1. [diskuv-opam-repository] should get updates. Needs to push and then wait for a SHA256.
 
 # 2. [release.sh] starting from line ~450 changes [dkml-component-desktop] and
 # waits for it to build. The release.sh changes are all to get the code we already checked
@@ -359,6 +543,23 @@ add_all_targets(PATCH)
 # * We'll need to create an opam switch to build [dkml-component-desktop] ... just
 # use [setup-dkml] desktop scripts to do that. Actually, can just use
 # [dkml-component-desktop] .gitlab-ci.yml (just run the ci/ scripts manually).
+#
+# In fact, have [dkml-component-desktop]'s new [bump-version.cmake] script
+# run immediately parts of [gather.sh] and [build-test.sh] so that a
+# new dkml-component-staging-desktop-full.opam can be generated with all
+# the required .opam (essentially from dkml-runtime-distribution). You can use
+# dkml-component-opam dependency so you can run [opam] inside a [build:]
+# command. You'll need that to do [opam show --list-files] to feed into
+# [dkml-desktop-copy-installed] as part of your new [install:] commands.
+#
+# The new [bump-version.cmake] script will need to be supplied with
+# the locations of dkml-runtime-common and dkml-runtime-distribution (or better
+# yet, do a FetchContent which can be overridden on the command line or within
+# this version-bump/CMakeLists.txt script).
+#
+# Net effect is no -prep needed (although the lack of a binary asset may
+# lengthen the time for dkml-installer-ocaml). Perhaps use OCaml-CI, but at
+# first just create the -prep tag and build it.
 
 # 3. Build [dkml-installer-ocaml]
 
