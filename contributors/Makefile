@@ -138,6 +138,12 @@ release-start-patch:
 	git -C vendor/diskuv-opam-repository push && \
 	git push
 
+CPKGS_VERSION = 0.1.0
+.PHONY: upload-pkgconf
+upload-pkgconf: auth-gitlab-cli
+	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
+	bash -x upload-pkgconf.sh -f $(CPKGS_VERSION)
+
 .PHONY: release-prerelease
 release-prerelease: auth-gitlab-cli install-gitlab-release-cli install-release-script-dependencies _opam/bin/dune
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \

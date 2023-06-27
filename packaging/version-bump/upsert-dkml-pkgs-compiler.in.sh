@@ -25,6 +25,20 @@ export PATH="$DKML_SYSTEM_PATH"
 
 export OPAMSWITCH=dkml
 
+# dkml-base-compiler can find its own C compiler, so it does not need
+# with-compiler.sh. However, during an opam recompile (perhaps
+# dkml-base-compiler was updated) many already-installed packages will
+# need a C compiler. This lack of C compiler won't appear during the initial
+# install (because dkml-base-compiler does not need it), but will during a
+# recompile. So we force the use of with-compiler.sh.
+ORIGDIR=$(pwd)
+autodetect_compiler with-compiler.sh
+if [ "${DKML_BUILD_TRACE:-}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ]; then
+  echo '=== with-compiler.sh ===' >&2
+  cat with-compiler.sh >&2
+  echo '=== (done) ===' >&2
+fi
+
 # Add or upgrade compiler packages.
 # - Use topological order so don't have unnecessary reinstalls
 #"$OPAM_EXE" pin dkml-runtime-common-native "git+file://@dkml-runtime-common_SOURCE_DIR@/.git#$drc_COMMIT" --yes --no-action
@@ -42,5 +56,5 @@ export OPAMSWITCH=dkml
 #   - [opam install] is only way to have opam report any new version numbers embedded in .opam.
 # - [cd ..._SOURCE_DIR && opam install ./x.opam] is required because opam 2.2 prereleases say:
 #   "Invalid character in package name" when opam install Z:/x/y/z/a.opam
-cd '@dkml-runtime-common_SOURCE_DIR@' && "$OPAM_EXE" install ./dkml-runtime-common-native.opam --ignore-pin-depends --yes
-cd '@dkml-compiler_SOURCE_DIR@' && "$OPAM_EXE" install ./dkml-base-compiler.opam --ignore-pin-depends --yes
+cd '@dkml-runtime-common_SOURCE_DIR@' && "$ORIGDIR/with-compiler.sh" "$OPAM_EXE" install ./dkml-runtime-common-native.opam --ignore-pin-depends --yes
+cd '@dkml-compiler_SOURCE_DIR@' && "$ORIGDIR/with-compiler.sh" "$OPAM_EXE" install ./dkml-base-compiler.opam --ignore-pin-depends --yes

@@ -52,6 +52,12 @@ dor_COMMIT=$(git -C '@diskuv-opam-repository_SOURCE_DIR@' rev-parse --quiet --ve
 -e "git+file://@diskuv-opam-repository_SOURCE_DIR@/.git#${dor_COMMIT}" \
 -x
 
+# shellcheck disable=SC2050
+if [ "@CMAKE_HOST_WIN32@" = 1 ]; then
+    # Get rid of annoying warning in prereleases of Opam 2.2
+    "$OPAM_EXE" option --root "$OPAMROOT" --global depext=false
+fi
+
 # create-opam-switch
 #
 # -p DKMLABI: The DKML ABI (not 'dev'). Determines how to make an OCaml home if a version number is specified
@@ -71,6 +77,8 @@ dor_COMMIT=$(git -C '@diskuv-opam-repository_SOURCE_DIR@' rev-parse --quiet --ve
 #     the -F option, would be added to the new switch
 # -o OPAMEXE_OR_HOME: Optional. If a directory, it is the home for Opam containing bin/opam-real or bin/opam.
 #    If an executable, it is the opam to use (and when there is an opam shim the opam-real can be used)
+# -e NAME=VAL or -e NAME+=VAL: Optional; can be repeated. Environment variables that will be available
+#    to all users of and packages in the switch
 # -z: Do not use any default invariants (ocaml-system, dkml-base-compiler). If the -m option is not used,
 #    there will be no invariants. When there are no invariants no pins will be created
 # -R NAME=EXTRAREPO: Optional; may be repeated. Opam repository to use in the switch. Will be higher priority
@@ -78,7 +86,24 @@ dor_COMMIT=$(git -C '@diskuv-opam-repository_SOURCE_DIR@' rev-parse --quiet --ve
 #    line will be highest priority of the extra repositories.
 # -m EXTRAINVARIANT: Optional; may be repeated. Opam package or package.version that will be added to the switch
 #   invariant
-'@dkml-runtime-distribution_SOURCE_DIR@/src/unix/create-opam-switch.sh' \
+#
+#
+# AUTHORITATIVE OPTIONS = dkml-runtime-apps's [cmd_init.ml]. Aka: [dkml init]
+# But not using [-m conf-withdkml]
+run_create_opam_switch() {
+    '@dkml-runtime-distribution_SOURCE_DIR@/src/unix/create-opam-switch.sh' "$@"
+}
+#       shellcheck disable=SC2050
+if [ "@CMAKE_HOST_WIN32@" = 1 ] && [ -x /usr/bin/cygpath ] && [ -d /clang64 ]; then
+    run_create_opam_switch() {
+        '@dkml-runtime-distribution_SOURCE_DIR@/src/unix/create-opam-switch.sh' \
+            -e "PKG_CONFIG_PATH=$(/usr/bin/cygpath -aw /clang64/lib/pkgconfig)" \
+            -e "PKG_CONFIG_SYSTEM_INCLUDE_PATH=" \
+            -e "PKG_CONFIG_SYSTEM_LIBRARY_PATH=" \
+            "$@"
+    }
+fi
+run_create_opam_switch \
 -p "@DKML_HOST_ABI@" \
 -b Release \
 -s \
