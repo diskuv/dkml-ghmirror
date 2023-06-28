@@ -61,10 +61,12 @@ cd '@dkml-runtime-apps_SOURCE_DIR@' && \
     "$ORIGDIR/with-compiler.sh" "$OPAM_EXE" install @dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES@ \
     --ignore-pin-depends --yes
 
-# Add or upgrade the Full distribution (minus Dune)
+# Add or upgrade the Full distribution (minus Dune, minus conf-withdkml)
 # * See upsert-dkml-pkgs-compiler.in for why we add packages like this)
 # * There may be some overlap between these distribution packages and the patched
 #   diskuv-opam-repository packages. That's fine!
-"$ORIGDIR/with-compiler.sh" "$OPAM_EXE" install @FULL_NOT_DUNE_FLAVOR_SPACED_PKGVERS@ --yes
+# * We don't want [conf-withdkml] since that pulls in an external [with-dkml.exe]
+#   which is not repeatable (ie. not hermetic).
+"$ORIGDIR/with-compiler.sh" "$OPAM_EXE" install @FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS@ --yes
 
 # TODO FIXPOINT: Reinstall dkml-runtime-distribution.opam now that we have a complete set of packages. Perhaps iterate until FIXPOINT.

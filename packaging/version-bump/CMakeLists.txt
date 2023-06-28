@@ -23,6 +23,10 @@ set(preProjects
     # a) need to be bumped and
     # b) are listed in a CI or Full distribution -pkgs.txt
     dkml-runtime-apps
+
+    # These are projects that are not built in a switch. They are
+    # utility projects and can be bumped whenever we want.
+    dkml-workflows
 )
 set(syncedProjects
     ${preProjects}
@@ -367,7 +371,7 @@ function(add_GitPush_commands_for_synced_projects)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-function(get_flavor_packages FLAVORS OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABLE OUTPUT_SPACED_PKGVERS_VARIABLE)
+function(get_flavor_packages FLAVORS OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABLE)
     FetchContent_GetProperties(dkml-runtime-distribution)
     set(pkgvers)
 
@@ -384,21 +388,32 @@ function(get_flavor_packages FLAVORS OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABL
     endforeach()
 
     list(TRANSFORM pkgvers REPLACE "[.].*" "" OUTPUT_VARIABLE pkgs)
-    list(JOIN pkgvers " " pkgvers_spaces)
 
     set(${OUTPUT_PKGS_VARIABLE} ${pkgs} PARENT_SCOPE)
     set(${OUTPUT_PKGVERS_VARIABLE} ${pkgvers} PARENT_SCOPE)
-    set(${OUTPUT_SPACED_PKGVERS_VARIABLE} ${pkgvers_spaces} PARENT_SCOPE)
 endfunction()
 
-get_flavor_packages(Dune DUNE_FLAVOR_PKGS DUNE_FLAVOR_PKGVERS DUNE_FLAVOR_SPACED_PKGVERS)
-get_flavor_packages("CI;Full" FULL_NOT_DUNE_FLAVOR_PKGS FULL_NOT_DUNE_FLAVOR_PKGVERS FULL_NOT_DUNE_FLAVOR_SPACED_PKGVERS)
+get_flavor_packages(Dune DUNE_FLAVOR_PKGS DUNE_FLAVOR_PKGVERS)
+get_flavor_packages("CI;Full" FULL_NOT_DUNE_FLAVOR_PKGS FULL_NOT_DUNE_FLAVOR_PKGVERS)
 
 # dune.3.6.2+shim -> 3.6.2
 set(DKML_RELEASE_DUNE_VERSION ${DUNE_FLAVOR_PKGVERS})
 list(FILTER DKML_RELEASE_DUNE_VERSION INCLUDE REGEX "^dune[.]")
 string(REPLACE "dune." "" DKML_RELEASE_DUNE_VERSION "${DKML_RELEASE_DUNE_VERSION}")
 string(REGEX REPLACE "[+].*" "" DKML_RELEASE_DUNE_VERSION "${DKML_RELEASE_DUNE_VERSION}")
+
+# DUNE_FLAVOR_PKGVERS with [dune.X+shim] replaced by [dune.X]
+set(duneFlavorPkgVers ${DUNE_FLAVOR_PKGVERS})
+list(FILTER duneFlavorPkgVers EXCLUDE REGEX "^dune[.]")
+list(APPEND duneFlavorPkgVers dune.${DKML_RELEASE_DUNE_VERSION})
+list(JOIN duneFlavorPkgVers " " DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS)
+
+# FULL_NOT_DUNE_FLAVOR_PKGVERS without [conf-withdkml]
+# * [conf-withdkml] pulls in an external [with-dkml.exe] which is not
+#   repeatable (ie. not hermetic).
+set(fullNoDuneNoWithdkmlPkgVers ${FULL_NOT_DUNE_FLAVOR_PKGVERS})
+list(FILTER fullNoDuneNoWithdkmlPkgVers EXCLUDE REGEX "^conf-withdkml[.]")
+list(JOIN fullNoDuneNoWithdkmlPkgVers " " FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS)
 
 # The OpamSwitch target creates the "dkml" switch.
 #
@@ -556,9 +571,19 @@ function(add_OpamSwitch_target)
     anyrun(${opamsw}/upsert-dkml-pkgs-compiler.sh upsert_dkml_pkgs_compiler_COMMAND)
     anyrun(${opamsw}/upsert-dkml-pkgs-flavor-dune.sh upsert_dkml_pkgs_dune_COMMAND)
     anyrun(${opamsw}/upsert-dkml-pkgs-flavor-full-not-dune.sh upsert_dkml_pkgs_full_not_dune_COMMAND)
+    set(switchCreated ${opamsw}/switch.created)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
-        OUTPUT ${opamsw}/.ci/o/dkml/.opam-switch/environment
+        # There is no file within a switch that gets updated when and only when
+        # the switch is created. Some timestamps (like switch-config) are
+        # updated frequently for unrelated opam commands, and some timestamps
+        # (like environment) are rarely updated.
+        # So we use a synthetic OUTPUT, real BYPRODUCTS,
+        # and a [touch_nocreate] command.
+        OUTPUT ${switchCreated}
+        BYPRODUCTS
+        ${opamsw}/.ci/o/dkml/.opam-switch/switch-config
+        ${opamsw}/.ci/o/dkml/.opam-switch/environment
         MAIN_DEPENDENCY upsert-dkml-switch.in.sh
         DEPENDS
         ${opamsw}/.ci/sd4/opamrun/cmdrun
@@ -571,24 +596,26 @@ function(add_OpamSwitch_target)
         # repositories exist, but opam may at its own discretion use a .tar.gz
         # rather than a directory for its copy of the repository.
         COMMAND ${upsert_dkml_switch_COMMAND}
+        COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${switchCreated}
         VERBATIM
         USES_TERMINAL
     )
-    set(ocamloptOpt ${opamsw}/.ci/o/dkml/bin/ocamlopt.opt${CMAKE_EXECUTABLE_SUFFIX})
+    set(compilerCreated ${opamsw}/compiler.created)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
-        OUTPUT ${ocamloptOpt}
+        # Compiler binaries often do not have timestamps updated due to
+        # opam seeing no changes. So we use a synthetic OUTPUT, real BYPRODUCTS,
+        # and a [touch_nocreate] command.
+        OUTPUT ${compilerCreated}
+        BYPRODUCTS ${opamsw}/.ci/o/dkml/bin/ocamlopt.opt${CMAKE_EXECUTABLE_SUFFIX}
         MAIN_DEPENDENCY upsert-dkml-pkgs-compiler.in.sh
         DEPENDS
-        ${opamsw}/.ci/o/dkml/.opam-switch/environment
+        ${switchCreated}
         ${dkml-runtime-common_SOURCE_DIR}/dkml-runtime-common-native.opam
         ${dkml-compiler_SOURCE_DIR}/dkml-base-compiler.opam
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} [dkml] compiler"
         COMMAND ${upsert_dkml_pkgs_compiler_COMMAND}
-
-        # Often opam knows there is nothing to update, so let CMake know we
-        # don't need to rerun this custom command.
-        COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${ocamloptOpt}
+        COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${compilerCreated}
         VERBATIM
         USES_TERMINAL
     )
@@ -599,7 +626,7 @@ function(add_OpamSwitch_target)
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${duneFlavorOutput}
         MAIN_DEPENDENCY upsert-dkml-pkgs-flavor-dune.in.sh
-        DEPENDS ${ocamloptOpt}
+        DEPENDS ${compilerCreated}
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} [dkml] distribution - Dune flavor"
         COMMAND ${upsert_dkml_pkgs_dune_COMMAND}
         VERBATIM

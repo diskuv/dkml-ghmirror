@@ -29,7 +29,4 @@ fi
 
 # Add or upgrade Dune
 #       shellcheck disable=SC2043
-# for pkg in @DUNE_FLAVOR_SPACED_PKGVERS@; do
-#     "$OPAM_EXE" pin "$pkg" --no-action
-# done
-./with-compiler.sh "$OPAM_EXE" install @DUNE_FLAVOR_SPACED_PKGVERS@ --yes
+./with-compiler.sh "$OPAM_EXE" install @DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS@ --yes

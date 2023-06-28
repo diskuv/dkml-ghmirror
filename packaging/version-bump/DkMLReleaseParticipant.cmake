@@ -2,24 +2,30 @@ if(NOT GIT_EXECUTABLE)
     message(FATAL_ERROR "Missing -D GIT_EXECUTABLE=xx")
 endif()
 
-if(NOT DKML_RELEASE_OCAML_VERSION)
-    message(FATAL_ERROR "Missing -D DKML_RELEASE_OCAML_VERSION=xx")
-endif()
+if(DKML_RELEASE_IS_UPGRADING_PACKAGES)
+    if(NOT DKML_RELEASE_DUNE_VERSION)
+        message(FATAL_ERROR "Missing -D DKML_RELEASE_DUNE_VERSION=xx")
+    endif()
+else()
+    if(NOT DKML_RELEASE_OCAML_VERSION)
+        message(FATAL_ERROR "Missing -D DKML_RELEASE_OCAML_VERSION=xx")
+    endif()
 
-if(NOT regex_DKML_VERSION_OPAMVER)
-    message(FATAL_ERROR "Missing -D regex_DKML_VERSION_OPAMVER=xx")
-endif()
+    if(NOT regex_DKML_VERSION_OPAMVER)
+        message(FATAL_ERROR "Missing -D regex_DKML_VERSION_OPAMVER=xx")
+    endif()
 
-if(NOT regex_DKML_VERSION_SEMVER)
-    message(FATAL_ERROR "Missing -D regex_DKML_VERSION_SEMVER=xx")
-endif()
+    if(NOT regex_DKML_VERSION_SEMVER)
+        message(FATAL_ERROR "Missing -D regex_DKML_VERSION_SEMVER=xx")
+    endif()
 
-if(NOT DKML_VERSION_OPAMVER_NEW)
-    message(FATAL_ERROR "Missing -D DKML_VERSION_OPAMVER_NEW=xx")
-endif()
+    if(NOT DKML_VERSION_OPAMVER_NEW)
+        message(FATAL_ERROR "Missing -D DKML_VERSION_OPAMVER_NEW=xx")
+    endif()
 
-if(NOT DKML_VERSION_SEMVER_NEW)
-    message(FATAL_ERROR "Missing -D DKML_VERSION_SEMVER_NEW=xx")
+    if(NOT DKML_VERSION_SEMVER_NEW)
+        message(FATAL_ERROR "Missing -D DKML_VERSION_SEMVER_NEW=xx")
+    endif()
 endif()
 
 macro(_DkMLReleaseParticipant_Finish_Replace VERSION_TYPE)
@@ -30,6 +36,7 @@ macro(_DkMLReleaseParticipant_Finish_Replace VERSION_TYPE)
             cmake_path(ABSOLUTE_PATH REL_FILENAME OUTPUT_VARIABLE FILENAME_ABS)
             message(FATAL_ERROR "The old version(s) ${regex_DKML_VERSION_${VERSION_TYPE}} were not found in ${FILENAME_ABS} or the file already had the new version ${DKML_VERSION_${VERSION_TYPE}_NEW} derived from the DKML_VERSION_CMAKEVER value in version.cmake")
         endif()
+
         # idempotent
         return()
     endif()
@@ -96,18 +103,32 @@ function(_DkMLReleaseParticipant_HelperApps REL_FILENAME SEPARATOR)
     _DkMLReleaseParticipant_Finish_Replace(OPAMVER)
 endfunction()
 
-# dkml-apps,1.2.1~prerel2 -> dkml-apps,1.2.1~prerel3
-# dkml-exe,1.2.1~prerel2 -> dkml-exe,1.2.1~prerel3
-# with-dkml,1.2.1~prerel2 -> with-dkml,1.2.1~prerel3
-function(DkMLReleaseParticipant_CreateOpamSwitchReplace REL_FILENAME)
-    _DkMLReleaseParticipant_HelperApps(${REL_FILENAME} ",")
-endfunction()
-
 # dkml-apps.1.2.1~prerel2 -> dkml-apps.1.2.1~prerel3
 # dkml-exe.1.2.1~prerel2 -> dkml-exe.1.2.1~prerel3
 # with-dkml.1.2.1~prerel2 -> with-dkml.1.2.1~prerel3
 function(DkMLReleaseParticipant_PkgsReplace REL_FILENAME)
     _DkMLReleaseParticipant_HelperApps(${REL_FILENAME} ".")
+endfunction()
+
+# OCAML_DEFAULT_VERSION=4.14.0 -> OCAML_DEFAULT_VERSION=4.14.2
+function(DkMLReleaseParticipant_CreateOpamSwitchReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(REGEX REPLACE # Match at beginning of line: ^|\n
+        "(^|\n)OCAML_DEFAULT_VERSION=[0-9.]+"
+        "\\1OCAML_DEFAULT_VERSION=${DKML_RELEASE_OCAML_VERSION}"
+        contents_NEW "${contents_NEW}")
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_RELEASE_OCAML_VERSION}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
 # version = "1.2.1~prerel2" -> version = "1.2.1~prerel3"
@@ -132,7 +153,7 @@ function(DkMLReleaseParticipant_DkmlBaseCompilerReplace REL_FILENAME)
 
     string(REGEX REPLACE # Match at beginning of line: ^|\n
         "(^|\n)version: \"([0-9.]*)[~]v${regex_DKML_VERSION_OPAMVER}\""
-        "\\1version: \"\\2~v${DKML_VERSION_OPAMVER_NEW}\""
+        "\\1version: \"${DKML_RELEASE_OCAML_VERSION}~v${DKML_VERSION_OPAMVER_NEW}\""
         contents_NEW "${contents_NEW}")
 
     string(REGEX REPLACE
@@ -141,6 +162,223 @@ function(DkMLReleaseParticipant_DkmlBaseCompilerReplace REL_FILENAME)
         contents_NEW "${contents_NEW}")
 
     _DkMLReleaseParticipant_Finish_Replace(OPAMVER)
+endfunction()
+
+# ("DEFAULT_DKML_COMPILER", "4.14.0-v1.1.0-prerel15"); -> ("DEFAULT_DKML_COMPILER", "4.14.0-v1.2.1-3");
+function(DkMLReleaseParticipant_ModelReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(REGEX REPLACE # Match at beginning of line: ^|\n
+        "\"DEFAULT_DKML_COMPILER\", \"([0-9.]*)-v${regex_DKML_VERSION_SEMVER}\""
+        "\"DEFAULT_DKML_COMPILER\", \"${DKML_RELEASE_OCAML_VERSION}-v${DKML_VERSION_SEMVER_NEW}\""
+        contents_NEW "${contents_NEW}")
+
+    _DkMLReleaseParticipant_Finish_Replace(SEMVER)
+endfunction()
+
+# Applies a standard exclusion filter to the packages.
+#
+# Works with packages (base-bytes) or package-versions (base-bytes.4)
+macro(_DkMLReleaseParticipant_NormalizePinnedPackages lst)
+    foreach(_exclude_pkg IN ITEMS
+
+        # Exclude packages bundled by the compiler like
+        # [base-threads].
+        base-bigarray
+        base-bytes
+        base-domains
+        base-effects
+        base-num
+        base-threads
+        base-unix
+    )
+        # Ex. list(FILTER ${lst} EXCLUDE REGEX "^base-bytes([.]|$)")
+        # which matches "base-bytes" and "base-bytes.XXXX"
+        list(FILTER ${lst} EXCLUDE REGEX "^${_exclude_pkg}([.]|$)")
+    endforeach()
+endmacro()
+
+# Sets a series of OCaml list elements like:
+# ("PIN_ALCOTEST", "1.6.0");
+# ("PIN_ALCOTEST_ASYNC", "1.6.0");
+function(DkMLReleaseParticipant_ModelUpgrade REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    # Get list of packages.
+    # Example:
+    # variantslib.1.2.3
+    # with-dkml.4.5.6
+    execute_process(
+        COMMAND opam list --columns=package --short
+        OUTPUT_VARIABLE pkgvers
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Convert to list
+    string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
+    _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
+
+    # Sort
+    list(SORT pkgvers)
+
+    # ocp-indent.1.2.3 -> ("PIN_OCP_INDENT", "1.2.3");
+    set(bindings)
+
+    foreach(pkgver IN LISTS pkgvers)
+        string(FIND "${pkgver}" "." dotLoc)
+        string(SUBSTRING "${pkgver}" 0 ${dotLoc} pkg)
+        math(EXPR dotLocPlus1 "${dotLoc} + 1")
+        string(SUBSTRING "${pkgver}" ${dotLocPlus1} -1 ver)
+        string(TOUPPER "${pkg}" PKG_UPPER_UNDERSCORE)
+        string(REPLACE "-" "_" PKG_UPPER_UNDERSCORE "${PKG_UPPER_UNDERSCORE}")
+        string(APPEND bindings "\n    (\"PIN_${PKG_UPPER_UNDERSCORE}\", \"${ver}\");")
+    endforeach()
+
+    # Set the command
+    cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
+    string(REGEX REPLACE
+        [[\(\* BEGIN pin-env-vars.*END pin-env-vars[^*]* \*\)]]
+        "(* BEGIN pin-env-vars. DO NOT EDIT THE LINES IN THIS SECTION *)
+    (* Managed by ${managerFile} *)${bindings}
+    (* END pin-env-vars. DO NOT EDIT THE LINES ABOVE *)"
+        contents_NEW "${contents_NEW}")
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Upgraded pin environment bindings in ${REL_FILENAME}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endfunction()
+
+# Sets a series of commands like:
+# opamrun pin add --switch "$do_pins_NAME"  --yes --no-action -k version alcotest "${PIN_ALCOTEST}"
+function(DkMLReleaseParticipant_SetupDkmlUpgrade REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    # Get list of packages.
+    # Example:
+    # variantslib
+    # with-dkml
+    execute_process(
+        COMMAND opam list --short
+        OUTPUT_VARIABLE pkgs
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Convert to list
+    string(REGEX REPLACE "\n" ";" pkgs "${pkgs}")
+    _DkMLReleaseParticipant_NormalizePinnedPackages(pkgs)
+
+    # Sort
+    list(SORT pkgs)
+
+    # ocp-indent -> ocp-indent "${PIN_OCP_INDENT}"
+    set(pkgs2)
+
+    foreach(pkg IN LISTS pkgs)
+        string(TOUPPER "${pkg}" PKG_UPPER_UNDERSCORE)
+        string(REPLACE "-" "_" PKG_UPPER_UNDERSCORE "${PKG_UPPER_UNDERSCORE}")
+        list(APPEND pkgs2 "${pkg} \"\${PIN_${PKG_UPPER_UNDERSCORE}}\"")
+    endforeach()
+
+    set(pkgs ${pkgs2})
+
+    # Convert to list of commands
+    list(TRANSFORM pkgs PREPEND [[    opamrun pin add --switch "$do_pins_NAME"  --yes --no-action -k version ]])
+    list(JOIN pkgs "\n" pkgs)
+
+    # Set the command
+    cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
+    string(REGEX REPLACE
+        [[### BEGIN pin-adds.*### END pin-adds[. A-Za-z]*]]
+        "### BEGIN pin-adds. DO NOT EDIT THE LINES IN THIS SECTION
+    # Managed by ${managerFile}
+${pkgs}
+    ### END pin-adds. DO NOT EDIT THE LINES ABOVE"
+        contents_NEW "${contents_NEW}")
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Upgraded [pin add] commands in ${REL_FILENAME}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endfunction()
+
+# Sets a printer of a "pinned" opam section of [switch-state]. Similar to:
+#
+# echo '
+# pinned: [
+# "0install.2.17"
+# "dkml-base-compiler.4.14.0~v1.2.1~prerel10"
+# "dkml-compiler-env.1.2.1~prerel10"
+# ]
+# '
+function(DkMLReleaseParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    # Get list of package versions.
+    # Example:
+    # variantslib.v0.15.0
+    # with-dkml.1.2.1~prerel10
+    execute_process(
+        COMMAND opam list --columns=package --short
+        OUTPUT_VARIABLE pkgvers
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Convert to list
+    string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
+    _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
+
+    # Remove [dune] and replace with [dune+shim]
+    list(FILTER pkgvers EXCLUDE REGEX "^dune[.]")
+    list(APPEND pkgvers "dune.${DKML_RELEASE_DUNE_VERSION}+shim")
+
+    # Sort
+    list(SORT pkgvers)
+
+    # Convert to list of quoted strings.
+    list(TRANSFORM pkgvers PREPEND "  \"")
+    list(TRANSFORM pkgvers APPEND "\"")
+    list(JOIN pkgvers "\n" pkgvers)
+
+    # Make a shell script printer
+    cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
+    string(REGEX REPLACE
+        [[### BEGIN pinned-section.*### END pinned-section[. A-Za-z]*]]
+        "### BEGIN pinned-section. DO NOT EDIT THE LINES IN THIS SECTION
+# Managed by ${managerFile}
+echo 'pinned: [
+${pkgvers}
+]
+'
+### END pinned-section. DO NOT EDIT THE LINES ABOVE"
+        contents_NEW "${contents_NEW}")
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Upgraded [pinned:] opam section in ${REL_FILENAME}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
 function(DkMLReleaseParticipant_GitAddAndCommit)
