@@ -14,7 +14,7 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
 # [OCAML_VERSION]. Any packages that are part of [SYNCHRONIZED_PACKAGES]
 # will be reported as version [DKML_VERSION_OPAMVER_NEW]
 # because the expectation is that those will be pinned during
-# the CMake version-bump/ targets.
+# the CMake bump/ targets.
 function(DkMLPatches_GetPackageVersions)
     set(noValues)
     set(singleValues DUNE_VERSION OCAML_VERSION DKML_VERSION_OPAMVER_NEW OUTPUT_VARIABLE)

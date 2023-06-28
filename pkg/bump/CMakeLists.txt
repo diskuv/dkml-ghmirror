@@ -410,10 +410,29 @@ list(JOIN duneFlavorPkgVers " " DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS)
 
 # FULL_NOT_DUNE_FLAVOR_PKGVERS without [conf-withdkml]
 # * [conf-withdkml] pulls in an external [with-dkml.exe] which is not
-#   repeatable (ie. not hermetic).
+# repeatable (ie. not hermetic).
 set(fullNoDuneNoWithdkmlPkgVers ${FULL_NOT_DUNE_FLAVOR_PKGVERS})
 list(FILTER fullNoDuneNoWithdkmlPkgVers EXCLUDE REGEX "^conf-withdkml[.]")
 list(JOIN fullNoDuneNoWithdkmlPkgVers " " FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS)
+
+function(shorten_bump_level)
+    set(noValues)
+    set(singleValues BUMP_LEVEL OUTPUT_VARIABLE)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
+        set(${OUTPUT_VARIABLE} PR PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "PATCH")
+        set(${OUTPUT_VARIABLE} PR PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "MINOR")
+        set(${OUTPUT_VARIABLE} MN PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "MAJOR")
+        set(${OUTPUT_VARIABLE} MJ PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Not a recognized BUMP_LEVEL: ${ARG_BUMP_LEVEL}")
+    endif()
+endfunction()
 
 # The OpamSwitch target creates the "dkml" switch.
 #
@@ -436,8 +455,9 @@ function(add_OpamSwitch_target)
 
     FetchContent_GetProperties(dkml-workflows)
 
+    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
-    set(opamsw ${CMAKE_CURRENT_BINARY_DIR}/OpamSwitch/${ARG_BUMP_LEVEL})
+    set(opamsw ${CMAKE_CURRENT_BINARY_DIR}/sw/${SHORT_BUMP_LEVEL})
     set(setupAdditionalOutput)
 
     function(anyrun SCRIPT OUTVAR)
@@ -457,7 +477,7 @@ function(add_OpamSwitch_target)
             # [build]   $env:MSYSTEM = "CLANG64"
             # [build]   $env:dkml_host_abi = "windows_x86_64"
             # [build]   $env:abi_pattern = "win32-windows_x86_64"
-            # [build]   $env:opam_root = "Z:/source/dkml/build/packaging/version-bump/opamsw/.ci/o"
+            # [build]   $env:opam_root = "Z:/source/dkml/build/packaging/bump/opamsw/.ci/o"
             # [build]   $env:exe_ext = ".exe"
             set(${OUTVAR}
                 ${CMAKE_COMMAND} -E env CHERE_INVOKING=yes MSYSTEM=CLANG64 MSYS2_ARG_CONV_EXCL=*
@@ -574,6 +594,7 @@ function(add_OpamSwitch_target)
     set(switchCreated ${opamsw}/switch.created)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
+
         # There is no file within a switch that gets updated when and only when
         # the switch is created. Some timestamps (like switch-config) are
         # updated frequently for unrelated opam commands, and some timestamps
@@ -603,6 +624,7 @@ function(add_OpamSwitch_target)
     set(compilerCreated ${opamsw}/compiler.created)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
+
         # Compiler binaries often do not have timestamps updated due to
         # opam seeing no changes. So we use a synthetic OUTPUT, real BYPRODUCTS,
         # and a [touch_nocreate] command.
@@ -768,7 +790,7 @@ add_all_targets(BUMP_LEVEL PATCH)
 # The new [bump-version.cmake] script will need to be supplied with
 # the locations of dkml-runtime-common and dkml-runtime-distribution (or better
 # yet, do a FetchContent which can be overridden on the command line or within
-# this version-bump/CMakeLists.txt script).
+# this bump/CMakeLists.txt script).
 #
 # Net effect is no -prep needed (although the lack of a binary asset may
 # lengthen the time for dkml-installer-ocaml). Perhaps use OCaml-CI, but at

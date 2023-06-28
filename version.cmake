@@ -16,12 +16,12 @@
 if(CMAKE_SCRIPT_MODE_FILE AND DKML_VERSION_CMAKEVER_OVERRIDE)
     set(DKML_VERSION_CMAKEVER "${DKML_VERSION_CMAKEVER_OVERRIDE}")
 else()
-    # Edited by packaging/version-bump/CMakeLists.txt. Do not change format.
+    # Edited by pkg/bump/CMakeLists.txt. Do not change format.
     set(DKML_VERSION_CMAKEVER "1.2.1.9")
 endif()
 
 # The last released version (never a prerelease)
-# Edited by packaging/version-bump/CMakeLists.txt. Do not change format.
+# Edited by pkg/bump/CMakeLists.txt. Do not change format.
 set(DKML_PUBLICVERSION_CMAKEVER "1.2.0")
 
 macro(ExpandDkmlVersion VERSIONTYPE)

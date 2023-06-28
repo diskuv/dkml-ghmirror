@@ -14,4 +14,4 @@ set(CMAKE_C_STANDARD_REQUIRED YES)
 set(CMAKE_C_EXTENSIONS NO)
 
 add_subdirectory(dependencies)
-add_subdirectory(packaging)
+add_subdirectory(pkg)
