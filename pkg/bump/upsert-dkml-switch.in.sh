@@ -7,19 +7,10 @@ set -euf
 
 export TOPDIR='@dkml-runtime-common_SOURCE_DIR@/all/emptytop'
 export DKMLDIR='@DKML_ROOT_DIR@'
-GIT_EXECUTABLE_DIR='@GIT_EXECUTABLE_DIR@'
 
-# Get location of opam from cmdrun/opamrun (whatever is launching this script)
-OPAM_EXE=$(command -v opam)
-
-# But especially for Windows, we need the system Git for [opam repository]
-# commands and no other PATH complications.
 #       shellcheck disable=SC1091
-. '@dkml-runtime-common_SOURCE_DIR@/unix/crossplatform-functions.sh'
-if [ -x /usr/bin/cygpath ]; then GIT_EXECUTABLE_DIR=$(/usr/bin/cygpath -au "$GIT_EXECUTABLE_DIR"); fi
-export PATH="$GIT_EXECUTABLE_DIR:$PATH"
-autodetect_system_path_with_git_before_usr_bin
-export PATH="$DKML_SYSTEM_PATH"
+. '@UPSERT_UTILS@'
+unset OPAMSWITCH # Interferes with init-opam-root.sh and create-opam-switch.sh
 
 # The Opam 2.2 prereleases have finicky behavior with git pins. We really
 # need to use a commit id not just a branch. Without a commit id, often
@@ -104,9 +95,9 @@ if [ "@CMAKE_HOST_WIN32@" = 1 ] && [ -x /usr/bin/cygpath ] && [ -d /clang64 ]; t
     }
 fi
 run_create_opam_switch \
--p "@DKML_HOST_ABI@" \
+-p '@DKML_HOST_ABI@' \
 -b Release \
--s \
+-n '@SHORT_BUMP_LEVEL@' \
 -r "$OPAMROOT" \
 -a \
 -F \

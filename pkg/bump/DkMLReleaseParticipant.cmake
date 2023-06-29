@@ -381,6 +381,63 @@ ${pkgvers}
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
+function(DkMLReleaseParticipant_DuneBuildOpamFiles)
+    # Find *.opam files to rebuild
+    file(
+        GLOB opamFiles
+        LIST_DIRECTORIES false
+        RELATIVE ${CMAKE_CURRENT_BINARY_DIR}
+        *.opam)
+
+    if(IS_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/opam)
+        # opam allows its .opam files to be in a opam/ subfolder
+        file(
+            GLOB opamFiles2
+            LIST_DIRECTORIES false
+            RELATIVE ${CMAKE_CURRENT_BINARY_DIR}
+            opam/*.opam)
+        list(APPEND opamFiles ${opamFiles2})
+    endif()
+
+    # Sort them
+    list(SORT opamFiles)
+
+    # Read them for a "before" snapshot
+    foreach(opamFile IN LISTS opamFiles)
+        file(READ ${opamFile} contents)
+        string(MAKE_C_IDENTIFIER opamFile opamFileId)
+        set(contents_${opamFileId} "${contents}")
+    endforeach()
+
+    # Do a dune build to regenerate
+    execute_process(
+        COMMAND opam exec -- dune build ${opamFiles}
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Which content changed, if any?
+    set(changedOpamFiles)
+
+    foreach(opamFile IN LISTS opamFiles)
+        file(READ ${opamFile} contents)
+        string(MAKE_C_IDENTIFIER opamFile opamFileId)
+
+        if(NOT(contents_${opamFileId} STREQUAL "${contents}"))
+            list(APPEND changedOpamFiles ${opamFile})
+        endif()
+    endforeach()
+
+    # Check idempotent
+    if(NOT changedOpamFiles)
+        # idempotent
+        return()
+    endif()
+
+    list(JOIN changedOpamFiles " " changedOpamFiles_SPACES)
+    message(NOTICE "Upgraded ${changedOpamFiles_SPACES}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${changedOpamFiles})
+endfunction()
+
 function(DkMLReleaseParticipant_GitAddAndCommit)
     if(DRYRUN)
         return()

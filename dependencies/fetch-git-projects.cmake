@@ -97,5 +97,7 @@ FetchGit(dkml-c-probe
 )
 FetchGit(dkml-workflows
     # GIT_REPOSITORY https://github.com/diskuv/dkml-workflows.git GIT_TAG v1
-    GIT_REPOSITORY https://github.com/diskuv/dkml-workflows-prerelease.git GIT_TAG 36e82632d9a4a789817dcadb23bf81755a7c9dd1 # has SKIP_OPAM_MODIFICATIONS
+    # GIT_REPOSITORY https://github.com/diskuv/dkml-workflows-prerelease.git GIT_TAG 36e82632d9a4a789817dcadb23bf81755a7c9dd1 # has SKIP_OPAM_MODIFICATIONS
+    GIT_REPOSITORY https://github.com/diskuv/dkml-workflows-prerelease.git
+    GIT_TAG v1
 )
