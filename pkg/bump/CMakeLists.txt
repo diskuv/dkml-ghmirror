@@ -37,6 +37,7 @@ set(postDuneProjects
     dkml-component-desktop
 )
 set(finalProjects
+
     # Technically [diskuv-opam-repository] belongs in [preDuneProjects],
     # however the repository must be updated after all the other
     # projects are updated (or else it can't get their checksums).
@@ -646,12 +647,12 @@ function(add_Flavor_targets)
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts
     FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
     FetchContent_GetProperties(dkml-compiler) # Used by upsert-dkml-pkgs-compiler
-    FetchContent_GetProperties(dkml-runtime-common) # Used by upsert-dkml-pkgs-compiler
+    FetchContent_GetProperties(dkml-runtime-common) # Used by upsert-utils and upsert-dkml-pkgs-compiler
     FetchContent_GetProperties(dkml-runtime-distribution) # Used in DKML_ROOT_DIR (create-switch.sh and init-opam-root.sh)
     FetchContent_GetProperties(dkml-runtime-apps) # Used by upsert-dkml-pkgs-flavor-full-not-dune
+    FetchContent_GetProperties(dkml-component-desktop) # Use by upsert-dkml-pkgs-introspect
     set(DISKUV_OPAM_REPOSITORY_NAME_NEW diskuv-${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}) # Used by upsert-dkml-pkgs-flavor-full-not-dune
     set(UPSERT_UTILS ${opamsw}/upsert-utils.sh) # Used by upsert-*.sh
-    FetchContent_GetProperties(dkml-runtime-common) # For upsert-utils.in.sh
 
     foreach(p IN ITEMS
         upsert-utils
@@ -702,6 +703,9 @@ function(add_Flavor_targets)
         DEPENDS
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
+        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/create-opam-switch.sh
+        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/init-opam-root.sh
+        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/platform-opam-exec.sh
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} opam switch"
 
         # We don't make a separate CMake command for creating the opam root
@@ -774,6 +778,10 @@ function(add_Flavor_targets)
     )
 
     set(introspectCreated ${opamsw}/introspect.created)
+    file(GLOB dkml_build_desktop_DEPENDS
+        LIST_DIRECTORIES false
+        # Compiled by dkml-build-desktop.opam
+        ${dkml-component-desktop_SOURCE_DIR}/src/citime/*)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
 
@@ -784,7 +792,11 @@ function(add_Flavor_targets)
         BYPRODUCTS
         ${bumpSwitch}/bin/dkml-desktop-gen-global-install${CMAKE_EXECUTABLE_SUFFIX}
         MAIN_DEPENDENCY upsert-dkml-pkgs-introspect.in.sh
-        DEPENDS ${fullFlavorOutput} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS}
+        DEPENDS
+        ${fullFlavorOutput}
+        ${WITH_COMPILER_SH}
+        ${anyrun_OUTPUTS}
+        ${dkml_build_desktop_DEPENDS}
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} introspect"
         COMMAND ${upsert_dkml_pkgs_introspect_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${introspectCreated}

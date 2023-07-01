@@ -381,6 +381,124 @@ ${pkgvers}
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
+function(DkMLReleaseParticipant_DuneProjectFlavorUpgrade REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    foreach(FLAVOR IN ITEMS ci full)
+        # Get list of [global-install] package versions for the flavor
+        # Example:
+        # with-dkml.1.2.1~prerel10
+        execute_process(
+            COMMAND opam exec -- dkml-desktop-gen-global-install ${FLAVOR} package-versions
+            OUTPUT_VARIABLE pkgvers
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+
+        # Convert to list
+        string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
+        _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
+
+        # Remove [dune] and replace with [dune+shim]
+        list(FILTER pkgvers EXCLUDE REGEX "^dune[.]")
+        list(APPEND pkgvers "dune.${DKML_RELEASE_DUNE_VERSION}+shim")
+
+        # Sort
+        list(SORT pkgvers)
+
+        # Convert to list of (PKGNAME (= PKGVER)) strings.
+        list(TRANSFORM pkgvers REPLACE "([^.]*)[.](.*)" "  (\\1 (= \\2))")
+        list(JOIN pkgvers "\n" pkgvers)
+
+        # Make a dune-project section
+        cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
+        string(REGEX REPLACE
+            "; BEGIN flavor-${FLAVOR}[.].*; END flavor-${FLAVOR}[. A-Za-z]*"
+            "; BEGIN flavor-${FLAVOR}. DO NOT EDIT THE LINES IN THIS SECTION
+  ; Managed by ${managerFile}
+${pkgvers}
+  ; END flavor-${FLAVOR}. DO NOT EDIT THE LINES ABOVE"
+            contents_NEW "${contents_NEW}")
+    endforeach()
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Upgraded [flavor-*] packages in ${REL_FILENAME}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endfunction()
+
+function(DkMLReleaseParticipant_DkmlFlavorOpamUpgrade REL_FILENAME FLAVOR)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    # Get list of [global-install] packages for the flavor
+    # Example:
+    # with-dkml.1.2.1~prerel10
+    execute_process(
+        COMMAND opam exec -- dkml-desktop-gen-global-install ${FLAVOR} packages
+        OUTPUT_VARIABLE pkgs
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Convert to list
+    string(REGEX REPLACE "\n" ";" pkgs "${pkgs}")
+    _DkMLReleaseParticipant_NormalizePinnedPackages(pkgs)
+
+    # Sort
+    list(SORT pkgs)
+
+    # Make a list of:
+    # [ "sh" "-c" "opam show --list-files dkml-apps > opamshow-dkml-apps.txt" ]
+    set(buildspec ${pkgs})
+    #   Want REPLACE ".*", but nasty cmake bug:
+    #   https://gitlab.kitware.com/cmake/cmake/-/issues/18884 https://gitlab.kitware.com/cmake/cmake/-/issues/16899
+    list(TRANSFORM buildspec REPLACE "[A-Za-z0-9_-]+" [==[  [ "sh" "-c" "opam show --list-files \0 > opamshow-\0.txt" ]]==])
+    list(JOIN buildspec "\n" buildspec)
+
+    # Make a list of:
+    # [ "dkml-desktop-copy-installed" "--file-list" "opamshow-dkml-apps.txt" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%" ]
+    set(installspec ${pkgs})
+    list(TRANSFORM installspec REPLACE "[A-Za-z0-9_-]+" [==[  [ "dkml-desktop-copy-installed" "--file-list" "opamshow-\0.txt" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%" ]]==])
+    list(JOIN installspec "\n" installspec)
+
+    cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
+
+    # Replace build: section
+    string(REGEX REPLACE
+        "# BEGIN build-flavor-${FLAVOR}[.].*# END build-flavor-${FLAVOR}[. A-Za-z]*"
+        "# BEGIN build-flavor-${FLAVOR}. DO NOT EDIT THE LINES IN THIS SECTION
+  # Managed by ${managerFile}
+${buildspec}
+  # END build-flavor-${FLAVOR}. DO NOT EDIT THE LINES ABOVE"
+        contents_NEW "${contents_NEW}")
+
+    # Replace install: section
+    string(REGEX REPLACE
+        "# BEGIN install-flavor-${FLAVOR}[.].*# END install-flavor-${FLAVOR}[. A-Za-z]*"
+        "# BEGIN install-flavor-${FLAVOR}. DO NOT EDIT THE LINES IN THIS SECTION
+  # Managed by ${managerFile}
+${installspec}
+  # END install-flavor-${FLAVOR}. DO NOT EDIT THE LINES ABOVE"
+        contents_NEW "${contents_NEW}")
+
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Upgraded [build:] and [install:] sections in ${REL_FILENAME}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endfunction()
+
 function(DkMLReleaseParticipant_DuneBuildOpamFiles)
     # Find *.opam files to rebuild
     file(
@@ -405,7 +523,8 @@ function(DkMLReleaseParticipant_DuneBuildOpamFiles)
     # Read them for a "before" snapshot
     foreach(opamFile IN LISTS opamFiles)
         file(READ ${opamFile} contents)
-        string(MAKE_C_IDENTIFIER opamFile opamFileId)
+        string(REPLACE "\r" "" contents "${contents}") # Normalize CRLF
+        string(MAKE_C_IDENTIFIER ${opamFile} opamFileId)
         set(contents_${opamFileId} "${contents}")
     endforeach()
 
@@ -420,7 +539,8 @@ function(DkMLReleaseParticipant_DuneBuildOpamFiles)
 
     foreach(opamFile IN LISTS opamFiles)
         file(READ ${opamFile} contents)
-        string(MAKE_C_IDENTIFIER opamFile opamFileId)
+        string(REPLACE "\r" "" contents "${contents}") # Normalize CRLF
+        string(MAKE_C_IDENTIFIER ${opamFile} opamFileId)
 
         if(NOT(contents_${opamFileId} STREQUAL "${contents}"))
             list(APPEND changedOpamFiles ${opamFile})

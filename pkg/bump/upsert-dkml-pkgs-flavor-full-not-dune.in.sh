@@ -29,9 +29,21 @@ fi
 # Because this [dkml] switch is used to collect the [pins.txt] used in
 # [create-opam-switch.sh]. Besides, we have to make sure the packages
 # actually build!
-"$OPAM_EXE" repository set-url @DISKUV_OPAM_REPOSITORY_NAME_NEW@ "git+file://@diskuv-opam-repository_SOURCE_DIR@/.git#${dor_COMMIT}"
-"$OPAM_EXE" update @DISKUV_OPAM_REPOSITORY_NAME_NEW@ --repositories --yes
-'@WITH_COMPILER_SH@' "$OPAM_EXE" install @DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS@ --yes
+_LAST_ID_FILE="$UPSERT_BINARY_DIR/dkml_unmanaged_patched_packages.installed.id"
+_IDEMPOTENT_ID="$dor_COMMIT @DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS@"
+_REBUILD=1
+if [ -e "$_LAST_ID_FILE" ]; then
+    _LAST_ID=$(cat "$_LAST_ID_FILE")
+    if [ "$_LAST_ID" = "$_IDEMPOTENT_ID" ]; then
+        _REBUILD=0
+    fi
+fi
+if [ $_REBUILD -eq 1 ]; then
+  "$OPAM_EXE" repository set-url @DISKUV_OPAM_REPOSITORY_NAME_NEW@ "git+file://@diskuv-opam-repository_SOURCE_DIR@/.git#$dor_COMMIT"
+  "$OPAM_EXE" update @DISKUV_OPAM_REPOSITORY_NAME_NEW@ --repositories --yes
+  '@WITH_COMPILER_SH@' "$OPAM_EXE" install @DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS@ --yes
+  printf "%s" "$_IDEMPOTENT_ID" > "$_LAST_ID_FILE"
+fi
 
 # Add or upgrade dkml-runtime-apps
 idempotent_opam_local_install dkml-runtime-apps-installable '@dkml-runtime-apps_SOURCE_DIR@' @dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES@
@@ -42,6 +54,4 @@ idempotent_opam_local_install dkml-runtime-apps-installable '@dkml-runtime-apps_
 #   diskuv-opam-repository packages. That's fine!
 # * We don't want [conf-withdkml] since that pulls in an external [with-dkml.exe]
 #   which is not repeatable (ie. not hermetic).
-'@WITH_COMPILER_SH@' "$OPAM_EXE" install @FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS@ --yes
-
-# TODO FIXPOINT: Reinstall dkml-runtime-distribution.opam now that we have a complete set of packages. Perhaps iterate until FIXPOINT.
+idempotent_opam_install full-not-dune-flavor-no-withdkml @FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS@
