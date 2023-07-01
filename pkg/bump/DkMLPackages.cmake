@@ -1,5 +1,12 @@
 include_guard()
 
+# These packages do not have a META file, or not consistently for all package versions
+set(PACKAGES_WITHOUT_META
+    conf-withdkml
+    ocaml
+    ocamlfind
+)
+
 # Synchronized projects that have multiple opam packages
 set(dkml-compiler_PACKAGES
     dkml-base-compiler

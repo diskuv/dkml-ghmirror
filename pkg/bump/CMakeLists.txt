@@ -211,6 +211,25 @@ function(add_GitTag_command)
     )
 endfunction()
 
+function(shorten_bump_level)
+    set(noValues)
+    set(singleValues BUMP_LEVEL OUTPUT_VARIABLE)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
+        set(${ARG_OUTPUT_VARIABLE} PR PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "PATCH")
+        set(${ARG_OUTPUT_VARIABLE} PR PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "MINOR")
+        set(${ARG_OUTPUT_VARIABLE} MN PARENT_SCOPE)
+    elseif(ARG_BUMP_LEVEL STREQUAL "MAJOR")
+        set(${ARG_OUTPUT_VARIABLE} MJ PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Not a recognized BUMP_LEVEL: ${ARG_BUMP_LEVEL}")
+    endif()
+endfunction()
+
 function(add_VersionBump_commands_for_synced_projects)
     set(noValues)
     set(singleValues BUMP_LEVEL FILTER OUTPUT_LIST_VARIABLE)
@@ -274,9 +293,9 @@ function(add_VersionBump_commands_for_synced_projects)
             string(APPEND outputDir /FINAL)
         endif()
 
-        set(OTHER_BUMP_OUTPUTS ${BUMP_LEVELS})
-        list(REMOVE_ITEM OTHER_BUMP_OUTPUTS ${ARG_BUMP_LEVEL})
-        list(TRANSFORM OTHER_BUMP_OUTPUTS PREPEND ${outputDir}/bumped-)
+        set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
+        list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
+        list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/bumped-)
         add_custom_command(
             OUTPUT ${outputDir}/bumped-${ARG_BUMP_LEVEL}
             WORKING_DIRECTORY ${srcDir}
@@ -284,8 +303,8 @@ function(add_VersionBump_commands_for_synced_projects)
             COMMAND ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
             -D "DKML_RELEASE_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake"
+            -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
             -D regex_DKML_VERSION_OPAMVER=${regex_DKML_VERSION_OPAMVER}
             -D regex_DKML_VERSION_SEMVER=${regex_DKML_VERSION_SEMVER}
             -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
@@ -295,12 +314,72 @@ function(add_VersionBump_commands_for_synced_projects)
 
             # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
             # is global, we have to invalidate all other OUTPUTs from other BUMP_LEVELs
-            COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_BUMP_OUTPUTS}
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_PKGUP_OUTPUTS}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${outputDir}/bumped-${ARG_BUMP_LEVEL}
             VERBATIM
             USES_TERMINAL
         )
         list(APPEND retval ${outputDir}/bumped-${ARG_BUMP_LEVEL})
+    endforeach()
+
+    # Add to list
+    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+endfunction()
+
+function(add_PackageUpgrade_commands_for_synced_projects)
+    set(noValues)
+    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE OPAMROOT OPAMEXE)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
+    set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
+    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
+
+    cmake_path(NATIVE_PATH ARG_OPAMROOT NORMALIZE OPAMROOT_NATIVE)
+
+    foreach(proj IN LISTS syncedProjects)
+        set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/PackageUpgrade/${proj})
+
+        # Set <proj>_SOURCE_DIR
+        FetchContent_GetProperties(${proj})
+        set(srcDir ${${proj}_SOURCE_DIR})
+
+        if(NOT srcDir)
+            message(FATAL_ERROR "No FetchContent_MakeAvailable(${proj}) has been performed in dependencies/")
+        endif()
+
+        if(NOT EXISTS ${srcDir}/bump-packages.cmake)
+            continue()
+        endif()
+
+        set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
+        list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
+        list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/pkgup-)
+        add_custom_command(
+            OUTPUT ${outputDir}/pkgup-${ARG_BUMP_LEVEL}
+            WORKING_DIRECTORY ${srcDir}
+            DEPENDS ${newSemverFile} ${srcDir}/bump-packages.cmake
+            COMMAND ${CMAKE_COMMAND} -E env
+            OPAMROOT=${OPAMROOT_NATIVE}
+            OPAMSWITCH=${SHORT_BUMP_LEVEL}
+            ${CMAKE_COMMAND}
+            --log-context
+            -D CMAKE_MESSAGE_CONTEXT=${proj}
+            -D "DKML_BUMP_PACKAGES_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLBumpPackagesParticipant.cmake"
+            -D DKML_RELEASE_DUNE_VERSION=${DKML_RELEASE_DUNE_VERSION}
+            -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+            -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
+            -P bump-packages.cmake
+
+            # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
+            # is global, we have to invalidate all other OUTPUTs from other BUMP_LEVELs
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_PKGUP_OUTPUTS}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${outputDir}/pkgup-${ARG_BUMP_LEVEL}
+            VERBATIM
+            USES_TERMINAL
+        )
+        list(APPEND retval ${outputDir}/pkgup-${ARG_BUMP_LEVEL})
     endforeach()
 
     # Add to list
@@ -442,25 +521,6 @@ set(fullNoDuneNoWithdkmlPkgVers ${FULL_NOT_DUNE_FLAVOR_PKGVERS})
 list(FILTER fullNoDuneNoWithdkmlPkgVers EXCLUDE REGEX "^conf-withdkml[.]")
 list(JOIN fullNoDuneNoWithdkmlPkgVers " " FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS)
 
-function(shorten_bump_level)
-    set(noValues)
-    set(singleValues BUMP_LEVEL OUTPUT_VARIABLE)
-    set(multiValues)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
-
-    if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
-        set(${ARG_OUTPUT_VARIABLE} PR PARENT_SCOPE)
-    elseif(ARG_BUMP_LEVEL STREQUAL "PATCH")
-        set(${ARG_OUTPUT_VARIABLE} PR PARENT_SCOPE)
-    elseif(ARG_BUMP_LEVEL STREQUAL "MINOR")
-        set(${ARG_OUTPUT_VARIABLE} MN PARENT_SCOPE)
-    elseif(ARG_BUMP_LEVEL STREQUAL "MAJOR")
-        set(${ARG_OUTPUT_VARIABLE} MJ PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "Not a recognized BUMP_LEVEL: ${ARG_BUMP_LEVEL}")
-    endif()
-endfunction()
-
 # -----------------------------------
 # GenerateLaunchers
 # -----------------------------------
@@ -480,7 +540,9 @@ set(MSYS2_BASH_RUN
     "${MSYS2_BASH}" -l)
 
 set(WITH_COMPILER_SH ${CMAKE_CURRENT_BINARY_DIR}/with-compiler.sh) # Used by generate-compiler-launcher.sh and upsert-*.sh
+set(anyrun_OPAMEXE ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/bs/bin/opam${CMAKE_EXECUTABLE_SUFFIX})
 set(anyrun_OUTPUTS
+    ${anyrun_OPAMEXE}
     ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/cmdrun
     ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/opamrun)
 set(anyrun_OPAMROOT ${CMAKE_CURRENT_BINARY_DIR}/.ci/o) # $OPAMROOT is also set indirectly in anyrun.sh by [cmdrun] or [opamrun]
@@ -741,6 +803,7 @@ function(add_Flavor_targets)
         USES_TERMINAL
     )
     set(duneFlavorOutput ${DUNE_FLAVOR_PKGS})
+    list(REMOVE_ITEM duneFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM duneFlavorOutput PREPEND "${bumpSwitch}/lib/" OUTPUT_VARIABLE duneFlavorOutput)
     list(TRANSFORM duneFlavorOutput APPEND "/META" OUTPUT_VARIABLE duneFlavorOutput)
     add_custom_command(
@@ -764,6 +827,7 @@ function(add_Flavor_targets)
     # projects opam files.
     # -----------------------------------
     set(fullFlavorOutput ${FULL_NOT_DUNE_FLAVOR_PKGS})
+    list(REMOVE_ITEM fullFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM fullFlavorOutput PREPEND "${bumpSwitch}/lib/" OUTPUT_VARIABLE fullFlavorOutput)
     list(TRANSFORM fullFlavorOutput APPEND "/META" OUTPUT_VARIABLE fullFlavorOutput)
     add_custom_command(
@@ -780,6 +844,7 @@ function(add_Flavor_targets)
     set(introspectCreated ${opamsw}/introspect.created)
     file(GLOB dkml_build_desktop_DEPENDS
         LIST_DIRECTORIES false
+
         # Compiled by dkml-build-desktop.opam
         ${dkml-component-desktop_SOURCE_DIR}/src/citime/*)
     add_custom_command(
@@ -820,7 +885,7 @@ function(add_all_targets)
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(selfModifications)
-    set(INTENDED_TARGET_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage6-GitPush)
+    set(STAGE_7_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage7-GitPush)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
@@ -848,6 +913,7 @@ function(add_all_targets)
     set(versionBumpPreDuneOutputs)
     set(versionBumpPostDuneOutputs)
     set(versionBumpFinalOutputs ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
+    set(packageUpgradeOutputs)
     add_custom_command(
         OUTPUT ${selfOutput}/bumped-${ARG_BUMP_LEVEL}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -862,7 +928,7 @@ function(add_all_targets)
         SOURCE_DIR ${PROJECT_SOURCE_DIR}
         CONTEXT self
         BRANCH ${self_BRANCH}
-        INTENDED_TARGET ${INTENDED_TARGET_GIT_PUSH}
+        INTENDED_TARGET ${STAGE_7_GIT_PUSH}
         OUTPUT_FILE ${selfOutput}/pushed-${ARG_BUMP_LEVEL}
         DEPENDS ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
 
@@ -880,10 +946,15 @@ function(add_all_targets)
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER FINAL
         OUTPUT_LIST_VARIABLE versionBumpFinalOutputs)
+    add_PackageUpgrade_commands_for_synced_projects(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_LIST_VARIABLE packageUpgradeOutputs
+        OPAMROOT ${anyrun_OPAMROOT}
+        OPAMEXE ${anyrun_OPAMEXE})
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE gitPushTargetDepends
-        INTENDED_TARGET ${INTENDED_TARGET_GIT_PUSH}
+        INTENDED_TARGET ${STAGE_7_GIT_PUSH}
         DEPENDS ${versionBumpPreDuneOutputs} ${versionBumpPostDuneOutputs} ${versionBumpFinalOutputs})
 
     # Stage 1
@@ -905,19 +976,26 @@ function(add_all_targets)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump)
 
     # Stage 5
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage5-VersionBump
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage5-PackageUpgrade
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${newSemverFile} ${packageUpgradeOutputs}
+        VERBATIM)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage5-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor)
+
+    # Stage 6 (TODO: diskuv-opam-repository needs to add all the new package versions)
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage6-VersionBump
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${versionBumpFinalOutputs}
         VERBATIM)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage5-VersionBump Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage6-VersionBump Package-${ARG_BUMP_LEVEL}-Stage5-PackageUpgrade)
 
-    # Stage 6
-    add_custom_target(${INTENDED_TARGET_GIT_PUSH}
+    # Stage 7
+    add_custom_target(${STAGE_7_GIT_PUSH}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushTargetDepends}
         VERBATIM)
 
-    add_dependencies(${INTENDED_TARGET_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage5-VersionBump)
+    add_dependencies(${STAGE_7_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage6-VersionBump)
 endfunction()
 
 add_GenerateLaunchers_target()
