@@ -1,4 +1,4 @@
-include(${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant_core.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake)
 
 if(NOT DKML_RELEASE_DUNE_VERSION)
     message(FATAL_ERROR "Missing -D DKML_RELEASE_DUNE_VERSION=xx")

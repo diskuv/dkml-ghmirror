@@ -303,7 +303,7 @@ function(add_VersionBump_commands_for_synced_projects)
             COMMAND ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D "DKML_RELEASE_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake"
+            -D "DKML_BUMP_VERSION_PARTICIPANT_MODULE=${CMAKE_CURRENT_LIST_DIR}/DkMLBumpVersionParticipant.cmake"
             -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
             -D regex_DKML_VERSION_OPAMVER=${regex_DKML_VERSION_OPAMVER}
             -D regex_DKML_VERSION_SEMVER=${regex_DKML_VERSION_SEMVER}
