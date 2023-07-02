@@ -71,6 +71,10 @@ FetchGit(dkml-component-desktop
     GIT_REPOSITORY https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop.git
     GIT_TAG main
 )
+FetchGit(dkml-install-api
+    GIT_REPOSITORY https://github.com/diskuv/dkml-install-api.git
+    GIT_TAG 0.4 # TODO: Release this to opam repository
+)
 FetchGit(dkml-installer-ocaml
     GIT_REPOSITORY https://github.com/diskuv/dkml-installer-ocaml.git
     GIT_TAG main
@@ -86,6 +90,18 @@ FetchGit(dkml-runtime-common
 FetchGit(dkml-runtime-distribution
     GIT_REPOSITORY https://github.com/diskuv/dkml-runtime-distribution.git
     GIT_TAG main # b1a1403eded259a49a57134054633df526d3addb # 1.2.1-prerel1 + commits
+)
+FetchGit(dkml-component-ocamlrun
+    GIT_REPOSITORY https://github.com/diskuv/dkml-component-ocamlrun.git
+    GIT_TAG main
+)
+FetchGit(dkml-component-ocamlcompiler
+    GIT_REPOSITORY https://github.com/diskuv/dkml-component-ocamlcompiler.git
+    GIT_TAG main
+)
+FetchGit(dkml-component-unixutils
+    GIT_REPOSITORY https://github.com/diskuv/dkml-component-unixutils.git
+    GIT_TAG main
 )
 FetchGit(dkml-component-opam
     GIT_REPOSITORY https://github.com/diskuv/dkml-component-opam.git

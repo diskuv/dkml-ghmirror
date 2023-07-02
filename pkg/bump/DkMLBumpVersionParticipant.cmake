@@ -38,7 +38,7 @@ macro(_DkMLBumpVersionParticipant_Finish_Replace VERSION_TYPE)
     file(WRITE ${REL_FILENAME} "${contents_NEW}")
 
     message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_VERSION_${VERSION_TYPE}_NEW}")
-    set_property(GLOBAL APPEND PROPERTY DkMLBumpVersionParticipant_REL_FILES ${REL_FILENAME})
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endmacro()
 
 # 1.2.1-2 -> 1.2.1-3
@@ -64,6 +64,32 @@ function(DkMLBumpVersionParticipant_OpamReplace REL_FILENAME)
     _DkMLBumpVersionParticipant_Finish_Replace(OPAMVER)
 endfunction()
 
+# ReleaseDate: 2022-12-28 -> ReleaseDate: 2023-07-01
+function(DkMLBumpVersionParticipant_ReleaseDateReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(TIMESTAMP now_YYYYMMDD "%Y-%m-%d" UTC)
+    string(REGEX REPLACE # Match at beginning of line: ^|\n
+        "(^|\n)ReleaseDate: [0-9-]+"
+        "\\1ReleaseDate: ${now_YYYYMMDD}"
+        contents_NEW "${contents_NEW}")
+    _DkMLBumpVersionParticipant_Finish_Replace(SEMVER)
+endfunction()
+
+# Copyright: Copyright 2022 Diskuv, Inc. -> Copyright: Copyright 2023 Diskuv, Inc.
+function(DkMLBumpVersionParticipant_CopyrightReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(TIMESTAMP now_YYYY "%Y" UTC)
+    string(REGEX REPLACE 
+        "Copyright 2[0-9][0-9][0-9] Diskuv"
+        "Copyright ${now_YYYY} Diskuv"
+        contents_NEW "${contents_NEW}")
+    _DkMLBumpVersionParticipant_Finish_Replace(SEMVER)
+endfunction()
+
 # (version 1.2.1~prerel2) -> (version 1.2.1~prerel3)
 function(DkMLBumpVersionParticipant_DuneProjectReplace REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
@@ -73,6 +99,19 @@ function(DkMLBumpVersionParticipant_DuneProjectReplace REL_FILENAME)
         "(^|\n)[(]version ${regex_DKML_VERSION_OPAMVER}[)]"
         "\\1(version ${DKML_VERSION_OPAMVER_NEW})"
         contents_NEW "${contents_NEW}")
+    _DkMLBumpVersionParticipant_Finish_Replace(OPAMVER)
+endfunction()
+
+# (version 4.14.0~v1.2.1~prerel2) -> (version 4.14.0~v1.2.1~prerel3)
+function(DkMLBumpVersionParticipant_DuneProjectWithCompilerVersionReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(REGEX REPLACE # Match at beginning of line: ^|\n
+        "(^|\n)[(]version ([0-9.]*)[~]v${regex_DKML_VERSION_OPAMVER}[)]"
+        "\\1(version ${DKML_RELEASE_OCAML_VERSION}~v${DKML_VERSION_OPAMVER_NEW})"
+        contents_NEW "${contents_NEW}")
+
     _DkMLBumpVersionParticipant_Finish_Replace(OPAMVER)
 endfunction()
 
@@ -122,7 +161,7 @@ function(DkMLBumpVersionParticipant_CreateOpamSwitchReplace REL_FILENAME)
     file(WRITE ${REL_FILENAME} "${contents_NEW}")
 
     message(NOTICE "Bumped ${REL_FILENAME} to ${DKML_RELEASE_OCAML_VERSION}")
-    set_property(GLOBAL APPEND PROPERTY DkMLBumpVersionParticipant_REL_FILES ${REL_FILENAME})
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
 # version = "1.2.1~prerel2" -> version = "1.2.1~prerel3"
@@ -176,11 +215,12 @@ function(DkMLBumpVersionParticipant_GitAddAndCommit)
         return()
     endif()
 
-    get_property(relFiles GLOBAL PROPERTY DkMLBumpVersionParticipant_REL_FILES)
+    get_property(relFiles GLOBAL PROPERTY DkMLReleaseParticipant_REL_FILES)
 
     if(NOT relFiles)
         return()
     endif()
+    list(REMOVE_DUPLICATES relFiles)
 
     execute_process(
         COMMAND

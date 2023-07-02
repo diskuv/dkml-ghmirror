@@ -49,6 +49,15 @@ if [ "@CMAKE_HOST_WIN32@" = 1 ]; then
     "$OPAM_EXE" option --root "$OPAMROOT" --global depext=false
 fi
 
+# Make %{dkml-sys-opam-exe}% available
+#       shellcheck disable=SC2050
+if [ "@CMAKE_HOST_WIN32@" = 1 ] && [ -x /usr/bin/cygpath ]; then
+    DKML_SYS_OPAM_EXE=$(/usr/bin/cygpath -aw "$OPAM_EXE")
+else
+    DKML_SYS_OPAM_EXE=$OPAM_EXE
+fi
+"$OPAM_EXE" var --global "dkml-sys-opam-exe=$DKML_SYS_OPAM_EXE"
+
 # create-opam-switch
 #
 # -p DKMLABI: The DKML ABI (not 'dev'). Determines how to make an OCaml home if a version number is specified
