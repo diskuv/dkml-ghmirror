@@ -337,10 +337,10 @@ file(GLOB dkml-runtime-distribution_PKGS_FILES
     LIST_DIRECTORIES false
     ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-pkgs.txt)
 
-function(add_PackageUpgrade_commands_for_synced_projects)
+function(add_PackageUpgrade_target)
     set(noValues)
     set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE OPAMROOT OPAMEXE)
-    set(multiValues DEPENDS)
+    set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
@@ -348,6 +348,9 @@ function(add_PackageUpgrade_commands_for_synced_projects)
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
 
     cmake_path(NATIVE_PATH ARG_OPAMROOT NORMALIZE OPAMROOT_NATIVE)
+    set(target_COMMANDS)
+    set(target_DEPENDS)
+    set(target_SOURCES)
 
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/PackageUpgrade/${proj})
@@ -367,16 +370,27 @@ function(add_PackageUpgrade_commands_for_synced_projects)
         set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
         list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
         list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/pkgup-)
-        add_custom_command(
-            OUTPUT ${outputDir}/pkgup-${ARG_BUMP_LEVEL}
-            WORKING_DIRECTORY ${srcDir}
-            DEPENDS
-            ${newSemverFile}
-            ${srcDir}/bump-packages.cmake
-            ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpPackagesParticipant.cmake
-            ${dkml-runtime-distribution_PKGS_FILES}
-            ${ARG_DEPENDS}
-            COMMAND ${CMAKE_COMMAND} -E env
+
+        # We queue up the COMMANDs rather than use add_custom_command() because
+        # we _always_ want these commands to run.
+        #
+        # 1. [dkml-installer-ocaml]'s bump-packages.cmake will regenerate the
+        # list of components. So any source code can register itself in the
+        # dkml-install-api registry.
+        # 2. [dkml-runtime-distribution] and [dkml-workflows]'s
+        # bump-packages.cmake change their pins and package lists based on the
+        # state of the switch (which is a synthesis of all the steps prior)
+        #
+        # In general, PackageUpgrade _cannot_ model when bump-packages.cmake
+        # should be re-run (ie. add_custom_command(DEPENDS)) so we always
+        # run the bump-packages.cmake.
+        list(APPEND target_SOURCES
+            ${srcDir}/bump-packages.cmake)
+        list(APPEND target_COMMANDS
+            COMMAND
+            ${CMAKE_COMMAND} -E chdir
+            ${srcDir}
+            ${CMAKE_COMMAND} -E env
             OPAMROOT=${OPAMROOT_NATIVE}
             OPAMSWITCH=${SHORT_BUMP_LEVEL}
             ${CMAKE_COMMAND}
@@ -391,14 +405,24 @@ function(add_PackageUpgrade_commands_for_synced_projects)
             # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
             # is global, we have to invalidate all other OUTPUTs from other BUMP_LEVELs
             COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_PKGUP_OUTPUTS}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${outputDir}/pkgup-${ARG_BUMP_LEVEL}
-            VERBATIM
-            USES_TERMINAL
         )
-        list(APPEND retval ${outputDir}/pkgup-${ARG_BUMP_LEVEL})
     endforeach()
 
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS
+        ${newSemverFile}
+        ${target_DEPENDS}
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpPackagesParticipant.cmake
+        ${dkml-runtime-distribution_PKGS_FILES}
+
+        ${target_COMMANDS}
+
+        SOURCES ${target_SOURCES}
+        VERBATIM USES_TERMINAL)
+
     # Add to list
+    list(APPEND retval ${target_DEPENDS})
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
@@ -852,11 +876,15 @@ function(add_Flavor_targets)
     list(REMOVE_ITEM duneFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM duneFlavorOutput PREPEND "${bumpSwitch}/lib/" OUTPUT_VARIABLE duneFlavorOutput)
     list(TRANSFORM duneFlavorOutput APPEND "/META" OUTPUT_VARIABLE duneFlavorOutput)
+    file(CONFIGURE OUTPUT ${opamsw}/rerun-on-DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
+        CONTENT [[@DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS@]]
+        @ONLY)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${duneFlavorOutput}
         MAIN_DEPENDENCY upsert-dkml-pkgs-flavor-dune.in.sh
         DEPENDS ${compilerCreated} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS}
+        ${opamsw}/rerun-on-DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} distribution - Dune flavor"
         COMMAND ${upsert_dkml_pkgs_dune_COMMAND}
         VERBATIM
@@ -1061,6 +1089,36 @@ function(add_Installer_target)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${installerCreated} PARENT_SCOPE)
 endfunction()
 
+function(add_OpamConsoleUpgrade_target)
+    set(noValues)
+    set(singleValues BUMP_LEVEL)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    prepare_upsert_variables(
+        ID so
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_UPSERT_UTILS UPSERT_UTILS # Used by upsert-*
+        OUTPUT_SHORT_BUMP_LEVEL SHORT_BUMP_LEVEL
+        OUTPUT_WORKING_DIRECTORY opamsw
+        OUTPUT_SWITCH bumpSwitch)
+
+    foreach(p IN ITEMS upsert-opam-console-upgrade)
+        configure_file(${p}.in.sh ${opamsw}/${p}.sh
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            @ONLY NEWLINE_STYLE UNIX)
+    endforeach()
+
+    anyrun(${opamsw}/upsert-opam-console-upgrade.sh upsert_opam_console_upgrade_COMMAND)
+
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-OpamConsoleUpgrade
+        WORKING_DIRECTORY ${opamsw}
+        COMMAND ${upsert_opam_console_upgrade_COMMAND}
+        VERBATIM
+        USES_TERMINAL
+    )
+endfunction()
+
 function(add_all_targets)
     set(noValues)
     set(singleValues BUMP_LEVEL)
@@ -1156,16 +1214,11 @@ function(add_all_targets)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage5-Api Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor)
 
     # Stage 6
-    add_PackageUpgrade_commands_for_synced_projects(
+    add_PackageUpgrade_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE packageUpgradeOutputs
-        DEPENDS ${apiOutputs}
         OPAMROOT ${anyrun_OPAMROOT}
         OPAMEXE ${anyrun_OPAMEXE})
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${packageUpgradeOutputs}
-        VERBATIM)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage5-Api)
 
     # Stage 7
@@ -1203,6 +1256,7 @@ endfunction()
 add_GenerateLaunchers_target()
 add_all_targets(BUMP_LEVEL PRERELEASE)
 add_all_targets(BUMP_LEVEL PATCH)
+add_OpamConsoleUpgrade_target(BUMP_LEVEL PRERELEASE)
 
 # TODO:
 

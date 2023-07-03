@@ -2,12 +2,29 @@ include_guard()
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 
 set(DKML_PATCH_EXCLUDE_PACKAGES
+    # Note: +android patches aren't useful in DkML    
 
     # Already fixed upstream. Eligible to be removed
     # from diskuv-opam-repository! Only reason to keep it around is for
     # packages that require older versions
+    alcotest # 1.6.0
+    bigstringaf # 0.9.0+msvc
+    checkseum # 0.3.4+android
     cmdliner # 1.0.4    
+    crunch # 3.3.1
+    curly # 0.2.1-windows-env_r2
+    digestif # 1.1.2+msvc
+    ocamlbuild # 0.14.0
     ptime # 0.8.6-msvcsupport
+
+    #       -- Jane Street --
+    base # v0.15.1
+    base_bigstring # v0.15.0
+    core # v0.15.1
+    core_kernel # v0.15.0
+    ppx_expect # v0.15.1
+    spawn # 0.15.1+android
+    time_now # v0.15.0
 )
 
 # Get the list of the latest package versions compatible with
@@ -46,10 +63,19 @@ function(DkMLPatches_GetPackageVersions)
             list(APPEND dkml-base-compiler.${ARG_OCAML_VERSION}~v${ARG_DKML_VERSION_OPAMVER_NEW})
         elseif(pkgname STREQUAL "ocaml" OR pkgname STREQUAL "conf-dkml-cross-toolchain")
             list(APPEND ${pkgname}.${ARG_OCAML_VERSION})
-        elseif(pkgname STREQUAL "dune" OR pkgname MATCHES "^dune-.*" OR
+        elseif(pkgname STREQUAL "dune")
+            # Always select the given dune X.Y.Z version, so we can flip back
+            # and forth from dune.X.Y.Z+shim and dune.X.Y.Z in diskuv-opam-repository
+            # depending on the presence of [conf-withdkml] in our [dkml] switch.
+            list(APPEND pkgvers dune.${ARG_DUNE_VERSION})
+        elseif(pkgname MATCHES "^dune-.*" OR
             pkgname STREQUAL "dyn" OR pkgname STREQUAL "fiber" OR
             pkgname STREQUAL "ordering" OR pkgname STREQUAL "stdune" OR pkgname STREQUAL "xdg")
-            list(APPEND pkgvers ${pkgname}.${ARG_DUNE_VERSION})
+            # diskuv-opam-repository patches for Dune-related packages are only
+            # needed when the core Dune package is 3.6.2
+            if (ARG_DUNE_VERSION VERSION_EQUAL 3.6.2)
+                list(APPEND pkgvers ${pkgname}.${ARG_DUNE_VERSION})
+            endif()
         else()
             # "Naturally" sort the package versions so we can find the latest
             # version. Yep, this is not done 100% correctly, but you can always

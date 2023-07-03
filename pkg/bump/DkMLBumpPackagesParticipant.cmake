@@ -343,6 +343,14 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
         file(WRITE ${REL_FILENAME} "")
     endforeach()
 
+
+    # Clean the dune build directory so the dune target can be
+    # reproducible and especially so it is not affected by
+    # a prior bump.
+    execute_process(
+        COMMAND ${OPAM_EXECUTABLE} exec -- dune clean
+    )
+
     # Run the dune target ... the first time may fail because it has yet
     # to be promoted ... but the second time should work
     execute_process(
