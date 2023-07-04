@@ -138,6 +138,9 @@ function(add_GitTag_command)
         list(APPEND tar_ARGS --force)
     endif()
 
+    # We want the git tagging to be done always. We settle for doing
+    # it in each re-configure by deleting the output file during re-configure.
+    file(REMOVE ${ARG_OUTPUT_FILE})
     add_custom_command(
         OUTPUT ${ARG_OUTPUT_FILE}
         WORKING_DIRECTORY ${ARG_SOURCE_DIR}
@@ -1263,18 +1266,3 @@ DkMLPublish_AddArchiveTarget(
 foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
     add_all_targets(BUMP_LEVEL ${BUMP_LEVEL})
 endforeach()
-
-# TODO:
-
-# 0. {DONE} Save the [git push] of all the synced projects until step [2] and [3] are done.
-
-# 2. [release.sh] starting from line ~450 changes [dkml-component-desktop] and
-# waits for it to build. The release.sh changes are all to get the code we already checked
-# out, and are complicated because release.sh does not let [dune] autogenerate
-# all the .opam files. So we run [dune] and add the changed .opam files!
-# * However, we'll need to download a version of dune (easy).
-# * We'll need to create an opam switch to build [dkml-component-desktop] ... just
-# use [setup-dkml] desktop scripts to do that. Actually, can just use
-# [dkml-component-desktop] .gitlab-ci.yml (just run the ci/ scripts manually).
-
-# 4. Do [git push] of all synced projects _and_ [self]
