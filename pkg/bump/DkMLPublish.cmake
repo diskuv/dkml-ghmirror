@@ -141,12 +141,12 @@ function(DkMLPublish_PublishAssetsTarget)
             COMMAND
             ${CMAKE_COMMAND} -E copy_if_different
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${ARCHIVEDIR}/setup64.exe
+            ${ARCHIVEDIR}/setup64u.exe
 
             COMMAND
             ${CMAKE_COMMAND} -E copy_if_different
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${ARCHIVEDIR}/uninstall64.exe
+            ${ARCHIVEDIR}/uninstall64u.exe
         )
         list(APPEND uploads
             "setup64u.exe#Windows 64-bit Installer"
