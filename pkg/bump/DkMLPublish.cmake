@@ -92,16 +92,17 @@ function(DkMLPublish_CreateReleaseTarget)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     # Get ChangeLog entry
+    set(changes_MD_NEW_FILENAME ${PUBLISHDIR}/change-${ARG_DKML_VERSION_SEMVER_NEW}.md)
     DkMLPublish_ChangeLog(
         DKML_VERSION_SEMVER_NEW ${ARG_DKML_VERSION_SEMVER_NEW}
         OUTPUT_VARIABLE changes_MD)
     file(READ ${changes_MD} changes_CONTENT)
     string(TIMESTAMP now_YYYYMMDD "%Y-%m-%d")
     string(REPLACE "@@YYYYMMDD@@" "${now_YYYYMMDD}" changes_CONTENT "${changes_CONTENT}")
-    file(WRITE ${PUBLISHDIR}/change-${ARG_DKML_VERSION_SEMVER_NEW}.md)
+    file(WRITE ${changes_MD_NEW_FILENAME} ${changes_CONTENT})
 
     add_custom_target(${ARG_TARGET}
-        DEPENDS ${PUBLISHDIR}/change-${ARG_DKML_VERSION_SEMVER_NEW}.md
+        DEPENDS ${changes_MD_NEW_FILENAME}
         COMMAND
         ${GLAB_EXECUTABLE} auth status
 
@@ -110,7 +111,7 @@ function(DkMLPublish_CreateReleaseTarget)
         ${GLAB_EXECUTABLE} release create ${ARG_DKML_VERSION_SEMVER_NEW}
         --name "DkML ${ARG_DKML_VERSION_SEMVER_NEW}"
         --ref "${ARG_DKML_VERSION_SEMVER_NEW}"
-        --notes-file ${PUBLISHDIR}/change.md
+        --notes-file ${changes_MD_NEW_FILENAME}
         VERBATIM USES_TERMINAL
     )
 endfunction()
