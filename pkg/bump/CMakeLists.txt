@@ -1039,8 +1039,17 @@ function(add_Installer_target)
 
     anyrun(${opamsw}/upsert-installer.sh upsert_installer_COMMAND)
 
-    set(installerCreated ${opamsw}/installer.created)
+    set(byproducts bundle-diskuv-ocaml-generic-i.sh bundle-diskuv-ocaml-generic-u.sh)
 
+    if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
+        list(APPEND byproducts
+            unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe
+            unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
+    endif()
+
+    list(TRANSFORM byproducts PREPEND ${bumpSwitch}/share/dkml-installer-network-ocaml/t/)
+
+    set(installerCreated ${opamsw}/installer.created)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
 
@@ -1048,9 +1057,7 @@ function(add_Installer_target)
         # opam seeing no changes. So we use a synthetic OUTPUT, real BYPRODUCTS,
         # and a [touch] command.
         OUTPUT ${installerCreated}
-        BYPRODUCTS
-        ${bumpSwitch}/share/dkml-installer-network-ocaml/t/bundle-diskuv-ocaml-generic-i.sh
-        ${bumpSwitch}/share/dkml-installer-network-ocaml/t/bundle-diskuv-ocaml-generic-u.sh
+        BYPRODUCTS ${byproducts}
         MAIN_DEPENDENCY upsert-installer.in.sh
         DEPENDS
         ${newSemverFile}

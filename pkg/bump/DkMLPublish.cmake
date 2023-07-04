@@ -133,16 +133,16 @@ function(DkMLPublish_PublishAssetsTarget)
     set(depends)
     set(tdir ${anyrun_OPAMROOT}/${ARG_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
 
-    if(CMAKE_HOST_WIN32)
+    if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
         list(APPEND precommands
             COMMAND
             ${CMAKE_COMMAND} -E copy_if_different
-            ${tdir}/unsigned-diskuv-ocaml-windows_x86_64-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             ${ARCHIVEDIR}/setup64.exe
 
             COMMAND
             ${CMAKE_COMMAND} -E copy_if_different
-            ${tdir}/unsigned-diskuv-ocaml-windows_x86_64-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             ${ARCHIVEDIR}/uninstall64.exe
         )
         list(APPEND uploads
@@ -150,8 +150,8 @@ function(DkMLPublish_PublishAssetsTarget)
             "uninstall64.exe#Windows 64-bit Uninstaller"
         )
         list(APPEND depends
-            ${tdir}/unsigned-diskuv-ocaml-windows_x86_64-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${tdir}/unsigned-diskuv-ocaml-windows_x86_64-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe)
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe)
     endif()
 
     # https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/release/upload.md
