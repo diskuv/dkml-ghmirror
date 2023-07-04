@@ -108,6 +108,7 @@ function(DkMLPublish_CreateReleaseTarget)
         COMMAND
         ${GLAB_EXECUTABLE} release create ${ARG_DKML_VERSION_SEMVER_NEW}
         --name "DkML ${ARG_DKML_VERSION_SEMVER_NEW}"
+        --ref "${ARG_DKML_VERSION_SEMVER_NEW}"
         --notes-file ${PUBLISHDIR}/change.md
         VERBATIM USES_TERMINAL
     )
