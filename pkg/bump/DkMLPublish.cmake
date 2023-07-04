@@ -131,6 +131,7 @@ function(DkMLPublish_PublishAssetsTarget)
     set(precommands)
     set(uploads)
     set(depends)
+    set(tdir ${anyrun_OPAMROOT}/${ARG_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
 
     if(CMAKE_HOST_WIN32)
         list(APPEND precommands
@@ -159,7 +160,6 @@ function(DkMLPublish_PublishAssetsTarget)
         list(APPEND depends ${ARCHIVEDIR}/src.${PROJECT}.tar.gz)
     endforeach()
 
-    set(tdir ${anyrun_OPAMROOT}/${ARG_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
     add_custom_target(${ARG_TARGET}
         WORKING_DIRECTORY ${ARCHIVEDIR}
         DEPENDS ${depends}
