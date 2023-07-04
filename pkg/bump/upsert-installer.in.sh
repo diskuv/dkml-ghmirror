@@ -34,6 +34,3 @@ idempotent_opam_local_install dkml-package-console-TRANSITIVE '@dkml-install-api
     ./dkml-package-console.opam
 idempotent_opam_local_install dkml-install-installer '@dkml-install-api_SOURCE_DIR@' ./dkml-install-installer.opam
 idempotent_opam_local_install dkml-installer-network-ocaml '@dkml-installer-ocaml_SOURCE_DIR@' ./dkml-installer-network-ocaml.opam
-
-# Print any remaining upgrades that may be done
-'@WITH_COMPILER_SH@' "$OPAM_EXE" upgrade --dry-run --yes

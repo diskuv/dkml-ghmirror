@@ -1,7 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake)
 
-# TODO: This file should be renamed DkMLBumpVersionParticipant.cmake
-
 if(NOT DKML_RELEASE_OCAML_VERSION)
     message(FATAL_ERROR "Missing -D DKML_RELEASE_OCAML_VERSION=xx")
 endif()

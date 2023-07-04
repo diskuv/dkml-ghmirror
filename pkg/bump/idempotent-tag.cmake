@@ -16,7 +16,13 @@ execute_process(
     COMMAND ${GIT_EXECUTABLE} describe
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE possibleTag
-    COMMAND_ERROR_IS_FATAL ANY
+
+    # Failure examples?
+    # > fatal: No annotated tags can describe '87d34d61e35085a84c34b5bc1e38ceba4245e7e9'
+    # > However, there were unannotated tags: try --tags.
+    # That is, no annotated tags are in project. And that is okay ...
+    # we'll just continue and make our own.
+    # So do not use: COMMAND_ERROR_IS_FATAL ANY
 )
 
 if(possibleTag STREQUAL ${DKML_VERSION_SEMVER_NEW})

@@ -1,7 +1,10 @@
 set(DKML_RELEASE_OCAML_VERSION 4.14.0)
 include(${PROJECT_SOURCE_DIR}/version.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/DkMLAnyRun.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/DkMLBumpLevels.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPatches.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/DkMLPublish.cmake)
 
 if(CMAKE_HOST_WIN32)
     find_program(POWERSHELL_EXECUTABLE NAMES pwsh powershell REQUIRED)
@@ -12,48 +15,10 @@ set(BUMP2VERSION_EXECUTABLE "${CONDA_EXECUTABLE}" run -n "${CONDA_ENVIRONMENT}" 
 
 cmake_path(GET GIT_EXECUTABLE PARENT_PATH GIT_EXECUTABLE_DIR)
 
-set(preDuneProjects
-
-    # These are the projects that are required to a) create a switch
-    # with b) just an OCaml compiler. See note in [syncedProjects] about
-    # [diskuv-opam-repository].
-    dkml-compiler
-    dkml-runtime-common
-    dkml-runtime-distribution # contains create-opam-switch.sh
-)
-set(postDuneProjects
-
-    # These are projects that need [dune build *.opam] to bump their
-    # versions.
-
-    # Part of a CI or Full distribution -pkgs.txt
-    dkml-runtime-apps
-
-    # Utility projects that won't be built in a switch (but still
-    # need to be bumped with [dune build *.opam])
-    dkml-workflows
-
-    # Install API Components
-    dkml-component-desktop
-    dkml-component-ocamlcompiler
-    dkml-component-ocamlrun
-    dkml-installer-ocaml
-)
-set(finalProjects
-
-    # Technically [diskuv-opam-repository] belongs in [preDuneProjects],
-    # however the repository must be updated after all the other
-    # projects are updated (or else it can't get their checksums).
-    # AFAIK this should not affect anything ... this VersionBump logic
-    # uses pinning for all projects, so it is irrelevant if
-    # [diskuv-opam-repository] is stale all the way until the end
-    # of VersionBump.
-    diskuv-opam-repository
-)
 set(syncedProjects
-    ${preDuneProjects}
-    ${postDuneProjects}
-    ${finalProjects}
+    ${DKML_PROJECTS_PREDUNE}
+    ${DKML_PROJECTS_POSTDUNE}
+    ${DKML_PROJECTS_FINAL}
 )
 set(self_BRANCH next-cmake) # self is [dkml]
 set(diskuv-opam-repository_BRANCH main)
@@ -67,46 +32,19 @@ set(dkml-runtime-common_BRANCH main)
 set(dkml-runtime-distribution_BRANCH main)
 set(dkml-workflows_BRANCH v1)
 
-# ----------------
-#
-# Pre-calculate content for new prerelease,patch,etc. bumped versions
-set(BUMP_LEVELS PRERELEASE PATCH MINOR MAJOR)
-
-function(set_new_prerelease_version)
-    if(DKML_VERSION_PRERELEASE)
-        math(EXPR new_prerelease "${DKML_VERSION_PRERELEASE} + 1")
-        set(new_patch "${DKML_VERSION_PATCH}")
-    else()
-        set(new_prerelease 1)
-        math(EXPR new_patch "${DKML_VERSION_PATCH} + 1")
+# Sanity check
+foreach(PROJECT IN LISTS syncedProjects)
+    if(NOT ${PROJECT}_BRANCH)
+        message(FATAL_ERROR "Missing set(${PROJECT}_BRANCH ...) statement in ${CMAKE_CURRENT_LIST_FILE}")
     endif()
-
-    set(DKML_VERSION_CMAKEVER_NEW_PRERELEASE ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch}.${new_prerelease} PARENT_SCOPE)
-    set(DKML_VERSION_SEMVER_NEW_PRERELEASE ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch}-${new_prerelease} PARENT_SCOPE)
-    set(DKML_VERSION_OPAMVER_NEW_PRERELEASE ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch}~prerel${new_prerelease} PARENT_SCOPE)
-endfunction()
-
-function(set_new_patch_version)
-    if(DKML_VERSION_PRERELEASE)
-        set(new_patch "${DKML_VERSION_PATCH}") # Pre-releases are _before_ a non-prerelease
-    else()
-        math(EXPR new_patch "${DKML_VERSION_PATCH} + 1") # No pre-release
-    endif()
-
-    set(DKML_VERSION_CMAKEVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
-    set(DKML_VERSION_SEMVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
-    set(DKML_VERSION_OPAMVER_NEW_PATCH ${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${new_patch} PARENT_SCOPE)
-endfunction()
-
-set_new_prerelease_version()
-set_new_patch_version()
-file(CONFIGURE OUTPUT new-PRERELEASE-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
-file(CONFIGURE OUTPUT new-PATCH-semver CONTENT "@DKML_VERSION_SEMVER_NEW_PATCH@" @ONLY NEWLINE_STYLE UNIX)
-file(CONFIGURE OUTPUT new-PRERELEASE-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_PRERELEASE@" @ONLY NEWLINE_STYLE UNIX)
-file(CONFIGURE OUTPUT new-PATCH-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_PATCH@" @ONLY NEWLINE_STYLE UNIX)
+endforeach()
 
 # ----------------
 #
+foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
+    file(CONFIGURE OUTPUT new-${BUMP_LEVEL}-semver CONTENT "@DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}@" @ONLY NEWLINE_STYLE UNIX)
+    file(CONFIGURE OUTPUT new-${BUMP_LEVEL}-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}@" @ONLY NEWLINE_STYLE UNIX)
+endforeach()
 
 # ----------------
 #
@@ -132,7 +70,7 @@ function(stage_self_VersionReplace BUMP_LEVEL NEW_VERSION_CMAKEVER NEW_PUBLICVER
             contents_NEW "${contents_NEW}")
 
         if(contents_LAST STREQUAL "${contents_NEW}")
-            message(FATAL_ERROR "The public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+            message(FATAL_ERROR "The ${BUMP_LEVEL} public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
         endif()
     endif()
 
@@ -161,7 +99,12 @@ function(stage_self_DkMLReplace BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIAB
 endfunction()
 
 function(stage_self_Changes BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE)
-    file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md versionChanges)
+    if(EXISTS ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md)
+        file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md versionChanges)
+    else()
+        set(versionChanges "## ${NEW_VERSION_SEMVER} (@@YYYYMMDD@@)")
+    endif()
+
     file(READ ${PROJECT_SOURCE_DIR}/CHANGES.md priorChanges)
 
     # First line in CHANGES.md should be a top-level heading "# CHANGES" to
@@ -276,19 +219,19 @@ function(add_VersionBump_commands_for_synced_projects)
         endif()
 
         if(ARG_FILTER STREQUAL PRE_DUNE)
-            if(NOT(proj IN_LIST preDuneProjects))
+            if(NOT(proj IN_LIST DKML_PROJECTS_PREDUNE))
                 continue()
             endif()
 
             string(APPEND outputDir /PRE)
         elseif(ARG_FILTER STREQUAL POST_DUNE)
-            if(NOT(proj IN_LIST postDuneProjects))
+            if(NOT(proj IN_LIST DKML_PROJECTS_POSTDUNE))
                 continue()
             endif()
 
             string(APPEND outputDir /POST)
         elseif(ARG_FILTER STREQUAL FINAL)
-            if(NOT(proj IN_LIST finalProjects))
+            if(NOT(proj IN_LIST DKML_PROJECTS_FINAL))
                 continue()
             endif()
 
@@ -340,7 +283,7 @@ file(GLOB dkml-runtime-distribution_PKGS_FILES
 function(add_PackageUpgrade_target)
     set(noValues)
     set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE OPAMROOT OPAMEXE)
-    set(multiValues)
+    set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
@@ -349,7 +292,7 @@ function(add_PackageUpgrade_target)
 
     cmake_path(NATIVE_PATH ARG_OPAMROOT NORMALIZE OPAMROOT_NATIVE)
     set(target_COMMANDS)
-    set(target_DEPENDS)
+    set(target_DEPENDS ${ARG_DEPENDS})
     set(target_SOURCES)
 
     foreach(proj IN LISTS syncedProjects)
@@ -367,6 +310,8 @@ function(add_PackageUpgrade_target)
             continue()
         endif()
 
+        # nit: We no longer need OTHER_PKGUP_OUTPUTS since we'll be
+        # queuing up the COMMANDs rather than using add_custom_command()
         set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
         list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
         list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/pkgup-)
@@ -426,6 +371,76 @@ function(add_PackageUpgrade_target)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
+function(add_RepositoryUpdate_target)
+    set(noValues)
+    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE)
+    set(multiValues DEPENDS)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
+    set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
+    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
+
+    set(target_COMMANDS)
+    set(target_DEPENDS ${ARG_DEPENDS})
+    set(target_SOURCES)
+
+    foreach(proj IN LISTS syncedProjects)
+        set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/RepositoryUpdate/${proj})
+
+        # Set <proj>_SOURCE_DIR
+        FetchContent_GetProperties(${proj})
+        set(srcDir ${${proj}_SOURCE_DIR})
+
+        if(NOT srcDir)
+            message(FATAL_ERROR "No FetchContent_MakeAvailable(${proj}) has been performed in dependencies/")
+        endif()
+
+        if(NOT EXISTS ${srcDir}/bump-repository.cmake)
+            continue()
+        endif()
+
+        # We queue up the COMMANDs rather than use add_custom_command() because
+        # we _always_ want these commands to run. We do this because
+        # PackageUpgrade (a prior step) has to always run as well.
+        list(APPEND target_SOURCES
+            ${srcDir}/bump-repository.cmake)
+        list(APPEND target_COMMANDS
+            COMMAND
+            ${CMAKE_COMMAND} -E chdir
+            ${srcDir}
+            ${CMAKE_COMMAND}
+            --log-context
+            -D CMAKE_MESSAGE_CONTEXT=${proj}
+            -D "DKML_BUMP_REPOSITORY_PARTICIPANT_MODULE=${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpRepositoryParticipant.cmake"
+            -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
+            -D DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+            -D "BUMP_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+            -D "DKML_SOURCE_ARCHIVE_DIR=${ARCHIVEDIR}"
+            -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+            -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
+            -P bump-repository.cmake
+        )
+    endforeach()
+
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS
+        ${newSemverFile}
+        ${target_DEPENDS}
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpRepositoryParticipant.cmake
+        ${dkml-runtime-distribution_PKGS_FILES}
+
+        ${target_COMMANDS}
+
+        SOURCES ${target_SOURCES}
+        VERBATIM USES_TERMINAL)
+
+    # Add to list
+    list(APPEND retval ${target_DEPENDS})
+    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+endfunction()
+
 function(add_GitPush_command)
     set(noValues)
     set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET)
@@ -461,6 +476,7 @@ function(add_GitPush_command)
 
     add_GitTag_command(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        SOURCE_DIR ${ARG_SOURCE_DIR}
         CONTEXT ${ARG_CONTEXT}
         OUTPUT_FILE ${ARG_OUTPUT_FILE}-tagged
         DEPENDS ${ARG_DEPENDS})
@@ -564,42 +580,15 @@ list(JOIN fullNoDuneNoWithdkmlPkgVers " " FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACE
 # -----------------------------------
 # GenerateLaunchers
 # -----------------------------------
-
-# [build] Finished setup.
-# [build]
-# [build] To continue your testing, run in PowerShell:
-# [build]   $env:CHERE_INVOKING = "yes"
-# [build]   $env:MSYSTEM = "CLANG64"
-# [build]   $env:dkml_host_abi = "windows_x86_64"
-# [build]   $env:abi_pattern = "win32-windows_x86_64"
-# [build]   $env:opam_root = "Z:/source/dkml/build/packaging/bump/opamsw/.ci/o"
-# [build]   $env:exe_ext = ".exe"
-set(MSYS2_BASH ${CMAKE_CURRENT_BINARY_DIR}/msys64/usr/bin/bash.exe)
-set(MSYS2_BASH_RUN
-    ${CMAKE_COMMAND} -E env CHERE_INVOKING=yes MSYSTEM=CLANG64 MSYS2_ARG_CONV_EXCL=*
-    "${MSYS2_BASH}" -l)
-
 set(WITH_COMPILER_SH ${CMAKE_CURRENT_BINARY_DIR}/with-compiler.sh) # Used by generate-compiler-launcher.sh and upsert-*.sh
-set(anyrun_OPAMEXE ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/bs/bin/opam${CMAKE_EXECUTABLE_SUFFIX})
-set(anyrun_OUTPUTS
-    ${anyrun_OPAMEXE}
-    ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/cmdrun
-    ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/opamrun)
-set(anyrun_OPAMROOT ${CMAKE_CURRENT_BINARY_DIR}/.ci/o) # $OPAMROOT is also set indirectly in anyrun.sh by [cmdrun] or [opamrun]
-
-if(CMAKE_HOST_WIN32)
-    list(APPEND anyrun_OUTPUTS ${MSYS2_BASH})
-endif()
 
 function(add_GenerateLaunchers_target)
     FetchContent_GetProperties(dkml-workflows)
 
     if(CMAKE_HOST_WIN32)
-        set(setupScript "${POWERSHELL_EXECUTABLE}" "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-windows_x86_64.ps1")
-    elseif(CMAKE_HOST_APPLE)
-        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-darwin_x86_64.ps1")
+        set(setupScript "${POWERSHELL_EXECUTABLE}" "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.ps1")
     else()
-        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-linux_x86_64.ps1")
+        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.ps1")
     endif()
 
     add_custom_command(
@@ -768,15 +757,6 @@ function(add_Flavor_targets)
     set(dkml-runtime-apps_INSTALLABLE_OPAMFILES ${dkml-runtime-apps_OPAMFILES})
     list(REMOVE_ITEM dkml-runtime-apps_INSTALLABLE_OPAMFILES ./opam-dkml.opam)
     list(JOIN dkml-runtime-apps_INSTALLABLE_OPAMFILES " " dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES)
-
-    # DKML_HOST_ABI used in configure_file() for upsert-dkml-switch.in.sh
-    if(CMAKE_HOST_WIN32)
-        set(DKML_HOST_ABI windows_x86_64)
-    elseif(CMAKE_HOST_APPLE)
-        set(DKML_HOST_ABI darwin_x86_64)
-    else()
-        set(DKML_HOST_ABI linux_x86_64)
-    endif()
 
     # Other values used in configure_file()
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts
@@ -1127,27 +1107,25 @@ function(add_all_targets)
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(selfModifications)
-    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage9-GitPush)
+    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage10-GitPush)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
         stage_self_VersionReplace(${ARG_BUMP_LEVEL}
             ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
-
-            # No change to the public version
-            ${DKML_PUBLICVERSION_CMAKEVER}
+            ${DKML_PUBLICVERSION_CMAKEVER} # No change to the public version
             selfModifications version.cmake)
     else()
         # PATCH, MINOR or MAJOR bump
         stage_self_VersionReplace(${ARG_BUMP_LEVEL}
-            ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
-            ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
             selfModifications version.cmake)
         stage_self_DkMLReplace(${ARG_BUMP_LEVEL}
-            ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+            ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
             selfModifications README.md)
         stage_self_Changes(${ARG_BUMP_LEVEL}
-            ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+            ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
             selfModifications)
     endif()
 
@@ -1217,6 +1195,7 @@ function(add_all_targets)
     add_PackageUpgrade_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE packageUpgradeOutputs
+        DEPENDS ${apiOutputs}
         OPAMROOT ${anyrun_OPAMROOT}
         OPAMEXE ${anyrun_OPAMEXE})
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage5-Api)
@@ -1228,17 +1207,24 @@ function(add_all_targets)
         VERBATIM)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage7-Installer Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade)
 
-    # Stage 8 (TODO: diskuv-opam-repository needs to add all the new package versions)
+    # Stage 8
+    add_RepositoryUpdate_target(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_LIST_VARIABLE repositoryUpdateOutputs
+        DEPENDS ${installerOutputs})
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-${ARG_BUMP_LEVEL}-Stage7-Installer)
+
+    # Stage 9. Both diskuv-opam-repository and self (dkml).
     add_VersionBump_commands_for_synced_projects(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER FINAL
-        DEPENDS ${installerOutputs}
+        DEPENDS ${installerOutputs} ${repositoryUpdateOutputs}
         OUTPUT_LIST_VARIABLE versionBumpFinalOutputs)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage8-VersionBump
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${versionBumpFinalOutputs}
         VERBATIM)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-VersionBump Package-${ARG_BUMP_LEVEL}-Stage7-Installer)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate)
 
     # Last Stage
     add_GitPush_commands_for_synced_projects(
@@ -1250,19 +1236,37 @@ function(add_all_targets)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushTargetDepends}
         VERBATIM)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage8-VersionBump)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump)
+
+    DkMLPublish_CreateReleaseTarget(
+        TARGET Package-${ARG_BUMP_LEVEL}-CreateRelease
+        DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+    )
+
+    # add_dependencies(Package-${BUMP_LEVEL}-CreateRelease ${STAGE_LAST_GIT_PUSH})
+    DkMLPublish_PublishAssetsTarget(
+        TARGET Package-${ARG_BUMP_LEVEL}-PublishAssets
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        ARCHIVE_TARGET Package-Archive
+        DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+    )
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-PublishAssets Package-${ARG_BUMP_LEVEL}-CreateRelease)
 endfunction()
 
 add_GenerateLaunchers_target()
-add_all_targets(BUMP_LEVEL PRERELEASE)
-add_all_targets(BUMP_LEVEL PATCH)
 add_OpamConsoleUpgrade_target(BUMP_LEVEL PRERELEASE)
+DkMLPublish_AddArchiveTarget(
+    TARGET Package-Archive
+    PROJECTS ${DKML_PROJECTS_PREDUNE} ${DKML_PROJECTS_POSTDUNE}
+)
+
+foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
+    add_all_targets(BUMP_LEVEL ${BUMP_LEVEL})
+endforeach()
 
 # TODO:
 
 # 0. {DONE} Save the [git push] of all the synced projects until step [2] and [3] are done.
-
-# 1. [diskuv-opam-repository] should get updates. Needs to push and then wait for a SHA256.
 
 # 2. [release.sh] starting from line ~450 changes [dkml-component-desktop] and
 # waits for it to build. The release.sh changes are all to get the code we already checked
@@ -1272,24 +1276,5 @@ add_OpamConsoleUpgrade_target(BUMP_LEVEL PRERELEASE)
 # * We'll need to create an opam switch to build [dkml-component-desktop] ... just
 # use [setup-dkml] desktop scripts to do that. Actually, can just use
 # [dkml-component-desktop] .gitlab-ci.yml (just run the ci/ scripts manually).
-#
-# In fact, have [dkml-component-desktop]'s new [bump-version.cmake] script
-# run immediately parts of [gather.sh] and [build-test.sh] so that a
-# new dkml-component-staging-desktop-full.opam can be generated with all
-# the required .opam (essentially from dkml-runtime-distribution). You can use
-# dkml-component-opam dependency so you can run [opam] inside a [build:]
-# command. You'll need that to do [opam show --list-files] to feed into
-# [dkml-desktop-copy-installed] as part of your new [install:] commands.
-#
-# The new [bump-version.cmake] script will need to be supplied with
-# the locations of dkml-runtime-common and dkml-runtime-distribution (or better
-# yet, do a FetchContent which can be overridden on the command line or within
-# this bump/CMakeLists.txt script).
-#
-# Net effect is no -prep needed (although the lack of a binary asset may
-# lengthen the time for dkml-installer-ocaml). Perhaps use OCaml-CI, but at
-# first just create the -prep tag and build it.
-
-# 3. Build [dkml-installer-ocaml]
 
 # 4. Do [git push] of all synced projects _and_ [self]

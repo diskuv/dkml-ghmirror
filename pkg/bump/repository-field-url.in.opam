@@ -1,0 +1,6 @@
+url {
+  src: "@URL_SRC@"
+  checksum: [
+    "sha512=@URL_CHECKSUM_SHA512@"
+  ]
+}
