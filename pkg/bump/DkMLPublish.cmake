@@ -1,5 +1,6 @@
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLAnyRun.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/DkMLBumpLevels.cmake)
 
 set(PUBLISHDIR ${CMAKE_CURRENT_BINARY_DIR}/publish)
 
@@ -131,7 +132,9 @@ function(DkMLPublish_PublishAssetsTarget)
     set(precommands)
     set(uploads)
     set(depends)
-    set(tdir ${anyrun_OPAMROOT}/${ARG_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
+
+    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
+    set(tdir ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
 
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
         list(APPEND precommands
