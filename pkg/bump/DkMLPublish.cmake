@@ -173,14 +173,16 @@ function(DkMLPublish_PublishAssetsTarget)
     endmacro()
 
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
-        _handle_upload(
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            setup64u.exe
-            "Windows 64-bit Installer")
+        # The reverse order of insertion shows up on GitLab UI. Want installer to display
+        # first, so _handle_upload(<installer>) last.
         _handle_upload(
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             uninstall64u.exe
             "Windows 64-bit Uninstaller")
+        _handle_upload(
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            setup64u.exe
+            "Windows 64-bit Installer")
     endif()
 
     if(assetlinks)
