@@ -167,7 +167,7 @@ function(DkMLPublish_PublishAssetsTarget)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             @ONLY)
         list(APPEND depends ${UPLOAD_SRCFILE})
-        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"link_type\": \"other\", \"filepath\": \"/${DESTFILE}\"}")
+        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"filepath\": \"/${DESTFILE}\"}")
         list(APPEND precommands
             COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/${ARG_BUMP_LEVEL}/upload-${DESTFILE}.cmake)
     endmacro()
