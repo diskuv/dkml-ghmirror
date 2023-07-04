@@ -934,6 +934,7 @@ function(add_Api_target)
         OUTPUT_SWITCH bumpSwitch)
 
     FetchContent_GetProperties(dkml-install-api) # upsert-api
+    FetchContent_GetProperties(dkml-workflows) # upsert-api
 
     foreach(p IN ITEMS
         upsert-api)

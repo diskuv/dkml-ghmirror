@@ -12,3 +12,6 @@ set -euf
 # [package-ml-of-installer-generator] and [common-ml-of-installer-generator]
 # executables from [dkml-install]
 idempotent_opam_local_install dkml-install '@dkml-install-api_SOURCE_DIR@' ./dkml-install.opam
+
+# Add dkml-workflows
+idempotent_opam_local_install dkml-workflows '@dkml-workflows_SOURCE_DIR@' ./dkml-workflows.opam

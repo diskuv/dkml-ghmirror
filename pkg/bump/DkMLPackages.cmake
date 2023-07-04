@@ -26,8 +26,10 @@ set(DKML_PROJECTS_POSTDUNE
     # Part of a CI or Full distribution -pkgs.txt
     dkml-runtime-apps
 
-    # Utility projects that won't be built in a switch (but still
-    # need to be bumped with [dune build *.opam])
+    # Install utility projects.
+    # They are bumped therefore they should be built (they are built as part
+    # of the Api target). Regardless, they are transitive dependencies
+    # of many DkML projects.
     dkml-workflows
 
     # Install API Components
