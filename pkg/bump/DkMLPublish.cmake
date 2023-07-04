@@ -130,31 +130,63 @@ function(DkMLPublish_PublishAssetsTarget)
     # Confer:
     # https://docs.gitlab.com/ee/user/project/releases/release_fields.html#permanent-links-to-latest-release-assets
     set(precommands)
-    set(uploads)
+    set(uploads) # Files at most 100MB
+    set(assetlinks) # References to 5GB Generic Packages
     set(depends)
 
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
     set(tdir ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
 
+    # Procedure
+    # ---------
+    # 1. Upload to Generic Package Registry because it can support 5GB uploads.
+    # https://docs.gitlab.com/ee/user/gitlab_com/index.html#account-and-limit-settings
+    # 2. Create a release pointing to Generic Package (rather than a normal release
+    # attachment which only supports 100MB)
+    # Only do that somewhat convoluted step for big installers ... the source
+    # archives can be "normal" release attachments.
+
+    # Get GitLab private token
+    execute_process(
+        COMMAND ${GLAB_EXECUTABLE} auth status -t
+        ERROR_VARIABLE AUTH_LINE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+    string(REGEX MATCH "Token: [0-9a-h]+" GITLAB_PRIVATE_TOKEN "${AUTH_LINE}")
+    string(REPLACE "Token: " "" GITLAB_PRIVATE_TOKEN "${GITLAB_PRIVATE_TOKEN}")
+
+    macro(_handle_upload SRCFILE DESTFILE NAME)
+        set(UPLOAD_SRCFILE "${SRCFILE}")
+        set(UPLOAD_VERSION "${ARG_DKML_VERSION_SEMVER_NEW}")
+        set(UPLOAD_DESTFILE "${DESTFILE}")
+        set(UPLOAD_TOKEN "${GITLAB_PRIVATE_TOKEN}")
+        configure_file(upload.in.cmake ${PUBLISHDIR}/upload-${DESTFILE}.cmake
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            @ONLY)
+        list(APPEND depends ${UPLOAD_SRCFILE})
+        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"link_type\": \"other\", \"filepath\": \"${DESTFILE}\"}")
+        list(APPEND precommands
+            COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/upload-${DESTFILE}.cmake)
+    endmacro()
+
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
+        _handle_upload(
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            setup64u-exe
+            "Windows 64-bit Installer")
+        _handle_upload(
+            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            uninstall64u-exe
+            "Windows 64-bit Uninstaller")
+    endif()
+
+    if(assetlinks)
+        list(JOIN assetlinks "," assetlinks_csv)
         list(APPEND precommands
             COMMAND
-            ${CMAKE_COMMAND} -E copy_if_different
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${ARCHIVEDIR}/setup64u.exe
-
-            COMMAND
-            ${CMAKE_COMMAND} -E copy_if_different
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${ARCHIVEDIR}/uninstall64u.exe
+            ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
+            --assets-links=[${assetlinks_csv}]
         )
-        list(APPEND uploads
-            "setup64u.exe#Windows 64-bit Installer"
-            "uninstall64u.exe#Windows 64-bit Uninstaller"
-        )
-        list(APPEND depends
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe)
     endif()
 
     # https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/release/upload.md
@@ -166,8 +198,6 @@ function(DkMLPublish_PublishAssetsTarget)
     add_custom_target(${ARG_TARGET}
         WORKING_DIRECTORY ${ARCHIVEDIR}
         DEPENDS ${depends}
-        COMMAND
-        ${GLAB_EXECUTABLE} auth status
 
         ${precommands}
 
