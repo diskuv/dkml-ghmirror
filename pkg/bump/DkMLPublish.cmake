@@ -198,7 +198,7 @@ function(DkMLPublish_PublishAssetsTarget)
 
     # https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/release/upload.md
     foreach(PROJECT IN LISTS DKML_PROJECTS_PREDUNE DKML_PROJECTS_POSTDUNE)
-        list(APPEND uploads "src.${PROJECT}.tar.gz#${PROJECT} Source Code#other")
+        list(APPEND uploads "src.${PROJECT}.tar.gz#${PROJECT} Source Code")
         list(APPEND depends ${ARCHIVEDIR}/src.${PROJECT}.tar.gz)
     endforeach()
 
@@ -210,7 +210,7 @@ function(DkMLPublish_PublishAssetsTarget)
 
         COMMAND
         ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
-        "${uploads}"
+        ${uploads}
 
         ${postcommands}
 
