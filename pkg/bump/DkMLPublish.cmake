@@ -2,6 +2,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLAnyRun.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLBumpLevels.cmake)
 
+# Aka. https://gitlab.com/diskuv-ocaml/distributions/dkml
+set(GITLAB_UPLOAD_BASE_URL https://gitlab.com/api/v4/projects/diskuv-ocaml%2Fdistributions%2Fdkml)
 set(PUBLISHDIR ${CMAKE_CURRENT_BINARY_DIR}/Publish)
 
 set(glab_HINTS)
@@ -165,7 +167,7 @@ function(DkMLPublish_PublishAssetsTarget)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             @ONLY)
         list(APPEND depends ${UPLOAD_SRCFILE})
-        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"link_type\": \"other\", \"filepath\": \"${DESTFILE}\"}")
+        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"link_type\": \"other\", \"filepath\": \"/${DESTFILE}\"}")
         list(APPEND precommands
             COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/${ARG_BUMP_LEVEL}/upload-${DESTFILE}.cmake)
     endmacro()
@@ -173,11 +175,11 @@ function(DkMLPublish_PublishAssetsTarget)
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
         _handle_upload(
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            setup64u-exe
+            setup64u.exe
             "Windows 64-bit Installer")
         _handle_upload(
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            uninstall64u-exe
+            uninstall64u.exe
             "Windows 64-bit Uninstaller")
     endif()
 
