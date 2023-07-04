@@ -149,8 +149,8 @@ function(DkMLPublish_PublishAssetsTarget)
             ${ARCHIVEDIR}/uninstall64.exe
         )
         list(APPEND uploads
-            "setup64.exe#Windows 64-bit Installer"
-            "uninstall64.exe#Windows 64-bit Uninstaller"
+            "setup64u.exe#Windows 64-bit Installer"
+            "uninstall64u.exe#Windows 64-bit Uninstaller"
         )
         list(APPEND depends
             ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
