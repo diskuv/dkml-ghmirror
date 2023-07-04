@@ -133,6 +133,7 @@ function(DkMLPublish_PublishAssetsTarget)
     # Confer:
     # https://docs.gitlab.com/ee/user/project/releases/release_fields.html#permanent-links-to-latest-release-assets
     set(precommands)
+    set(postcommands)
     set(uploads) # Files at most 100MB
     set(assetlinks) # References to 5GB Generic Packages
     set(depends)
@@ -187,7 +188,8 @@ function(DkMLPublish_PublishAssetsTarget)
 
     if(assetlinks)
         list(JOIN assetlinks "," assetlinks_csv)
-        list(APPEND precommands
+
+        list(APPEND postcommands
             COMMAND
             ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
             --assets-links=[${assetlinks_csv}]
@@ -196,7 +198,7 @@ function(DkMLPublish_PublishAssetsTarget)
 
     # https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/release/upload.md
     foreach(PROJECT IN LISTS DKML_PROJECTS_PREDUNE DKML_PROJECTS_POSTDUNE)
-        list(APPEND uploads "src.${PROJECT}.tar.gz#${PROJECT} Source Code")
+        list(APPEND uploads "src.${PROJECT}.tar.gz#${PROJECT} Source Code#other")
         list(APPEND depends ${ARCHIVEDIR}/src.${PROJECT}.tar.gz)
     endforeach()
 
@@ -209,6 +211,9 @@ function(DkMLPublish_PublishAssetsTarget)
         COMMAND
         ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
         "${uploads}"
+
+        ${postcommands}
+
         VERBATIM USES_TERMINAL
     )
     add_dependencies(${ARG_TARGET} ${ARG_ARCHIVE_TARGET})
