@@ -2,7 +2,8 @@ include_guard()
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 
 set(DKML_PATCH_EXCLUDE_PACKAGES
-    # Note: +android patches aren't useful in DkML    
+
+    # Note: +android patches aren't useful in DkML
 
     # Already fixed upstream. Eligible to be removed
     # from diskuv-opam-repository! Only reason to keep it around is for
@@ -10,14 +11,14 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
     alcotest # 1.6.0
     bigstringaf # 0.9.0+msvc
     checkseum # 0.3.4+android
-    cmdliner # 1.0.4    
+    cmdliner # 1.0.4
     crunch # 3.3.1
     curly # 0.2.1-windows-env_r2
     digestif # 1.1.2+msvc
     ocamlbuild # 0.14.0
     ptime # 0.8.6-msvcsupport
 
-    #       -- Jane Street --
+    # -- Jane Street --
     base # v0.15.1
     base_bigstring # v0.15.0
     core # v0.15.1
@@ -59,8 +60,11 @@ function(DkMLPatches_GetPackageVersions)
             list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
         elseif("dkml-runtime-common" IN_LIST ARG_SYNCHRONIZED_PACKAGES AND pkgname IN_LIST dkml-runtime-common_PACKAGES)
             list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
-        elseif(pkgname STREQUAL "dkml-base-compiler")
-            list(APPEND dkml-base-compiler.${ARG_OCAML_VERSION}~v${ARG_DKML_VERSION_OPAMVER_NEW})
+        elseif(pkgname STREQUAL "dkml-base-compiler"
+            OR pkgname STREQUAL "dkml-component-network-ocamlcompiler"
+            OR pkgname STREQUAL "dkml-component-offline-ocamlrun"
+            OR pkgname STREQUAL "dkml-component-staging-ocamlrun")
+            list(APPEND ${pkgname}.${ARG_OCAML_VERSION}~v${ARG_DKML_VERSION_OPAMVER_NEW})
         elseif(pkgname STREQUAL "ocaml" OR pkgname STREQUAL "conf-dkml-cross-toolchain")
             list(APPEND ${pkgname}.${ARG_OCAML_VERSION})
         elseif(pkgname STREQUAL "dune")
@@ -73,7 +77,7 @@ function(DkMLPatches_GetPackageVersions)
             pkgname STREQUAL "ordering" OR pkgname STREQUAL "stdune" OR pkgname STREQUAL "xdg")
             # diskuv-opam-repository patches for Dune-related packages are only
             # needed when the core Dune package is 3.6.2
-            if (ARG_DUNE_VERSION VERSION_EQUAL 3.6.2)
+            if(ARG_DUNE_VERSION VERSION_EQUAL 3.6.2)
                 list(APPEND pkgvers ${pkgname}.${ARG_DUNE_VERSION})
             endif()
         else()
