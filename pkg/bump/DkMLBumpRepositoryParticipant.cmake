@@ -1,5 +1,10 @@
+cmake_policy(SET CMP0057 NEW) # Support new ``if()`` IN_LIST operator.
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
+
+if(NOT DKML_RELEASE_OCAML_VERSION)
+    message(FATAL_ERROR "Missing -D DKML_RELEASE_OCAML_VERSION=xx")
+endif()
 
 if(NOT DKML_VERSION_OPAMVER_NEW)
     message(FATAL_ERROR "Missing -D DKML_VERSION_OPAMVER_NEW=xx")
@@ -50,6 +55,8 @@ function(DkMLBumpRepositoryParticipant_AddPackageVersion)
             OPAM_FILE "${OPAM_FILE}")
 
         # Values for file(CONFIGURE)
+        # ---------
+
         # 1. Url
         # Permalink documentation:
         # https://docs.gitlab.com/ee/user/project/releases/release_fields.html#permanent-links-to-latest-release-assets
@@ -60,7 +67,14 @@ function(DkMLBumpRepositoryParticipant_AddPackageVersion)
         # 2. Checksums
         file(SHA512 ${ARCHIVE_FILE} URL_CHECKSUM_SHA512)
 
-        set(REL_FILENAME packages/${OPAM_PACKAGE}/${OPAM_PACKAGE}.${DKML_VERSION_OPAMVER_NEW}/opam)
+        # Version number
+        if(OPAM_PACKAGE IN_LIST DKML_COMPILER_DKML_VERSIONED_PACKAGES)
+            set(PKGVER ${OPAM_PACKAGE}.${DKML_RELEASE_OCAML_VERSION}~v${DKML_VERSION_OPAMVER_NEW})
+        else()
+            set(PKGVER ${OPAM_PACKAGE}.${DKML_VERSION_OPAMVER_NEW})
+        endif()
+
+        set(REL_FILENAME packages/${OPAM_PACKAGE}/${PKGVER}/opam)
 
         if(EXISTS ${REL_FILENAME})
             file(READ ${REL_FILENAME} ORIGINAL_PKGVER_OPAM)
@@ -83,7 +97,7 @@ function(DkMLBumpRepositoryParticipant_AddPackageVersion)
             continue()
         endif()
 
-        message(NOTICE "${verb} ${OPAM_PACKAGE}.${DKML_VERSION_OPAMVER_NEW}")
+        message(NOTICE "${verb} ${PKGVER}")
         set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
     endforeach()
 endfunction()

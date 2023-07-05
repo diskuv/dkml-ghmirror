@@ -72,7 +72,7 @@ set(dkml-runtime-distribution_PACKAGES dkml-runtime-distribution)
 set(dkml-runtime_PACKAGES
     ${dkml-runtime-common_PACKAGES}
     ${dkml-runtime-distribution_PACKAGES})
-    
+
 set(dkml-workflows_PACKAGES dkml-workflows)
 
 set(dkml-component-desktop_PACKAGES
@@ -101,6 +101,16 @@ set(dkml-component_PACKAGES
     ${dkml-component-ocaml_PACKAGES})
 set(dkml-installer_PACKAGES
     ${dkml-installer-ocaml_PACKAGES})
+
+# These are packages that have opam version numbers like 4.14.0~v1.2.1~prerel10
+set(DKML_COMPILER_DKML_VERSIONED_PACKAGES
+    dkml-base-compiler
+    ${dkml-component-ocamlcompiler_PACKAGES}
+    ${dkml-component-ocamlrun_PACKAGES}
+)
+# These are packages that have opam version numbers like 4.14.0
+set(DKML_COMPILER_VERSIONED_PACKAGES
+    conf-dkml-cross-toolchain)
 
 # Sanity check
 foreach(PROJECT IN LISTS DKML_PROJECTS_PREDUNE DKML_PROJECTS_POSTDUNE)

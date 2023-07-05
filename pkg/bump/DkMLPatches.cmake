@@ -1,4 +1,7 @@
 include_guard()
+
+cmake_policy(SET CMP0057 NEW) # Support new ``if()`` IN_LIST operator.
+
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLPackages.cmake)
 
 set(DKML_PATCH_EXCLUDE_PACKAGES
@@ -60,12 +63,9 @@ function(DkMLPatches_GetPackageVersions)
             list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
         elseif("dkml-runtime-common" IN_LIST ARG_SYNCHRONIZED_PACKAGES AND pkgname IN_LIST dkml-runtime-common_PACKAGES)
             list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
-        elseif(pkgname STREQUAL "dkml-base-compiler"
-            OR pkgname STREQUAL "dkml-component-network-ocamlcompiler"
-            OR pkgname STREQUAL "dkml-component-offline-ocamlrun"
-            OR pkgname STREQUAL "dkml-component-staging-ocamlrun")
+        elseif(pkgname IN_LIST DKML_COMPILER_DKML_VERSIONED_PACKAGES)
             list(APPEND ${pkgname}.${ARG_OCAML_VERSION}~v${ARG_DKML_VERSION_OPAMVER_NEW})
-        elseif(pkgname STREQUAL "ocaml" OR pkgname STREQUAL "conf-dkml-cross-toolchain")
+        elseif(pkgname STREQUAL "ocaml" OR pkgname IN_LIST DKML_COMPILER_VERSIONED_PACKAGES)
             list(APPEND ${pkgname}.${ARG_OCAML_VERSION})
         elseif(pkgname STREQUAL "dune")
             # Always select the given dune X.Y.Z version, so we can flip back
