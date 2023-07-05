@@ -274,6 +274,12 @@ function(add_PackageUpgrade_target)
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
 
+    if(CMAKE_HOST_WIN32)
+        set(bashExecutable ${MSYS2_BASH_RUN})
+    else()
+        set(bashExecutable bash)
+    endif()
+
     cmake_path(NATIVE_PATH ARG_OPAMROOT NORMALIZE OPAMROOT_NATIVE)
     set(target_COMMANDS)
     set(target_DEPENDS ${ARG_DEPENDS})

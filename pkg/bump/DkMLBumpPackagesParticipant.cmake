@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0053 NEW) # Simplify variable reference and escape sequence evaluation
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLReleaseParticipant.cmake)
 
 if(NOT DKML_RELEASE_DUNE_VERSION)
@@ -6,6 +7,14 @@ endif()
 
 if(NOT OPAM_EXECUTABLE)
     message(FATAL_ERROR "Missing -D OPAM_EXECUTABLE=xx")
+endif()
+
+if(NOT WITH_COMPILER_SH)
+    message(FATAL_ERROR "Missing -D WITH_COMPILER_SH=xx")
+endif()
+
+if(NOT BASH_EXECUTABLE)
+    message(FATAL_ERROR "Missing -D BASH_EXECUTABLE=xx")
 endif()
 
 # Sets a printer of a "pinned" opam section of [switch-state]. Similar to:
@@ -343,7 +352,6 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
         file(WRITE ${REL_FILENAME} "")
     endforeach()
 
-
     # Clean the dune build directory so the dune target can be
     # reproducible and especially so it is not affected by
     # a prior bump.
@@ -359,6 +367,55 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     )
     execute_process(
         COMMAND ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # Which content changed, if any?
+    set(changedFiles)
+
+    foreach(REL_FILENAME IN LISTS ARG_REL_FILENAMES)
+        file(READ ${REL_FILENAME} contents)
+        string(REPLACE "\r" "" contents "${contents}") # Normalize CRLF
+        string(MAKE_C_IDENTIFIER ${REL_FILENAME} fileId)
+
+        if(NOT(contents_${fileId} STREQUAL "${contents}"))
+            list(APPEND changedFiles ${REL_FILENAME})
+        endif()
+    endforeach()
+
+    # Check idempotent
+    if(NOT changedFiles)
+        # idempotent
+        return()
+    endif()
+
+    list(JOIN changedFiles " " changedFiles_SPACES)
+    message(NOTICE "Upgraded ${changedFiles_SPACES}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${changedFiles})
+endfunction()
+
+function(DkMLBumpPackagesParticipant_TestPromote)
+    set(noValues)
+    set(singleValues)
+    set(multiValues REL_FILENAMES)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    # Read them for a "before" snapshot
+    foreach(REL_FILENAME IN LISTS ARG_REL_FILENAMES)
+        file(READ ${REL_FILENAME} contents)
+        string(REPLACE "\r" "" contents "${contents}") # Normalize CRLF
+        string(MAKE_C_IDENTIFIER ${REL_FILENAME} fileId)
+        set(contents_${fileId} "${contents}")
+    endforeach()
+
+    # Run the dune runtest ... the first time may fail because it has yet
+    # to be promoted ... but the second time should work
+    execute_process(
+        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune runtest --auto-promote
+        ERROR_QUIET # Don't want long promote diffs printed
+    )
+    execute_process(
+        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune runtest --auto-promote
         COMMAND_ERROR_IS_FATAL ANY
     )
 
