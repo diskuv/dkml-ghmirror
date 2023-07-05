@@ -62,7 +62,7 @@ function(DkMLBumpRepositoryParticipant_AddPackageVersion)
         # https://docs.gitlab.com/ee/user/project/releases/release_fields.html#permanent-links-to-latest-release-assets
         # Example:
         # https://gitlab.com/diskuv-ocaml/distributions/dkml/-/releases/1.2.1-10/downloads/src.dkml-runtime-common.tar.gz
-        set(URL_SRC https://gitlab.com/diskuv-ocaml/distributions/dkml/-/releases/${DKML_VERSION_SEMVER_NEW}/downloads/src.dkml-runtime-common.tar.gz)
+        set(URL_SRC https://gitlab.com/diskuv-ocaml/distributions/dkml/-/releases/${DKML_VERSION_SEMVER_NEW}/downloads/src.${ARG_PROJECT}.tar.gz)
 
         # 2. Checksums
         file(SHA512 ${ARCHIVE_FILE} URL_CHECKSUM_SHA512)
