@@ -723,8 +723,9 @@ function(add_Flavor_targets)
         EXCLUDE_PACKAGES
         ${dkml-runtime-apps_PACKAGES}
         ${dune_PACKAGES}
-        ${dkml-runtime-common_PACKAGES}
-        dkml-runtime-distribution
+        ${dkml-component_PACKAGES}
+        ${dkml-installer_PACKAGES}
+        ${dkml-runtime_PACKAGES}
         ${dkml-compiler_PACKAGES}
         ocaml-option-32bit
         dkml-option-debuginfo

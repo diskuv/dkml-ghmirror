@@ -69,7 +69,12 @@ set(dkml-runtime-common_PACKAGES
     dkml-runtime-common
     dkml-runtime-common-native)
 set(dkml-runtime-distribution_PACKAGES dkml-runtime-distribution)
+set(dkml-runtime_PACKAGES
+    ${dkml-runtime-common_PACKAGES}
+    ${dkml-runtime-distribution_PACKAGES})
+    
 set(dkml-workflows_PACKAGES dkml-workflows)
+
 set(dkml-component-desktop_PACKAGES
     dkml-build-desktop
     dkml-component-common-desktop
@@ -88,6 +93,14 @@ set(dkml-component-ocamlrun_PACKAGES
     dkml-component-staging-ocamlrun)
 set(dkml-installer-ocaml_PACKAGES
     dkml-installer-network-ocaml)
+
+set(dkml-component_PACKAGES
+    ${dkml-component-desktop_PACKAGES}
+    ${dkml-component-ocamlcompiler_PACKAGES}
+    ${dkml-component-ocamlrun_PACKAGES}
+    ${dkml-component-ocaml_PACKAGES})
+set(dkml-installer_PACKAGES
+    ${dkml-installer-ocaml_PACKAGES})
 
 # Sanity check
 foreach(PROJECT IN LISTS DKML_PROJECTS_PREDUNE DKML_PROJECTS_POSTDUNE)
