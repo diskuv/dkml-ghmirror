@@ -199,23 +199,29 @@ function(DkMLBumpPackagesParticipant_ModelUpgrade REL_FILENAME)
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endfunction()
 
+# Adds UNION(global-compile, global-install) to dune-project
 function(DkMLBumpPackagesParticipant_DuneProjectFlavorUpgrade REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
     set(contents_NEW "${contents}")
 
     foreach(FLAVOR IN ITEMS ci full)
-        # Get list of [global-install] package versions for the flavor
-        # Example:
-        # with-dkml.1.2.1~prerel10
-        execute_process(
-            COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-global-install ${FLAVOR} package-versions
-            OUTPUT_VARIABLE pkgvers
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            COMMAND_ERROR_IS_FATAL ANY
-        )
+        set(pkgvers)
+
+        foreach(GLOBALTYPE IN ITEMS compile install)
+            # Get list of [global-compile] package versions for the flavor
+            # Example:
+            # with-dkml.1.2.1~prerel10
+            execute_process(
+                COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-globals ${GLOBALTYPE} ${FLAVOR} package-versions
+                OUTPUT_VARIABLE i_pkgvers
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                COMMAND_ERROR_IS_FATAL ANY
+            )
+            string(REGEX REPLACE "\n" ";" i_pkgvers "${i_pkgvers}")
+            list(APPEND pkgvers ${i_pkgvers})
+        endforeach()
 
         # Convert to list
-        string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
         _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
 
         # Remove [dune]; we have a special insertion for it later
@@ -263,43 +269,52 @@ function(DkMLBumpPackagesParticipant_DkmlFlavorOpamUpgrade)
     file(READ ${ARG_REL_FILENAME} contents)
     set(contents_NEW "${contents}")
 
-    # Get list of [global-install] packages for the flavor
-    # Example:
-    # with-dkml.1.2.1~prerel10
-    execute_process(
-        COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-global-install ${ARG_FLAVOR} packages
-        OUTPUT_VARIABLE pkgs
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        COMMAND_ERROR_IS_FATAL ANY
-    )
+    set(buildspec)
+    set(installspec)
 
-    # Convert to list
-    string(REGEX REPLACE "\n" ";" pkgs "${pkgs}")
-    _DkMLReleaseParticipant_NormalizePinnedPackages(pkgs)
+    foreach(GLOBALTYPE IN ITEMS compile install)
+        # Get list of [global-install] packages for the flavor
+        # Example:
+        # with-dkml.1.2.1~prerel10
+        execute_process(
+            COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-globals ${GLOBALTYPE} ${ARG_FLAVOR} packages
+            OUTPUT_VARIABLE pkgs
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY
+        )
 
-    # Remove any exclusions
-    if(ARG_EXCLUDE_PACKAGES)
-        list(REMOVE_ITEM pkgs ${ARG_EXCLUDE_PACKAGES})
-    endif()
+        # Convert to list
+        string(REGEX REPLACE "\n" ";" pkgs "${pkgs}")
+        _DkMLReleaseParticipant_NormalizePinnedPackages(pkgs)
 
-    # Sort
-    list(SORT pkgs)
+        # Remove any exclusions
+        if(ARG_EXCLUDE_PACKAGES)
+            list(REMOVE_ITEM pkgs ${ARG_EXCLUDE_PACKAGES})
+        endif()
 
-    # Make a list of:
-    # [ "sh" "-c" "opam show --list-files dkml-apps > opamshow-dkml-apps.txt" ]
-    set(buildspec ${pkgs})
+        # Sort
+        list(SORT pkgs)
 
-    # Want REPLACE ".*", but nasty cmake bug:
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/18884 https://gitlab.kitware.com/cmake/cmake/-/issues/16899
-    list(TRANSFORM buildspec REPLACE "[A-Za-z0-9_-]+"
-        [==[  [ "sh" "-c" "'%{dkml-sys-opam-exe}%' show --list-files \0 > opamshow-\0.txt" ]]==])
+        # Make a list of:
+        # [ "sh" "-c" "opam show --list-files dkml-apps > opamshow-dkml-apps.txt" ]
+        set(i_buildspec ${pkgs})
+
+        # Want REPLACE ".*", but nasty cmake bug:
+        # https://gitlab.kitware.com/cmake/cmake/-/issues/18884 https://gitlab.kitware.com/cmake/cmake/-/issues/16899
+        list(TRANSFORM i_buildspec REPLACE "[A-Za-z0-9_-]+"
+            [==[  [ "sh" "-c" "'%{dkml-sys-opam-exe}%' show --list-files \0 > opamshow-\0.txt" ]]==])
+        list(APPEND buildspec ${i_buildspec})
+
+        # Make a list of:
+        # [ "dkml-desktop-copy-installed" "--file-list" "opamshow-dkml-apps.txt" "--opam-switch-prefix" "%{prefix}%" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%/compile" ]
+        set(i_installspec ${pkgs})
+        list(TRANSFORM i_installspec REPLACE "[A-Za-z0-9_-]+"
+            [==[  [ "dkml-desktop-copy-installed" "--file-list" "opamshow-\0.txt" "--opam-switch-prefix" "%{prefix}%" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%/I_DST" ]]==])
+        list(TRANSFORM i_installspec REPLACE I_DST ${GLOBALTYPE})
+        list(APPEND installspec ${i_installspec})
+    endforeach()
+
     list(JOIN buildspec "\n" buildspec)
-
-    # Make a list of:
-    # [ "dkml-desktop-copy-installed" "--file-list" "opamshow-dkml-apps.txt" "--opam-switch-prefix" "%{prefix}%" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%" ]
-    set(installspec ${pkgs})
-    list(TRANSFORM installspec REPLACE "[A-Za-z0-9_-]+"
-        [==[  [ "dkml-desktop-copy-installed" "--file-list" "opamshow-\0.txt" "--opam-switch-prefix" "%{prefix}%" "--output-dir" "%{_:share}%/staging-files/%{dkml-abi}%" ]]==])
     list(JOIN installspec "\n" installspec)
 
     cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)

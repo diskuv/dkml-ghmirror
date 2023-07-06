@@ -276,6 +276,7 @@ function(add_PackageUpgrade_target)
 
     if(CMAKE_HOST_WIN32)
         set(bashExecutable ${MSYS2_BASH_RUN})
+        string(REPLACE ";" "$<SEMICOLON>" bashExecutable "${bashExecutable}")
     else()
         set(bashExecutable bash)
     endif()
@@ -335,6 +336,8 @@ function(add_PackageUpgrade_target)
             -D DKML_RELEASE_DUNE_VERSION=${DKML_RELEASE_DUNE_VERSION}
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
+            -D "BASH_EXECUTABLE=${bashExecutable}"
+            -D WITH_COMPILER_SH=${WITH_COMPILER_SH}
             -P bump-packages.cmake
 
             # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
@@ -640,12 +643,27 @@ function(anyrun SCRIPT OUTVAR)
 endfunction()
 
 # -----------------------------------
+function(get_bump_switch)
+    set(noValues)
+    set(singleValues BUMP_LEVEL OUTPUT_SWITCH)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
+    set(${ARG_OUTPUT_SWITCH} ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL} PARENT_SCOPE)
+endfunction()
+
 function(prepare_upsert_variables)
     set(noValues)
     set(singleValues ID BUMP_LEVEL
         OUTPUT_SHORT_BUMP_LEVEL OUTPUT_WORKING_DIRECTORY OUTPUT_SWITCH OUTPUT_UPSERT_UTILS)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    get_bump_switch(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_SWITCH bumpSwitch
+    )
 
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
     set(workdir ${CMAKE_CURRENT_BINARY_DIR}/${ARG_ID}/${SHORT_BUMP_LEVEL})
@@ -661,7 +679,7 @@ function(prepare_upsert_variables)
     endif()
 
     set(${ARG_OUTPUT_WORKING_DIRECTORY} ${workdir} PARENT_SCOPE)
-    set(${ARG_OUTPUT_SWITCH} ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL} PARENT_SCOPE)
+    set(${ARG_OUTPUT_SWITCH} ${bumpSwitch} PARENT_SCOPE)
     set(${ARG_OUTPUT_UPSERT_UTILS} ${UPSERT_UTILS} PARENT_SCOPE)
 endfunction()
 
@@ -901,7 +919,7 @@ function(add_Flavor_targets)
         # and a [touch] command.
         OUTPUT ${introspectCreated}
         BYPRODUCTS
-        ${bumpSwitch}/bin/dkml-desktop-gen-global-install${CMAKE_EXECUTABLE_SUFFIX}
+        ${bumpSwitch}/bin/dkml-desktop-gen-globals${CMAKE_EXECUTABLE_SUFFIX}
         MAIN_DEPENDENCY upsert-dkml-pkgs-introspect.in.sh
         DEPENDS
         ${fullFlavorOutput}
@@ -1191,10 +1209,17 @@ function(add_all_targets)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage5-Api Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor)
 
     # Stage 6
+    get_bump_switch(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_SWITCH bumpSwitch
+    )
     add_PackageUpgrade_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE packageUpgradeOutputs
-        DEPENDS ${apiOutputs}
+        DEPENDS
+        ${apiOutputs}
+        ${bumpSwitch}/bin/common-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
+        ${bumpSwitch}/bin/package-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
         OPAMROOT ${anyrun_OPAMROOT}
         OPAMEXE ${anyrun_OPAMEXE})
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage5-Api)
