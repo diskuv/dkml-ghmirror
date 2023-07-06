@@ -1147,18 +1147,16 @@ function(add_all_targets)
     endif()
 
     set(selfOutput ${CMAKE_CURRENT_BINARY_DIR}/self)
+    set(versionBumpSelfOutput ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
     set(versionBumpPreDuneOutputs)
     set(versionBumpPostDuneOutputs)
-    set(versionBumpFinalOutputs ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
+    set(versionBumpFinalOutputs)
     set(packageUpgradeOutputs)
     add_custom_command(
-        OUTPUT ${selfOutput}/bumped-${ARG_BUMP_LEVEL}
+        OUTPUT ${versionBumpSelfOutput}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile}
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/_replace/${ARG_BUMP_LEVEL} .
-        COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
-        COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${selfOutput}/bumped-${ARG_BUMP_LEVEL}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${versionBumpSelfOutput}
         VERBATIM)
     add_GitPush_command(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
@@ -1167,9 +1165,15 @@ function(add_all_targets)
         BRANCH ${self_BRANCH}
         INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
         OUTPUT_FILE ${selfOutput}/pushed-${ARG_BUMP_LEVEL}
-        DEPENDS ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
+        DEPENDS ${versionBumpSelfOutput})
 
     set(gitPushTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
+
+    # Stage 0
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${newSemverFile} ${versionBumpSelfOutput}
+        VERBATIM)
 
     # Stage 1
     add_VersionBump_commands_for_synced_projects(
@@ -1180,6 +1184,7 @@ function(add_all_targets)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${versionBumpPreDuneOutputs}
         VERBATIM)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump)
 
     # Stage 2 and 4
     add_Flavor_targets(
@@ -1251,11 +1256,19 @@ function(add_all_targets)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate)
 
     # Last Stage
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
+        COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
+    )
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE gitPushTargetDepends
         INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
-        DEPENDS ${versionBumpPreDuneOutputs} ${versionBumpPostDuneOutputs} ${versionBumpFinalOutputs})
+        DEPENDS
+        ${versionBumpPreDuneOutputs} ${versionBumpPostDuneOutputs} ${versionBumpFinalOutputs}
+        ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
     add_custom_target(${STAGE_LAST_GIT_PUSH}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushTargetDepends}
