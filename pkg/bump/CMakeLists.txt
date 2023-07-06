@@ -751,6 +751,7 @@ function(add_Flavor_targets)
         ${dkml-installer_PACKAGES}
         ${dkml-runtime_PACKAGES}
         ${dkml-compiler_PACKAGES}
+        ${dkml-workflows_PACKAGES}
         ocaml-option-32bit
         dkml-option-debuginfo
         dkml-option-minsize
