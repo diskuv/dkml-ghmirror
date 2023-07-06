@@ -159,13 +159,12 @@ function(add_GitTag_command)
     )
 endfunction()
 
-function(add_VersionBump_commands_for_synced_projects)
+function(add_VersionBump_target_for_synced_projects)
     set(noValues)
-    set(singleValues BUMP_LEVEL FILTER OUTPUT_LIST_VARIABLE)
+    set(singleValues TARGET BUMP_LEVEL FILTER)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
 
     # For PRERELEASE we want fuzzy matching on any prior PRERELEASE because
@@ -187,6 +186,11 @@ function(add_VersionBump_commands_for_synced_projects)
     string(REPLACE "." "[.]" regex_DKML_VERSION_SEMVER "${regex_DKML_VERSION_SEMVER}")
     string(REPLACE "." "[.]" regex_DKML_VERSION_OPAMVER "${regex_DKML_VERSION_OPAMVER}")
 
+    set(participant ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpVersionParticipant.cmake)
+    set(target_SOURCES ${participant})
+    set(target_COMMANDS)
+    set(bumpedProjects)
+
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/VersionBump/${proj})
 
@@ -201,6 +205,8 @@ function(add_VersionBump_commands_for_synced_projects)
         if(NOT EXISTS ${srcDir}/bump-version.cmake)
             message(FATAL_ERROR "${proj} has no bump-version.cmake")
         endif()
+
+        list(APPEND target_SOURCES ${srcDir}/bump-version.cmake)
 
         if(ARG_FILTER STREQUAL PRE_DUNE)
             if(NOT(proj IN_LIST DKML_PROJECTS_PREDUNE))
@@ -222,21 +228,15 @@ function(add_VersionBump_commands_for_synced_projects)
             string(APPEND outputDir /FINAL)
         endif()
 
-        set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
-        list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
-        list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/bumped-)
-        add_custom_command(
-            OUTPUT ${outputDir}/bumped-${ARG_BUMP_LEVEL}
-            WORKING_DIRECTORY ${srcDir}
-            DEPENDS
-            ${newSemverFile}
-            ${srcDir}/bump-version.cmake
-            ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpVersionParticipant.cmake
-            ${ARG_DEPENDS}
-            COMMAND ${CMAKE_COMMAND}
+        # Queue up COMMANDs rather than add_custom_command() because
+        # we want bump-version.cmake to always be run.
+        list(APPEND target_COMMANDS
+            COMMAND
+            ${CMAKE_COMMAND} -E chdir ${srcDir}
+            ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D "DKML_BUMP_VERSION_PARTICIPANT_MODULE=${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpVersionParticipant.cmake"
+            -D "DKML_BUMP_VERSION_PARTICIPANT_MODULE=${participant}"
             -D DKML_RELEASE_OCAML_VERSION=${DKML_RELEASE_OCAML_VERSION}
             -D regex_DKML_VERSION_OPAMVER=${regex_DKML_VERSION_OPAMVER}
             -D regex_DKML_VERSION_SEMVER=${regex_DKML_VERSION_SEMVER}
@@ -244,19 +244,18 @@ function(add_VersionBump_commands_for_synced_projects)
             -D DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -P bump-version.cmake
-
-            # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
-            # is global, we have to invalidate all other OUTPUTs from other BUMP_LEVELs
-            COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_PKGUP_OUTPUTS}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${outputDir}/bumped-${ARG_BUMP_LEVEL}
-            VERBATIM
-            USES_TERMINAL
         )
-        list(APPEND retval ${outputDir}/bumped-${ARG_BUMP_LEVEL})
+        list(APPEND bumpedProjects ${proj})
     endforeach()
 
-    # Add to list
-    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+    list(JOIN bumpedProjects ", " bumpedProjects_SPACES)
+    add_custom_target(${ARG_TARGET}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Running bump-version.cmake in ${bumpedProjects_SPACES}"
+        DEPENDS ${ARG_DEPENDS}
+        ${target_COMMANDS}
+        SOURCES ${target_SOURCES}
+        VERBATIM USES_TERMINAL)
 endfunction()
 
 FetchContent_GetProperties(dkml-runtime-distribution)
@@ -266,11 +265,10 @@ file(GLOB dkml-runtime-distribution_PKGS_FILES
 
 function(add_PackageUpgrade_target)
     set(noValues)
-    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE OPAMROOT OPAMEXE)
+    set(singleValues BUMP_LEVEL OPAMROOT OPAMEXE)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
 
@@ -282,9 +280,10 @@ function(add_PackageUpgrade_target)
     endif()
 
     cmake_path(NATIVE_PATH ARG_OPAMROOT NORMALIZE OPAMROOT_NATIVE)
+    set(participant ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpPackagesParticipant.cmake)
+    set(target_SOURCES ${participant})
     set(target_COMMANDS)
-    set(target_DEPENDS ${ARG_DEPENDS})
-    set(target_SOURCES)
+    set(bumpedProjects)
 
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/PackageUpgrade/${proj})
@@ -300,12 +299,6 @@ function(add_PackageUpgrade_target)
         if(NOT EXISTS ${srcDir}/bump-packages.cmake)
             continue()
         endif()
-
-        # nit: We no longer need OTHER_PKGUP_OUTPUTS since we'll be
-        # queuing up the COMMANDs rather than using add_custom_command()
-        set(OTHER_PKGUP_OUTPUTS ${BUMP_LEVELS})
-        list(REMOVE_ITEM OTHER_PKGUP_OUTPUTS ${ARG_BUMP_LEVEL})
-        list(TRANSFORM OTHER_PKGUP_OUTPUTS PREPEND ${outputDir}/pkgup-)
 
         # We queue up the COMMANDs rather than use add_custom_command() because
         # we _always_ want these commands to run.
@@ -332,51 +325,40 @@ function(add_PackageUpgrade_target)
             ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D "DKML_BUMP_PACKAGES_PARTICIPANT_MODULE=${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpPackagesParticipant.cmake"
+            -D "DKML_BUMP_PACKAGES_PARTICIPANT_MODULE=${participant}"
             -D DKML_RELEASE_DUNE_VERSION=${DKML_RELEASE_DUNE_VERSION}
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
             -D "BASH_EXECUTABLE=${bashExecutable}"
             -D WITH_COMPILER_SH=${WITH_COMPILER_SH}
             -P bump-packages.cmake
-
-            # Since bumping is per BUMP_LEVEL, while the _SOURCE_DIR that will be bumped
-            # is global, we have to invalidate all other OUTPUTs from other BUMP_LEVELs
-            COMMAND ${CMAKE_COMMAND} -E rm -f ${OTHER_PKGUP_OUTPUTS}
         )
+        list(APPEND bumpedProjects ${proj})
     endforeach()
 
+    list(JOIN bumpedProjects ", " bumpedProjects_SPACES)
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS
-        ${newSemverFile}
-        ${target_DEPENDS}
-        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpPackagesParticipant.cmake
-        ${dkml-runtime-distribution_PKGS_FILES}
-
+        COMMENT "Running bump-packages.cmake in ${bumpedProjects_SPACES}"
+        DEPENDS ${ARG_DEPENDS}
         ${target_COMMANDS}
-
         SOURCES ${target_SOURCES}
         VERBATIM USES_TERMINAL)
-
-    # Add to list
-    list(APPEND retval ${target_DEPENDS})
-    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
 function(add_RepositoryUpdate_target)
     set(noValues)
-    set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE)
+    set(singleValues BUMP_LEVEL)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
 
+    set(participant ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpRepositoryParticipant.cmake)
+    set(target_SOURCES ${participant})
     set(target_COMMANDS)
-    set(target_DEPENDS ${ARG_DEPENDS})
-    set(target_SOURCES)
+    set(bumpedProjects)
 
     foreach(proj IN LISTS syncedProjects)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/RepositoryUpdate/${proj})
@@ -405,7 +387,7 @@ function(add_RepositoryUpdate_target)
             ${CMAKE_COMMAND}
             --log-context
             -D CMAKE_MESSAGE_CONTEXT=${proj}
-            -D "DKML_BUMP_REPOSITORY_PARTICIPANT_MODULE=${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpRepositoryParticipant.cmake"
+            -D "DKML_BUMP_REPOSITORY_PARTICIPANT_MODULE=${participant}"
             -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
             -D DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
             -D "BUMP_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
@@ -414,24 +396,17 @@ function(add_RepositoryUpdate_target)
             -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
             -P bump-repository.cmake
         )
+        list(APPEND bumpedProjects ${proj})
     endforeach()
 
+    list(JOIN bumpedProjects ", " bumpedProjects_SPACES)
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS
-        ${newSemverFile}
-        ${target_DEPENDS}
-        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkMLBumpRepositoryParticipant.cmake
-        ${dkml-runtime-distribution_PKGS_FILES}
-
+        COMMENT "Running bump-repository.cmake in ${bumpedProjects_SPACES}"
+        DEPENDS ${ARG_DEPENDS}
         ${target_COMMANDS}
-
         SOURCES ${target_SOURCES}
         VERBATIM USES_TERMINAL)
-
-    # Add to list
-    list(APPEND retval ${target_DEPENDS})
-    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
 function(add_GitPush_command)
@@ -1149,9 +1124,6 @@ function(add_all_targets)
 
     set(selfOutput ${CMAKE_CURRENT_BINARY_DIR}/self)
     set(versionBumpSelfOutput ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
-    set(versionBumpPreDuneOutputs)
-    set(versionBumpPostDuneOutputs)
-    set(versionBumpFinalOutputs)
     set(packageUpgradeOutputs)
     add_custom_command(
         OUTPUT ${versionBumpSelfOutput}
@@ -1177,14 +1149,10 @@ function(add_all_targets)
         VERBATIM)
 
     # Stage 1
-    add_VersionBump_commands_for_synced_projects(
+    add_VersionBump_target_for_synced_projects(
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        FILTER PRE_DUNE
-        OUTPUT_LIST_VARIABLE versionBumpPreDuneOutputs)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${versionBumpPreDuneOutputs}
-        VERBATIM)
+        FILTER PRE_DUNE)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump)
 
     # Stage 2 and 4
@@ -1195,15 +1163,11 @@ function(add_all_targets)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump)
 
     # Stage 3
-    add_VersionBump_commands_for_synced_projects(
+    add_VersionBump_target_for_synced_projects(
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER POST_DUNE
-        DEPENDS ${duneFlavorOutputs}
-        OUTPUT_LIST_VARIABLE versionBumpPostDuneOutputs)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${versionBumpPostDuneOutputs}
-        VERBATIM)
+        DEPENDS ${duneFlavorOutputs})
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump)
 
@@ -1221,7 +1185,6 @@ function(add_all_targets)
     )
     add_PackageUpgrade_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE packageUpgradeOutputs
         DEPENDS
         ${apiOutputs}
         ${bumpSwitch}/bin/common-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
@@ -1240,20 +1203,14 @@ function(add_all_targets)
     # Stage 8
     add_RepositoryUpdate_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE repositoryUpdateOutputs
         DEPENDS ${installerOutputs})
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-${ARG_BUMP_LEVEL}-Stage7-Installer)
 
     # Stage 9. Both diskuv-opam-repository and self (dkml).
-    add_VersionBump_commands_for_synced_projects(
+    add_VersionBump_target_for_synced_projects(
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        FILTER FINAL
-        DEPENDS ${installerOutputs} ${repositoryUpdateOutputs}
-        OUTPUT_LIST_VARIABLE versionBumpFinalOutputs)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${versionBumpFinalOutputs}
-        VERBATIM)
+        FILTER FINAL)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate)
 
     # Last Stage
@@ -1268,12 +1225,13 @@ function(add_all_targets)
         OUTPUT_LIST_VARIABLE gitPushTargetDepends
         INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
         DEPENDS
-        ${versionBumpPreDuneOutputs} ${versionBumpPostDuneOutputs} ${versionBumpFinalOutputs}
         ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
     add_custom_target(${STAGE_LAST_GIT_PUSH}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushTargetDepends}
         VERBATIM)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump)
     add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump)
 
     DkMLPublish_CreateReleaseTarget(

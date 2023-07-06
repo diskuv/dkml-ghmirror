@@ -370,6 +370,7 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     # Clean the dune build directory so the dune target can be
     # reproducible and especially so it is not affected by
     # a prior bump.
+    file(REMOVE _build/.lock)
     execute_process(
         COMMAND ${OPAM_EXECUTABLE} exec -- dune clean
     )

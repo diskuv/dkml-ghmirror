@@ -54,6 +54,7 @@ function(DkMLReleaseParticipant_DuneBuildOpamFiles)
     endforeach()
 
     # Do a dune build to regenerate
+    file(REMOVE _build/.lock)
     execute_process(
         COMMAND opam exec -- dune build ${opamFiles}
         COMMAND_ERROR_IS_FATAL ANY
