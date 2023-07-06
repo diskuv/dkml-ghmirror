@@ -13,6 +13,7 @@ set -euf
 # executables from [dkml-install-installer]
 idempotent_opam_local_install dkml-install-installer-TRANSITIVE '@dkml-install-api_SOURCE_DIR@' \
     ./dkml-install.opam \
+    ./dkml-install-runner.opam \
     ./dkml-install-installer.opam
 
 # Add dkml-workflows
