@@ -20,4 +20,14 @@
       [build] [ERROR] Initial download of repository failed.
       ```
 
+   2. For Stage7-Installer, you may need to run it twice. The first time you
+      may encounter:
+
+      ```text
+      [build] # File "installer/bin/runner_user.ml", line 1, characters 9-54:
+      [build] # 1 | let () = Dkml_component_network_ocamlcompiler.register ()
+      [build] #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      [build] # Error: Unbound module Dkml_component_network_ocamlcompiler
+      ```
+
 4. Finish with the CMake target `-PublishAssets`.
