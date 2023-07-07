@@ -743,6 +743,22 @@ function(add_Flavor_targets)
     list(REMOVE_ITEM dkml-runtime-apps_INSTALLABLE_OPAMFILES ./opam-dkml.opam)
     list(JOIN dkml-runtime-apps_INSTALLABLE_OPAMFILES " " dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES)
 
+    # Evaluate the git references at CMake configure time so that
+    # the various add_custom_commands() can be retriggered when
+    # git references change.
+    FetchContent_GetProperties(diskuv-opam-repository)
+    execute_process(
+        WORKING_DIRECTORY ${diskuv-opam-repository_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} rev-parse --quiet --verify HEAD
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE DISKUV_OPAM_REPOSITORY_GITREF
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+    file(CONFIGURE OUTPUT ${opamsw}/rerun-on-DISKUV_OPAM_REPOSITORY_GITREF
+        CONTENT "@DISKUV_OPAM_REPOSITORY_GITREF@"
+        @ONLY NEWLINE_STYLE UNIX
+    )
+
     # Other values used in configure_file()
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts
     FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
@@ -800,6 +816,7 @@ function(add_Flavor_targets)
         DEPENDS
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
+        ${opamsw}/rerun-on-DISKUV_OPAM_REPOSITORY_GITREF
         ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/create-opam-switch.sh
         ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/init-opam-root.sh
         ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/platform-opam-exec.sh
@@ -848,7 +865,10 @@ function(add_Flavor_targets)
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${duneFlavorOutput}
         MAIN_DEPENDENCY upsert-dkml-pkgs-flavor-dune.in.sh
-        DEPENDS ${compilerCreated} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS}
+        DEPENDS
+        ${compilerCreated}
+        ${WITH_COMPILER_SH}
+        ${anyrun_OUTPUTS}
         ${opamsw}/rerun-on-DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} distribution - Dune flavor"
         COMMAND ${upsert_dkml_pkgs_dune_COMMAND}

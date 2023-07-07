@@ -15,7 +15,7 @@ unset OPAMSWITCH # Interferes with init-opam-root.sh and create-opam-switch.sh
 # The Opam 2.2 prereleases have finicky behavior with git pins. We really
 # need to use a commit id not just a branch. Without a commit id, often
 # Opam does not know there is an update.
-dor_COMMIT=$(git -C '@diskuv-opam-repository_SOURCE_DIR@' rev-parse --quiet --verify HEAD)
+dor_COMMIT='@DISKUV_OPAM_REPOSITORY_GITREF@'
 
 # init-opam-root
 #
@@ -73,6 +73,7 @@ fi
 #    Ignored when -v OCAMLHOME is a OCaml home
 # -a: Do not look for with-dkml. By default with-dkml is added to the PATH and used as the wrap-build-commands,
 #     wrap-install-commands and wrap-remove-commands. Use -0 WRAP_COMMAND if you want your own wrap commands
+# -w: Disable updating of opam repositories. Useful when already updated (ex. by init-opam-root.sh)
 # -F: Disable adding of the fdopen repository on Windows. Diskuv OCaml installs a pruned repository which, without
 #     the -F option, would be added to the new switch
 # -o OPAMEXE_OR_HOME: Optional. If a directory, it is the home for Opam containing bin/opam-real or bin/opam.
@@ -109,6 +110,7 @@ run_create_opam_switch \
 -n '@SHORT_BUMP_LEVEL@' \
 -r "$OPAMROOT" \
 -a \
+-w \
 -F \
 -o "$OPAM_EXE" \
 -z
