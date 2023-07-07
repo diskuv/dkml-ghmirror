@@ -35,7 +35,7 @@ _idempotent_confirm_pkg_exist() {
     return 0
 }
 
-# [idempotent_opam_local_install name absdir ./pkg1.opam ./pkg2.opam ...]
+# [idempotent_opam_local_install name salt absdir ./pkg1.opam ./pkg2.opam ...]
 # conditionally executes `opam install ./pkg1.opam ./pkg2.opam ...`
 # in the absolute directory <absdir>.
 #
@@ -43,17 +43,18 @@ _idempotent_confirm_pkg_exist() {
 #
 # If either of the following conditions are true, the installation will execute:
 # 1. The [name] has not been used before.
-# 2. The last time [name] was used the git commit id of [absdir]
-#    was different.
+# 2. The last time [name] was used _either_ the git commit id of [absdir]
+#    was different, or the [salt] was different
 idempotent_opam_local_install() {
     idempotent_opam_local_install_NAME=$1; shift
+    idempotent_opam_local_install_SALT=$1; shift
     idempotent_opam_local_install_COMMITSOURCE_DIR=$1; shift
-    idempotent_opam_local_install_COMMIT=$(git -C "$idempotent_opam_local_install_COMMITSOURCE_DIR" rev-parse --quiet --verify HEAD)
+    idempotent_opam_local_install_IDEMPOTENT_ID=${idempotent_opam_local_install_SALT}$(git -C "$idempotent_opam_local_install_COMMITSOURCE_DIR" rev-parse --quiet --verify HEAD)
     idempotent_opam_local_install_LASTGITREFFILE="$UPSERT_BINARY_DIR/$idempotent_opam_local_install_NAME.installed.gitref"
     idempotent_opam_local_install_REBUILD=1
     if [ -e "$idempotent_opam_local_install_LASTGITREFFILE" ]; then
         idempotent_opam_local_install_LASTGITREF=$(cat "$idempotent_opam_local_install_LASTGITREFFILE")
-        if [ "$idempotent_opam_local_install_LASTGITREF" = "$idempotent_opam_local_install_COMMIT" ]; then
+        if [ "$idempotent_opam_local_install_LASTGITREF" = "$idempotent_opam_local_install_IDEMPOTENT_ID" ]; then
             # All the packages must exist. Opam can remove many packages when there is
             # a package upgrade (or re-install) followed by a build failure.
             idempotent_opam_local_install_LIB=$($OPAM_EXE var lib)
@@ -76,7 +77,7 @@ idempotent_opam_local_install() {
         '@WITH_COMPILER_SH@' "$OPAM_EXE" install "$@" --ignore-pin-depends --yes
         cd "$idempotent_opam_local_install_ENTRYDIR" || exit 67
 
-        printf "%s" "$idempotent_opam_local_install_COMMIT" > "$idempotent_opam_local_install_LASTGITREFFILE"
+        printf "%s" "$idempotent_opam_local_install_IDEMPOTENT_ID" > "$idempotent_opam_local_install_LASTGITREFFILE"
     fi
 }
 
@@ -89,7 +90,8 @@ idempotent_opam_local_install() {
 #    was different.
 idempotent_opam_install() {
     idempotent_opam_install_NAME=$1; shift
-    idempotent_opam_install_IDEMPOTENT_ID="$*"
+    idempotent_opam_install_SALT=$1; shift
+    idempotent_opam_install_IDEMPOTENT_ID="${idempotent_opam_install_SALT}$*"
     idempotent_opam_install_LAST_ID_FILE="$UPSERT_BINARY_DIR/$idempotent_opam_install_NAME.installed.id"
     idempotent_opam_install_REBUILD=1
     if [ -e "$idempotent_opam_install_LAST_ID_FILE" ]; then

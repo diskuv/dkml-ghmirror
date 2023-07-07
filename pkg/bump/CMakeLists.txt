@@ -734,6 +734,7 @@ function(add_Flavor_targets)
 
         OUTPUT_VARIABLE DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS)
     list(JOIN DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS " " DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS)
+    string(MD5 DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM "${DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS}")
     set(dkml-runtime-apps_OPAMFILES ${dkml-runtime-apps_PACKAGES})
     list(TRANSFORM dkml-runtime-apps_OPAMFILES PREPEND "./")
     list(TRANSFORM dkml-runtime-apps_OPAMFILES APPEND ".opam")
@@ -758,6 +759,17 @@ function(add_Flavor_targets)
         CONTENT "@DISKUV_OPAM_REPOSITORY_GITREF@"
         @ONLY NEWLINE_STYLE UNIX
     )
+
+    # Checksum to retrigger introspection
+    file(GLOB pkgs_txt_lst LIST_DIRECTORIES false
+        ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-anyver-pkgs.txt
+        ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-${DKML_RELEASE_OCAML_VERSION}-pkgs.txt)
+    set(DKML_DISTRIBUTION_PKGS_CKSUM)
+    foreach(pkgs_txt IN LISTS pkgs_txt_lst)
+        file(MD5 ${pkgs_txt} pkgs_txt_HASH)
+        string(APPEND DKML_DISTRIBUTION_PKGS_CKSUM ${pkgs_txt_HASH})
+    endforeach()
+    string(MD5 DKML_DISTRIBUTION_PKGS_CKSUM "${DKML_DISTRIBUTION_PKGS_CKSUM}")
 
     # Other values used in configure_file()
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts

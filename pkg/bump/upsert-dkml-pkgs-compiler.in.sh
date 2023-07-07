@@ -15,5 +15,5 @@ export DKMLDIR='@DKML_ROOT_DIR@'
 #   need a C compiler. This lack of C compiler won't appear during the initial
 #   install (because dkml-base-compiler does not need it), but will during a
 #   recompile. So we force the use of WITH_COMPILER_SH.
-idempotent_opam_local_install dkml-runtime-common-native '@dkml-runtime-common_SOURCE_DIR@' ./dkml-runtime-common-native.opam
-idempotent_opam_local_install dkml-compiler '@dkml-compiler_SOURCE_DIR@' ./dkml-base-compiler.opam
+idempotent_opam_local_install dkml-runtime-common-native '' '@dkml-runtime-common_SOURCE_DIR@' ./dkml-runtime-common-native.opam
+idempotent_opam_local_install dkml-compiler '' '@dkml-compiler_SOURCE_DIR@' ./dkml-base-compiler.opam
