@@ -42,6 +42,59 @@ For news about DkML,
 The *DkML* distribution uses an open-source, liberal
 [Apache v2 license](./LICENSE.txt).
 
+## Quick Start
+
+After installation, open a new Command Prompt or PowerShell, open
+an interactive "*full*" REPL with:
+
+```powershell
+C:\> utop-full
+
+(* Real World OCaml book: This is similar to the .ocamlinit
+   shown on the book's Installation page.
+   Learn more at https://dev.realworldocaml.org/ *)
+#require "base";;
+open Base;;
+
+(* Real World OCaml book: This is one example from the Error
+   Handling section. *)
+List.find [1;2;3] ~f:(fun x -> x >= 2);;
+
+(* refl: Type-safe type reflection. Learn more at
+   https://github.com/thierry-martinez/refl#readme *)
+#require "refl";;
+#require "refl.ppx";;
+
+(* refl: PPX-es are macros that generate tedious code for you.
+   Here is a basic example of a binary tree type with the
+   [@@deriving refl] macro attached. You'll see a ton of
+   generated code. *)
+type 'a binary_tree =
+  | Leaf
+  | Node of { left : 'a binary_tree; label : 'a; right : 'a binary_tree }
+        [@@deriving refl] ;;
+
+(* refl: Here is an example of how the generated code is
+   used. *)
+Refl.show [%refl: string binary_tree] []
+    (Node { left = Leaf; label = "root"; right = Leaf });;
+
+(* graphics: A simple cross-platform 2D drawing library.
+   Learn more at https://ocaml.org/docs/first-hour *)
+#require "graphics";;
+open Graphics;;
+
+open_graph " 640x480";;
+
+for i = 12 downto 1 do
+  let radius = i * 20 in
+    set_color (if i mod 2 = 0 then red else yellow);
+    fill_circle 320 240 radius
+done;;
+
+read_line ();;
+```
+
 ## Sponsor
 
 <a href="https://ocaml-sf.org">
