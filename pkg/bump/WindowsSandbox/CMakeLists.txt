@@ -10,6 +10,8 @@ foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
     cmake_path(NATIVE_PATH TOOLSDIR TOOLSDIR_NATIVE)
     configure_file(config.in.wsb ${BUMP_LEVEL}.wsb @ONLY)
     configure_file(installer.in.cmd ${TOOLSDIR}/installer.cmd @ONLY NEWLINE_STYLE DOS)
+    configure_file(test.in.cmd ${TOOLSDIR}/test.cmd @ONLY NEWLINE_STYLE DOS)
+    file(COPY proj1 script1 DESTINATION ${TOOLSDIR})
 
     if(CMAKE_HOST_WIN32)
         add_custom_target(Package-${BUMP_LEVEL}-WindowsSandbox

@@ -8,7 +8,6 @@
         <MappedFolder>
             <HostFolder>@TOOLSDIR_NATIVE@</HostFolder>
             <SandboxFolder>C:\Users\WDAGUtilityAccount\Tools</SandboxFolder>
-            <ReadOnly>true</ReadOnly>
         </MappedFolder>
     </MappedFolders>
 </Configuration>
