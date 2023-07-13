@@ -408,6 +408,7 @@ function(add_RepositoryUpdate_target)
         ${target_COMMANDS}
         SOURCES ${target_SOURCES}
         VERBATIM USES_TERMINAL)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-Archive)
 endfunction()
 
 function(add_GitPush_command)
