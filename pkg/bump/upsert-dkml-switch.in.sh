@@ -58,6 +58,16 @@ else
 fi
 "$OPAM_EXE" var --global "dkml-sys-opam-exe=$DKML_SYS_OPAM_EXE"
 
+# Make %{dkml-debug-env-failures}% available on machines with
+# [flag-dkml-debug-env-failures]
+#       shellcheck disable=SC2194
+case "@FLAG_DKML_DEBUG_ENV_FAILURES@" in
+    1|true|TRUE|True|on|ON|On)
+        "$OPAM_EXE" var --global "dkml-debug-env-failures=true" ;;
+    *)
+        "$OPAM_EXE" var --global "dkml-debug-env-failures=false"
+esac
+
 # create-opam-switch
 #
 # -p DKMLABI: The DKML ABI (not 'dev'). Determines how to make an OCaml home if a version number is specified

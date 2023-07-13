@@ -4,3 +4,6 @@ _build/
 
 # CMake
 build/
+
+# Flag files
+/flag-*

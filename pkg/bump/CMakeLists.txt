@@ -775,6 +775,10 @@ function(add_Flavor_targets)
 
     # Other values used in configure_file()
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts
+    cmake_host_system_information(RESULT DKML_HOSTNAME QUERY HOSTNAME) # Used by upsert-dkml-switch
+    if(EXISTS ${PROJECT_SOURCE_DIR}/flag-dkml-debug-env-failures)
+        set(FLAG_DKML_DEBUG_ENV_FAILURES 1)        
+    endif()
     FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
     FetchContent_GetProperties(dkml-compiler) # Used by upsert-dkml-pkgs-compiler
     FetchContent_GetProperties(dkml-runtime-common) # Used by upsert-dkml-pkgs-compiler
