@@ -1291,3 +1291,9 @@ DkMLPublish_AddArchiveTarget(
 foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
     add_all_targets(BUMP_LEVEL ${BUMP_LEVEL})
 endforeach()
+
+# Subdirectories
+
+set(PACKAGING_OPAMROOT ${anyrun_OPAMROOT})
+
+add_subdirectory(WindowsSandbox)

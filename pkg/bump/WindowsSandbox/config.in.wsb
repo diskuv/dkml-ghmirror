@@ -1,0 +1,14 @@
+<Configuration>
+    <MappedFolders>
+        <MappedFolder>
+            <HostFolder>@OPAMSWITCH_NATIVE@</HostFolder>
+            <SandboxFolder>C:\Users\WDAGUtilityAccount\Switch</SandboxFolder>
+            <ReadOnly>true</ReadOnly>
+        </MappedFolder>
+        <MappedFolder>
+            <HostFolder>@TOOLSDIR_NATIVE@</HostFolder>
+            <SandboxFolder>C:\Users\WDAGUtilityAccount\Tools</SandboxFolder>
+            <ReadOnly>true</ReadOnly>
+        </MappedFolder>
+    </MappedFolders>
+</Configuration>
