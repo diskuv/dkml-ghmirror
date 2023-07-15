@@ -908,11 +908,15 @@ function(add_Flavor_targets)
     list(REMOVE_ITEM fullFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM fullFlavorOutput PREPEND "${bumpSwitch}/lib/" OUTPUT_VARIABLE fullFlavorOutput)
     list(TRANSFORM fullFlavorOutput APPEND "/META" OUTPUT_VARIABLE fullFlavorOutput)
+    file(GLOB_RECURSE flavor_full_DEPENDS
+        LIST_DIRECTORIES false
+
+        ${dkml-runtime-apps_SOURCE_DIR}/src/*)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${fullFlavorOutput}
         MAIN_DEPENDENCY upsert-dkml-pkgs-flavor-full-not-dune.in.sh
-        DEPENDS ${duneFlavorOutput} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS}
+        DEPENDS ${duneFlavorOutput} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS} ${flavor_full_DEPENDS}
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} distribution - Full flavor"
         COMMAND ${upsert_dkml_pkgs_full_not_dune_COMMAND}
         VERBATIM
