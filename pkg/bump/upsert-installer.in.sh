@@ -26,7 +26,9 @@ idempotent_opam_local_install dkml-component-offline-unixutils-TRANSITIVE '' '@d
     ./dkml-component-common-unixutils.opam \
     ./dkml-component-staging-unixutils.opam \
     ./dkml-component-offline-unixutils.opam
-idempotent_opam_local_install dkml-component-ocamlcompiler-network '' '@dkml-component-ocamlcompiler_SOURCE_DIR@' ./dkml-component-ocamlcompiler-network.opam
+idempotent_opam_local_install dkml-component-ocamlcompiler-network-TRANSITIVE '' '@dkml-component-ocamlcompiler_SOURCE_DIR@' \
+    ./dkml-component-ocamlcompiler-common.opam \
+    ./dkml-component-ocamlcompiler-network.opam
 
 # Add or upgrade installer
 idempotent_opam_local_install dkml-package-console '' '@dkml-install-api_SOURCE_DIR@' ./dkml-package-console.opam
