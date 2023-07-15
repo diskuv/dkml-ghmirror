@@ -478,17 +478,17 @@ fi
 rungit -C "$SRC_MIXED/dkml-component-desktop" tag -a "$NEW_VERSION-prep" -m "Build of $OPAM_NEW_VERSION binary assets"
 rungit -C "$SRC_MIXED/dkml-component-desktop" push --atomic origin main "$NEW_VERSION-prep"
 #   Update and push dkml-component-ocamlcompiler
-update_opam_version "$RELEASE_OCAML_VERSION~$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam"
+update_opam_version "$RELEASE_OCAML_VERSION~$OPAM_NEW_VERSION" "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-ocamlcompiler-network.opam"
 #       shellcheck disable=SC2002
-cat "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam" | \
+cat "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-ocamlcompiler-network.opam" | \
     remove_opam_extra_source dkml-compiler | \
     cat - "$WORK/dkml-compiler.extra-source" > \
-    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp"
-mv "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam.tmp" \
-    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-network-ocamlcompiler.opam"
+    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-ocamlcompiler-network.opam.tmp"
+mv "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-ocamlcompiler-network.opam.tmp" \
+    "$SRC_MIXED/dkml-component-ocamlcompiler/dkml-component-ocamlcompiler-network.opam"
 rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" \
     commit -m "dkml-compiler $RELEASE_OCAML_VERSION: $CURRENT_VERSION → $NEW_VERSION" \
-    "dkml-component-network-ocamlcompiler.opam"
+    "dkml-component-ocamlcompiler-network.opam"
 if [ "$FORCE" = "ON" ]; then
     rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" tag -d "$RELEASE_OCAML_VERSION-$NEW_VERSION" || true
     rungit -C "$SRC_MIXED/dkml-component-ocamlcompiler" push --delete origin "$RELEASE_OCAML_VERSION-$NEW_VERSION" || true

@@ -87,7 +87,7 @@ set(dkml-component-desktop_PACKAGES
     dkml-component-staging-dkmlconfdir
     dkml-component-staging-withdkml)
 set(dkml-component-ocamlcompiler_PACKAGES
-    dkml-component-network-ocamlcompiler)
+    dkml-component-ocamlcompiler-network)
 set(dkml-component-ocamlrun_PACKAGES
     dkml-component-offline-ocamlrun
     dkml-component-staging-ocamlrun)
