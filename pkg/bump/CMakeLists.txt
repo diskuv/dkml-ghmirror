@@ -1048,7 +1048,11 @@ function(add_Installer_target)
     list(APPEND installerSources ${sources})
     file(GLOB_RECURSE sources LIST_DIRECTORIES false
         ${dkml-installer-ocaml_SOURCE_DIR}/installer/bin/*
-        ${dkml-installer-ocaml_SOURCE_DIR}/installer/src/*)
+        ${dkml-installer-ocaml_SOURCE_DIR}/installer/src/*
+        ${dkml-component-desktop_SOURCE_DIR}/src/api/*
+        ${dkml-component-desktop_SOURCE_DIR}/src/buildtime/*
+        ${dkml-component-desktop_SOURCE_DIR}/src/citime/*
+        ${dkml-component-desktop_SOURCE_DIR}/src/installtime/*)
     list(APPEND installerSources ${sources})
 
     foreach(p IN ITEMS
