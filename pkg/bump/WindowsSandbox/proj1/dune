@@ -1,0 +1,3 @@
+(tests
+ (names a)
+ (libraries logs))

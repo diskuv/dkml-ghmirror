@@ -1,2 +1,38 @@
 #use "topfind";;
+#require "base";;
 #require "logs";;
+
+(* Most of this is from the README.md. Perhaps use CMake or MDX to update it. *)
+
+(* https://erratique.ch/software/logs/doc/Logs/index.html#basics *)
+Logs.set_reporter (Logs.format_reporter ());
+Logs.err (fun m -> m "NO CARRIER") ;;
+
+(* Real World OCaml: https://dev.realworldocaml.org/error-handling.html *)
+open Base ;;
+List.find [1;2;3] ~f:(fun x -> x >= 2) ;;
+
+
+#require "refl";;
+#require "refl.ppx";;
+
+type 'a binary_tree =
+  | Leaf
+  | Node of { left : 'a binary_tree; label : 'a; right : 'a binary_tree }
+        [@@deriving refl] ;;
+
+Refl.show [%refl: string binary_tree] []
+    (Node { left = Leaf; label = "root"; right = Leaf });;
+
+
+
+#require "graphics";;
+open Graphics;;
+
+open_graph " 640x480";;
+
+for i = 12 downto 1 do
+  let radius = i * 20 in
+    set_color (if i mod 2 = 0 then red else yellow);
+    fill_circle 320 240 radius
+done;;
