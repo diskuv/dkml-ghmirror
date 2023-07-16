@@ -20,6 +20,7 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
     digestif # 1.1.2+msvc
     ocamlbuild # 0.14.0
     ptime # 0.8.6-msvcsupport
+    utop # 2.13.0+win32
 
     # -- Jane Street --
     base # v0.15.1
