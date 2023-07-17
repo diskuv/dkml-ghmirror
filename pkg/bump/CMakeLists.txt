@@ -87,7 +87,7 @@ function(stage_self_DkMLReplace BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIAB
     string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${NEW_VERSION_SEMVER}" contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
-        message(FATAL_ERROR "A DkML version was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+        return()
     endif()
 
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
@@ -1157,7 +1157,7 @@ function(add_all_targets)
     else()
         # PATCH, MINOR or MAJOR bump
         stage_self_VersionReplace(${ARG_BUMP_LEVEL}
-            ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
             ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
             selfModifications version.cmake)
         stage_self_DkMLReplace(${ARG_BUMP_LEVEL}
