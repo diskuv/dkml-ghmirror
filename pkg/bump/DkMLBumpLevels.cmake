@@ -30,7 +30,8 @@ macro(make_bumped_versions VERSIONTYPE)
     endfunction()
 
     function(set_new_minor_version)
-        if(DKML_${VERSIONTYPE}_PRERELEASE)
+        if(DKML_${VERSIONTYPE}_PRERELEASE
+            AND DKML_${VERSIONTYPE}_PATCH EQUAL 0)
             set(new_minor "${DKML_${VERSIONTYPE}_MINOR}") # Pre-releases are _before_ a non-prerelease
         else()
             math(EXPR new_minor "${DKML_${VERSIONTYPE}_MINOR} + 1") # No pre-release
@@ -42,7 +43,9 @@ macro(make_bumped_versions VERSIONTYPE)
     endfunction()
 
     function(set_new_major_version)
-        if(DKML_${VERSIONTYPE}_PRERELEASE)
+        if(DKML_${VERSIONTYPE}_PRERELEASE
+            AND DKML_${VERSIONTYPE}_PATCH EQUAL 0
+            AND DKML_${VERSIONTYPE}_MINOR EQUAL 0)
             set(new_major "${DKML_${VERSIONTYPE}_MAJOR}") # Pre-releases are _before_ a non-prerelease
         else()
             math(EXPR new_major "${DKML_${VERSIONTYPE}_MAJOR} + 1") # No pre-release
