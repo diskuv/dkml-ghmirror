@@ -1,3 +1,4 @@
-(tests
- (names a)
+(executable
+ (name a)
+ (modes byte)
  (libraries logs))

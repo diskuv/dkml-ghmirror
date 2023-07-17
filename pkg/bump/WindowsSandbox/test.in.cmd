@@ -3,10 +3,15 @@ for %%i in ("%~dp0.") do SET "sandbox=%%~fi"
 ocamlfind printconf
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-dune runtest --root %sandbox%\proj1
+REM Dune as of 3.8.3 requires explicit xxx.bc on the command line or else
+REM it will do -output-complete-exe which requires a C linker
+dune build --root %sandbox%\proj1 ./a.bc
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-utop %sandbox%\script1\script.ocamlinit
+ocamlrun %sandbox%\proj1\_build\default\a.bc
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+utop-full %sandbox%\script1\script.ocamlinit
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 REM Once ocaml has a shim:

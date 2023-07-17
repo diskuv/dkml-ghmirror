@@ -7,5 +7,6 @@
 (package
  (name proj1)
  (synopsis "Project 1")
+ (allow_empty)
  (depends
   (logs         (>= 0.5.0))))
