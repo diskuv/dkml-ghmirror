@@ -1,0 +1,4 @@
+(executable
+ (name best)
+ (modes
+  (best exe)))

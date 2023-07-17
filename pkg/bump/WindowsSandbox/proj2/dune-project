@@ -1,0 +1,12 @@
+(lang dune 3.0)
+
+(name proj2)
+
+(generate_opam_files true)
+
+(package
+ (name proj2)
+ (synopsis "Project 2")
+ (allow_empty)
+ (depends
+  (logs         (>= 0.5.0))))
