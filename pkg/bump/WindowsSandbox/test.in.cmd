@@ -3,12 +3,24 @@ for %%i in ("%~dp0.") do SET "sandbox=%%~fi"
 ocamlfind printconf
 if %errorlevel% neq 0 exit /b %errorlevel%
 
+REM Windows Sandbox's shared folders write out garbage when trying to
+REM compile an .exe (.bc is OK)... probably some security measure. So do all
+REM compilation in the temporary folder
+robocopy %sandbox%\proj1 %TEMP%\scratch1\proj1 /MIR /S
+robocopy %sandbox%\proj2 %TEMP%\scratch1\proj2 /MIR /S
+
 REM Dune as of 3.8.3 requires explicit xxx.bc on the command line or else
 REM it will do -output-complete-exe which requires a C linker
-dune build --root %sandbox%\proj1 ./a.bc
+dune build --root %TEMP%\scratch1\proj1 ./a.bc
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-ocamlrun %sandbox%\proj1\_build\default\a.bc
+ocamlrun %TEMP%\scratch1\proj1\_build\default\a.bc
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+dune build --root %TEMP%\scratch1\proj2
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+dune exec --root %TEMP%\scratch1\proj2 ./best.exe
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 utop-full %sandbox%\script1\script.ocamlinit
@@ -17,8 +29,8 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 REM Once ocaml has a shim:
 REM - ocaml script1/script.ocamlinit
 
-if not exist "%TEMP%\scratch" mkdir %TEMP%\scratch
-pushd %TEMP%\scratch
+if not exist "%TEMP%\scratch2" mkdir %TEMP%\scratch2
+pushd %TEMP%\scratch2
 
 dkml init --yes
 
