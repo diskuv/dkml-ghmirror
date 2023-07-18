@@ -1,4 +1,4 @@
-# DkML 1.2.0
+# DkML 2.0.0
 
 The DkML distribution is an open-source set of software
 that supports software development in pure OCaml. The distribution's
