@@ -4,6 +4,7 @@ set(ARCHIVEDIR ${CMAKE_CURRENT_BINARY_DIR}/archives)
 
 # These packages do not have a META file, or not consistently for all package versions
 set(PACKAGES_WITHOUT_META
+    conf-dkml-sys-opam
     conf-withdkml
     ocaml
     ocamlfind
