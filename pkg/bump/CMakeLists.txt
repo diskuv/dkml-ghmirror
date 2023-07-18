@@ -407,6 +407,7 @@ function(add_RepositoryUpdate_target)
         COMMENT "Running bump-repository.cmake in ${bumpedProjects_SPACES}"
         DEPENDS ${ARG_DEPENDS}
         ${target_COMMANDS}
+        COMMAND ${CMAKE_COMMAND} -E echo "Run [promote.sh] in diskuv-opam-repository to promote the update to the central opam repository"
         SOURCES ${target_SOURCES}
         VERBATIM USES_TERMINAL)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-Archive)
