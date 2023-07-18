@@ -327,6 +327,7 @@ function(add_PackageUpgrade_target)
             -D CMAKE_MESSAGE_CONTEXT=${proj}
             -D "DKML_BUMP_PACKAGES_PARTICIPANT_MODULE=${participant}"
             -D DKML_RELEASE_DUNE_VERSION=${DKML_RELEASE_DUNE_VERSION}
+            -D DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
             -D "BASH_EXECUTABLE=${bashExecutable}"

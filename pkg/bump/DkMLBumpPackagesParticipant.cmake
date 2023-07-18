@@ -5,6 +5,10 @@ if(NOT DKML_RELEASE_DUNE_VERSION)
     message(FATAL_ERROR "Missing -D DKML_RELEASE_DUNE_VERSION=xx")
 endif()
 
+if(NOT DKML_VERSION_OPAMVER_NEW)
+    message(FATAL_ERROR "Missing -D DKML_VERSION_OPAMVER_NEW=xx")
+endif()
+
 if(NOT OPAM_EXECUTABLE)
     message(FATAL_ERROR "Missing -D OPAM_EXECUTABLE=xx")
 endif()
@@ -26,6 +30,15 @@ endif()
 # "dkml-compiler-env.1.2.1~prerel10"
 # ]
 # '
+#
+# The "dkml-installer-network-ocaml.2.0.0" (or whatever version) is always
+# pinned to stop an expensive retrigger where [dkml-installer-network-ocaml] is
+# being installed (hence [dkml-installer-network-ocaml] is not available to be
+# listed in the pinned opam section) ... and then after
+# [dkml-installer-network-ocaml] is installed it becomes available to be
+# listed in the pinned open section.
+# In other words, we want idempotency.
+# Ditto for [dkml-installer-offline-ocaml].
 function(DkMLBumpPackagesParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
     set(contents_NEW "${contents}")
@@ -44,6 +57,14 @@ function(DkMLBumpPackagesParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
     # Convert to list
     string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
     _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
+
+    # Add [dkml-installer-network-ocaml]
+    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-network-ocaml[.]")
+    list(APPEND pkgvers "dkml-installer-network-ocaml.${DKML_VERSION_OPAMVER_NEW}")
+
+    # Add [dkml-installer-offline-ocaml]
+    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-offline-ocaml[.]")
+    list(APPEND pkgvers "dkml-installer-offline-ocaml.${DKML_VERSION_OPAMVER_NEW}")
 
     # Remove [dune] and replace with [dune+shim]
     list(FILTER pkgvers EXCLUDE REGEX "^dune[.]")
