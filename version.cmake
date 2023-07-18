@@ -17,7 +17,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND DKML_VERSION_CMAKEVER_OVERRIDE)
     set(DKML_VERSION_CMAKEVER "${DKML_VERSION_CMAKEVER_OVERRIDE}")
 else()
     # Edited by pkg/bump/CMakeLists.txt. Do not change format.
-    set(DKML_VERSION_CMAKEVER "1.2.1.10")
+    set(DKML_VERSION_CMAKEVER "1.2.1.12")
 endif()
 
 # The last released version (never a prerelease)
