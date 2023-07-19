@@ -21,6 +21,10 @@ if(NOT BASH_EXECUTABLE)
     message(FATAL_ERROR "Missing -D BASH_EXECUTABLE=xx")
 endif()
 
+if(NOT TEMP_DIR)
+    message(FATAL_ERROR "Missing -D TEMP_DIR=xx")
+endif()
+
 # Sets a printer of a "pinned" opam section of [switch-state]. Similar to:
 #
 # echo '
@@ -375,12 +379,17 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     set(multiValues REL_FILENAMES)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    # Read them for a "before" snapshot
+    # Read them for a "before" snapshot. We also need to capture the file
+    # timestamps so we don't retrigger CMake if there is no content changed.
     foreach(REL_FILENAME IN LISTS ARG_REL_FILENAMES)
         file(READ ${REL_FILENAME} contents)
         string(REPLACE "\r" "" contents "${contents}") # Normalize CRLF
         string(MAKE_C_IDENTIFIER ${REL_FILENAME} fileId)
         set(contents_${fileId} "${contents}")
+
+        # file(COPY) preserves timestamps
+        cmake_path(GET REL_FILENAME PARENT_PATH REL_FILEDIR)
+        file(COPY ${REL_FILENAME} DESTINATION ${TEMP_DIR}/${REL_FILEDIR})
     endforeach()
 
     # Truncate each dune.inc
@@ -422,7 +431,13 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
 
     # Check idempotent
     if(NOT changedFiles)
-        # idempotent
+        # idempotent content! But file timestamps could have changed, so
+        # restore the timestamps (by restoring the original files)
+        foreach(REL_FILENAME IN LISTS ARG_REL_FILENAMES)
+            cmake_path(GET REL_FILENAME PARENT_PATH REL_FILEDIR)
+            file(COPY ${TEMP_DIR}/${REL_FILENAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/${REL_FILEDIR})
+        endforeach()
+
         return()
     endif()
 

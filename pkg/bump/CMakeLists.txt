@@ -332,6 +332,7 @@ function(add_PackageUpgrade_target)
             -D "OPAM_EXECUTABLE=${ARG_OPAMEXE}"
             -D "BASH_EXECUTABLE=${bashExecutable}"
             -D WITH_COMPILER_SH=${WITH_COMPILER_SH}
+            -D TEMP_DIR=${outputDir}/tmp
             -P bump-packages.cmake
         )
         list(APPEND bumpedProjects ${proj})
