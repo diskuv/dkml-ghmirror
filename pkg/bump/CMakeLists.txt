@@ -20,7 +20,7 @@ set(syncedProjects
     ${DKML_PROJECTS_POSTDUNE}
     ${DKML_PROJECTS_FINAL}
 )
-set(self_BRANCH next-cmake) # self is [dkml]
+set(self_BRANCH next) # self is [dkml]
 set(diskuv-opam-repository_BRANCH main)
 set(dkml-compiler_BRANCH main)
 set(dkml-component-desktop_BRANCH main)
