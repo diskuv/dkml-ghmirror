@@ -43,6 +43,17 @@ function(DkMLPublish_AddArchiveTarget)
 
     file(MAKE_DIRECTORY ${ARCHIVEDIR})
 
+    # We use a stable timestamp so the tarball is somewhat reproducible
+    # (at least on the same machine). We want to minimize SHA checksums
+    # changing.
+    #
+    #   configure_file() does not change the mtime if the expanded
+    #   contents (ARG_PROJECTS) don't change
+    set(SORTED_PROJECTS ${ARG_PROJECTS})
+    list(SORT SORTED_PROJECTS)
+    configure_file(archive.in.mtime ${ARCHIVEDIR}/archive-${ARG_TARGET}.mtime @ONLY)
+    file(TIMESTAMP ${ARCHIVEDIR}/archive-${ARG_TARGET}.mtime mtime_YYYYMMDD "%Y-%m-%d" UTC)
+
     set(outputs)
 
     foreach(pkg IN ITEMS ${ARG_PROJECTS})
@@ -77,6 +88,8 @@ function(DkMLPublish_AddArchiveTarget)
             ${CMAKE_COMMAND} -E tar cfz
             ${output}
             --format=gnutar
+            # --mtime format is not documented. Use https://gitlab.kitware.com/cmake/cmake/-/blob/master/Tests/RunCMake/CommandLineTar/mtime-tests.cmake
+            --mtime=${mtime_YYYYMMDD}UTC
             --files-from=${git_ls_tree}
         )
         list(APPEND outputs ${output})
