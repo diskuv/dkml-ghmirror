@@ -21,7 +21,7 @@ for their GitHub Actions / GitLab CI:
 ### Changes
 
 **Breaking change**: The global environment (where you can run `dune`, `utop`,
-`ocamlopt` and a few other critical OCaml executables without you having
+`ocamlopt` and a few other critical OCaml executables without having
 to install your own opam switch) has changed significantly. Follow these
 guidelines if you operate frequently in the global environment:
 
@@ -75,6 +75,18 @@ Bug fixes:
   32-bit variant on 32-bit installs) are installed alongside `flexlink.exe` so
   flexlink can be used by itself without setting `FLEXDIR` environment
   variable.
+
+Known issues:
+
+* When you opt into the `("DiskuvOCamlMode" ("byte"))` mode you will get an unfriendly
+  `Cannot set stack reserve: File "coff.ml", line 1049, characters 4-10: Assertion failed`
+  if you compile or link C code. Dune, for example, will implicitly use the C linker
+  (`-output-complete-exe`) in its default rules if you have an `(executable)` clause. Telling
+  Dune that you want bytecode using `(executable ... (modes byte))` is necessary but not
+  sufficient. You will also explicitly need to use a ".bc" target like
+  `dune build src/some-executable.bc` to create pure bytecode, which you can run with
+  `dune exec src/some-executable.bc` or `ocamlrun _build/default/src/some-executable.bc`.
+  Alternatively, just use `ocamlc` directly to create bytecode.
 
 Changed packages:
 
