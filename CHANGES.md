@@ -25,7 +25,10 @@ for their GitHub Actions / GitLab CI:
 to install your own opam switch) has changed significantly. Follow these
 guidelines if you operate frequently in the global environment:
 
-* Use `utop` and `utop-full` like you did in previous versions.
+* Use `utop` and `utop-full` like you did in previous versions, but with more
+  libraries. There is a new
+  [Quick Start](https://gitlab.com/diskuv-ocaml/distributions/dkml#quick-start)
+  that shows how to use it.
 * If you want to use `dune` to compile native code libraries,
   create your own opam switch using `dkml init` in an empty directory.
 * If you want to use `dune` to compile bytecode, you can turn on
