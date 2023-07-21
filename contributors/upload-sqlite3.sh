@@ -11,15 +11,15 @@ DKMLDIR=$(cd "$DKMLDIR/.." && pwd)
 # BEGIN Command line processing
 
 CPKGS_VERSION=0.1.1
-PKGCONF_VERSION=
+SQLITE3_VERSION=
 
 usage() {
     echo "Usage:" >&2
-    echo "    upload-pkgconf.sh -h        Display this help message." >&2
-    echo "    upload-pkgconf.sh [options] Copy the x86 pkgconf.exe" >&2
+    echo "    upload-sqlite3.sh -h        Display this help message." >&2
+    echo "    upload-sqlite3.sh [options] Copy the x86 sqlite3.lib" >&2
     echo "Options:" >&2
     echo "  -f CPKGS_VERSION: Copy from the specified cpkgs Generic version. Defaults to $CPKGS_VERSION" >&2
-    echo "  -t PKGCONF_VERSION: Copy to the specified pkgconf Generic version. Defaults to the output of: pkgconf --version" >&2
+    echo "  -t SQLITE3_VERSION: Copy to the specified sqlite3 Generic version. Defaults to the output of: sqlite3 --version" >&2
 }
 
 while getopts ":hf:t:" opt; do
@@ -29,7 +29,7 @@ while getopts ":hf:t:" opt; do
             exit 0
         ;;
         f) CPKGS_VERSION=$OPTARG;;
-        t) PKGCONF_VERSION=$OPTARG;;
+        t) SQLITE3_VERSION=$OPTARG;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -68,28 +68,48 @@ CI_PROJECT_ID='diskuv%2Fdistributions%2Fnext%2Fcpkgs' # Must be url-encoded per 
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
-CPKGS_URL="$PACKAGE_REGISTRY_GENERIC_URL/x86-windows/$CPKGS_VERSION"
+CPKGS_X64_URL="$PACKAGE_REGISTRY_GENERIC_URL/x64-windows/$CPKGS_VERSION"
+CPKGS_X86_URL="$PACKAGE_REGISTRY_GENERIC_URL/x86-windows/$CPKGS_VERSION"
 
 # Download from Generic Packages
 
 install -d build
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-    -o build/base.tar.gz \
-    "$CPKGS_URL/base.tar.gz"
+    -o build/base-x64.tar.gz \
+    "$CPKGS_X64_URL/base.tar.gz"
+curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+    -o build/base-x86.tar.gz \
+    "$CPKGS_X86_URL/base.tar.gz"
 
-# Create build/tools/pkgconf.tar.gz with
-# - windows_x86/pkgconf.exe (and .dll and .pdb)
+# Create build/tools/sqlite3-x64.tar.gz with
+# - windows_x64/sqlite3.lib
+# and build/tools/sqlite3-x86.tar.gz with
+# - windows_x86/sqlite3.lib
+# Also include headers and 
 cd build
-tar xvf base.tar.gz ./tools/pkgconf
-cd tools
-rm -rf windows_x86
-mv pkgconf windows_x86
-tar cvfz pkgconf.tar.gz windows_x86
-cd ../..
-
-if [ -z "${PKGCONF_VERSION:-}" ]; then
-    PKGCONF_VERSION=$(build/tools/windows_x86/pkgconf --version)
+if [ -z "${SQLITE3_VERSION:-}" ]; then
+    tar xvf base-x64.tar.gz ./tools/sqlite3.exe ./tools/sqlite3.dll
+    SQLITE3_VERSION=$(tools/sqlite3 --version | awk '{print $1}')
 fi
+{
+    tar xvf base-x64.tar.gz ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
+    rm -rf windows_x64
+    install -d windows_x64/include windows_x64/lib/pkgconfig
+    mv include/sqlite3.h include/sqlite3ext.h windows_x64/include/
+    mv lib/sqlite3.lib windows_x64/lib/
+    mv lib/pkgconfig/sqlite3.pc windows_x64/lib/pkgconfig/
+    tar cvfz sqlite3-x64.tar.gz windows_x64
+}
+{
+    tar xvf base-x86.tar.gz ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
+    rm -rf windows_x86
+    install -d windows_x86/include windows_x86/lib windows_x86/lib/pkgconfig/
+    mv include/sqlite3.h include/sqlite3ext.h windows_x86/include/
+    mv lib/sqlite3.lib windows_x86/lib/
+    mv lib/pkgconfig/sqlite3.pc windows_x86/lib/pkgconfig/
+    tar cvfz sqlite3-x86.tar.gz windows_x86
+}
+cd ..
 
 # ------------------------
 # GitLab Release
@@ -102,10 +122,13 @@ CI_PROJECT_ID='diskuv-ocaml%2Fdistributions%2Fdkml' # Must be url-encoded per ht
 
 # Setup Generic Packages (https://docs.gitlab.com/ee/user/packages/generic_packages/)
 PACKAGE_REGISTRY_GENERIC_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic"
-PKGCONF_URL="$PACKAGE_REGISTRY_GENERIC_URL/pkgconf/$PKGCONF_VERSION"
+SQLITE3_URL="$PACKAGE_REGISTRY_GENERIC_URL/sqlite3/$SQLITE3_VERSION"
 
-# Upload pkgconf tarball to Generic Packages
+# Upload sqlite3 tarball to Generic Packages
 
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
-     --upload-file "build/tools/pkgconf.tar.gz" \
-     "$PKGCONF_URL/pkgconf.tar.gz"
+     --upload-file "build/sqlite3-x64.tar.gz" \
+     "$SQLITE3_URL/sqlite3-x64.tar.gz"
+curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" \
+     --upload-file "build/sqlite3-x86.tar.gz" \
+     "$SQLITE3_URL/sqlite3-x86.tar.gz"
