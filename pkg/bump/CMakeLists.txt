@@ -151,8 +151,8 @@ function(add_VersionBump_target_for_synced_projects)
     # occurs. Once it finishes end-to-end without failures ... only then
     # do you do a PATCH (or MINOR or MAJOR) bump.
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
-        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_MAJMINPAT}-[0-9]+")
-        set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_MAJMINPAT}[~]prerel[0-9]+")
+        set(regex_DKML_VERSION_SEMVER "${DKML_VERSION_MAJMIN}[.][0-9]-[0-9]+")
+        set(regex_DKML_VERSION_OPAMVER "${DKML_VERSION_MAJMIN}[.][0-9][~]prerel[0-9]+")
     else()
         set(regex_DKML_VERSION_SEMVER "${DKML_PUBLICVERSION_SEMVER}")
         set(regex_DKML_VERSION_OPAMVER "${DKML_PUBLICVERSION_OPAMVER}")
