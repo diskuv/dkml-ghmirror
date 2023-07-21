@@ -322,7 +322,7 @@ function(add_PackageUpgrade_target)
     endforeach()
 
     list(JOIN bumpedProjects ", " bumpedProjects_SPACES)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage06-PackageUpgrade
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running bump-packages.cmake in ${bumpedProjects_SPACES}"
         DEPENDS ${ARG_DEPENDS}
@@ -386,7 +386,7 @@ function(add_RepositoryUpdate_target)
     endforeach()
 
     list(JOIN bumpedProjects ", " bumpedProjects_SPACES)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running bump-repository.cmake in ${bumpedProjects_SPACES}"
         DEPENDS ${ARG_DEPENDS}
@@ -394,7 +394,7 @@ function(add_RepositoryUpdate_target)
         COMMAND ${CMAKE_COMMAND} -E echo "Run [promote.sh] in diskuv-opam-repository to promote the update to the central opam repository"
         SOURCES ${target_SOURCES}
         VERBATIM USES_TERMINAL)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-Archive)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate Package-Archive)
 endfunction()
 
 function(add_GitPush_command)
@@ -904,7 +904,7 @@ function(add_Flavor_targets)
         VERBATIM
         USES_TERMINAL
     )
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage02-DuneFlavor
         DEPENDS ${duneFlavorOutput}
         VERBATIM
     )
@@ -962,12 +962,12 @@ function(add_Flavor_targets)
         USES_TERMINAL
     )
 
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor
         DEPENDS ${introspectCreated}
         VERBATIM
     )
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor
-        Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor
+        Package-${ARG_BUMP_LEVEL}-Stage02-DuneFlavor)
     set(${OUTPUT_LIST_VARIABLE_FULL} ${introspectCreated} PARENT_SCOPE)
 endfunction()
 
@@ -1024,7 +1024,7 @@ function(add_Api_target)
         USES_TERMINAL
     )
 
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage5-Api
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage05-Api
         DEPENDS ${apiCreated}
         VERBATIM
     )
@@ -1112,7 +1112,7 @@ function(add_Installer_target)
         USES_TERMINAL
     )
 
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage7-Installer
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage07-Installer
         DEPENDS ${installerCreated}
         VERBATIM
     )
@@ -1157,7 +1157,7 @@ function(add_all_targets)
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(selfModifications)
-    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage10-GitPush)
+    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage12-GitPush)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
@@ -1223,40 +1223,40 @@ function(add_all_targets)
     set(gitPushTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
 
     # Stage 0
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage00-VersionBump
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${versionBumpSelfStartOutput}
         VERBATIM)
 
     # Stage 1
     add_VersionBump_target_for_synced_projects(
-        TARGET Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER PRE_DUNE)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump Package-${ARG_BUMP_LEVEL}-Stage00-VersionBump)
 
     # Stage 2 and 4
     add_Flavor_targets(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE_DUNE duneFlavorOutputs
         OUTPUT_LIST_VARIABLE_FULL fullFlavorOutputs)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage02-DuneFlavor Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
 
     # Stage 3
     add_VersionBump_target_for_synced_projects(
-        TARGET Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER POST_DUNE
         DEPENDS ${duneFlavorOutputs})
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump Package-${ARG_BUMP_LEVEL}-Stage2-DuneFlavor)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump Package-${ARG_BUMP_LEVEL}-Stage02-DuneFlavor)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
 
     # Stage 5
     add_Api_target(BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE apiOutputs
         DEPENDS ${fullFlavorOutputs}
         VERBATIM)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage5-Api Package-${ARG_BUMP_LEVEL}-Stage4-FullFlavor)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage05-Api Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor)
 
     # Stage 6
     get_bump_switch(
@@ -1271,27 +1271,27 @@ function(add_all_targets)
         ${bumpSwitch}/bin/package-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
         OPAMROOT ${anyrun_OPAMROOT}
         OPAMEXE ${anyrun_OPAMEXE})
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage5-Api)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage06-PackageUpgrade Package-${ARG_BUMP_LEVEL}-Stage05-Api)
 
     # Stage 7
     add_Installer_target(BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE installerOutputs
         DEPENDS ${packageUpgradeOutputs}
         VERBATIM)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage7-Installer Package-${ARG_BUMP_LEVEL}-Stage6-PackageUpgrade)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage07-Installer Package-${ARG_BUMP_LEVEL}-Stage06-PackageUpgrade)
 
     # Stage 8
     add_RepositoryUpdate_target(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         DEPENDS ${installerOutputs})
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate Package-${ARG_BUMP_LEVEL}-Stage7-Installer)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate Package-${ARG_BUMP_LEVEL}-Stage07-Installer)
 
     # Stage 9. Both diskuv-opam-repository and self (dkml).
     add_VersionBump_target_for_synced_projects(
-        TARGET Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER FINAL)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump Package-${ARG_BUMP_LEVEL}-Stage8-RepositoryUpdate)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
 
     # Last Stage
     add_custom_command(
@@ -1310,23 +1310,23 @@ function(add_all_targets)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushTargetDepends}
         VERBATIM)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage1-VersionBump)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage3-VersionBump)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage9-VersionBump)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
 
     DkMLPublish_CreateReleaseTarget(
-        TARGET Package-${ARG_BUMP_LEVEL}-CreateRelease
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
     )
 
-    # add_dependencies(Package-${BUMP_LEVEL}-CreateRelease ${STAGE_LAST_GIT_PUSH})
+    # add_dependencies(Package-${BUMP_LEVEL}-Stage10-CreateRelease ${STAGE_LAST_GIT_PUSH})
     DkMLPublish_PublishAssetsTarget(
-        TARGET Package-${ARG_BUMP_LEVEL}-PublishAssets
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         ARCHIVE_TARGET Package-Archive
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
     )
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-PublishAssets Package-${ARG_BUMP_LEVEL}-CreateRelease)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease)
 endfunction()
 
 add_GenerateLaunchers_target()
