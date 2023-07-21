@@ -502,17 +502,24 @@ function(add_GitPush_commands_for_synced_projects)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-function(get_flavor_packages FLAVORS OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABLE)
+function(get_flavor_packages)
+    set(noValues)
+    set(singleValues OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABLE OUTPUT_DEPENDS)
+    set(multiValues FLAVORS)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
     FetchContent_GetProperties(dkml-runtime-distribution)
     set(pkgvers)
+    set(depends)
 
     macro(grok PKGS_TXT)
         # Read non-comment, non-blank lines that have a dot (.) in them
         file(STRINGS ${PKGS_TXT} strings REGEX "^[^#] *[a-z].*[.]")
         list(APPEND pkgvers ${strings})
+        list(APPEND depends ${PKGS_TXT})
     endmacro()
 
-    foreach(FLAVOR IN LISTS FLAVORS)
+    foreach(FLAVOR IN LISTS ARG_FLAVORS)
         string(TOLOWER "${FLAVOR}" lowerFlavor)
         grok(${dkml-runtime-distribution_SOURCE_DIR}/src/none/${lowerFlavor}-anyver-pkgs.txt)
         grok(${dkml-runtime-distribution_SOURCE_DIR}/src/none/${lowerFlavor}-${DKML_RELEASE_OCAML_VERSION}-pkgs.txt)
@@ -520,12 +527,21 @@ function(get_flavor_packages FLAVORS OUTPUT_PKGS_VARIABLE OUTPUT_PKGVERS_VARIABL
 
     list(TRANSFORM pkgvers REPLACE "[.].*" "" OUTPUT_VARIABLE pkgs)
 
-    set(${OUTPUT_PKGS_VARIABLE} ${pkgs} PARENT_SCOPE)
-    set(${OUTPUT_PKGVERS_VARIABLE} ${pkgvers} PARENT_SCOPE)
+    set(${ARG_OUTPUT_PKGS_VARIABLE} ${pkgs} PARENT_SCOPE)
+    set(${ARG_OUTPUT_PKGVERS_VARIABLE} ${pkgvers} PARENT_SCOPE)
+    set(${ARG_OUTPUT_DEPENDS} ${depends} PARENT_SCOPE)
 endfunction()
 
-get_flavor_packages(Dune DUNE_FLAVOR_PKGS DUNE_FLAVOR_PKGVERS)
-get_flavor_packages("CI;Full" FULL_NOT_DUNE_FLAVOR_PKGS FULL_NOT_DUNE_FLAVOR_PKGVERS)
+get_flavor_packages(
+    FLAVORS Dune
+    OUTPUT_PKGS_VARIABLE DUNE_FLAVOR_PKGS
+    OUTPUT_PKGVERS_VARIABLE DUNE_FLAVOR_PKGVERS
+    OUTPUT_DEPENDS DEPENDS_FLAVORS_Dune)
+get_flavor_packages(
+    FLAVORS CI Full
+    OUTPUT_PKGS_VARIABLE FULL_NOT_DUNE_FLAVOR_PKGS
+    OUTPUT_PKGVERS_VARIABLE FULL_NOT_DUNE_FLAVOR_PKGVERS
+    OUTPUT_DEPENDS DEPENDS_FLAVORS_CI_Full)
 
 # dune.3.6.2+shim -> 3.6.2
 set(DKML_RELEASE_DUNE_VERSION ${DUNE_FLAVOR_PKGVERS})
@@ -897,7 +913,7 @@ function(add_Flavor_targets)
         USES_TERMINAL
     )
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage02-DuneFlavor
-        DEPENDS ${duneFlavorOutput}
+        DEPENDS ${duneFlavorOutput} ${DEPENDS_FLAVORS_Dune}
         VERBATIM
     )
     set(${OUTPUT_LIST_VARIABLE_DUNE} ${duneFlavorOutput} PARENT_SCOPE)
@@ -955,7 +971,7 @@ function(add_Flavor_targets)
     )
 
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor
-        DEPENDS ${introspectCreated}
+        DEPENDS ${introspectCreated} ${DEPENDS_FLAVORS_CI_Full}
         VERBATIM
     )
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage04-FullFlavor
@@ -1312,6 +1328,7 @@ function(add_all_targets)
     else()
         set(DKML_VERSION_SEMVER_CHANGES_CreateRelease ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}})
     endif()
+
     DkMLPublish_CreateReleaseTarget(
         TARGET Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
