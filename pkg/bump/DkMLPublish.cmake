@@ -17,11 +17,11 @@ find_program(GLAB_EXECUTABLE glab
 
 function(DkMLPublish_ChangeLog)
     set(noValues)
-    set(singleValues DKML_VERSION_SEMVER_NEW OUTPUT_VARIABLE)
+    set(singleValues DKML_VERSION_SEMVER_CHANGES OUTPUT_VARIABLE)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    string(REPLACE "." ";" VERSION_LIST ${ARG_DKML_VERSION_SEMVER_NEW})
+    string(REPLACE "." ";" VERSION_LIST ${ARG_DKML_VERSION_SEMVER_CHANGES})
     string(REPLACE "-" ";" VERSION_LIST "${VERSION_LIST}")
     list(GET VERSION_LIST 0 DKML_VERSION_MAJOR_NEW)
     list(GET VERSION_LIST 1 DKML_VERSION_MINOR_NEW)
@@ -102,14 +102,14 @@ endfunction()
 
 function(DkMLPublish_CreateReleaseTarget)
     set(noValues)
-    set(singleValues DKML_VERSION_SEMVER_NEW TARGET)
+    set(singleValues DKML_VERSION_SEMVER_NEW DKML_VERSION_SEMVER_CHANGES TARGET)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     # Get ChangeLog entry
     set(changes_MD_NEW_FILENAME ${PUBLISHDIR}/change-${ARG_DKML_VERSION_SEMVER_NEW}.md)
     DkMLPublish_ChangeLog(
-        DKML_VERSION_SEMVER_NEW ${ARG_DKML_VERSION_SEMVER_NEW}
+        DKML_VERSION_SEMVER_CHANGES ${ARG_DKML_VERSION_SEMVER_CHANGES}
         OUTPUT_VARIABLE changes_MD)
     file(READ ${changes_MD} changes_CONTENT)
     string(TIMESTAMP now_YYYYMMDD "%Y-%m-%d")

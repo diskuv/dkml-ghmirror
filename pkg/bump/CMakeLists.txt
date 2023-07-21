@@ -62,10 +62,6 @@ function(stage_self_VersionReplace)
         "DKML_VERSION_CMAKEVER \"${ARG_NEW_VERSION_CMAKEVER}\""
         contents_NEW "${contents_NEW}")
 
-    if(contents STREQUAL "${contents_NEW}")
-        message(FATAL_ERROR "The version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME}")
-    endif()
-
     if(NOT(ARG_BUMP_LEVEL STREQUAL "PRERELEASE"))
         # PATCH, MINOR or MAJOR
         set(contents_LAST ${contents_NEW})
@@ -73,10 +69,6 @@ function(stage_self_VersionReplace)
             "DKML_PUBLICVERSION_CMAKEVER \"${DKML_PUBLICVERSION_CMAKEVER}\""
             "DKML_PUBLICVERSION_CMAKEVER \"${ARG_NEW_PUBLICVERSION_CMAKEVER}\""
             contents_NEW "${contents_NEW}")
-
-        if(contents_LAST STREQUAL "${contents_NEW}")
-            message(FATAL_ERROR "The ${ARG_BUMP_LEVEL} public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME}")
-        endif()
     endif()
 
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/${ARG_REL_FILENAME} "${contents_NEW}")
@@ -434,9 +426,9 @@ function(add_GitPush_command)
     # it in each re-configure by deleting the output file during re-configure.
     file(REMOVE ${ARG_OUTPUT_FILE})
 
-    if(ARG_FINAL_REPLACEMENTS_DIR)
+    if(ARG_FINAL_REPLACEMENTS_DIR AND IS_DIRECTORY ${ARG_FINAL_REPLACEMENTS_DIR})
         set(precommands
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${FINAL_REPLACEMENTS_DIR} .
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${ARG_FINAL_REPLACEMENTS_DIR} .
         )
     else()
         set(precommands)
@@ -1314,9 +1306,16 @@ function(add_all_targets)
     add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
     add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
 
+    if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
+        # There is no prerelease change.md, so use patch change.md
+        set(DKML_VERSION_SEMVER_CHANGES_CreateRelease ${DKML_VERSION_SEMVER_NEW_PATCH})
+    else()
+        set(DKML_VERSION_SEMVER_CHANGES_CreateRelease ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}})
+    endif()
     DkMLPublish_CreateReleaseTarget(
         TARGET Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+        DKML_VERSION_SEMVER_CHANGES ${DKML_VERSION_SEMVER_CHANGES_CreateRelease}
     )
 
     # add_dependencies(Package-${BUMP_LEVEL}-Stage10-CreateRelease ${STAGE_LAST_GIT_PUSH})
