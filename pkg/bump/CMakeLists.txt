@@ -48,61 +48,79 @@ endforeach()
 
 # ----------------
 #
-function(stage_self_VersionReplace BUMP_LEVEL NEW_VERSION_CMAKEVER NEW_PUBLICVERSION_CMAKEVER OUTPUT_LIST_VARIABLE REL_FILENAME)
-    file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
+function(stage_self_VersionReplace)
+    set(noValues)
+    set(singleValues BUMP_LEVEL STAGE NEW_VERSION_CMAKEVER NEW_PUBLICVERSION_CMAKEVER OUTPUT_LIST_VARIABLE REL_FILENAME)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    file(READ ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME} contents)
     set(contents_NEW "${contents}")
 
     string(REPLACE
         "DKML_VERSION_CMAKEVER \"${DKML_VERSION_CMAKEVER}\""
-        "DKML_VERSION_CMAKEVER \"${NEW_VERSION_CMAKEVER}\""
+        "DKML_VERSION_CMAKEVER \"${ARG_NEW_VERSION_CMAKEVER}\""
         contents_NEW "${contents_NEW}")
 
     if(contents STREQUAL "${contents_NEW}")
-        message(FATAL_ERROR "The version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+        message(FATAL_ERROR "The version ${DKML_VERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME}")
     endif()
 
-    if(NOT(BUMP_LEVEL STREQUAL "PRERELEASE"))
+    if(NOT(ARG_BUMP_LEVEL STREQUAL "PRERELEASE"))
         # PATCH, MINOR or MAJOR
         set(contents_LAST ${contents_NEW})
         string(REPLACE
             "DKML_PUBLICVERSION_CMAKEVER \"${DKML_PUBLICVERSION_CMAKEVER}\""
-            "DKML_PUBLICVERSION_CMAKEVER \"${NEW_PUBLICVERSION_CMAKEVER}\""
+            "DKML_PUBLICVERSION_CMAKEVER \"${ARG_NEW_PUBLICVERSION_CMAKEVER}\""
             contents_NEW "${contents_NEW}")
 
         if(contents_LAST STREQUAL "${contents_NEW}")
-            message(FATAL_ERROR "The ${BUMP_LEVEL} public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${REL_FILENAME}")
+            message(FATAL_ERROR "The ${ARG_BUMP_LEVEL} public version ${DKML_PUBLICVERSION_CMAKEVER} was not found in ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME}")
         endif()
     endif()
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/${ARG_REL_FILENAME} "${contents_NEW}")
 
     # Add to list
-    set(retval ${${OUTPUT_LIST_VARIABLE}})
-    list(APPEND retval ${PROJECT_SOURCE_DIR}/${REL_FILENAME})
-    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
+    list(APPEND retval ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME})
+    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-function(stage_self_DkMLReplace BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE REL_FILENAME)
-    file(READ ${PROJECT_SOURCE_DIR}/${REL_FILENAME} contents)
+function(stage_self_DkMLReplace)
+    set(noValues)
+    set(singleValues BUMP_LEVEL STAGE NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE REL_FILENAME)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    file(READ ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME} contents)
     string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${NEW_VERSION_SEMVER}" contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
         return()
     endif()
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/${REL_FILENAME} "${contents_NEW}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/${ARG_REL_FILENAME} "${contents_NEW}")
 
     # Add to list
-    set(retval ${OUTPUT_LIST_VARIABLE})
-    list(APPEND retval ${PROJECT_SOURCE_DIR}/${REL_FILENAME})
-    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
+    set(retval ${ARG_OUTPUT_LIST_VARIABLE})
+    list(APPEND retval ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME})
+    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
-function(stage_self_Changes BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE)
+function(stage_self_Changes)
+    set(noValues)
+    set(singleValues BUMP_LEVEL STAGE NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE OUTPUT_DEPENDS)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    # Find vX.Y.Z.md. Set DEPENDS
     if(EXISTS ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md)
         file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md versionChanges)
+        set(${OUTPUT_DEPENDS} ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md PARENT_SCOPE)
     else()
         set(versionChanges "## ${NEW_VERSION_SEMVER} (@@YYYYMMDD@@)")
+        set(${OUTPUT_DEPENDS} PARENT_SCOPE)
     endif()
 
     file(READ ${PROJECT_SOURCE_DIR}/CHANGES.md priorChanges)
@@ -116,47 +134,12 @@ function(stage_self_Changes BUMP_LEVEL NEW_VERSION_SEMVER OUTPUT_LIST_VARIABLE)
 
     string(STRIP "${versionChanges}" versionChanges)
     string(STRIP "${priorChanges}" priorChanges)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/_replace/${BUMP_LEVEL}/CHANGES.md "# CHANGES\n\n${versionChanges}\n\n${priorChanges}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/CHANGES.md "# CHANGES\n\n${versionChanges}\n\n${priorChanges}")
 
     # Add to list
-    set(retval ${OUTPUT_LIST_VARIABLE})
+    set(retval ${ARG_OUTPUT_LIST_VARIABLE})
     list(APPEND retval ${PROJECT_SOURCE_DIR}/CHANGES.md)
-    set(${OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
-endfunction()
-
-function(add_GitTag_command)
-    set(noValues)
-    set(singleValues SOURCE_DIR BUMP_LEVEL OUTPUT_FILE CONTEXT)
-    set(multiValues DEPENDS)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
-
-    set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
-    set(tar_ARGS)
-
-    if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
-        # Prereleases can always be overwritten, so force overwrite the git tag if present.
-        list(APPEND tar_ARGS --force)
-    endif()
-
-    # We want the git tagging to be done always. We settle for doing
-    # it in each re-configure by deleting the output file during re-configure.
-    file(REMOVE ${ARG_OUTPUT_FILE})
-    add_custom_command(
-        OUTPUT ${ARG_OUTPUT_FILE}
-        WORKING_DIRECTORY ${ARG_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${ARG_DEPENDS}
-
-        COMMAND
-        ${CMAKE_COMMAND}
-        -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
-        -D "BUMP_LEVEL=${ARG_BUMP_LEVEL}"
-        -D "DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
-        -D "DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}"
-        -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/idempotent-tag.cmake
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${ARG_OUTPUT_FILE}
-        VERBATIM
-        USES_TERMINAL
-    )
+    set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
 
 function(add_VersionBump_target_for_synced_projects)
@@ -416,7 +399,7 @@ endfunction()
 
 function(add_GitPush_command)
     set(noValues)
-    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET)
+    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET FINAL_REPLACEMENTS_DIR)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
@@ -447,20 +430,41 @@ function(add_GitPush_command)
         message(FATAL_ERROR "There is no branch (likely a detached HEAD) in ${ARG_SOURCE_DIR}")
     endif()
 
-    add_GitTag_command(
-        BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        SOURCE_DIR ${ARG_SOURCE_DIR}
-        CONTEXT ${ARG_CONTEXT}
-        OUTPUT_FILE ${ARG_OUTPUT_FILE}-tagged
-        DEPENDS ${ARG_DEPENDS})
+    # We want the git tagging to be done always. We settle for doing
+    # it in each re-configure by deleting the output file during re-configure.
+    file(REMOVE ${ARG_OUTPUT_FILE})
+
+    if(ARG_FINAL_REPLACEMENTS_DIR)
+        set(precommands
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${FINAL_REPLACEMENTS_DIR} .
+        )
+    else()
+        set(precommands)
+    endif()
 
     add_custom_command(
         OUTPUT ${ARG_OUTPUT_FILE}
         WORKING_DIRECTORY ${ARG_SOURCE_DIR}
-        DEPENDS ${ARG_OUTPUT_FILE}-tagged
+        DEPENDS ${ARG_DEPENDS}
 
+        # precommands
+        ${precommands}
+
+        # git tag
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D CMAKE_MESSAGE_CONTEXT=${ARG_CONTEXT}
+        -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+        -D "BUMP_LEVEL=${ARG_BUMP_LEVEL}"
+        -D "DKML_VERSION_SEMVER_NEW=${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
+        -D "DKML_VERSION_OPAMVER_NEW=${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}"
+        -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/idempotent-tag.cmake
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${ARG_OUTPUT_FILE}
+
+        # git push
         COMMAND ${GIT_EXECUTABLE} push --atomic origin ${currentBranch} ${refspec}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${ARG_OUTPUT_FILE}
+
         VERBATIM
         USES_TERMINAL
     )
@@ -770,18 +774,22 @@ function(add_Flavor_targets)
         ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-anyver-pkgs.txt
         ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-${DKML_RELEASE_OCAML_VERSION}-pkgs.txt)
     set(DKML_DISTRIBUTION_PKGS_CKSUM)
+
     foreach(pkgs_txt IN LISTS pkgs_txt_lst)
         file(MD5 ${pkgs_txt} pkgs_txt_HASH)
         string(APPEND DKML_DISTRIBUTION_PKGS_CKSUM ${pkgs_txt_HASH})
     endforeach()
+
     string(MD5 DKML_DISTRIBUTION_PKGS_CKSUM "${DKML_DISTRIBUTION_PKGS_CKSUM}")
 
     # Other values used in configure_file()
     set(DKML_ROOT_DIR ${opamsw}/dkmldir) # Used by upsert-*.sh scripts
     cmake_host_system_information(RESULT DKML_HOSTNAME QUERY HOSTNAME) # Used by upsert-dkml-switch
+
     if(EXISTS ${PROJECT_SOURCE_DIR}/flag-dkml-debug-env-failures)
-        set(FLAG_DKML_DEBUG_ENV_FAILURES 1)        
+        set(FLAG_DKML_DEBUG_ENV_FAILURES 1)
     endif()
+
     FetchContent_GetProperties(diskuv-opam-repository) # Used by upsert-dkml-switch
     FetchContent_GetProperties(dkml-compiler) # Used by upsert-dkml-pkgs-compiler
     FetchContent_GetProperties(dkml-runtime-common) # Used by upsert-dkml-pkgs-compiler
@@ -1153,32 +1161,54 @@ function(add_all_targets)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
-        stage_self_VersionReplace(${ARG_BUMP_LEVEL}
-            ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
-            ${DKML_PUBLICVERSION_CMAKEVER} # No change to the public version
-            selfModifications version.cmake)
+        stage_self_VersionReplace(
+            BUMP_LEVEL ${ARG_BUMP_LEVEL}
+            STAGE start
+            NEW_VERSION_CMAKEVER ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            NEW_PUBLICVERSION_CMAKEVER ${DKML_PUBLICVERSION_CMAKEVER} # No change to the public version
+            OUTPUT_LIST_VARIABLE selfModifications
+            REL_FILENAME version.cmake)
+        set(selfChanges_DEPENDS)
     else()
         # PATCH, MINOR or MAJOR bump
-        stage_self_VersionReplace(${ARG_BUMP_LEVEL}
-            ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
-            ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
-            selfModifications version.cmake)
-        stage_self_DkMLReplace(${ARG_BUMP_LEVEL}
-            ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
-            selfModifications README.md)
-        stage_self_Changes(${ARG_BUMP_LEVEL}
-            ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
-            selfModifications)
+        stage_self_VersionReplace(
+            BUMP_LEVEL ${ARG_BUMP_LEVEL}
+            STAGE start
+            NEW_VERSION_CMAKEVER ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            NEW_PUBLICVERSION_CMAKEVER ${DKML_PUBLICVERSION_CMAKEVER} # No change to the public version at first
+            OUTPUT_LIST_VARIABLE selfModifications
+            REL_FILENAME version.cmake)
+        stage_self_VersionReplace(
+            BUMP_LEVEL ${ARG_BUMP_LEVEL}
+            STAGE end
+            NEW_VERSION_CMAKEVER ${DKML_VERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            NEW_PUBLICVERSION_CMAKEVER ${DKML_PUBLICVERSION_CMAKEVER_NEW_${ARG_BUMP_LEVEL}}
+            OUTPUT_LIST_VARIABLE selfModifications
+            REL_FILENAME version.cmake)
+        stage_self_DkMLReplace(
+            BUMP_LEVEL ${ARG_BUMP_LEVEL}
+            STAGE end
+            NEW_VERSION_SEMVER ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+            OUTPUT_LIST_VARIABLE selfModifications
+            REL_FILENAME README.md)
+        stage_self_Changes(
+            BUMP_LEVEL ${ARG_BUMP_LEVEL}
+            STAGE end
+            NEW_VERSION_SEMVER ${DKML_PUBLICVERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
+            OUTPUT_LIST_VARIABLE selfModifications
+            OUTPUT_DEPENDS selfChanges_DEPENDS)
     endif()
 
+    list(REMOVE_DUPLICATES selfModifications)
+
     set(selfOutput ${CMAKE_CURRENT_BINARY_DIR}/self)
-    set(versionBumpSelfOutput ${selfOutput}/bumped-${ARG_BUMP_LEVEL})
+    set(versionBumpSelfStartOutput ${selfOutput}/bumped-start-${ARG_BUMP_LEVEL})
     set(packageUpgradeOutputs)
     add_custom_command(
-        OUTPUT ${versionBumpSelfOutput}
+        OUTPUT ${versionBumpSelfStartOutput}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/_replace/${ARG_BUMP_LEVEL} .
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${versionBumpSelfOutput}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/replace-start/${ARG_BUMP_LEVEL} .
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${versionBumpSelfStartOutput}
         VERBATIM)
     add_GitPush_command(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
@@ -1186,15 +1216,16 @@ function(add_all_targets)
         CONTEXT self
         BRANCH ${self_BRANCH}
         INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
+        FINAL_REPLACEMENTS_DIR ${CMAKE_CURRENT_BINARY_DIR}/replace-end/${ARG_BUMP_LEVEL}
         OUTPUT_FILE ${selfOutput}/pushed-${ARG_BUMP_LEVEL}
-        DEPENDS ${versionBumpSelfOutput})
+        DEPENDS ${versionBumpSelfStartOutput})
 
     set(gitPushTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
 
     # Stage 0
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage0-VersionBump
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${versionBumpSelfOutput}
+        DEPENDS ${newSemverFile} ${versionBumpSelfStartOutput}
         VERBATIM)
 
     # Stage 1
@@ -1310,7 +1341,6 @@ foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
 endforeach()
 
 # Subdirectories
-
 set(PACKAGING_OPAMROOT ${anyrun_OPAMROOT})
 
 add_subdirectory(WindowsSandbox)
