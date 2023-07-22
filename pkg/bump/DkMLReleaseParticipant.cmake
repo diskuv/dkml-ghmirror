@@ -17,6 +17,12 @@ macro(_DkMLReleaseParticipant_NormalizePinnedPackages lst)
         base-num
         base-threads
         base-unix
+
+        # Remove [ocaml-config] since ocaml-config.3 is needed for dkml-base-compiler
+        # on Windows but ocaml-config.3 is OCaml 5.x only on Unix. So no
+        # OCaml 4.x on Unix if ocaml-config is pinned to 3 and no
+        # dkml-base-compiler.4.x on Windows if ocaml-config is pinned to 2.
+        ocaml-config
     )
         # Ex. list(FILTER ${lst} EXCLUDE REGEX "^base-bytes([.]|$)")
         # which matches "base-bytes" and "base-bytes.XXXX"
