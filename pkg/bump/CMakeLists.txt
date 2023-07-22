@@ -465,13 +465,24 @@ endfunction()
 function(add_GitPush_commands_for_synced_projects)
     set(noValues)
     set(singleValues BUMP_LEVEL OUTPUT_LIST_VARIABLE INTENDED_TARGET)
-    set(multiValues DEPENDS)
+    set(multiValues DEPENDS INCLUDE EXCLUDE)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
 
     foreach(proj IN LISTS syncedProjects)
+        if(ARG_INCLUDE)
+            if(NOT proj IN_LIST ARG_INCLUDE)
+                continue()
+            endif()
+        endif()
+        if(ARG_EXCLUDE)
+            if(proj IN_LIST ARG_EXCLUDE)
+                continue()
+            endif()
+        endif()
+
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/GitPush/${proj})
 
         # Set <proj>_SOURCE_DIR
@@ -1165,7 +1176,7 @@ function(add_all_targets)
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(selfModifications)
-    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage12-GitPush)
+    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
@@ -1228,7 +1239,7 @@ function(add_all_targets)
         OUTPUT_FILE ${selfOutput}/pushed-${ARG_BUMP_LEVEL}
         DEPENDS ${versionBumpSelfStartOutput})
 
-    set(gitPushTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
+    set(gitPushRemainingTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
 
     # Stage 0
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage00-VersionBump
@@ -1294,34 +1305,14 @@ function(add_all_targets)
         DEPENDS ${installerOutputs})
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate Package-${ARG_BUMP_LEVEL}-Stage07-Installer)
 
-    # Stage 9. Both diskuv-opam-repository and self (dkml).
+    # Stage 9. diskuv-opam-repository
     add_VersionBump_target_for_synced_projects(
         TARGET Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         FILTER FINAL)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
 
-    # Last Stage
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
-        COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
-    )
-    add_GitPush_commands_for_synced_projects(
-        BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE gitPushTargetDepends
-        INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
-        DEPENDS
-        ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
-    add_custom_target(${STAGE_LAST_GIT_PUSH}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${gitPushTargetDepends}
-        VERBATIM)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
-
+    # Stage 10
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # There is no prerelease change.md, so use patch change.md
         set(DKML_VERSION_SEMVER_CHANGES_CreateRelease ${DKML_VERSION_SEMVER_NEW_PATCH})
@@ -1335,7 +1326,7 @@ function(add_all_targets)
         DKML_VERSION_SEMVER_CHANGES ${DKML_VERSION_SEMVER_CHANGES_CreateRelease}
     )
 
-    # add_dependencies(Package-${BUMP_LEVEL}-Stage10-CreateRelease ${STAGE_LAST_GIT_PUSH})
+    # Stage 11
     DkMLPublish_PublishAssetsTarget(
         TARGET Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
@@ -1343,6 +1334,41 @@ function(add_all_targets)
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
     )
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease)
+
+    # Stage 12. Can try out Windows Sandbox after this.
+    add_GitPush_commands_for_synced_projects(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_LIST_VARIABLE gitPushForSandboxTargetDepends
+        INCLUDE diskuv-opam-repository
+        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox)
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${newSemverFile} ${gitPushForSandboxTargetDepends}
+        VERBATIM)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
+
+    # Last Stage
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
+        COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
+    )
+    add_GitPush_commands_for_synced_projects(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_LIST_VARIABLE gitPushRemainingTargetDepends # already includes self (dkml)
+        EXCLUDE diskuv-opam-repository
+        INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
+        DEPENDS
+        ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
+    add_custom_target(${STAGE_LAST_GIT_PUSH}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${newSemverFile} ${gitPushRemainingTargetDepends}
+        VERBATIM)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox)
 endfunction()
 
 add_GenerateLaunchers_target()
