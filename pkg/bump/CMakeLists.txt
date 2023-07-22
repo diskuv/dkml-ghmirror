@@ -181,21 +181,19 @@ function(add_VersionBump_target_for_synced_projects)
             message(FATAL_ERROR "${proj} has no bump-version.cmake")
         endif()
 
-        list(APPEND target_SOURCES ${srcDir}/bump-version.cmake)
-
-        if(ARG_FILTER STREQUAL PRE_DUNE)
+        if(ARG_FILTER STREQUAL "PRE_DUNE")
             if(NOT(proj IN_LIST DKML_PROJECTS_PREDUNE))
                 continue()
             endif()
 
             string(APPEND outputDir /PRE)
-        elseif(ARG_FILTER STREQUAL POST_DUNE)
+        elseif(ARG_FILTER STREQUAL "POST_DUNE")
             if(NOT(proj IN_LIST DKML_PROJECTS_POSTDUNE))
                 continue()
             endif()
 
             string(APPEND outputDir /POST)
-        elseif(ARG_FILTER STREQUAL FINAL)
+        elseif(ARG_FILTER STREQUAL "FINAL")
             if(NOT(proj IN_LIST DKML_PROJECTS_FINAL))
                 continue()
             endif()
@@ -220,6 +218,7 @@ function(add_VersionBump_target_for_synced_projects)
             -D "GIT_EXECUTABLE=${GIT_EXECUTABLE}"
             -P bump-version.cmake
         )
+        list(APPEND target_SOURCES ${srcDir}/bump-version.cmake)
         list(APPEND bumpedProjects ${proj})
     endforeach()
 
