@@ -86,7 +86,7 @@ function(stage_self_DkMLReplace)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     file(READ ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME} contents)
-    string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${NEW_VERSION_SEMVER}" contents_NEW "${contents}")
+    string(REGEX REPLACE "DkML [0-9.-]+" "DkML ${ARG_NEW_VERSION_SEMVER}" contents_NEW "${contents}")
 
     if(contents STREQUAL "${contents_NEW}")
         return()
@@ -95,7 +95,7 @@ function(stage_self_DkMLReplace)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/${ARG_REL_FILENAME} "${contents_NEW}")
 
     # Add to list
-    set(retval ${ARG_OUTPUT_LIST_VARIABLE})
+    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
     list(APPEND retval ${PROJECT_SOURCE_DIR}/${ARG_REL_FILENAME})
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
@@ -107,12 +107,12 @@ function(stage_self_Changes)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     # Find vX.Y.Z.md. Set DEPENDS
-    if(EXISTS ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md)
-        file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md versionChanges)
-        set(${OUTPUT_DEPENDS} ${PROJECT_SOURCE_DIR}/contributors/changes/v${NEW_VERSION_SEMVER}.md PARENT_SCOPE)
+    if(EXISTS ${PROJECT_SOURCE_DIR}/contributors/changes/v${ARG_NEW_VERSION_SEMVER}.md)
+        file(READ ${PROJECT_SOURCE_DIR}/contributors/changes/v${ARG_NEW_VERSION_SEMVER}.md versionChanges)
+        set(${ARG_OUTPUT_DEPENDS} ${PROJECT_SOURCE_DIR}/contributors/changes/v${ARG_NEW_VERSION_SEMVER}.md PARENT_SCOPE)
     else()
-        set(versionChanges "## ${NEW_VERSION_SEMVER} (@@YYYYMMDD@@)")
-        set(${OUTPUT_DEPENDS} PARENT_SCOPE)
+        set(versionChanges "## ${ARG_NEW_VERSION_SEMVER} (@@YYYYMMDD@@)")
+        set(${ARG_OUTPUT_DEPENDS} PARENT_SCOPE)
     endif()
 
     file(READ ${PROJECT_SOURCE_DIR}/CHANGES.md priorChanges)
@@ -129,7 +129,7 @@ function(stage_self_Changes)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/replace-${ARG_STAGE}/${ARG_BUMP_LEVEL}/CHANGES.md "# CHANGES\n\n${versionChanges}\n\n${priorChanges}")
 
     # Add to list
-    set(retval ${ARG_OUTPUT_LIST_VARIABLE})
+    set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
     list(APPEND retval ${PROJECT_SOURCE_DIR}/CHANGES.md)
     set(${ARG_OUTPUT_LIST_VARIABLE} ${retval} PARENT_SCOPE)
 endfunction()
@@ -390,12 +390,16 @@ endfunction()
 
 function(add_GitPush_command)
     set(noValues)
-    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET FINAL_REPLACEMENTS_DIR)
+    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET TAG_SUFFIX)
     set(multiValues DEPENDS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(refspec ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}})
+
+    if(ARG_TAG_SUFFIX)
+        string(APPEND refspec "${ARG_TAG_SUFFIX}")
+    endif()
 
     if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
         # Prereleases can always be overwritten, so add a leading +
@@ -425,21 +429,10 @@ function(add_GitPush_command)
     # it in each re-configure by deleting the output file during re-configure.
     file(REMOVE ${ARG_OUTPUT_FILE})
 
-    if(ARG_FINAL_REPLACEMENTS_DIR AND IS_DIRECTORY ${ARG_FINAL_REPLACEMENTS_DIR})
-        set(precommands
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${ARG_FINAL_REPLACEMENTS_DIR} .
-        )
-    else()
-        set(precommands)
-    endif()
-
     add_custom_command(
         OUTPUT ${ARG_OUTPUT_FILE}
         WORKING_DIRECTORY ${ARG_SOURCE_DIR}
         DEPENDS ${ARG_DEPENDS}
-
-        # precommands
-        ${precommands}
 
         # git tag
         COMMAND
@@ -1175,7 +1168,6 @@ function(add_all_targets)
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(selfModifications)
-    set(STAGE_LAST_GIT_PUSH Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining)
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
@@ -1228,17 +1220,8 @@ function(add_all_targets)
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/replace-start/${ARG_BUMP_LEVEL} .
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${versionBumpSelfStartOutput}
         VERBATIM)
-    add_GitPush_command(
-        BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        SOURCE_DIR ${PROJECT_SOURCE_DIR}
-        CONTEXT self
-        BRANCH ${self_BRANCH}
-        INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
-        FINAL_REPLACEMENTS_DIR ${CMAKE_CURRENT_BINARY_DIR}/replace-end/${ARG_BUMP_LEVEL}
-        OUTPUT_FILE ${selfOutput}/pushed-${ARG_BUMP_LEVEL}
-        DEPENDS ${versionBumpSelfStartOutput})
 
-    set(gitPushRemainingTargetDepends ${selfOutput}/pushed-${ARG_BUMP_LEVEL})
+    set(gitPushRemainingTargetDepends)
 
     # Stage 0
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage00-VersionBump
@@ -1311,7 +1294,25 @@ function(add_all_targets)
         FILTER FINAL)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
 
-    # Stage 10. Can try out Windows Sandbox after this.
+    # Stage 10.
+    # - During testing (ex. Windows Sandbox) of the installer the installer
+    #   will use a versioned diskuv-opam-repository, so the
+    #   [diskuv-opam-repository] project must be tagged if we want to test
+    #   before the last step (which tags and pushes the vast majority of
+    #   synced projects).
+    # - The tag for dkml [self] must be available before a release can be
+    #   created in GitLab, so this stage precedes any installer testing.
+    # - However, our [self] version.cmake cannot be updated until the last
+    #   stage (or else if a subsequent stage is in a different CMake build invocation,
+    #   CMake will be auto-reconfigured and a completely new version will start).
+    add_GitPush_command(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        SOURCE_DIR ${PROJECT_SOURCE_DIR}
+        CONTEXT self
+        BRANCH ${self_BRANCH}
+        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting
+        OUTPUT_FILE ${selfOutput}/pushed-starting-${ARG_BUMP_LEVEL}
+        DEPENDS ${versionBumpSelfStartOutput})
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         OUTPUT_LIST_VARIABLE gitPushForTestingTargetDepends
@@ -1319,7 +1320,7 @@ function(add_all_targets)
         INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
     add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${gitPushForTestingTargetDepends}
+        DEPENDS ${newSemverFile} ${gitPushForTestingTargetDepends} ${selfOutput}/pushed-starting-${ARG_BUMP_LEVEL}
         VERBATIM)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
@@ -1350,25 +1351,35 @@ function(add_all_targets)
     )
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-PublishAssets Package-${ARG_BUMP_LEVEL}-Stage11-CreateRelease)
 
-    # Last Stage
+    # Last Stage. Do push of all synced projects (except diskuv-opam-repository which is
+    # already done), and do final push of [self]
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/replace-end/${ARG_BUMP_LEVEL} .
         COMMAND ${GIT_EXECUTABLE} -c core.safecrlf=false add ${selfModifications}
         COMMAND ${GIT_EXECUTABLE} commit -m "Bump version: ${DKML_VERSION_SEMVER} -> ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}"
     )
+    add_GitPush_command(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        SOURCE_DIR ${PROJECT_SOURCE_DIR}
+        CONTEXT self
+        TAG_SUFFIX -final
+        BRANCH ${self_BRANCH}
+        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining
+        OUTPUT_FILE ${selfOutput}/pushed-finished-${ARG_BUMP_LEVEL}
+        DEPENDS ${versionBumpSelfStartOutput} ${selfOutput}/pushed-starting-${ARG_BUMP_LEVEL} ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
     add_GitPush_commands_for_synced_projects(
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE gitPushRemainingTargetDepends # already includes self (dkml)
+        OUTPUT_LIST_VARIABLE gitPushRemainingTargetDepends
         EXCLUDE diskuv-opam-repository
-        INTENDED_TARGET ${STAGE_LAST_GIT_PUSH}
-        DEPENDS
-        ${CMAKE_CURRENT_BINARY_DIR}/self/committed-${ARG_BUMP_LEVEL})
-    add_custom_target(${STAGE_LAST_GIT_PUSH}
+        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining
+        DEPENDS ${selfOutput}/pushed-finished-${ARG_BUMP_LEVEL})
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushRemainingTargetDepends}
         VERBATIM)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage13-GitPushRemaining Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
 endfunction()
 
 add_GenerateLaunchers_target()
