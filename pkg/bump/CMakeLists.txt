@@ -1311,7 +1311,22 @@ function(add_all_targets)
         FILTER FINAL)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
 
-    # Stage 10
+    # Stage 10. Can try out Windows Sandbox after this.
+    add_GitPush_commands_for_synced_projects(
+        BUMP_LEVEL ${ARG_BUMP_LEVEL}
+        OUTPUT_LIST_VARIABLE gitPushForTestingTargetDepends
+        INCLUDE diskuv-opam-repository
+        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
+    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${newSemverFile} ${gitPushForTestingTargetDepends}
+        VERBATIM)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
+
+    # Stage 11
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # There is no prerelease change.md, so use patch change.md
         set(DKML_VERSION_SEMVER_CHANGES_CreateRelease ${DKML_VERSION_SEMVER_NEW_PATCH})
@@ -1320,34 +1335,20 @@ function(add_all_targets)
     endif()
 
     DkMLPublish_CreateReleaseTarget(
-        TARGET Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage11-CreateRelease
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
         DKML_VERSION_SEMVER_CHANGES ${DKML_VERSION_SEMVER_CHANGES_CreateRelease}
     )
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage11-CreateRelease Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
 
-    # Stage 11
+    # Stage 12
     DkMLPublish_PublishAssetsTarget(
-        TARGET Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets
+        TARGET Package-${ARG_BUMP_LEVEL}-Stage12-PublishAssets
         BUMP_LEVEL ${ARG_BUMP_LEVEL}
         ARCHIVE_TARGET Package-Archive
         DKML_VERSION_SEMVER_NEW ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}}
     )
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage11-PublishAssets Package-${ARG_BUMP_LEVEL}-Stage10-CreateRelease)
-
-    # Stage 12. Can try out Windows Sandbox after this.
-    add_GitPush_commands_for_synced_projects(
-        BUMP_LEVEL ${ARG_BUMP_LEVEL}
-        OUTPUT_LIST_VARIABLE gitPushForSandboxTargetDepends
-        INCLUDE diskuv-opam-repository
-        INTENDED_TARGET Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox)
-    add_custom_target(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS ${newSemverFile} ${gitPushForSandboxTargetDepends}
-        VERBATIM)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage01-VersionBump)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage03-VersionBump)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage09-VersionBump)
-    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate)
+    add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage12-PublishAssets Package-${ARG_BUMP_LEVEL}-Stage11-CreateRelease)
 
     # Last Stage
     add_custom_command(
@@ -1367,7 +1368,7 @@ function(add_all_targets)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${newSemverFile} ${gitPushRemainingTargetDepends}
         VERBATIM)
-    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage12-GitPushForSandbox)
+    add_dependencies(${STAGE_LAST_GIT_PUSH} Package-${ARG_BUMP_LEVEL}-Stage10-GitPushForTesting)
 endfunction()
 
 add_GenerateLaunchers_target()
