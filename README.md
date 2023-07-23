@@ -92,7 +92,53 @@ for i = 12 downto 1 do
     fill_circle 320 240 radius
 done;;
 
-read_line ();;
+(* sqlite3: A file-based database.
+   Learn more at https://mmottl.github.io/sqlite3-ocaml *)
+#require "sqlite3";;
+open Sqlite3;;
+
+let schema = "CREATE TABLE test_values ( " ^
+"    row_id INTEGER NOT NULL, " ^
+"    string_col TEXT NULL, " ^
+"    int_col INT NULL, " ^
+"    int64_col INT NULL, " ^
+"    float_col FLOAT NULL, " ^
+"    bool_col INT NULL" ^
+");" ;;
+let insert_sql = "INSERT INTO test_values " ^
+   "(row_id, string_col, int_col, int64_col, float_col, bool_col) " ^
+   "VALUES (?, ?, ?, ?, ?, ?)" ;;
+let select_sql = "SELECT " ^
+   "string_col, int_col, int64_col, float_col, bool_col " ^
+   "FROM test_values WHERE row_id = ?" ;;
+
+(* Construct database and statements *)
+let db = db_open "t_values";;
+let rc = exec db schema;;
+Printf.printf "Created schema: %s" (Rc.to_string rc);;
+let insert_stmt = prepare db insert_sql;;
+let select_stmt = prepare db select_sql;;
+
+(* Insert values in row 1 *)
+let test_float_val = 56.789 ;;
+reset insert_stmt;;
+bind insert_stmt 1 (Sqlite3.Data.INT 1L);;
+bind insert_stmt 2 (Data.opt_text (Some "Hi Mom"));;
+bind insert_stmt 3 (Data.opt_int (Some 1));;
+bind insert_stmt 4 (Data.opt_int64 (Some Int64.max_int));;
+bind insert_stmt 5 (Data.opt_float (Some test_float_val));;
+bind insert_stmt 6 (Data.opt_bool (Some true));;
+step insert_stmt;;
+
+(* Fetch data back with values *)
+reset select_stmt;;
+bind select_stmt 1 (Sqlite3.Data.INT 1L);;
+Sqlite3.step select_stmt;;
+Data.to_string_exn (column select_stmt 0);;
+Data.to_int_exn (column select_stmt 1);;
+Data.to_int64_exn (column select_stmt 2);;
+Data.to_float_exn (column select_stmt 3);;
+Data.to_bool_exn (column select_stmt 4);;
 ```
 
 ## Sponsor
