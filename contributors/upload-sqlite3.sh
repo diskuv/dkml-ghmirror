@@ -92,18 +92,20 @@ if [ -z "${SQLITE3_VERSION:-}" ]; then
     SQLITE3_VERSION=$(tools/sqlite3 --version | awk '{print $1}')
 fi
 {
-    tar xvf base-x64.tar.gz ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
+    tar xvf base-x64.tar.gz ./bin/sqlite3.dll ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
     rm -rf windows_x64
-    install -d windows_x64/include windows_x64/lib/pkgconfig
+    install -d windows_x64/bin windows_x64/include windows_x64/lib/pkgconfig
+    mv bin/sqlite3.dll windows_x64/bin/
     mv include/sqlite3.h include/sqlite3ext.h windows_x64/include/
     mv lib/sqlite3.lib windows_x64/lib/
     mv lib/pkgconfig/sqlite3.pc windows_x64/lib/pkgconfig/
     tar cvfz sqlite3-x64.tar.gz windows_x64
 }
 {
-    tar xvf base-x86.tar.gz ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
+    tar xvf base-x86.tar.gz ./bin/sqlite3.dll ./include/sqlite3.h ./include/sqlite3ext.h ./lib/sqlite3.lib ./lib/pkgconfig/sqlite3.pc
     rm -rf windows_x86
-    install -d windows_x86/include windows_x86/lib windows_x86/lib/pkgconfig/
+    install -d windows_x86/bin windows_x86/include windows_x86/lib windows_x86/lib/pkgconfig/
+    mv bin/sqlite3.dll windows_x86/bin/
     mv include/sqlite3.h include/sqlite3ext.h windows_x86/include/
     mv lib/sqlite3.lib windows_x86/lib/
     mv lib/pkgconfig/sqlite3.pc windows_x86/lib/pkgconfig/
