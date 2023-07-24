@@ -42,7 +42,7 @@ endif()
 # [dkml-installer-ocaml-network] is installed it becomes available to be
 # listed in the pinned open section.
 # In other words, we want idempotency.
-# Ditto for [dkml-installer-offline-ocaml].
+# Ditto for [dkml-installer-ocaml-offline].
 function(DkMLBumpPackagesParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
     set(contents_NEW "${contents}")
@@ -66,9 +66,9 @@ function(DkMLBumpPackagesParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
     list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-ocaml-network[.]")
     list(APPEND pkgvers "dkml-installer-ocaml-network.${DKML_VERSION_OPAMVER_NEW}")
 
-    # Add [dkml-installer-offline-ocaml]
-    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-offline-ocaml[.]")
-    list(APPEND pkgvers "dkml-installer-offline-ocaml.${DKML_VERSION_OPAMVER_NEW}")
+    # Add [dkml-installer-ocaml-offline]
+    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-ocaml-offline[.]")
+    list(APPEND pkgvers "dkml-installer-ocaml-offline.${DKML_VERSION_OPAMVER_NEW}")
 
     # Remove [dune] and replace with [dune+shim]
     list(FILTER pkgvers EXCLUDE REGEX "^dune[.]")
