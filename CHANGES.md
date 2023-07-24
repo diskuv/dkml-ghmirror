@@ -1,5 +1,45 @@
 # CHANGES
 
+## 2.0.1 (2023-07-23)
+
+### Upgrading?
+
+First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.
+
+### What do I do after the install is complete?
+
+You SHOULD read the "Install is done! What next?" at <https://diskuv-ocaml.gitlab.io/distributions/dkml/#install-is-done-what-next> documentation.
+
+If you had any existing local switches, upgrade them by doing `dkml init`, `opam upgrade` and `opam install . --deps-only` in the local switch directories.
+
+For projects using [`setup-dkml` (part of  `dkml-workflows`)](https://github.com/diskuv/dkml-workflows#dkml-workflows)
+for their GitHub Actions / GitLab CI:
+
+1. Re-run `dkml init`, `opam upgrade` and `opam install . --deps-only` in your project
+2. Follow the FOURTH and FIFTH steps of <https://github.com/diskuv/dkml-workflows#configure-your-project>
+
+### New Features
+
+- Added `sqlite3` to the global environment (no opam switch needed). The
+  [Quick Start](https://gitlab.com/diskuv-ocaml/distributions/dkml#quick-start)
+  shows how to use it.
+
+### Bug Fixes
+
+- `$DiskuvOCamlHome/dkmlvars*` now have required newline separating the last line
+- opam global vars `msystem-prefix` ... `mingw-package-prefix` were not being set
+- Insulate opam commands during installation from any prior `OPAM*` environment vars
+- Remove `ocaml-config` from pinning
+- All shims are installed; bug with incomplete termination fixed.
+- Uninstall code is now present for the global environment
+
+### Upgraded Packages
+
+| Package      | From | To         |
+| ------------ | ---- | ---------- |
+| conf-sqlite3 |      | 3.1+cpkgs  |
+| sqlite3      |      | 5.1.0+msvc |
+
 ## 2.0.0 (2023-07-17)
 
 ### Upgrading?
