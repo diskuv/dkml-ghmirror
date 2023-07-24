@@ -152,7 +152,7 @@ function(DkMLPublish_PublishAssetsTarget)
     set(depends)
 
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
-    set(tdir ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-network-ocaml/t)
+    set(tdir ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-network/t)
 
     # Procedure
     # ---------

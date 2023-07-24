@@ -1098,7 +1098,7 @@ function(add_Installer_target)
             unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
     endif()
 
-    list(TRANSFORM byproducts PREPEND ${bumpSwitch}/share/dkml-installer-network-ocaml/t/)
+    list(TRANSFORM byproducts PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-network/t/)
 
     set(installerCreated ${opamsw}/installer.created)
     add_custom_command(

@@ -35,11 +35,11 @@ endif()
 # ]
 # '
 #
-# The "dkml-installer-network-ocaml.2.0.0" (or whatever version) is always
-# pinned to stop an expensive retrigger where [dkml-installer-network-ocaml] is
-# being installed (hence [dkml-installer-network-ocaml] is not available to be
+# The "dkml-installer-ocaml-network.2.0.0" (or whatever version) is always
+# pinned to stop an expensive retrigger where [dkml-installer-ocaml-network] is
+# being installed (hence [dkml-installer-ocaml-network] is not available to be
 # listed in the pinned opam section) ... and then after
-# [dkml-installer-network-ocaml] is installed it becomes available to be
+# [dkml-installer-ocaml-network] is installed it becomes available to be
 # listed in the pinned open section.
 # In other words, we want idempotency.
 # Ditto for [dkml-installer-offline-ocaml].
@@ -62,9 +62,9 @@ function(DkMLBumpPackagesParticipant_CreateOpamSwitchUpgrade REL_FILENAME)
     string(REGEX REPLACE "\n" ";" pkgvers "${pkgvers}")
     _DkMLReleaseParticipant_NormalizePinnedPackages(pkgvers)
 
-    # Add [dkml-installer-network-ocaml]
-    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-network-ocaml[.]")
-    list(APPEND pkgvers "dkml-installer-network-ocaml.${DKML_VERSION_OPAMVER_NEW}")
+    # Add [dkml-installer-ocaml-network]
+    list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-ocaml-network[.]")
+    list(APPEND pkgvers "dkml-installer-ocaml-network.${DKML_VERSION_OPAMVER_NEW}")
 
     # Add [dkml-installer-offline-ocaml]
     list(FILTER pkgvers EXCLUDE REGEX "^dkml-installer-offline-ocaml[.]")

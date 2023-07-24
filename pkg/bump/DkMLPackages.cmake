@@ -95,7 +95,7 @@ set(dkml-component-ocamlrun_PACKAGES
     dkml-component-offline-ocamlrun
     dkml-component-staging-ocamlrun)
 set(dkml-installer-ocaml_PACKAGES
-    dkml-installer-network-ocaml)
+    dkml-installer-ocaml-network)
 
 set(dkml-component_PACKAGES
     ${dkml-component-desktop_PACKAGES}
