@@ -1098,15 +1098,18 @@ function(add_Installer_target)
     anyrun(${opamsw}/upsert-installer.sh upsert_installer_COMMAND)
 
     set(byproducts bundle-diskuv-ocaml-generic-i.sh bundle-diskuv-ocaml-generic-u.sh)
-
-    if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
-        list(APPEND byproducts
-            unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe
-            unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
-    endif()
-
     set(byproducts_byte ${byproducts})
     set(byproducts_native ${byproducts})
+
+    if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
+        list(APPEND byproducts_byte
+            unsigned-dkml-lite-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe
+            unsigned-dkml-lite-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
+        list(APPEND byproducts_native
+            unsigned-dkml-native-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe
+            unsigned-dkml-native-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
+    endif()
+
     list(TRANSFORM byproducts_byte PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-offline/t/)
     list(TRANSFORM byproducts_native PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-network/t/)
 

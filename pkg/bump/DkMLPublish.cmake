@@ -192,19 +192,19 @@ function(DkMLPublish_PublishAssetsTarget)
         # The reverse order of insertion shows up on GitLab UI. Want installer to display
         # first, so _handle_upload(<installer>) last.
         _handle_upload(
-            ${tnetwork}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             uninstall64nu.exe
             "Windows 64-bit Native Uninstaller (unsigned)")
         _handle_upload(
-            ${tnetwork}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             setup64nu.exe
             "Windows 64-bit Native Installer (unsigned)")
         _handle_upload(
-            ${toffline}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             uninstall64bu.exe
             "Windows 64-bit Lite Bytecode Uninstaller (unsigned)")
         _handle_upload(
-            ${toffline}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             setup64bu.exe
             "Windows 64-bit Lite Bytecode Installer (unsigned)")
     endif()
