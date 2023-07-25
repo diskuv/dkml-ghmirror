@@ -47,8 +47,8 @@ function(DkMLPublish_AddArchiveTarget)
     # (at least on the same machine). We want to minimize SHA checksums
     # changing.
     #
-    #   configure_file() does not change the mtime if the expanded
-    #   contents (ARG_PROJECTS) don't change
+    # configure_file() does not change the mtime if the expanded
+    # contents (ARG_PROJECTS) don't change
     set(SORTED_PROJECTS ${ARG_PROJECTS})
     list(SORT SORTED_PROJECTS)
     configure_file(archive.in.mtime ${ARCHIVEDIR}/archive-${ARG_TARGET}.mtime @ONLY)
@@ -88,6 +88,7 @@ function(DkMLPublish_AddArchiveTarget)
             ${CMAKE_COMMAND} -E tar cfz
             ${output}
             --format=gnutar
+
             # --mtime format is not documented. Use https://gitlab.kitware.com/cmake/cmake/-/blob/master/Tests/RunCMake/CommandLineTar/mtime-tests.cmake
             --mtime=${mtime_YYYYMMDD}UTC
             --files-from=${git_ls_tree}
@@ -152,7 +153,8 @@ function(DkMLPublish_PublishAssetsTarget)
     set(depends)
 
     shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
-    set(tdir ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-network/t)
+    set(tnetwork ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-network/t)
+    set(toffline ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-offline/t)
 
     # Procedure
     # ---------
@@ -190,13 +192,21 @@ function(DkMLPublish_PublishAssetsTarget)
         # The reverse order of insertion shows up on GitLab UI. Want installer to display
         # first, so _handle_upload(<installer>) last.
         _handle_upload(
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            uninstall64u.exe
-            "Windows 64-bit Uninstaller")
+            ${tnetwork}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            uninstall64nu.exe
+            "Windows 64-bit Native Uninstaller (unsigned)")
         _handle_upload(
-            ${tdir}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
-            setup64u.exe
-            "Windows 64-bit Installer")
+            ${tnetwork}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            setup64nu.exe
+            "Windows 64-bit Native Installer (unsigned)")
+        _handle_upload(
+            ${toffline}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            uninstall64bu.exe
+            "Windows 64-bit Lite Bytecode Uninstaller (unsigned)")
+        _handle_upload(
+            ${toffline}/unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            setup64bu.exe
+            "Windows 64-bit Lite Bytecode Installer (unsigned)")
     endif()
 
     if(assetlinks)

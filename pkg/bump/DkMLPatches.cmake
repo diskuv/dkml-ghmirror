@@ -8,6 +8,9 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
 
     # Note: +android patches aren't useful in DkML
 
+    # Renamed and/or deprecated packages
+    dkml-installer-network-ocaml # 2.0.1
+
     # Already fixed upstream. Eligible to be removed
     # from diskuv-opam-repository! Only reason to keep it around is for
     # packages that require older versions

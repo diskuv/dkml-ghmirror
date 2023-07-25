@@ -27,6 +27,7 @@ set(dkml-component-desktop_BRANCH main)
 set(dkml-component-ocamlcompiler_BRANCH main)
 set(dkml-component-ocamlrun_BRANCH main)
 set(dkml-installer-ocaml_BRANCH main)
+set(dkml-installer-ocaml-byte_BRANCH main)
 set(dkml-runtime-apps_BRANCH main)
 set(dkml-runtime-common_BRANCH main)
 set(dkml-runtime-distribution_BRANCH main)
@@ -1066,15 +1067,21 @@ function(add_Installer_target)
     FetchContent_GetProperties(dkml-component-unixutils) # upsert-installer
     FetchContent_GetProperties(dkml-install-api) # upsert-installer
     FetchContent_GetProperties(dkml-installer-ocaml) # upsert-installer
+    FetchContent_GetProperties(dkml-installer-ocaml-byte) # upsert-installer
 
     set(installerSources)
     file(GLOB sources LIST_DIRECTORIES false
         ${dkml-installer-ocaml_SOURCE_DIR}/*.opam
-        ${dkml-installer-ocaml_SOURCE_DIR}/*.opam.template)
+        ${dkml-installer-ocaml_SOURCE_DIR}/*.opam.template
+        ${dkml-installer-ocaml-byte_SOURCE_DIR}/*.opam
+        ${dkml-installer-ocaml-byte_SOURCE_DIR}/*.opam.template)
     list(APPEND installerSources ${sources})
     file(GLOB_RECURSE sources LIST_DIRECTORIES false
-        ${dkml-installer-ocaml_SOURCE_DIR}/installer/bin/*
-        ${dkml-installer-ocaml_SOURCE_DIR}/installer/src/*
+        ${dkml-installer-ocaml_SOURCE_DIR}/i-common/src/*
+        ${dkml-installer-ocaml_SOURCE_DIR}/i-network/bin/*
+        ${dkml-installer-ocaml_SOURCE_DIR}/i-network/src/*
+        ${dkml-installer-ocaml-byte_SOURCE_DIR}/i-offline/bin/*
+        ${dkml-installer-ocaml-byte_SOURCE_DIR}/i-offline/src/*
         ${dkml-component-desktop_SOURCE_DIR}/src/api/*
         ${dkml-component-desktop_SOURCE_DIR}/src/buildtime/*
         ${dkml-component-desktop_SOURCE_DIR}/src/citime/*
@@ -1098,7 +1105,10 @@ function(add_Installer_target)
             unsigned-diskuv-ocaml-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}}.exe)
     endif()
 
-    list(TRANSFORM byproducts PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-network/t/)
+    set(byproducts_byte ${byproducts})
+    set(byproducts_native ${byproducts})
+    list(TRANSFORM byproducts_byte PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-offline/t/)
+    list(TRANSFORM byproducts_native PREPEND ${bumpSwitch}/share/dkml-installer-ocaml-network/t/)
 
     set(installerCreated ${opamsw}/installer.created)
     add_custom_command(
@@ -1108,7 +1118,7 @@ function(add_Installer_target)
         # opam seeing no changes. So we use a synthetic OUTPUT, real BYPRODUCTS,
         # and a [touch] command.
         OUTPUT ${installerCreated}
-        BYPRODUCTS ${byproducts}
+        BYPRODUCTS ${byproducts_byte} ${byproducts_native}
         MAIN_DEPENDENCY upsert-installer.in.sh
         DEPENDS
         ${newSemverFile}

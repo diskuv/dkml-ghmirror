@@ -38,6 +38,7 @@ set(DKML_PROJECTS_POSTDUNE
     dkml-component-ocamlcompiler
     dkml-component-ocamlrun
     dkml-installer-ocaml
+    dkml-installer-ocaml-byte
 )
 set(DKML_PROJECTS_FINAL
 
@@ -95,7 +96,10 @@ set(dkml-component-ocamlrun_PACKAGES
     dkml-component-offline-ocamlrun
     dkml-component-staging-ocamlrun)
 set(dkml-installer-ocaml_PACKAGES
+    dkml-installer-ocaml-common
     dkml-installer-ocaml-network)
+set(dkml-installer-ocaml-byte_PACKAGES
+    dkml-installer-ocaml-offline)
 
 set(dkml-component_PACKAGES
     ${dkml-component-desktop_PACKAGES}
@@ -103,14 +107,14 @@ set(dkml-component_PACKAGES
     ${dkml-component-ocamlrun_PACKAGES}
     ${dkml-component-ocaml_PACKAGES})
 set(dkml-installer_PACKAGES
-    ${dkml-installer-ocaml_PACKAGES})
+    ${dkml-installer-ocaml_PACKAGES}
+    ${dkml-installer-ocaml-byte_PACKAGES})
 
 # These are packages that have opam version numbers like 4.14.0~v1.2.1~prerel10
 set(DKML_COMPILER_DKML_VERSIONED_PACKAGES
     dkml-base-compiler
     ${dkml-component-ocamlcompiler_PACKAGES}
-    ${dkml-component-ocamlrun_PACKAGES}
-)
+    ${dkml-component-ocamlrun_PACKAGES})
 # These are packages that have opam version numbers like 4.14.0
 set(DKML_COMPILER_VERSIONED_PACKAGES
     conf-dkml-cross-toolchain)

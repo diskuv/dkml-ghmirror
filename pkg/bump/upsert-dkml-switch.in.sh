@@ -123,4 +123,5 @@ run_create_opam_switch \
 -w \
 -F \
 -o "$OPAM_EXE" \
--z
+-z \
+-y

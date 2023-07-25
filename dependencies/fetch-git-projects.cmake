@@ -79,6 +79,10 @@ FetchGit(dkml-installer-ocaml
     GIT_REPOSITORY https://github.com/diskuv/dkml-installer-ocaml.git
     GIT_TAG main
 )
+FetchGit(dkml-installer-ocaml-byte
+    GIT_REPOSITORY https://github.com/diskuv/dkml-installer-ocaml-byte.git
+    GIT_TAG main
+)
 FetchGit(dkml-runtime-apps
     GIT_REPOSITORY https://github.com/diskuv/dkml-runtime-apps.git
     GIT_TAG main

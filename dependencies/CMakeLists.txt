@@ -10,6 +10,7 @@ FetchContent_MakeAvailable(
     dkml-component-unixutils
     dkml-install-api
     dkml-installer-ocaml
+    dkml-installer-ocaml-byte
     dkml-runtime-apps
     dkml-runtime-common
     dkml-runtime-distribution
