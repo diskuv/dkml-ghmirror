@@ -52,6 +52,20 @@ set(DKML_PROJECTS_FINAL
     diskuv-opam-repository
 )
 
+set(DKML_PROJECTS_SYNCED
+    ${DKML_PROJECTS_PREDUNE}
+    ${DKML_PROJECTS_POSTDUNE}
+    ${DKML_PROJECTS_FINAL}
+)
+set(DKML_PROJECTS_UNSYNCED
+    # Not even bump-version.cmake is present for version synchronization, but
+    # the latest code for these DkML projects is still built into the opam
+    # switches and used by the installers.
+    dkml-install-api
+    dkml-component-opam
+    dkml-component-unixutils
+)
+
 # Synchronized projects with their one or more opam packages
 set(dkml-compiler_PACKAGES
     dkml-base-compiler

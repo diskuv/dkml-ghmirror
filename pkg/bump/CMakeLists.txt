@@ -15,11 +15,6 @@ set(BUMP2VERSION_EXECUTABLE "${CONDA_EXECUTABLE}" run -n "${CONDA_ENVIRONMENT}" 
 
 cmake_path(GET GIT_EXECUTABLE PARENT_PATH GIT_EXECUTABLE_DIR)
 
-set(syncedProjects
-    ${DKML_PROJECTS_PREDUNE}
-    ${DKML_PROJECTS_POSTDUNE}
-    ${DKML_PROJECTS_FINAL}
-)
 set(self_BRANCH next) # self is [dkml]
 set(diskuv-opam-repository_BRANCH main)
 set(dkml-compiler_BRANCH main)
@@ -34,7 +29,7 @@ set(dkml-runtime-distribution_BRANCH main)
 set(dkml-workflows_BRANCH v1)
 
 # Sanity check
-foreach(PROJECT IN LISTS syncedProjects)
+foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED)
     if(NOT ${PROJECT}_BRANCH)
         message(FATAL_ERROR "Missing set(${PROJECT}_BRANCH ...) statement in ${CMAKE_CURRENT_LIST_FILE}")
     endif()
@@ -45,6 +40,23 @@ endforeach()
 foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
     file(CONFIGURE OUTPUT new-${BUMP_LEVEL}-semver CONTENT "@DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}@" @ONLY NEWLINE_STYLE UNIX)
     file(CONFIGURE OUTPUT new-${BUMP_LEVEL}-dkmlroot CONTENT "dkml_root_version=@DKML_VERSION_SEMVER_NEW_${BUMP_LEVEL}@" @ONLY NEWLINE_STYLE UNIX)
+endforeach()
+
+# ----------------
+# Make variables for all synced projects _and_ unsynced projects to have a
+# opam-install-friendly relative directory to PROJECT_SOURCE_DIR.
+
+foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
+    FetchContent_GetProperties(${PROJECT})
+    if(NOT ${PROJECT}_SOURCE_DIR)
+        message(FATAL_ERROR "Missing ${PROJECT}_SOURCE_DIR variable, so missing FetchContent_MakeAvailable(${PROJECT}) in dependencies/CMakeLists.txt")
+    endif()
+    cmake_path(
+        RELATIVE_PATH ${PROJECT}_SOURCE_DIR
+        BASE_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE ${PROJECT}_REL_SOURCE_DIR)
+    # opam 2.1 (and later?) needs opam install ./x/y/z.opam for some odd reason
+    set(${PROJECT}_REL_SOURCE_DIR "./${${PROJECT}_REL_SOURCE_DIR}")
 endforeach()
 
 # ----------------
@@ -167,7 +179,7 @@ function(add_VersionBump_target_for_synced_projects)
     set(target_COMMANDS)
     set(bumpedProjects)
 
-    foreach(proj IN LISTS syncedProjects)
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/VersionBump/${proj})
 
         # Set <proj>_SOURCE_DIR
@@ -260,7 +272,7 @@ function(add_PackageUpgrade_target)
     set(target_COMMANDS)
     set(bumpedProjects)
 
-    foreach(proj IN LISTS syncedProjects)
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/PackageUpgrade/${proj})
 
         # Set <proj>_SOURCE_DIR
@@ -337,7 +349,7 @@ function(add_RepositoryUpdate_target)
     set(target_COMMANDS)
     set(bumpedProjects)
 
-    foreach(proj IN LISTS syncedProjects)
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
         set(outputDir ${CMAKE_CURRENT_BINARY_DIR}/RepositoryUpdate/${proj})
 
         # Set <proj>_SOURCE_DIR
@@ -464,7 +476,7 @@ function(add_GitPush_commands_for_synced_projects)
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
     set(retval ${${ARG_OUTPUT_LIST_VARIABLE}})
 
-    foreach(proj IN LISTS syncedProjects)
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
         if(ARG_INCLUDE)
             if(NOT proj IN_LIST ARG_INCLUDE)
                 continue()
@@ -739,7 +751,7 @@ function(add_Flavor_targets)
         DUNE_VERSION ${DKML_RELEASE_DUNE_VERSION}
         OCAML_VERSION ${DKML_RELEASE_OCAML_VERSION}
         DKML_VERSION_OPAMVER_NEW ${DKML_VERSION_OPAMVER_NEW_${ARG_BUMP_LEVEL}}
-        SYNCHRONIZED_PACKAGES ${syncedProjects}
+        SYNCHRONIZED_PACKAGES ${DKML_PROJECTS_SYNCED}
         EXCLUDE_PACKAGES
         ${dkml-runtime-apps_PACKAGES}
         ${dune_PACKAGES}
@@ -756,14 +768,14 @@ function(add_Flavor_targets)
         OUTPUT_VARIABLE DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS)
     list(JOIN DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS " " DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS)
     string(MD5 DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM "${DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS}")
-    set(dkml-runtime-apps_OPAMFILES ${dkml-runtime-apps_PACKAGES})
-    list(TRANSFORM dkml-runtime-apps_OPAMFILES PREPEND "./")
-    list(TRANSFORM dkml-runtime-apps_OPAMFILES APPEND ".opam")
+    set(dkml-runtime-apps_REL_OPAMFILES ${dkml-runtime-apps_PACKAGES})
+    list(TRANSFORM dkml-runtime-apps_REL_OPAMFILES PREPEND "${dkml-runtime-apps_REL_SOURCE_DIR}/")
+    list(TRANSFORM dkml-runtime-apps_REL_OPAMFILES APPEND ".opam")
 
     # dkml-runtime-apps: [opam-dkml] is deprecated; we don't install it
-    set(dkml-runtime-apps_INSTALLABLE_OPAMFILES ${dkml-runtime-apps_OPAMFILES})
-    list(REMOVE_ITEM dkml-runtime-apps_INSTALLABLE_OPAMFILES ./opam-dkml.opam)
-    list(JOIN dkml-runtime-apps_INSTALLABLE_OPAMFILES " " dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES)
+    set(dkml-runtime-apps_REL_INSTALLABLE_OPAMFILES ${dkml-runtime-apps_REL_OPAMFILES})
+    list(REMOVE_ITEM dkml-runtime-apps_REL_INSTALLABLE_OPAMFILES "${dkml-runtime-apps_REL_SOURCE_DIR}/opam-dkml.opam")
+    list(JOIN dkml-runtime-apps_REL_INSTALLABLE_OPAMFILES " " dkml-runtime-apps_SPACED_REL_INSTALLABLE_OPAMFILES)
 
     # Evaluate the git references at CMake configure time so that
     # the various add_custom_commands() can be retriggered when

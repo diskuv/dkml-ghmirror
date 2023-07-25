@@ -4,11 +4,6 @@ set -euf
 #       shellcheck disable=SC1091
 . '@UPSERT_UTILS@'
 
-# Add or upgrade prereqs
-idempotent_opam_local_install dkml-runtime-common '' '@dkml-runtime-common_SOURCE_DIR@' ./dkml-runtime-common.opam
-idempotent_opam_local_install dkml-compiler-env '' '@dkml-compiler_SOURCE_DIR@' ./dkml-compiler-env.opam
-idempotent_opam_local_install dkml-runtime-distribution '' '@dkml-runtime-distribution_SOURCE_DIR@' ./dkml-runtime-distribution.opam
-
 # [ctypes.0.19.2-windowssupport-r6] requirements:
 # - The following required C libraries are missing: libffi.
 #       shellcheck disable=SC2050
@@ -17,6 +12,8 @@ if [ "@CMAKE_HOST_WIN32@" = 1 ] && [ ! -e /clang64/lib/libffi.a ]; then
     pacman -Sy --noconfirm --needed mingw-w64-clang-x86_64-libffi
 fi
 
+# ------ 0 --------
+# Add or upgrade prereqs: dkml-runtime-common, dkml-compiler-env, dkml-runtime-distribution
 # ------- 1 -------
 # Add or upgrade the diskuv-opam-repository packages (except dkml-runtime-apps
 # which we will do in the next step).
@@ -54,7 +51,10 @@ fi
 # versioning to (example) dkml-apps.M.N.O has already
 # been done, the dkml-runtime-apps packages must be
 # part of the install command line.
-idempotent_opam_local_install unmanaged-patched-full-no-dune-withdkml-and-apps '@DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM@' '@dkml-runtime-apps_SOURCE_DIR@' \
+idempotent_opam_local_install unmanaged-patched-full-no-dune-withdkml-and-apps '@DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM@' '@PROJECT_SOURCE_DIR@' \
+    '@dkml-runtime-common_REL_SOURCE_DIR@/dkml-runtime-common.opam' \
+    '@dkml-compiler_REL_SOURCE_DIR@/dkml-compiler-env.opam' \
+    '@dkml-runtime-distribution_REL_SOURCE_DIR@/dkml-runtime-distribution.opam' \
     @DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS@ \
     @FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS@ \
-    @dkml-runtime-apps_SPACED_INSTALLABLE_OPAMFILES@
+    @dkml-runtime-apps_SPACED_REL_INSTALLABLE_OPAMFILES@
