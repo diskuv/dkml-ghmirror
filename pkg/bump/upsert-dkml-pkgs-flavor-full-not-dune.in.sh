@@ -51,7 +51,9 @@ fi
 # versioning to (example) dkml-apps.M.N.O has already
 # been done, the dkml-runtime-apps packages must be
 # part of the install command line.
-idempotent_opam_local_install unmanaged-patched-full-no-dune-withdkml-and-apps '@DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM@' '@PROJECT_SOURCE_DIR@' \
+idempotent_opam_local_install unmanaged-patched-full-no-dune-withdkml-and-apps \
+    '@DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM@,@dkml-runtime-common_SHORTREF@,@dkml-compiler_SHORTREF@,@dkml-runtime-distribution_SHORTREF@,@dkml-runtime-apps_SHORTREF@' \
+    '@PROJECT_SOURCE_DIR@' \
     '@dkml-runtime-common_REL_SOURCE_DIR@/dkml-runtime-common.opam' \
     '@dkml-compiler_REL_SOURCE_DIR@/dkml-compiler-env.opam' \
     '@dkml-runtime-distribution_REL_SOURCE_DIR@/dkml-runtime-distribution.opam' \

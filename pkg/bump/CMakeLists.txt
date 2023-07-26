@@ -45,7 +45,8 @@ endforeach()
 
 # ----------------
 # Make variables for all synced projects _and_ unsynced projects to have a
-# opam-install-friendly relative directory to PROJECT_SOURCE_DIR.
+# opam-install-friendly relative directory to PROJECT_SOURCE_DIR, and a
+# short git reference.
 
 foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     FetchContent_GetProperties(${PROJECT})
@@ -58,6 +59,15 @@ foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
         OUTPUT_VARIABLE ${PROJECT}_REL_SOURCE_DIR)
     # opam 2.1 (and later?) needs opam install ./x/y/z.opam for some odd reason
     set(${PROJECT}_REL_SOURCE_DIR "./${${PROJECT}_REL_SOURCE_DIR}")
+
+    execute_process(
+        WORKING_DIRECTORY ${${PROJECT}_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} rev-parse --quiet --verify HEAD
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE gitref
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+    string(SUBSTRING "${gitref}" 0 6 ${PROJECT}_SHORTREF)
 endforeach()
 
 # ----------------
