@@ -1015,6 +1015,21 @@ function(add_Api_target)
     FetchContent_GetProperties(dkml-install-api) # upsert-api
     FetchContent_GetProperties(dkml-workflows) # upsert-api
 
+    set(apiSources)
+    file(GLOB sources LIST_DIRECTORIES false
+        ${dkml-install-api_SOURCE_DIR}/*.opam
+        ${dkml-install-api_SOURCE_DIR}/*.opam.template
+        ${dkml-workflows_SOURCE_DIR}/*.opam
+        ${dkml-workflows_SOURCE_DIR}/*.opam.template)
+    list(APPEND apiSources ${sources})
+    file(GLOB_RECURSE sources LIST_DIRECTORIES false
+        ${dkml-install-api_SOURCE_DIR}/api/*.ml
+        ${dkml-install-api_SOURCE_DIR}/installer/*.ml
+        ${dkml-install-api_SOURCE_DIR}/package/*.ml
+        ${dkml-install-api_SOURCE_DIR}/register/*.ml
+        ${dkml-install-api_SOURCE_DIR}/runner/*.ml)
+    list(APPEND apiSources ${sources})
+    
     foreach(p IN ITEMS
         upsert-api)
         configure_file(${p}.in.sh ${opamsw}/${p}.sh
@@ -1042,6 +1057,7 @@ function(add_Api_target)
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
         ${ARG_DEPENDS}
+        ${apiSources}
         COMMENT "Creating/updating ${ARG_BUMP_LEVEL} api"
         COMMAND ${upsert_api_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${apiCreated}
