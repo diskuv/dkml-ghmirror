@@ -95,6 +95,10 @@ FetchGit(dkml-runtime-distribution
     GIT_REPOSITORY https://github.com/diskuv/dkml-runtime-distribution.git
     GIT_TAG main # b1a1403eded259a49a57134054633df526d3addb # 1.2.1-prerel1 + commits
 )
+FetchGit(dkml-component-curl
+    GIT_REPOSITORY https://github.com/diskuv/dkml-component-curl.git
+    GIT_TAG main
+)
 FetchGit(dkml-component-ocamlrun
     GIT_REPOSITORY https://github.com/diskuv/dkml-component-ocamlrun.git
     GIT_TAG main

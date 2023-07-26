@@ -18,6 +18,7 @@ cmake_path(GET GIT_EXECUTABLE PARENT_PATH GIT_EXECUTABLE_DIR)
 set(self_BRANCH next) # self is [dkml]
 set(diskuv-opam-repository_BRANCH main)
 set(dkml-compiler_BRANCH main)
+set(dkml-component-curl_BRANCH main)
 set(dkml-component-desktop_BRANCH main)
 set(dkml-component-ocamlcompiler_BRANCH main)
 set(dkml-component-ocamlrun_BRANCH main)

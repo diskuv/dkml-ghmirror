@@ -62,6 +62,7 @@ set(DKML_PROJECTS_UNSYNCED
     # the latest code for these DkML projects is still built into the opam
     # switches and used by the installers.
     dkml-install-api
+    dkml-component-curl
     dkml-component-opam
     dkml-component-unixutils
 )
