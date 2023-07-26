@@ -73,7 +73,7 @@ FetchGit(dkml-component-desktop
 )
 FetchGit(dkml-install-api
     GIT_REPOSITORY https://github.com/diskuv/dkml-install-api.git
-    GIT_TAG 0.4 # TODO: Release this to opam repository
+    GIT_TAG 0.5 # TODO: Release this to opam repository
 )
 FetchGit(dkml-installer-ocaml
     GIT_REPOSITORY https://github.com/diskuv/dkml-installer-ocaml.git
