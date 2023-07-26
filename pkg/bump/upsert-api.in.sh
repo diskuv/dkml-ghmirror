@@ -6,15 +6,16 @@ set -euf
 
 # --- Add all packages needed by PackageUpgrade
 
+# ------- 1 ------
 # Add the API packages of dkml-install-api (needed by all dkml-component-*)
 # but in particular [dune build '@installer/bin/gen-dkml' --auto-promote]
 # in [dkml-installer-ocaml] bump-packages.cmake requires
 # [package-ml-of-installer-generator] and [common-ml-of-installer-generator]
 # executables from [dkml-install-installer]
-idempotent_opam_local_install dkml-install-installer-TRANSITIVE '' '@dkml-install-api_SOURCE_DIR@' \
-    ./dkml-install.opam \
-    ./dkml-install-runner.opam \
-    ./dkml-install-installer.opam
-
+# ------- 2 ------
 # Add dkml-workflows
-idempotent_opam_local_install dkml-workflows '' '@dkml-workflows_SOURCE_DIR@' ./dkml-workflows.opam
+idempotent_opam_local_install api-TRANSITIVE '' '@PROJECT_SOURCE_DIR@' \
+    '@dkml-install-api_REL_SOURCE_DIR@/dkml-install.opam' \
+    '@dkml-install-api_REL_SOURCE_DIR@/dkml-install-runner.opam' \
+    '@dkml-install-api_REL_SOURCE_DIR@/dkml-install-installer.opam' \
+    '@dkml-workflows_REL_SOURCE_DIR@/dkml-workflows.opam'
