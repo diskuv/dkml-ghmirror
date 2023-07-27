@@ -1,5 +1,46 @@
 # CHANGES
 
+## 2.0.2 (2023-07-27)
+
+### Upgrading?
+
+First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.
+
+### What do I do after the install is complete?
+
+You SHOULD read the "Install is done! What next?" at <https://diskuv-ocaml.gitlab.io/distributions/dkml/#install-is-done-what-next> documentation.
+
+If you had any existing local switches, upgrade them by doing `dkml init`, `opam upgrade` and `opam install . --deps-only` in the local switch directories.
+
+For projects using [`setup-dkml` (part of  `dkml-workflows`)](https://github.com/diskuv/dkml-workflows#dkml-workflows)
+for their GitHub Actions / GitLab CI:
+
+1. Re-run `dkml init`, `opam upgrade` and `opam install . --deps-only` in your project
+2. Follow the FOURTH and FIFTH steps of <https://github.com/diskuv/dkml-workflows#configure-your-project>
+
+### Major Changes
+
+- There are now two installers. The original installer is now called the Native Code Edition. The new installer is the Bytecode Edition.
+- If you have used any previous versions, the Program Name seen in Add/Remove Programs has changed from
+  `Diskuv OCaml` to `DkML Native`.
+
+### New Features
+
+### Bug Fixes
+
+- The global shims now work in a custom installation directory
+- The `dkml-runtime-common` package builds on macOS
+
+### Internal Changes
+
+- `with-dkml` does not set MSYS2 or auto-detect the MSVC environment in
+  the Bytecode Edition
+
+### Upgraded Packages
+
+| Package      | From | To         |
+| ------------ | ---- | ---------- |
+
 ## 2.0.1 (2023-07-23)
 
 ### Upgrading?

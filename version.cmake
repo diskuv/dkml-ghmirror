@@ -22,7 +22,7 @@ endif()
 
 # The last released version (never a prerelease)
 # Edited by pkg/bump/CMakeLists.txt. Do not change format.
-set(DKML_PUBLICVERSION_CMAKEVER "2.0.1")
+set(DKML_PUBLICVERSION_CMAKEVER "2.0.2")
 
 macro(ExpandDkmlVersion VERSIONTYPE)
     string(REPLACE "." ";" VERSION_LIST ${DKML_${VERSIONTYPE}_CMAKEVER})
