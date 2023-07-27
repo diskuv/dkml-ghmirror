@@ -19,5 +19,13 @@ foreach(BUMP_LEVEL IN LISTS BUMP_LEVELS)
             COMMAND start ${BUMP_LEVEL}.wsb
             SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${BUMP_LEVEL}.wsb
         )
+
+        add_custom_target(Package-${BUMP_LEVEL}-WindowsDocker
+            COMMAND
+            start docker run -it
+            -v "${OPAMSWITCH_NATIVE}:C:\\Switch"
+            -v "${TOOLSDIR_NATIVE}:C:\\Tools"
+            mcr.microsoft.com/windows/servercore:ltsc2022
+            VERBATIM USES_TERMINAL)
     endif()
 endforeach()
