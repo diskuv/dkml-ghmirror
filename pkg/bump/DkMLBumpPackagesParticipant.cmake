@@ -406,11 +406,16 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     )
 
     # Run the dune target ... the first time may fail because it has yet
-    # to be promoted ... but the second time should work
-    execute_process(
-        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
-        ERROR_QUIET # Don't want long promote diffs printed
-    )
+    # to be promoted ... and so may the second (and third) ... but eventually
+    # it should work. The number of times until success has been observed to
+    # be the number of dune include files that has to be generated (+1).
+    list(LENGTH ARG_REL_FILENAMES NUM_FILENAMES)
+    foreach(fileno RANGE 1 ${NUM_FILENAMES})
+        execute_process(
+            COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
+            ERROR_QUIET # Don't want long promote diffs printed
+        )        
+    endforeach()    
     execute_process(
         COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
         COMMAND_ERROR_IS_FATAL ANY
