@@ -24,7 +24,9 @@ for their GitHub Actions / GitLab CI:
 - If you have used any previous versions, the Program Name seen in Add/Remove Programs has changed from
   `Diskuv OCaml` to `DkML Native`.
 
-### New Features
+### Known Issues
+
+- The uninstaller for 2.0.2 is broken. You'll need to wait for the next release (ie. 2.0.3 or 2.1.0) to get a working `uninstall64*.exe`.
 
 ### Bug Fixes
 
