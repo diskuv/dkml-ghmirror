@@ -9,15 +9,15 @@ REM compilation in the temporary folder
 robocopy %sandbox%\proj1 %TEMP%\scratch1\proj1 /MIR /S
 robocopy %sandbox%\proj2 %TEMP%\scratch1\proj2 /MIR /S
 
+REM THIS SECTION WORKS ONLY WITH BYTE CODE. (How can we check?)
 REM Dune as of 3.8.3 requires explicit xxx.bc on the command line or else
 REM it will do -output-complete-exe which requires a C linker
-dune build --root %TEMP%\scratch1\proj1 ./a.bc
-if %errorlevel% neq 0 exit /b %errorlevel%
+REM dune build --root %TEMP%\scratch1\proj1 ./a.bc
+REM if %errorlevel% neq 0 exit /b %errorlevel%
+REM ocamlrun %TEMP%\scratch1\proj1\_build\default\a.bc
+REM if %errorlevel% neq 0 exit /b %errorlevel%
 
-ocamlrun %TEMP%\scratch1\proj1\_build\default\a.bc
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-REM This section works only with native code. (How can we check?)
+REM THIS SECTION WORKS ONLY WITH NATIVE CODE. (How can we check?)
 REM dune build --root %TEMP%\scratch1\proj2
 REM if %errorlevel% neq 0 exit /b %errorlevel%
 REM dune exec --root %TEMP%\scratch1\proj2 ./best.exe
