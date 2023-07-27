@@ -26,7 +26,10 @@ for their GitHub Actions / GitLab CI:
 
 ### Known Issues
 
-- The uninstaller for 2.0.2 is broken. You'll need to wait for the next release (ie. 2.0.3 or 2.1.0) to get a working `uninstall64*.exe`.
+- The uninstaller for DkML 2.0.2 is broken. You'll need to wait for the next release (ie. 2.0.3 or 2.1.0) to get a working `uninstall64*.exe`.
+- Until core.v0.17 is released and is working on Windows (<https://github.com/janestreet/core/pull/161>) if you need `core` you can either
+  wait for DkML 2.0.3 (which will have a temporary patch), or run the following in your switches:
+  `opam pin core.v0.16.1+msvc+r1 git+https://github.com/jonahbeckford/core.git#v0.16.1+msvc+r1`
 
 ### Bug Fixes
 
