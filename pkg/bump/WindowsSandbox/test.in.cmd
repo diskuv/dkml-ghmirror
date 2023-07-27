@@ -17,11 +17,11 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 ocamlrun %TEMP%\scratch1\proj1\_build\default\a.bc
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-dune build --root %TEMP%\scratch1\proj2
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-dune exec --root %TEMP%\scratch1\proj2 ./best.exe
-if %errorlevel% neq 0 exit /b %errorlevel%
+REM This section works only with native code. (How can we check?)
+REM dune build --root %TEMP%\scratch1\proj2
+REM if %errorlevel% neq 0 exit /b %errorlevel%
+REM dune exec --root %TEMP%\scratch1\proj2 ./best.exe
+REM if %errorlevel% neq 0 exit /b %errorlevel%
 
 utop-full %sandbox%\script1\script.ocamlinit
 if %errorlevel% neq 0 exit /b %errorlevel%
