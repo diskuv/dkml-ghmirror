@@ -402,17 +402,17 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     # a prior bump.
     file(REMOVE _build/.lock)
     execute_process(
-        COMMAND ${OPAM_EXECUTABLE} exec -- dune clean
+        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune clean
     )
 
     # Run the dune target ... the first time may fail because it has yet
     # to be promoted ... but the second time should work
     execute_process(
-        COMMAND ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
+        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
         ERROR_QUIET # Don't want long promote diffs printed
     )
     execute_process(
-        COMMAND ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
+        COMMAND ${BASH_EXECUTABLE} ${WITH_COMPILER_SH} ${OPAM_EXECUTABLE} exec -- dune build ${ARG_DUNE_TARGET} --auto-promote
         COMMAND_ERROR_IS_FATAL ANY
     )
 
