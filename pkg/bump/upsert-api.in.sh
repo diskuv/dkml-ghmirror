@@ -21,4 +21,5 @@ idempotent_opam_local_install api-TRANSITIVE \
     '@dkml-install-api_REL_SOURCE_DIR@/dkml-install-runner.opam' \
     '@dkml-install-api_REL_SOURCE_DIR@/dkml-install-installer.opam' \
     '@dkml-install-api_REL_SOURCE_DIR@/dkml-package-console.opam' \
+    '@dkml-installer-ocaml_REL_SOURCE_DIR@/dkml-installer-ocaml-common.opam' \
     '@dkml-workflows_REL_SOURCE_DIR@/dkml-workflows.opam'

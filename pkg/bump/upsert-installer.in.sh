@@ -30,6 +30,5 @@ idempotent_opam_local_install dkml-installer-ocaml_TRANSITIVE \
     '@dkml-component-ocamlcompiler_REL_SOURCE_DIR@/dkml-component-ocamlcompiler-common.opam' \
     '@dkml-component-ocamlcompiler_REL_SOURCE_DIR@/dkml-component-ocamlcompiler-network.opam' \
     '@dkml-component-ocamlcompiler_REL_SOURCE_DIR@/dkml-component-ocamlcompiler-offline.opam' \
-    '@dkml-installer-ocaml_REL_SOURCE_DIR@/dkml-installer-ocaml-common.opam' \
     '@dkml-installer-ocaml_REL_SOURCE_DIR@/dkml-installer-ocaml-network.opam' \
     '@dkml-installer-ocaml-byte_REL_SOURCE_DIR@/dkml-installer-ocaml-offline.opam'
