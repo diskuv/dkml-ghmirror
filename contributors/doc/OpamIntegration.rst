@@ -26,7 +26,7 @@ that has no MinGW patches.
     to find where the repository is physically located and then look in its ``packages/`` subdirectory
     to see what versions of your problematic package are supported by the fdopen repository.
     ``opam list`` will tell you which versions you are currently using. An issue can be filed at
-    https://gitlab.com/diskuv-ocaml/distributions/dkml/-/issues to move the package into an upcoming
+    https://gitlab.com/dkml/distributions/dkml/-/issues to move the package into an upcoming
     ``diskuv-*`` repository.
 
 The ``default`` repository is the central Opam repository. Most of your packages are unpatched and

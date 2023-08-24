@@ -31,7 +31,7 @@ GITURLS=(
     https://github.com/diskuv/dkml-component-opam.git
     https://github.com/diskuv/dkml-component-ocamlrun.git
     https://github.com/diskuv/dkml-component-ocamlcompiler.git
-    https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop.git
+    https://gitlab.com/dkml/components/dkml-component-desktop.git
 )
 # Which GITURLs are synced with bump2version
 SYNCED_RELEASE_GITDIRS=(dkml-installer-ocaml)
@@ -684,9 +684,9 @@ echo
 echo 'Note: You can do the steps 1, 2 and perhaps 3 in parallel below! If you are told to WAIT in step 2'
 echo 'then you must do step 3 only after you complete the release steps of step 2.'
 echo
-echo '1. Go to https://gitlab.com/diskuv-ocaml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds.'
+echo '1. Go to https://gitlab.com/dkml/distributions/dkml/-/pipelines and make sure that the pipeline succeeds.'
 echo "   You can save compute by canceling the [next] branch job; only keep the [$NEW_VERSION] tag job."
-echo '2. https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop/-/pipelines is running to prepare binary'
+echo '2. https://gitlab.com/dkml/components/dkml-component-desktop/-/pipelines is running to prepare binary'
 echo "   assets for $NEW_VERSION."
 echo "   You can save compute by canceling the [main] branch job; only keep the [$NEW_VERSION-prep] tag job."
 if [ "$PRERELEASE" = ON ]; then

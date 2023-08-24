@@ -93,7 +93,7 @@ win32:oorepo-matrix-2:
       - OCAMLVERSION: 4.12.1
       #- OCAMLVERSION: 4.13.1
       - OCAMLVERSION: 4.14.0
-  artifacts: # The artifact is not needed, except for browsing the repository at https://gitlab.com/diskuv-ocaml/distributions/dkml/-/jobs to troubleshoot what package versions are picked
+  artifacts: # The artifact is not needed, except for browsing the repository at https://gitlab.com/dkml/distributions/dkml/-/jobs to troubleshoot what package versions are picked
     name: "ocaml-opam-repo-${OCAMLVERSION}"
     paths:
       - '$OCAML_OPAM_REPO_DEPLOY_FOLDER_WINDOWS/share/dkml/repro/$OCAMLVERSION'

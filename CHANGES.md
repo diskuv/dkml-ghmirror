@@ -67,7 +67,7 @@ for their GitHub Actions / GitLab CI:
 ### New Features
 
 - Added `sqlite3` to the global environment (no opam switch needed). The
-  [Quick Start](https://gitlab.com/diskuv-ocaml/distributions/dkml#quick-start)
+  [Quick Start](https://gitlab.com/dkml/distributions/dkml#quick-start)
   shows how to use it.
 
 ### Bug Fixes
@@ -113,7 +113,7 @@ guidelines if you operate frequently in the global environment:
 
 * Use `utop` and `utop-full` like you did in previous versions, but with more
   libraries. There is a new
-  [Quick Start](https://gitlab.com/diskuv-ocaml/distributions/dkml#quick-start)
+  [Quick Start](https://gitlab.com/dkml/distributions/dkml#quick-start)
   that shows how to use it.
 * If you want to use `dune` to compile native code libraries,
   create your own opam switch using `dkml init` in an empty directory.
@@ -286,7 +286,7 @@ Critical changes:
 
 * Switch from the official MSYS2 `msys2-base` install, plus a set of MSYS2
   Internet updates, to a standalone
-  [msys2-dkml-base](https://gitlab.com/diskuv-ocaml/distributions/msys2-dkml-base#msys2-dkml-base)
+  [msys2-dkml-base](https://gitlab.com/dkml/distributions/msys2-dkml-base#msys2-dkml-base)
   that has all the MSYS2 packages needed during installation. That removes the
   Internet, GPG keys, proxies, etc. as a source of failures during the MSYS2
   sub-installation.

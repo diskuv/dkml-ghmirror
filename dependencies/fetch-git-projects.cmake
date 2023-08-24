@@ -68,7 +68,7 @@ FetchGit(dkml-compiler
     GIT_TAG main # fd73aa1567099344e5d12c7acbc2a13cf1a9cd20 # 1.2.1-prerel1 + commits
 )
 FetchGit(dkml-component-desktop
-    GIT_REPOSITORY https://gitlab.com/diskuv-ocaml/components/dkml-component-desktop.git
+    GIT_REPOSITORY https://gitlab.com/dkml/components/dkml-component-desktop.git
     GIT_TAG main
 )
 FetchGit(dkml-install-api
