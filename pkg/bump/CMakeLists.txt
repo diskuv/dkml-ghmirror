@@ -446,7 +446,12 @@ function(add_GitPush_command)
             message(FATAL_ERROR "The expected branch was ${ARG_BRANCH} in ${ARG_SOURCE_DIR}, but is actually ${currentBranch}. Change ${CMAKE_CURRENT_FUNCTION_LIST_FILE} if the expected branch is wrong")
         endif()
     else()
-        message(FATAL_ERROR "There is no branch (likely a detached HEAD) in ${ARG_SOURCE_DIR}")
+        # FetchContent_Declare(GIT_TAG) in CMake 3.23.1 does not change HEAD (aka. no `git switch <branch>`).
+        # So we'll do that if it looks like a detached HEAD.
+        execute_process(
+            WORKING_DIRECTORY ${ARG_SOURCE_DIR}
+            COMMAND ${GIT_EXECUTABLE} switch "${ARG_BRANCH}"
+        )
     endif()
 
     # We want the git tagging to be done always. We settle for doing
