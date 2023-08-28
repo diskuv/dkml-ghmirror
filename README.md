@@ -35,7 +35,7 @@ support AT diskuv.com if you need OCaml/C development.
 For news about DkML,
 [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv)](https://twitter.com/diskuv) on Twitter.
 
-**Please visit our documentation at https://diskuv-ocaml.gitlab.io/distributions/dkml/**
+**Please visit our documentation at https://diskuv.com/dkmlbook/**
 
 ## License
 
