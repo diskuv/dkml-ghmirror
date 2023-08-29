@@ -373,10 +373,12 @@ ${installspec}
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${ARG_REL_FILENAME})
 endfunction()
 
+# EMPTY_DUNE_INC <name1> <value1> <name2> <value2> ...
+# where <name1> is one of REL_FILENAMES <name1> <name2> ...
 function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
     set(noValues)
     set(singleValues DUNE_TARGET)
-    set(multiValues REL_FILENAMES)
+    set(multiValues REL_FILENAMES EMPTY_DUNE_INC)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     # Read them for a "before" snapshot. We also need to capture the file
@@ -394,7 +396,20 @@ function(DkMLBumpPackagesParticipant_DuneIncUpgrade)
 
     # Truncate each dune.inc
     foreach(REL_FILENAME IN LISTS ARG_REL_FILENAMES)
-        file(WRITE ${REL_FILENAME} "")
+        set(empty_dune_inc)
+        if(ARG_EMPTY_DUNE_INC)
+            list(LENGTH ARG_EMPTY_DUNE_INC num_empty_keyvals)
+            math(EXPR num_empty_keyvals_minus1 "${num_empty_keyvals} - 1")
+            foreach(key_idx RANGE 0 ${num_empty_keyvals_minus1} 2)
+                list(GET ARG_EMPTY_DUNE_INC ${key_idx} key)
+                if(key STREQUAL REL_FILENAME)
+                    math(EXPR value_idx "1 + ${key_idx}")
+                    list(GET ARG_EMPTY_DUNE_INC ${value_idx} empty_dune_inc)
+                    break()
+                endif()
+            endforeach()
+        endif()
+        file(WRITE ${REL_FILENAME} "${empty_dune_inc}")
     endforeach()
 
     # Clean the dune build directory so the dune target can be
