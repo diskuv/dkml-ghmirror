@@ -1055,7 +1055,8 @@ function(add_Api_target)
         ${dkml-install-api_SOURCE_DIR}/*.opam
         ${dkml-install-api_SOURCE_DIR}/*.opam.template
         ${dkml-workflows_SOURCE_DIR}/*.opam
-        ${dkml-workflows_SOURCE_DIR}/*.opam.template)
+        ${dkml-workflows_SOURCE_DIR}/*.opam.template
+        ${dkml-installer-ocaml}/dkml-installer-ocaml-common.opam)
     list(APPEND apiSources ${sources})
     file(GLOB_RECURSE sources LIST_DIRECTORIES false
         ${dkml-install-api_SOURCE_DIR}/api/*.ml
