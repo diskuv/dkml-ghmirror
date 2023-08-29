@@ -412,27 +412,11 @@ function(add_RepositoryUpdate_target)
     add_dependencies(Package-${ARG_BUMP_LEVEL}-Stage08-RepositoryUpdate Package-Archive)
 endfunction()
 
-function(add_GitPush_command)
+function(update_Git)
     set(noValues)
-    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET TAG_SUFFIX)
-    set(multiValues DEPENDS)
+    set(singleValues SOURCE_DIR BRANCH)
+    set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
-
-    set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
-    set(refspec ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}})
-
-    if(ARG_TAG_SUFFIX)
-        string(APPEND refspec "${ARG_TAG_SUFFIX}")
-    endif()
-
-    if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
-        # Prereleases can always be overwritten, so add a leading +
-        # (similar to --force) to force overwrite the git tag if present.
-        # We don't use --force since that would apply to the [<currentBranch>]
-        # branch as well (which we want to fail if it is not a fast-forward
-        # commit).
-        string(PREPEND refspec "+")
-    endif()
 
     execute_process(
         WORKING_DIRECTORY ${ARG_SOURCE_DIR}
@@ -454,9 +438,31 @@ function(add_GitPush_command)
         )
         execute_process(
             COMMAND ${GIT_EXECUTABLE} -C "${ARG_SOURCE_DIR}" pull --ff-only
-            COMMAND_ECHO STDERR
             COMMAND_ERROR_IS_FATAL ANY
         )
+    endif()
+endfunction()
+
+function(add_GitPush_command)
+    set(noValues)
+    set(singleValues SOURCE_DIR CONTEXT BUMP_LEVEL OUTPUT_FILE BRANCH INTENDED_TARGET TAG_SUFFIX)
+    set(multiValues DEPENDS)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
+    set(refspec ${DKML_VERSION_SEMVER_NEW_${ARG_BUMP_LEVEL}})
+
+    if(ARG_TAG_SUFFIX)
+        string(APPEND refspec "${ARG_TAG_SUFFIX}")
+    endif()
+
+    if(ARG_BUMP_LEVEL STREQUAL PRERELEASE)
+        # Prereleases can always be overwritten, so add a leading +
+        # (similar to --force) to force overwrite the git tag if present.
+        # We don't use --force since that would apply to the [<currentBranch>]
+        # branch as well (which we want to fail if it is not a fast-forward
+        # commit).
+        string(PREPEND refspec "+")
     endif()
 
     # We want the git tagging to be done always. We settle for doing
@@ -480,7 +486,7 @@ function(add_GitPush_command)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${ARG_OUTPUT_FILE}
 
         # git push
-        COMMAND ${GIT_EXECUTABLE} push --atomic origin ${currentBranch} ${refspec}
+        COMMAND ${GIT_EXECUTABLE} push --atomic origin "${ARG_BRANCH}" ${refspec}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${newSemverFile} ${ARG_OUTPUT_FILE}
 
         VERBATIM
@@ -568,6 +574,15 @@ function(get_flavor_packages)
     set(${ARG_OUTPUT_PKGVERS_VARIABLE} ${pkgvers} PARENT_SCOPE)
     set(${ARG_OUTPUT_DEPENDS} ${depends} PARENT_SCOPE)
 endfunction()
+
+# ----------------------------------------------------------------------------------
+
+foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
+    FetchContent_GetProperties(${proj})
+    set(srcDir ${${proj}_SOURCE_DIR})
+    set(branch ${${proj}_BRANCH})
+    update_Git(SOURCE_DIR ${srcDir} BRANCH ${branch})
+endforeach()
 
 get_flavor_packages(
     FLAVORS Dune
