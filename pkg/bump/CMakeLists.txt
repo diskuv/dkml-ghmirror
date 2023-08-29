@@ -449,8 +449,13 @@ function(add_GitPush_command)
         # FetchContent_Declare(GIT_TAG) in CMake 3.23.1 does not change HEAD (aka. no `git switch <branch>`).
         # So we'll do that if it looks like a detached HEAD.
         execute_process(
-            WORKING_DIRECTORY ${ARG_SOURCE_DIR}
-            COMMAND ${GIT_EXECUTABLE} switch "${ARG_BRANCH}"
+            COMMAND ${GIT_EXECUTABLE} -C "${ARG_SOURCE_DIR}" switch "${ARG_BRANCH}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} -C "${ARG_SOURCE_DIR}" pull --ff-only
+            COMMAND_ECHO STDERR
+            COMMAND_ERROR_IS_FATAL ANY
         )
     endif()
 
