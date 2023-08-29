@@ -35,6 +35,15 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
     time_now # v0.15.0
 )
 
+# Do GLOBs once
+FetchContent_GetProperties(diskuv-opam-repository)
+file(GLOB_RECURSE diskuv-opam-repository-PACKAGEGLOB
+    LIST_DIRECTORIES true
+    RELATIVE ${diskuv-opam-repository_SOURCE_DIR}
+
+    CONFIGURE_DEPENDS
+    ${diskuv-opam-repository_SOURCE_DIR}/packages/*/*/opam)
+
 # Get the list of the latest package versions compatible with
 # [OCAML_VERSION]. Any packages that are part of [SYNCHRONIZED_PACKAGES]
 # will be reported as version [DKML_VERSION_OPAMVER_NEW]
@@ -46,14 +55,15 @@ function(DkMLPatches_GetPackageVersions)
     set(multiValues SYNCHRONIZED_PACKAGES EXCLUDE_PACKAGES)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    FetchContent_GetProperties(diskuv-opam-repository)
-    file(GLOB packages
-        LIST_DIRECTORIES true
-        CONFIGURE_DEPENDS
-        ${diskuv-opam-repository_SOURCE_DIR}/packages/*)
-    set(pkgvers)
+    set(pkgdirs)
+    foreach(pkgopam IN LISTS diskuv-opam-repository-PACKAGEGLOB)
+        cmake_path(GET pkgopam PARENT_PATH pkgverdir)
+        cmake_path(GET pkgverdir PARENT_PATH pkgdir)
+        list(APPEND pkgdirs "${pkgdir}")
+    endforeach()
 
-    foreach(pkgdir IN LISTS packages)
+    set(pkgvers)
+    foreach(pkgdir IN LISTS pkgdirs)
         cmake_path(GET pkgdir FILENAME pkgname)
 
         if(pkgname IN_LIST DKML_PATCH_EXCLUDE_PACKAGES OR pkgname IN_LIST ARG_EXCLUDE_PACKAGES)
@@ -88,11 +98,15 @@ function(DkMLPatches_GetPackageVersions)
             # "Naturally" sort the package versions so we can find the latest
             # version. Yep, this is not done 100% correctly, but you can always
             # override a mistaken package version in this script.
-            file(GLOB current_pkgvers
-                LIST_DIRECTORIES true
-                RELATIVE ${pkgdir}
-                CONFIGURE_DEPENDS
-                ${pkgdir}/${pkgname}.*)
+            set(current_pkgvers)
+            foreach(pkgopam IN LISTS diskuv-opam-repository-PACKAGEGLOB)
+                cmake_path(IS_PREFIX pkgdir "${pkgopam}" in_subdir)
+                if(in_subdir)
+                    cmake_path(GET pkgopam PARENT_PATH pkgverdir)
+                    cmake_path(GET pkgverdir FILENAME pkgver)
+                    list(APPEND current_pkgvers "${pkgver}")
+                endif()
+            endforeach()
             list(SORT current_pkgvers COMPARE NATURAL CASE INSENSITIVE ORDER DESCENDING)
             list(GET current_pkgvers 0 latest_pkgver)
             list(APPEND pkgvers ${latest_pkgver})
