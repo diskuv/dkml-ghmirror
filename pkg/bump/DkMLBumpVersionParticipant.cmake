@@ -195,14 +195,20 @@ function(DkMLBumpVersionParticipant_DkmlBaseCompilerReplace REL_FILENAME)
     _DkMLBumpVersionParticipant_Finish_Replace(OPAMVER)
 endfunction()
 
-# ("DEFAULT_DKML_COMPILER", "4.14.0-v1.1.0-prerel15"); -> ("DEFAULT_DKML_COMPILER", "4.14.0-v1.2.1-3");
+# ("DEFAULT_DKML_COMPILER", "1.1.0-prerel15"); -> ("DEFAULT_DKML_COMPILER", "1.2.1-3");
+#
+# dkml-compiler project has two types of opam files:
+# 1. dkml-base-compiler X.Y.Z~vM.N.O
+# 2. dkml-compiler-env (etc) M.N.O
+#
+# So the project is tagged M.N.O.
 function(DkMLBumpVersionParticipant_ModelReplace REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
     set(contents_NEW "${contents}")
 
     string(REGEX REPLACE # Match at beginning of line: ^|\n
-        "\"DEFAULT_DKML_COMPILER\", \"([0-9.]*)-v${regex_DKML_VERSION_SEMVER}\""
-        "\"DEFAULT_DKML_COMPILER\", \"${DKML_RELEASE_OCAML_VERSION}-v${DKML_VERSION_SEMVER_NEW}\""
+        "\"DEFAULT_DKML_COMPILER\", \"${regex_DKML_VERSION_SEMVER}\""
+        "\"DEFAULT_DKML_COMPILER\", \"${DKML_VERSION_SEMVER_NEW}\""
         contents_NEW "${contents_NEW}")
 
     _DkMLBumpVersionParticipant_Finish_Replace(SEMVER)
