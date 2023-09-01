@@ -321,13 +321,16 @@ function(DkMLBumpPackagesParticipant_DkmlFlavorOpamUpgrade)
         list(SORT pkgs)
 
         # Make a list of:
-        # [ "sh" "-c" "opam show --list-files dkml-apps > opamshow-dkml-apps.txt" ]
+        #   [ "sh" "-c" "OPAMLOGS=$PWD opam show --readonly --list-files dkml-apps > opamshow-dkml-apps.txt" ]
+        # 1. Set OPAMLOGS so doesn't try to write to opam's default log
+        #    directory in the opamroot that is read-only in a sandbox
+        # 2. Use --readonly to future-proof with unreleased versions of opam
         set(i_buildspec ${pkgs})
 
         # Want REPLACE ".*", but nasty cmake bug:
         # https://gitlab.kitware.com/cmake/cmake/-/issues/18884 https://gitlab.kitware.com/cmake/cmake/-/issues/16899
         list(TRANSFORM i_buildspec REPLACE "[A-Za-z0-9_-]+"
-            [==[  [ "sh" "-c" "'%{dkml-sys-opam-exe}%' show --list-files \0 > opamshow-\0.txt" ]]==])
+            [==[  [ "sh" "-c" "OPAMLOGS=$PWD '%{dkml-sys-opam-exe}%' show --readonly --list-files \0 > opamshow-\0.txt" ]]==])
         list(APPEND buildspec ${i_buildspec})
 
         # Make a list of:

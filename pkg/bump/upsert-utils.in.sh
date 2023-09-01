@@ -27,7 +27,7 @@ _idempotent_confirm_pkg_exist() {
     # META existence is a speedy check, with some false positives, that a package is not present
     if [ ! -e "$_idempotent_confirm_pkg_exist_LIB/$_idempotent_confirm_pkg_exist_PKG/META" ]; then
         # Foolproof slow check that a package is not present
-        if ! $OPAM_EXE show "$_idempotent_confirm_pkg_exist_PKG" --list-files >/dev/null 2>/dev/null; then
+        if ! $OPAM_EXE show "$_idempotent_confirm_pkg_exist_PKG" --readonly --list-files >/dev/null 2>/dev/null; then
             echo "Rebuilding missing package [$_idempotent_confirm_pkg_exist_PKG]" >&2
             return 1
         fi
