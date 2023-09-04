@@ -229,15 +229,28 @@ function(DkMLBumpPackagesParticipant_DuneProjectFlavorUpgrade REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
     set(contents_NEW "${contents}")
 
-    foreach(FLAVOR IN ITEMS ci full)
-        set(pkgvers)
+    # Replace: flavor-<FLAVOR> or dkml-apps-only
+    foreach(FLAVOR IN ITEMS ci full dkml-apps-only)
+        # Which flavor should we query?
+        set(query_FLAVOR ${FLAVOR})
+        if(FLAVOR STREQUAL dkml-apps-only)
+            # dkml-apps is in the ci flavor
+            set(query_FLAVOR ci)
+        endif()
 
+        # What section should we search and replace?
+        set(replace_FLAVOR flavor-${FLAVOR})
+        if(FLAVOR STREQUAL dkml-apps-only)
+            set(replace_FLAVOR dkml-apps-only)
+        endif()
+
+        set(pkgvers)
         foreach(GLOBALTYPE IN ITEMS compile install)
             # Get list of [global-compile] package versions for the flavor
             # Example:
             # with-dkml.1.2.1~prerel10
             execute_process(
-                COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-globals ${GLOBALTYPE} ${FLAVOR} package-versions
+                COMMAND ${OPAM_EXECUTABLE} exec -- dkml-desktop-gen-globals ${GLOBALTYPE} ${query_FLAVOR} package-versions
                 OUTPUT_VARIABLE i_pkgvers
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 COMMAND_ERROR_IS_FATAL ANY
@@ -251,6 +264,11 @@ function(DkMLBumpPackagesParticipant_DuneProjectFlavorUpgrade REL_FILENAME)
 
         # Remove [dune]; we have a special insertion for it later
         list(FILTER pkgvers EXCLUDE REGEX "^dune[.]")
+
+        # Special case: dkml-apps-only
+        if(FLAVOR STREQUAL dkml-apps-only)
+            list(FILTER pkgvers INCLUDE REGEX "^dkml-apps[.]")
+        endif()
 
         # Sort
         list(SORT pkgvers)
@@ -266,11 +284,11 @@ function(DkMLBumpPackagesParticipant_DuneProjectFlavorUpgrade REL_FILENAME)
         # Make a dune-project section
         cmake_path(GET CMAKE_CURRENT_LIST_FILE FILENAME managerFile)
         string(REGEX REPLACE
-            "; BEGIN flavor-${FLAVOR}[.].*; END flavor-${FLAVOR}[. A-Za-z]*"
-            "; BEGIN flavor-${FLAVOR}. DO NOT EDIT THE LINES IN THIS SECTION
+            "; BEGIN ${replace_FLAVOR}[.].*; END ${replace_FLAVOR}[. A-Za-z]*"
+            "; BEGIN ${replace_FLAVOR}. DO NOT EDIT THE LINES IN THIS SECTION
   ; Managed by ${managerFile}
 ${pkgvers}
-  ; END flavor-${FLAVOR}. DO NOT EDIT THE LINES ABOVE"
+  ; END ${replace_FLAVOR}. DO NOT EDIT THE LINES ABOVE"
             contents_NEW "${contents_NEW}")
     endforeach()
 
