@@ -11,6 +11,24 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
     # Renamed and/or deprecated packages
     dkml-installer-network-ocaml # 2.0.1
 
+    # For now we are locally checking out dkml-install-api and
+    # several independently versioned components like dkml-component-curl.
+    # That means we must exclude the versions from diskuv-opam-repository
+    dkml-component-common-opam          # 2.2.0~alpha0~20221228
+    dkml-component-common-unixutils     # 0.2.0
+    dkml-component-network-unixutils    # 0.2.0
+    dkml-component-offline-opam         # 2.2.0~alpha0~20221228
+    dkml-component-offline-opamshim     # 2.2.0~alpha0~20221228
+    dkml-component-offline-unixutils    # 0.2.0
+    dkml-component-staging-curl         # 0.2.0
+    dkml-component-staging-opam32       # 2.2.0~alpha0~20221228
+    dkml-component-staging-opam64       # 2.2.0~alpha0~20221228
+    dkml-component-staging-unixutils    # 0.2.0
+    dkml-install            # 0.5.0
+    dkml-install-runner     # 0.5.0
+    dkml-install-installer  # 0.5.0
+    dkml-package-console    # 0.5.0
+
     # Already fixed upstream. Eligible to be removed
     # from diskuv-opam-repository! Only reason to keep it around is for
     # packages that require older versions
