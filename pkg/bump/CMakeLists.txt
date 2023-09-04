@@ -438,8 +438,11 @@ function(update_Git)
         )
         execute_process(
             COMMAND ${GIT_EXECUTABLE} -C "${ARG_SOURCE_DIR}" pull --ff-only
-            COMMAND_ERROR_IS_FATAL ANY
+            ERROR_VARIABLE execute_ERROR
         )
+        if(execute_ERROR)
+            message(FATAL_ERROR "git pull --ff-only failed in branch ${ARG_BRANCH} of ${ARG_SOURCE_DIR}")
+        endif()
     endif()
 endfunction()
 
