@@ -1,6 +1,7 @@
 {
     "files.exclude": {
-        "**/release-zip": true
+        "**/release-zip": true,
+	    "**/build/pkg/bump/.ci/o": true
     },
     "python.pythonPath": "${workspaceFolder}/contributors/envs",
     "esbonio.sphinx.confDir": "${workspaceFolder}\\contributors"
