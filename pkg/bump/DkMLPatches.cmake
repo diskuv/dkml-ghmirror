@@ -21,7 +21,6 @@ set(DKML_PATCH_EXCLUDE_PACKAGES
     crunch # 3.3.1
     curly # 0.2.1-windows-env_r2
     digestif # 1.1.2+msvc
-    ocamlbuild # 0.14.0
     ptime # 0.8.6-msvcsupport
     utop # 2.13.0+win32
 
