@@ -67,7 +67,7 @@ export GITLAB_PRIVATE_TOKEN=$($GLAB auth status -t 2>&1 | awk '$2=="Token:" {pri
 
 # Find Generic Packages
 # TODO: Pagination is not handled!! https://docs.gitlab.com/ee/api/index.html#pagination
-PROJECT_URL='https://gitlab.com/api/v4/projects/diskuv-ocaml%2Fdistributions%2Fdkml'
+PROJECT_URL='https://gitlab.com/api/v4/projects/dkml%2Fdistributions%2Fdkml'
 
 install -d _build
 curl --header "PRIVATE-TOKEN: $GITLAB_PRIVATE_TOKEN" "$PROJECT_URL/packages?per_page=100" | \

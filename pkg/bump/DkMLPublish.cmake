@@ -3,7 +3,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/DkMLAnyRun.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/DkMLBumpLevels.cmake)
 
 # Aka. https://gitlab.com/dkml/distributions/dkml
-set(GITLAB_UPLOAD_BASE_URL https://gitlab.com/api/v4/projects/diskuv-ocaml%2Fdistributions%2Fdkml)
+set(GITLAB_UPLOAD_BASE_URL https://gitlab.com/api/v4/projects/dkml%2Fdistributions%2Fdkml)
 set(PUBLISHDIR ${CMAKE_CURRENT_BINARY_DIR}/Publish)
 
 set(glab_HINTS)

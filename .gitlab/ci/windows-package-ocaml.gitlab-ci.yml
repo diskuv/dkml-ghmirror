@@ -50,7 +50,7 @@ win32:oorepo-fetch-1:
     # 4 types of bytecode (32/64 bit, Windows/Unix).
     - if ("${env:CI_COMMIT_TAG}" -eq "") { $PKGTAG= "$env:CI_COMMIT_BRANCH" } else { $PKGTAG = "$env:CI_COMMIT_TAG"; $PKGTAG = $PKGTAG -replace "^v" }
     - Invoke-WebRequest `
-        -Uri "https://gitlab.com/api/v4/projects/diskuv-ocaml%2Fdistributions%2Fdkml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
+        -Uri "https://gitlab.com/api/v4/projects/dkml%2Fdistributions%2Fdkml/packages/generic/ocaml_opam_repo-support/$PKGTAG/ocaml_opam_repo_trim.bc" `
         -OutFile "vendor/drd/src/ml/ocaml_opam_repo_trim.bc"
 
     # Setup and Fetch

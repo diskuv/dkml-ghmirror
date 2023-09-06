@@ -592,7 +592,7 @@ rungit -C "$SRC_MIXED/dkml-workflows-prerelease" push origin "$WORKFLOWS_PRERELE
 # ------------------------
 
 # Remove git ignored files from submodules for distribution archive. ARCHIVE_MEMBERS
-# is already a good filter for this repository (diskuv-ocaml), and we do not clean it
+# is already a good filter for this repository (dkml), and we do not clean it
 # because we may blow away IDE settings and other build information.
 for v in "${ALL_VENDORS[@]}"; do
     git -C vendor/"$v" clean -x -d -f
@@ -602,7 +602,7 @@ done
 # Set GitLab options
 CI_SERVER_URL=https://gitlab.com
 CI_API_V4_URL="$CI_SERVER_URL/api/v4"
-CI_PROJECT_ID='diskuv-ocaml%2Fdistributions%2Fdkml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
+CI_PROJECT_ID='dkml%2Fdistributions%2Fdkml' # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
 GLOBAL_OPTS=(--server-url "$CI_SERVER_URL" --project-id "$CI_PROJECT_ID")
 CREATE_OPTS=(
     --tag-name "$NEW_VERSION"
