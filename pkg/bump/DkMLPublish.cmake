@@ -128,6 +128,13 @@ function(DkMLPublish_CreateReleaseTarget)
         --name "DkML ${ARG_DKML_VERSION_SEMVER_NEW}"
         --ref "${ARG_DKML_VERSION_SEMVER_NEW}"
         --notes-file ${changes_MD_NEW_FILENAME}
+
+        # There seems to be an eventual consistency issue with GitLab as of 2023-09. If
+        # we create the release above, and then the next second upload the Generic Package
+        # for that version, no Generic Package will be uploaded.
+        COMMAND
+        ${CMAKE_COMMAND} -E sleep 30
+
         VERBATIM USES_TERMINAL
     )
 endfunction()
