@@ -181,7 +181,8 @@ function(DkMLPublish_PublishAssetsTarget)
     string(REGEX MATCH "Token: [0-9a-h]+" GITLAB_PRIVATE_TOKEN "${AUTH_LINE}")
     string(REPLACE "Token: " "" GITLAB_PRIVATE_TOKEN "${GITLAB_PRIVATE_TOKEN}")
 
-    macro(_handle_upload SRCFILE DESTFILE NAME)
+    macro(_handle_upload LINKTYPE SRCFILE DESTFILE NAME)
+        # LINKTYPE: https://docs.gitlab.com/ee/user/project/releases/release_fields.html#link-types
         set(UPLOAD_SRCFILE "${SRCFILE}")
         set(UPLOAD_VERSION "${ARG_DKML_VERSION_SEMVER_NEW}")
         set(UPLOAD_DESTFILE "${DESTFILE}")
@@ -190,7 +191,7 @@ function(DkMLPublish_PublishAssetsTarget)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             @ONLY)
         list(APPEND depends ${UPLOAD_SRCFILE})
-        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"filepath\": \"/${DESTFILE}\"}")
+        list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"filepath\": \"/${DESTFILE}\", \"linktype\": \"${LINKTYPE}\"}")
         list(APPEND precommands
             COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/${ARG_BUMP_LEVEL}/upload-${DESTFILE}.cmake)
     endmacro()
@@ -198,19 +199,19 @@ function(DkMLPublish_PublishAssetsTarget)
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
         # The reverse order of insertion shows up on GitLab UI. Want installer to display
         # first, so _handle_upload(<installer>) last.
-        _handle_upload(
+        _handle_upload(package
             ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             uninstall64nu.exe
             "Windows 64-bit Native Uninstaller (unsigned)")
-        _handle_upload(
+        _handle_upload(package
             ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             setup64nu.exe
             "Windows 64-bit Native Installer (unsigned)")
-        _handle_upload(
+        _handle_upload(package
             ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             uninstall64bu.exe
             "Windows 64-bit Lite Bytecode Uninstaller (unsigned)")
-        _handle_upload(
+        _handle_upload(package
             ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
             setup64bu.exe
             "Windows 64-bit Lite Bytecode Installer (unsigned)")
