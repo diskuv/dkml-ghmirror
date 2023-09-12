@@ -1,5 +1,53 @@
 # CHANGES
 
+## 2.0.3 (2023-09-12)
+
+### Upgrading?
+
+First uninstall the old Diskuv OCaml version using "Add or remove programs" in the Control Panel.
+
+### What do I do after the install is complete?
+
+You SHOULD read the "Install is done! What next?" at <https://diskuv.com/dkmlbook/#install-is-done-what-next> documentation.
+
+If you had any existing local switches, upgrade them by doing `dkml init`, `opam upgrade` and `opam install . --deps-only` in the local switch directories.
+
+For projects using [`setup-dkml` (part of  `dkml-workflows`)](https://github.com/diskuv/dkml-workflows#dkml-workflows)
+for their GitHub Actions / GitLab CI:
+
+1. Re-run `dkml init`, `opam upgrade` and `opam install . --deps-only` in your project
+2. Follow the FOURTH and FIFTH steps of <https://github.com/diskuv/dkml-workflows#configure-your-project>
+
+### Major Changes
+
+### Known Issues
+
+* The 2.0.3 uninstaller does not work. Workaround: The DkML uninstallers are backwards-compatible. Wait for a working 2.0.x uninstaller to uninstall your 2.0.3 installation.
+
+### Bug Fixes
+
+* Visual Studio Redistributables could fail if a higher version was already installed. <https://github.com/diskuv/dkml-installer-ocaml/issues/60>
+* `opam-putenv.exe` was not being installed on Windows. <https://github.com/diskuv/dkml-installer-ocaml/issues/22>
+* Print both error message and backtrace on some fatals
+* Do not ignore `DiskuvOCamlMode` environment variable
+
+### Internal Changes
+
+* Added `vcver.txt` with Visual Studio runtime version in staging root dir
+* Added `log_spawn_onerror_exit ?success_exitcodes` to install API
+
+### Upgraded Packages
+
+| Package      | From       | To              |
+| ------------ | ---------- | --------------- |
+| ocamlbuild   | 0.14.2+win | 0.14.2+win+unix |
+| dkml-install | 0.5.0      | 0.5.1           |
+
+New patches:
+
+* The version `ocamlbuild.0.14.2+win+unix` in diskuv-opam-repository is not
+  Windows-only like the `ocamlbuild.0.14.2+win` in the main opam-repository
+
 ## 2.0.2 (2023-07-27)
 
 ### Upgrading?
