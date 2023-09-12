@@ -1257,7 +1257,19 @@ function(add_all_targets)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     set(newSemverFile ${CMAKE_CURRENT_BINARY_DIR}/new-${ARG_BUMP_LEVEL}-semver)
-    set(selfModifications)
+    
+    # Often bugs are fixed in .cmake files during a bump. Include any of those
+    # fixes in -final.
+    file(GLOB selfModifications LIST_DIRECTORIES false
+        RELATIVE ${PROJECT_SOURCE_DIR}
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/CMakeLists.txt
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DkML*.cmake)
+
+    # Often the vM.N.O.md changelog is manually modified during the bump as bugs are found.
+    # Include them in -final.
+    if(EXISTS ${PROJECT_SOURCE_DIR}/contributors/changes/v${ARG_NEW_VERSION_SEMVER}.md)
+        list(APPEND selfModifications contributors/changes/v${ARG_NEW_VERSION_SEMVER}.md)
+    endif()    
 
     if(ARG_BUMP_LEVEL STREQUAL "PRERELEASE")
         # PRERELEASE bump
