@@ -117,7 +117,7 @@ fi
 run_create_opam_switch \
 -p '@DKML_HOST_ABI@' \
 -b Release \
--n '@SHORT_BUMP_LEVEL@' \
+-n '@SWITCH_NAME@' \
 -r "$OPAMROOT" \
 -a \
 -w \

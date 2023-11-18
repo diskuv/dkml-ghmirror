@@ -12,17 +12,23 @@
 # 2. We start with a full version number that is bumpable, and then
 # decompose it so we can pull out a semver compatible version.
 
-# Allow [-D <DKML_VERSION_CMAKEVER_OVERRIDE>] in script mode
+# The last released version (never a prerelease).
+#   Allow [-D <DKML_PUBLICVERSION_CMAKEVER_OVERRIDE>] in script mode
+if(CMAKE_SCRIPT_MODE_FILE AND DKML_PUBLICVERSION_CMAKEVER_OVERRIDE)
+    set(DKML_PUBLICVERSION_CMAKEVER "${DKML_PUBLICVERSION_CMAKEVER_OVERRIDE}")
+else()
+    #   Edited by pkg/bump/CMakeLists.txt. Do not change format.
+    set(DKML_PUBLICVERSION_CMAKEVER "2.0.3")
+endif()
+
+# The current version.
+#   Allow [-D <DKML_VERSION_CMAKEVER_OVERRIDE>] in script mode
 if(CMAKE_SCRIPT_MODE_FILE AND DKML_VERSION_CMAKEVER_OVERRIDE)
     set(DKML_VERSION_CMAKEVER "${DKML_VERSION_CMAKEVER_OVERRIDE}")
 else()
     # Edited by pkg/bump/CMakeLists.txt. Do not change format.
-    set(DKML_VERSION_CMAKEVER "2.0.3")
+    set(DKML_VERSION_CMAKEVER "2.1.0")
 endif()
-
-# The last released version (never a prerelease)
-# Edited by pkg/bump/CMakeLists.txt. Do not change format.
-set(DKML_PUBLICVERSION_CMAKEVER "2.0.3")
 
 macro(ExpandDkmlVersion VERSIONTYPE)
     string(REPLACE "." ";" VERSION_LIST ${DKML_${VERSIONTYPE}_CMAKEVER})
@@ -74,6 +80,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND DUMP_DKML_VERSION)
     message(NOTICE "DKML_VERSION_MAJMIN=${DKML_VERSION_MAJMIN}")
     message(NOTICE "DKML_VERSION_MAJMINPAT=${DKML_VERSION_MAJMINPAT}")
     message(NOTICE "DKML_VERSION_SEMVER=${DKML_VERSION_SEMVER}")
+    message(NOTICE "DKML_VERSION_OPAMVER=${DKML_VERSION_OPAMVER}")
 
     message(NOTICE "DKML_PUBLICVERSION_CMAKEVER=${DKML_PUBLICVERSION_CMAKEVER}")
     message(NOTICE "DKML_PUBLICVERSION_MAJOR=${DKML_PUBLICVERSION_MAJOR}")

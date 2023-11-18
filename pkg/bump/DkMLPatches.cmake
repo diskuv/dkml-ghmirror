@@ -63,12 +63,12 @@ file(GLOB_RECURSE diskuv-opam-repository-PACKAGEGLOB
 
 # Get the list of the latest package versions compatible with
 # [OCAML_VERSION]. Any packages that are part of [SYNCHRONIZED_PACKAGES]
-# will be reported as version [DKML_VERSION_OPAMVER_NEW]
+# will be reported as version [DKML_VERSION_OPAMVER]
 # because the expectation is that those will be pinned during
 # the CMake bump/ targets.
 function(DkMLPatches_GetPackageVersions)
     set(noValues)
-    set(singleValues DUNE_VERSION OCAML_VERSION DKML_VERSION_OPAMVER_NEW OUTPUT_VARIABLE)
+    set(singleValues DUNE_VERSION OCAML_VERSION OUTPUT_VARIABLE)
     set(multiValues SYNCHRONIZED_PACKAGES EXCLUDE_PACKAGES)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
@@ -87,15 +87,15 @@ function(DkMLPatches_GetPackageVersions)
             continue()
         elseif(pkgname IN_LIST ARG_SYNCHRONIZED_PACKAGES)
             # Ex. dkml-runtimelib, with-dkml
-            list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
+            list(APPEND pkgvers ${pkgname}.${DKML_VERSION_OPAMVER})
         elseif("dkml-compiler" IN_LIST ARG_SYNCHRONIZED_PACKAGES AND pkgname IN_LIST dkml-compiler_PACKAGES)
-            list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
+            list(APPEND pkgvers ${pkgname}.${DKML_VERSION_OPAMVER})
         elseif("dkml-runtime-apps" IN_LIST ARG_SYNCHRONIZED_PACKAGES AND pkgname IN_LIST dkml-runtime-apps_PACKAGES)
-            list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
+            list(APPEND pkgvers ${pkgname}.${DKML_VERSION_OPAMVER})
         elseif("dkml-runtime-common" IN_LIST ARG_SYNCHRONIZED_PACKAGES AND pkgname IN_LIST dkml-runtime-common_PACKAGES)
-            list(APPEND pkgvers ${pkgname}.${ARG_DKML_VERSION_OPAMVER_NEW})
+            list(APPEND pkgvers ${pkgname}.${DKML_VERSION_OPAMVER})
         elseif(pkgname IN_LIST DKML_COMPILER_DKML_VERSIONED_PACKAGES)
-            list(APPEND ${pkgname}.${ARG_OCAML_VERSION}~v${ARG_DKML_VERSION_OPAMVER_NEW})
+            list(APPEND ${pkgname}.${ARG_OCAML_VERSION}~v${DKML_VERSION_OPAMVER})
         elseif(pkgname STREQUAL "ocaml" OR pkgname IN_LIST DKML_COMPILER_VERSIONED_PACKAGES)
             list(APPEND ${pkgname}.${ARG_OCAML_VERSION})
         elseif(pkgname STREQUAL "dune")

@@ -7,7 +7,10 @@
    * Delete the `build/pkg/bump` directory
 
 2. Run CMake configure (`cmake -G` or a "configure" button in your CMake-enabled IDE)
-3. Run through each of the CMake targets **sequentially** starting from `-Stage0-` to
+   with `windows_x86_64` or another OS-specific configuration.
+3. Run one of the `Package-VersionBump-{PRERELEASE,PATCH,MINOR,MAJOR}` targets
+4. Rerun CMake configure (ex. `cmake -G`).
+5. Run through each of the CMake targets **sequentially** starting from `Package-Stage0-` to
    the highest Stage number. Many stages require a re-configuration based on
    values obtained from the prior stages, so do not skip any targets.
 
@@ -30,4 +33,4 @@
       [build] # Error: Unbound module Dkml_component_network_ocamlcompiler
       ```
 
-4. Finish with the CMake target `-PublishAssets`.
+6. Finish with the CMake target `-PublishAssets`.

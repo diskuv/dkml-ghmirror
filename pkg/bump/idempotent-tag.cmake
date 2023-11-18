@@ -1,11 +1,11 @@
-if(NOT GIT_EXECUTABLE OR NOT BUMP_LEVEL OR
+if(NOT GIT_EXECUTABLE OR
     NOT DKML_VERSION_SEMVER_NEW OR NOT DKML_VERSION_OPAMVER_NEW)
     message(FATAL_ERROR "Invalid idempotent-tag.cmake arguments")
 endif()
 
 set(tar_ARGS)
 
-if(BUMP_LEVEL STREQUAL PRERELEASE)
+if(DKML_VERSION_PRERELEASE_NEW)
     # Prereleases can always be overwritten, so force overwrite the git tag if present.
     list(APPEND tar_ARGS --force)
 endif()

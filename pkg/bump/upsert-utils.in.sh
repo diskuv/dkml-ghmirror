@@ -5,7 +5,7 @@ UPSERT_BINARY_DIR=$(pwd)
 
 # Get location of opam from cmdrun/opamrun (whatever is launching this script)
 OPAM_EXE=$(command -v opam)
-export OPAMSWITCH=@SHORT_BUMP_LEVEL@
+export OPAMSWITCH=@DKML_VERSION_CMAKEVER@
 
 # Especially for Windows, we need the system Git for [opam repository]
 # commands and no other PATH complications.

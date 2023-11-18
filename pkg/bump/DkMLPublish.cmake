@@ -4,7 +4,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/DkMLBumpLevels.cmake)
 
 # Aka. https://gitlab.com/dkml/distributions/dkml
 set(GITLAB_UPLOAD_BASE_URL https://gitlab.com/api/v4/projects/dkml%2Fdistributions%2Fdkml)
-set(PUBLISHDIR ${CMAKE_CURRENT_BINARY_DIR}/Publish)
+set(PUBLISHDIR ${CMAKE_CURRENT_BINARY_DIR}/${DKML_VERSION_CMAKEVER}/publish)
 
 set(glab_HINTS)
 
@@ -17,16 +17,12 @@ find_program(GLAB_EXECUTABLE glab
 
 function(DkMLPublish_ChangeLog)
     set(noValues)
-    set(singleValues DKML_VERSION_SEMVER_CHANGES OUTPUT_VARIABLE)
+    set(singleValues OUTPUT_VARIABLE)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    string(REPLACE "." ";" VERSION_LIST ${ARG_DKML_VERSION_SEMVER_CHANGES})
-    string(REPLACE "-" ";" VERSION_LIST "${VERSION_LIST}")
-    list(GET VERSION_LIST 0 DKML_VERSION_MAJOR_NEW)
-    list(GET VERSION_LIST 1 DKML_VERSION_MINOR_NEW)
-    list(GET VERSION_LIST 2 DKML_VERSION_PATCH_NEW)
-    set(changes_MD ${PROJECT_SOURCE_DIR}/contributors/changes/v${DKML_VERSION_MAJOR_NEW}.${DKML_VERSION_MINOR_NEW}.${DKML_VERSION_PATCH_NEW}.md)
+    # There is no prerelease change.md, so use patch change.md
+    set(changes_MD ${PROJECT_SOURCE_DIR}/contributors/changes/v${DKML_VERSION_MAJOR}.${DKML_VERSION_MINOR}.${DKML_VERSION_PATCH}.md)
 
     if(NOT EXISTS ${changes_MD})
         message(FATAL_ERROR "Missing changelog at ${changes_MD}")
@@ -103,15 +99,13 @@ endfunction()
 
 function(DkMLPublish_CreateReleaseTarget)
     set(noValues)
-    set(singleValues DKML_VERSION_SEMVER_NEW DKML_VERSION_SEMVER_CHANGES TARGET)
+    set(singleValues TARGET)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
     # Get ChangeLog entry
-    set(changes_MD_NEW_FILENAME ${PUBLISHDIR}/change-${ARG_DKML_VERSION_SEMVER_NEW}.md)
-    DkMLPublish_ChangeLog(
-        DKML_VERSION_SEMVER_CHANGES ${ARG_DKML_VERSION_SEMVER_CHANGES}
-        OUTPUT_VARIABLE changes_MD)
+    set(changes_MD_NEW_FILENAME ${PUBLISHDIR}/change.md)
+    DkMLPublish_ChangeLog(OUTPUT_VARIABLE changes_MD)
     file(READ ${changes_MD} changes_CONTENT)
     string(TIMESTAMP now_YYYYMMDD "%Y-%m-%d")
     string(REPLACE "@@YYYYMMDD@@" "${now_YYYYMMDD}" changes_CONTENT "${changes_CONTENT}")
@@ -124,9 +118,9 @@ function(DkMLPublish_CreateReleaseTarget)
 
         # https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/release/create.md
         COMMAND
-        ${GLAB_EXECUTABLE} release create ${ARG_DKML_VERSION_SEMVER_NEW}
-        --name "DkML ${ARG_DKML_VERSION_SEMVER_NEW}"
-        --ref "${ARG_DKML_VERSION_SEMVER_NEW}"
+        ${GLAB_EXECUTABLE} release create ${DKML_VERSION_SEMVER}
+        --name "DkML ${DKML_VERSION_SEMVER}"
+        --ref "${DKML_VERSION_SEMVER}"
         --notes-file ${changes_MD_NEW_FILENAME}
 
         # There seems to be an eventual consistency issue with GitLab as of 2023-09. If
@@ -141,7 +135,7 @@ endfunction()
 
 function(DkMLPublish_PublishAssetsTarget)
     set(noValues)
-    set(singleValues BUMP_LEVEL DKML_VERSION_SEMVER_NEW TARGET ARCHIVE_TARGET)
+    set(singleValues TARGET ARCHIVE_TARGET)
     set(multiValues)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
@@ -159,9 +153,8 @@ function(DkMLPublish_PublishAssetsTarget)
     set(assetlinks) # References to 5GB Generic Packages
     set(depends)
 
-    shorten_bump_level(BUMP_LEVEL ${ARG_BUMP_LEVEL} OUTPUT_VARIABLE SHORT_BUMP_LEVEL)
-    set(tnetwork ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-network/t)
-    set(toffline ${anyrun_OPAMROOT}/${SHORT_BUMP_LEVEL}/share/dkml-installer-ocaml-offline/t)
+    set(tnetwork ${anyrun_OPAMROOT}/${DKML_VERSION_CMAKEVER}/share/dkml-installer-ocaml-network/t)
+    set(toffline ${anyrun_OPAMROOT}/${DKML_VERSION_CMAKEVER}/share/dkml-installer-ocaml-offline/t)
 
     # Procedure
     # ---------
@@ -184,35 +177,35 @@ function(DkMLPublish_PublishAssetsTarget)
     macro(_handle_upload LINKTYPE SRCFILE DESTFILE NAME)
         # LINKTYPE: https://docs.gitlab.com/ee/user/project/releases/release_fields.html#link-types
         set(UPLOAD_SRCFILE "${SRCFILE}")
-        set(UPLOAD_VERSION "${ARG_DKML_VERSION_SEMVER_NEW}")
+        set(UPLOAD_VERSION "${DKML_VERSION_SEMVER}")
         set(UPLOAD_DESTFILE "${DESTFILE}")
         set(UPLOAD_TOKEN "${GITLAB_PRIVATE_TOKEN}")
-        configure_file(upload.in.cmake ${PUBLISHDIR}/${ARG_BUMP_LEVEL}/upload-${DESTFILE}.cmake
+        configure_file(upload.in.cmake ${PUBLISHDIR}/upload-${DESTFILE}.cmake
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             @ONLY)
         list(APPEND depends ${UPLOAD_SRCFILE})
         list(APPEND assetlinks "{\"name\": \"${NAME}\", \"url\":\"${GITLAB_UPLOAD_BASE_URL}/packages/generic/release/${UPLOAD_VERSION}/${UPLOAD_DESTFILE}\", \"filepath\": \"/${DESTFILE}\", \"linktype\": \"${LINKTYPE}\"}")
         list(APPEND precommands
-            COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/${ARG_BUMP_LEVEL}/upload-${DESTFILE}.cmake)
+            COMMAND ${CMAKE_COMMAND} -P ${PUBLISHDIR}/upload-${DESTFILE}.cmake)
     endmacro()
 
     if(DKML_TARGET_ABI STREQUAL windows_x86 OR DKML_TARGET_ABI STREQUAL windows_x86_64)
         # The reverse order of insertion shows up on GitLab UI. Want installer to display
         # first, so _handle_upload(<installer>) last.
         _handle_upload(package
-            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER}.exe
             uninstall64nu.exe
             "Windows 64-bit Native Uninstaller (unsigned)")
         _handle_upload(package
-            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${tnetwork}/unsigned-dkml-native-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER}.exe
             setup64nu.exe
             "Windows 64-bit Native Installer (unsigned)")
         _handle_upload(package
-            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-u-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-u-${DKML_VERSION_SEMVER}.exe
             uninstall64bu.exe
             "Windows 64-bit Lite Bytecode Uninstaller (unsigned)")
         _handle_upload(package
-            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-i-${ARG_DKML_VERSION_SEMVER_NEW}.exe
+            ${toffline}/unsigned-dkml-byte-${DKML_TARGET_ABI}-i-${DKML_VERSION_SEMVER}.exe
             setup64bu.exe
             "Windows 64-bit Lite Bytecode Installer (unsigned)")
     endif()
@@ -222,7 +215,7 @@ function(DkMLPublish_PublishAssetsTarget)
 
         list(APPEND postcommands
             COMMAND
-            ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
+            ${GLAB_EXECUTABLE} release upload ${DKML_VERSION_SEMVER}
             --assets-links=[${assetlinks_csv}]
         )
     endif()
@@ -240,7 +233,7 @@ function(DkMLPublish_PublishAssetsTarget)
         ${precommands}
 
         COMMAND
-        ${GLAB_EXECUTABLE} release upload ${ARG_DKML_VERSION_SEMVER_NEW}
+        ${GLAB_EXECUTABLE} release upload ${DKML_VERSION_SEMVER}
         ${uploads}
 
         ${postcommands}
