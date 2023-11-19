@@ -13,7 +13,7 @@ if [ "@CMAKE_HOST_WIN32@" = 1 ] && [ ! -e /clang64/lib/libffi.a ]; then
 fi
 
 # ------ 0 --------
-# Add or upgrade prereqs: dkml-runtime-common, dkml-compiler-env, dkml-runtime-distribution
+# Add or upgrade prereqs: dkml-runtime-common, dkml-compiler-src, dkml-runtime-distribution
 # ------- 1 -------
 # Add or upgrade the diskuv-opam-repository packages (except dkml-runtime-apps
 # which we will do in the next step).
@@ -55,7 +55,7 @@ idempotent_opam_local_install unmanaged-patched-full-no-dune-withdkml-and-apps \
     '@DKML_UNMANAGED_PATCHED_PACKAGES_PKGVERS_CKSUM@,@dkml-runtime-common_SHORTREF@,@dkml-compiler_SHORTREF@,@dkml-runtime-distribution_SHORTREF@,@dkml-runtime-apps_SHORTREF@' \
     '@PROJECT_SOURCE_DIR@' \
     '@dkml-runtime-common_REL_SOURCE_DIR@/dkml-runtime-common.opam' \
-    '@dkml-compiler_REL_SOURCE_DIR@/dkml-compiler-env.opam' \
+    '@dkml-compiler_REL_SOURCE_DIR@/dkml-compiler-src.opam' \
     '@dkml-runtime-distribution_REL_SOURCE_DIR@/dkml-runtime-distribution.opam' \
     @DKML_UNMANAGED_PATCHED_PACKAGES_SPACED_PKGVERS@ \
     @FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS@ \

@@ -13,7 +13,6 @@ set -euf
 idempotent_opam_local_install dkml-installer-ocaml_TRANSITIVE \
     '@dkml-compiler_SHORTREF@,@dkml-component-ocamlrun_SHORTREF@,@dkml-component-desktop_SHORTREF@,@dkml-component-opam_SHORTREF@,@dkml-component-unixutils_SHORTREF@,@dkml-component-ocamlcompiler_SHORTREF@,@dkml-install-api_SHORTREF@,@dkml-installer-ocaml_SHORTREF@,@dkml-installer-ocaml-byte_SHORTREF@' \
     '@PROJECT_SOURCE_DIR@' \
-    '@dkml-compiler_REL_SOURCE_DIR@/dkml-compiler-src.opam' \
     '@dkml-component-ocamlrun_REL_SOURCE_DIR@/dkml-component-staging-ocamlrun.opam' \
     '@dkml-component-desktop_REL_SOURCE_DIR@/dkml-component-staging-withdkml.opam' \
     '@dkml-component-desktop_REL_SOURCE_DIR@/dkml-component-staging-dkmlconfdir.opam' \
