@@ -16,7 +16,7 @@ shift
 # SETUP
 # -----
 
-env TOPDIR="${CI_PROJECT_DIR}/vendor/drc/all/emptytop" vendor/drd/src/unix/private/r-f-oorepo-1-setup.sh \
+vendor/drd/src/unix/private/r-f-oorepo-1-setup.sh \
     -d "${CI_PROJECT_DIR}" \
     -t "$DEPLOYDIR" \
     -v "$DV_WindowsMsvcDockerImage" \

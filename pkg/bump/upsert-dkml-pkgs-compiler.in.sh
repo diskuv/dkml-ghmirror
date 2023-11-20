@@ -1,7 +1,6 @@
 #!/bin/sh
 set -euf
 
-export TOPDIR='@dkml-runtime-common_SOURCE_DIR@/all/emptytop'
 export DKMLDIR='@DKML_ROOT_DIR@'
 
 #       shellcheck disable=SC1091

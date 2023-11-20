@@ -5,7 +5,6 @@ set -euf
 # This is only for building [with-dkml] and any other critical tools that
 # are needed for a full opam switch (especially on Windows).
 
-export TOPDIR='@dkml-runtime-common_SOURCE_DIR@/all/emptytop'
 export DKMLDIR='@DKML_ROOT_DIR@'
 
 #       shellcheck disable=SC1091
