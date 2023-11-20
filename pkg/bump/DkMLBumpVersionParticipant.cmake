@@ -39,6 +39,18 @@ macro(_DkMLBumpVersionParticipant_Finish_Replace VERSION_TYPE)
     set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
 endmacro()
 
+macro(_DkMLBumpVersionParticipant_Finish_ReplaceDirect WHAT)
+    if(contents STREQUAL "${contents_NEW}")
+        # idempotent
+        return()
+    endif()
+
+    file(WRITE ${REL_FILENAME} "${contents_NEW}")
+
+    message(NOTICE "Bumped ${REL_FILENAME} to ${WHAT}")
+    set_property(GLOBAL APPEND PROPERTY DkMLReleaseParticipant_REL_FILES ${REL_FILENAME})
+endmacro()
+
 # 1.2.1-2 -> 1.2.1-3
 function(DkMLBumpVersionParticipant_PlainReplace REL_FILENAME)
     file(READ ${REL_FILENAME} contents)
@@ -72,7 +84,7 @@ function(DkMLBumpVersionParticipant_ReleaseDateReplace REL_FILENAME)
         "(^|\n)ReleaseDate: [0-9-]+"
         "\\1ReleaseDate: ${now_YYYYMMDD}"
         contents_NEW "${contents_NEW}")
-    _DkMLBumpVersionParticipant_Finish_Replace(SEMVER)
+    _DkMLBumpVersionParticipant_Finish_ReplaceDirect(${now_YYYYMMDD})
 endfunction()
 
 # Copyright: Copyright 2022 Diskuv, Inc. -> Copyright: Copyright 2023 Diskuv, Inc.
@@ -85,7 +97,7 @@ function(DkMLBumpVersionParticipant_CopyrightReplace REL_FILENAME)
         "Copyright 2[0-9][0-9][0-9] Diskuv"
         "Copyright ${now_YYYY} Diskuv"
         contents_NEW "${contents_NEW}")
-    _DkMLBumpVersionParticipant_Finish_Replace(SEMVER)
+    _DkMLBumpVersionParticipant_Finish_ReplaceDirect(${now_YYYY})
 endfunction()
 
 # (version 1.2.1~prerel2) -> (version 1.2.1~prerel3)
@@ -193,6 +205,19 @@ function(DkMLBumpVersionParticipant_DkmlBaseCompilerReplace REL_FILENAME)
         contents_NEW "${contents_NEW}")
 
     _DkMLBumpVersionParticipant_Finish_Replace(OPAMVER)
+endfunction()
+
+# 4.14.0 -> 4.14.2
+function(DkMLBumpVersionParticipant_OCamlVersionReplace REL_FILENAME)
+    file(READ ${REL_FILENAME} contents)
+    set(contents_NEW "${contents}")
+
+    string(REGEX REPLACE # Match at beginning of line: ^|\n
+        "(^|\n)[0-9]+[.][0-9]+[.][0-9]+$"
+        "\\1${DKML_RELEASE_OCAML_VERSION}"
+        contents_NEW "${contents_NEW}")
+
+    _DkMLBumpVersionParticipant_Finish_ReplaceDirect(${DKML_RELEASE_OCAML_VERSION})
 endfunction()
 
 # ("DKML_VERSION", "1.1.0-prerel15"); -> ("DKML_VERSION", "1.2.1-3")
