@@ -40,6 +40,7 @@ endforeach()
 # Make variables for all synced projects _and_ unsynced projects to have a
 # opam-install-friendly relative directory to PROJECT_SOURCE_DIR, and a
 # short git reference.
+# Also make files containing the shortrefs so they can be used in DEPENDS.
 
 foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     FetchContent_GetProperties(${PROJECT})
@@ -61,6 +62,9 @@ foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
         COMMAND_ERROR_IS_FATAL ANY
     )
     string(SUBSTRING "${gitref}" 0 6 ${PROJECT}_SHORTREF)
+
+    # Only write if content has changed
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/depends/${PROJECT}.shortref" CONTENT "${gitref}")
 endforeach()
 
 # ----------------
@@ -352,11 +356,6 @@ function(add_VersionBump_target_for_synced_projects)
         VERBATIM USES_TERMINAL)
 endfunction()
 
-FetchContent_GetProperties(dkml-runtime-distribution)
-file(GLOB dkml-runtime-distribution_PKGS_FILES
-    LIST_DIRECTORIES false
-    ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-pkgs.txt)
-
 function(add_PackageUpgrade_target)
     set(noValues)
     set(singleValues OPAMROOT OPAMEXE)
@@ -647,7 +646,6 @@ function(get_flavor_packages)
     set(multiValues FLAVORS)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
 
-    FetchContent_GetProperties(dkml-runtime-distribution)
     set(pkgvers)
     set(depends)
 
@@ -658,6 +656,7 @@ function(get_flavor_packages)
         list(APPEND depends ${PKGS_TXT})
     endmacro()
 
+    FetchContent_GetProperties(dkml-runtime-distribution)
     foreach(FLAVOR IN LISTS ARG_FLAVORS)
         string(TOLOWER "${FLAVOR}" lowerFlavor)
         grok(${dkml-runtime-distribution_SOURCE_DIR}/src/none/${lowerFlavor}-anyver-pkgs.txt)
@@ -702,6 +701,8 @@ set(duneFlavorPkgVers ${DUNE_FLAVOR_PKGVERS})
 list(FILTER duneFlavorPkgVers EXCLUDE REGEX "^dune[.]")
 list(APPEND duneFlavorPkgVers dune.${DKML_RELEASE_DUNE_VERSION})
 list(JOIN duneFlavorPkgVers " " DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS)
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/depends/DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
+    CONTENT "${DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS}")
 
 # FULL_NOT_DUNE_FLAVOR_PKGVERS without [conf-withdkml]
 # * [conf-withdkml] pulls in an external [with-dkml.exe] which is not
@@ -709,6 +710,8 @@ list(JOIN duneFlavorPkgVers " " DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS)
 set(fullNoDuneNoWithdkmlPkgVers ${FULL_NOT_DUNE_FLAVOR_PKGVERS})
 list(FILTER fullNoDuneNoWithdkmlPkgVers EXCLUDE REGEX "^conf-withdkml[.]")
 list(JOIN fullNoDuneNoWithdkmlPkgVers " " FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS)
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/depends/FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS
+    CONTENT "${FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS}")
 
 # -----------------------------------
 # GenerateLaunchers
@@ -912,12 +915,9 @@ function(add_Flavor_targets)
         OUTPUT_VARIABLE DISKUV_OPAM_REPOSITORY_GITREF
         COMMAND_ERROR_IS_FATAL ANY
     )
-    file(CONFIGURE OUTPUT ${opamsw}/rerun-on-DISKUV_OPAM_REPOSITORY_GITREF
-        CONTENT "@DISKUV_OPAM_REPOSITORY_GITREF@"
-        @ONLY NEWLINE_STYLE UNIX
-    )
 
     # Checksum to retrigger introspection
+    FetchContent_GetProperties(dkml-runtime-distribution)
     file(GLOB pkgs_txt_lst LIST_DIRECTORIES false
         ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-anyver-pkgs.txt
         ${dkml-runtime-distribution_SOURCE_DIR}/src/none/*-${DKML_RELEASE_OCAML_VERSION}-pkgs.txt)
@@ -993,10 +993,9 @@ function(add_Flavor_targets)
         DEPENDS
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
-        ${opamsw}/rerun-on-DISKUV_OPAM_REPOSITORY_GITREF
-        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/create-opam-switch.sh
-        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/init-opam-root.sh
-        ${dkml-runtime-distribution_SOURCE_DIR}/src/unix/private/platform-opam-exec.sh
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/diskuv-opam-repository.shortref # for init-opam-root.sh
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-common.shortref # needed by dkml-runtime-distribution
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-distribution.shortref # src/unix/create-opam-switch.sh, src/unix/private/init-opam-root.sh etc.
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} opam switch"
 
         # We don't make a separate CMake command for creating the opam root
@@ -1023,8 +1022,8 @@ function(add_Flavor_targets)
         ${switchCreated}
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
-        ${dkml-runtime-common_SOURCE_DIR}/dkml-runtime-common-native.opam
-        ${dkml-compiler_SOURCE_DIR}/dkml-base-compiler.opam
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-compiler.shortref # dkml-base-compiler.opam
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-common.shortref # dkml-runtime-common-native.opam
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} compiler"
         COMMAND ${upsert_dkml_pkgs_compiler_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${compilerCreated}
@@ -1035,9 +1034,6 @@ function(add_Flavor_targets)
     list(REMOVE_ITEM duneFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM duneFlavorOutput PREPEND "${switchPath}/lib/" OUTPUT_VARIABLE duneFlavorOutput)
     list(TRANSFORM duneFlavorOutput APPEND "/META" OUTPUT_VARIABLE duneFlavorOutput)
-    file(CONFIGURE OUTPUT ${opamsw}/rerun-on-DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
-        CONTENT [[@DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS@]]
-        @ONLY)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${duneFlavorOutput}
@@ -1046,7 +1042,7 @@ function(add_Flavor_targets)
         ${compilerCreated}
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
-        ${opamsw}/rerun-on-DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/DUNE_FLAVOR_NO_SHIM_SPACED_PKGVERS
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} distribution - Dune flavor"
         COMMAND ${upsert_dkml_pkgs_dune_COMMAND}
         VERBATIM
@@ -1067,15 +1063,16 @@ function(add_Flavor_targets)
     list(REMOVE_ITEM fullFlavorOutput ${PACKAGES_WITHOUT_META})
     list(TRANSFORM fullFlavorOutput PREPEND "${switchPath}/lib/" OUTPUT_VARIABLE fullFlavorOutput)
     list(TRANSFORM fullFlavorOutput APPEND "/META" OUTPUT_VARIABLE fullFlavorOutput)
-    file(GLOB_RECURSE flavor_full_DEPENDS
-        LIST_DIRECTORIES false
-
-        ${dkml-runtime-apps_SOURCE_DIR}/src/*)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
         OUTPUT ${fullFlavorOutput}
         MAIN_DEPENDENCY upsert-dkml-pkgs-flavor-full-not-dune.in.sh
-        DEPENDS ${duneFlavorOutput} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS} ${flavor_full_DEPENDS}
+        DEPENDS ${duneFlavorOutput} ${WITH_COMPILER_SH} ${anyrun_OUTPUTS}
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-compiler.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-apps.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-common.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-runtime-distribution.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/FULL_NOT_DUNE_FLAVOR_NO_WITHDKML_SPACED_PKGVERS
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} distribution - Full flavor"
         COMMAND ${upsert_dkml_pkgs_full_not_dune_COMMAND}
         VERBATIM
@@ -1083,11 +1080,6 @@ function(add_Flavor_targets)
     )
 
     set(introspectCreated ${opamsw}/introspect.created)
-    file(GLOB dkml_build_desktop_DEPENDS
-        LIST_DIRECTORIES false
-
-        # Compiled by dkml-build-desktop.opam
-        ${dkml-component-desktop_SOURCE_DIR}/src/citime/*)
     add_custom_command(
         WORKING_DIRECTORY ${opamsw}
 
@@ -1102,7 +1094,7 @@ function(add_Flavor_targets)
         ${fullFlavorOutput}
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
-        ${dkml_build_desktop_DEPENDS}
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-desktop.shortref # especially src/citime/* compiled by dkml-build-desktop.opam
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} introspect"
         COMMAND ${upsert_dkml_pkgs_introspect_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${introspectCreated}
@@ -1137,22 +1129,6 @@ function(add_Api_target)
     FetchContent_GetProperties(dkml-install-api) # upsert-api
     FetchContent_GetProperties(dkml-workflows) # upsert-api
 
-    set(apiSources)
-    file(GLOB sources LIST_DIRECTORIES false
-        ${dkml-install-api_SOURCE_DIR}/*.opam
-        ${dkml-install-api_SOURCE_DIR}/*.opam.template
-        ${dkml-workflows_SOURCE_DIR}/*.opam
-        ${dkml-workflows_SOURCE_DIR}/*.opam.template
-        ${dkml-installer-ocaml}/dkml-installer-ocaml-common.opam)
-    list(APPEND apiSources ${sources})
-    file(GLOB_RECURSE sources LIST_DIRECTORIES false
-        ${dkml-install-api_SOURCE_DIR}/api/*.ml
-        ${dkml-install-api_SOURCE_DIR}/installer/*.ml
-        ${dkml-install-api_SOURCE_DIR}/package/*.ml
-        ${dkml-install-api_SOURCE_DIR}/register/*.ml
-        ${dkml-install-api_SOURCE_DIR}/runner/*.ml)
-    list(APPEND apiSources ${sources})
-
     foreach(p IN ITEMS
         upsert-api)
         configure_file(${p}.in.sh ${opamsw}/${p}.sh
@@ -1180,7 +1156,9 @@ function(add_Api_target)
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
         ${ARG_DEPENDS}
-        ${apiSources}
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-install-api.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-workflows.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-installer-ocaml.shortref # dkml-installer-ocaml-common
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} api"
         COMMAND ${upsert_api_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${apiCreated}
@@ -1219,32 +1197,6 @@ function(add_Installer_target)
     FetchContent_GetProperties(dkml-install-api) # upsert-installer
     FetchContent_GetProperties(dkml-installer-ocaml) # upsert-installer
     FetchContent_GetProperties(dkml-installer-ocaml-byte) # upsert-installer
-
-    set(installerSources)
-    file(GLOB sources LIST_DIRECTORIES false
-        ${dkml-installer-ocaml_SOURCE_DIR}/META.*
-        ${dkml-installer-ocaml_SOURCE_DIR}/*.opam
-        ${dkml-installer-ocaml_SOURCE_DIR}/*.opam.template
-        ${dkml-installer-ocaml-byte_SOURCE_DIR}/META.*
-        ${dkml-installer-ocaml-byte_SOURCE_DIR}/*.opam
-        ${dkml-installer-ocaml-byte_SOURCE_DIR}/*.opam.template
-        ${dkml-installer-opam_SOURCE_DIR}/META.*
-        ${dkml-installer-opam_SOURCE_DIR}/*.opam
-        ${dkml-installer-opam_SOURCE_DIR}/*.opam.template
-        ${dkml-component-unixutils_SOURCE_DIR}/META.*
-        ${dkml-component-unixutils_SOURCE_DIR}/*.opam
-        ${dkml-component-unixutils_SOURCE_DIR}/*.opam.template)
-    list(APPEND installerSources ${sources})
-    file(GLOB_RECURSE sources LIST_DIRECTORIES false
-        ${dkml-installer-ocaml_SOURCE_DIR}/i-common/src/*
-        ${dkml-installer-ocaml_SOURCE_DIR}/i-network/bin/*
-        ${dkml-installer-ocaml_SOURCE_DIR}/i-network/src/*
-        ${dkml-installer-ocaml-byte_SOURCE_DIR}/i-offline/bin/*
-        ${dkml-installer-ocaml-byte_SOURCE_DIR}/i-offline/src/*
-        ${dkml-component-desktop_SOURCE_DIR}/src/*
-        ${dkml-component-opam_SOURCE_DIR}/src/*
-        ${dkml-component-unixutils_SOURCE_DIR}/src/*)
-    list(APPEND installerSources ${sources})
 
     foreach(p IN ITEMS
         upsert-installer)
@@ -1288,7 +1240,13 @@ function(add_Installer_target)
         ${WITH_COMPILER_SH}
         ${anyrun_OUTPUTS}
         ${ARG_DEPENDS}
-        ${installerSources}
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-desktop.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-ocamlcompiler.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-ocamlrun.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-opam.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-component-unixutils.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-installer-ocaml-byte.shortref
+        ${CMAKE_CURRENT_BINARY_DIR}/depends/dkml-installer-ocaml.shortref
         COMMENT "Creating/updating ${DKML_VERSION_CMAKEVER} installer"
         COMMAND ${upsert_installer_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${installerCreated}
