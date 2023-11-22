@@ -7,6 +7,7 @@ cmake_path(NATIVE_PATH TOOLSDIR TOOLSDIR_NATIVE)
 configure_file(config.in.wsb config.wsb @ONLY)
 configure_file(installer-native.in.cmd ${TOOLSDIR}/installer-native.cmd @ONLY NEWLINE_STYLE DOS)
 configure_file(installer-byte.in.cmd ${TOOLSDIR}/installer-byte.cmd @ONLY NEWLINE_STYLE DOS)
+file(COPY_FILE install-winget.ps1 ${TOOLSDIR}/install-winget.ps1 ONLY_IF_DIFFERENT)
 configure_file(test.in.cmd ${TOOLSDIR}/test.cmd @ONLY NEWLINE_STYLE DOS)
 file(COPY proj1 proj2 script1 DESTINATION ${TOOLSDIR})
 
