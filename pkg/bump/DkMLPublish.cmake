@@ -12,8 +12,7 @@ if(IS_DIRECTORY Z:/ProgramFiles/glab)
     list(APPEND glab_HINTS Z:/ProgramFiles/glab)
 endif()
 
-find_program(GLAB_EXECUTABLE glab
-    REQUIRED HINTS ${glab_HINTS})
+find_program(GLAB_EXECUTABLE glab REQUIRED HINTS ${glab_HINTS})
 
 function(DkMLPublish_ChangeLog)
     set(noValues)

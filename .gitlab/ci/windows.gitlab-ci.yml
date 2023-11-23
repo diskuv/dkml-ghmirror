@@ -24,10 +24,6 @@
   - $ErrorActionPreference = 'Stop'
   - $ProgressPreference = 'SilentlyContinue'
 
-  - $env:PSModulePath += "$([System.IO.Path]::PathSeparator)vendor\drd\src\windows"
-  - Import-Module DeploymentVersion # Use the same $DV_ variables as 'installtime' scripts
-  - Import-Module UnixInvokers      # Use Invoke-CygwinCommand and Invoke-MSYS2Command
-
   # ----------- Chocolatey --------------
   - |
     $oldeap = $ErrorActionPreference; $ErrorActionPreference = "SilentlyContinue";
@@ -65,25 +61,10 @@
   - date
 
 .before_setupmachine: &before-setupmachine
-  # ----------- Visual Studio Detection -----------
-
-  - Import-VSSetup -TempPath "$env:TEMP\vssetup"
-  - $ExtraSetupMachineOpts = ""
-  - if ("$env:SKIP_VISUAL_STUDIO_INSTALL" -eq "ON") { $ExtraSetupMachineOpts = "-SkipAutoInstallVsBuildTools"; Get-CompatibleVisualStudios -ErrorIfNotFound }
-
-  # ----------- setup-machine.ps1 -----------
-  # Timing: 15 seconds if nothing needs to be installed
-
-  # TODO: When setup.exe is done, use that instead.
-  # - vendor\diskuv-ocaml\installtime\windows\setup-machine.bat -SkipProgress -AllowRunAsAdmin $ExtraSetupMachineOpts
-  # - date
-
-  - $CompatibleVisualStudios = Get-CompatibleVisualStudios -ErrorIfNotFound
-  - $CompatibleVisualStudios
-  - $ChosenVisualStudio = ($CompatibleVisualStudios | Select-Object -First 1)
-  - $VisualStudioProps = Get-VisualStudioProperties -VisualStudioInstallation $ChosenVisualStudio
-  - $VisualStudioProps
-  - $VS_EXPORT_CMDS = "export DKML_COMPILE_SPEC=1; export DKML_COMPILE_TYPE=VS; export DKML_COMPILE_VS_DIR='$($VisualStudioProps.InstallPath)'; export DKML_COMPILE_VS_VCVARSVER='$($VisualStudioProps.VcVarsVer)'; export DKML_COMPILE_VS_WINSDKVER='$($VisualStudioProps.WinSdkVer)'; export DKML_COMPILE_VS_MSVSPREFERENCE='$($VisualStudioProps.MsvsPreference)'; export DKML_COMPILE_VS_CMAKEGENERATOR='$($VisualStudioProps.CMakeGenerator)'"
+  # ninja needed for 'cmake -G Ninja' (on GitLab Windows SaaS the default generator would be Visual Studio 2019 ... aka. MSBuild)
+  - choco upgrade ninja -y --no-progress
+  # glab needed for DkMLPublish.cmake
+  - choco upgrade glab -y --no-progress
 
 .before_msys2: &before-msys2
   # ----------- MSYS2 -----------
@@ -119,41 +100,6 @@
       zip'
   - msys_direct 'pacman --noconfirm -Scc'  # Cleans the entire package cache
   - taskkill /F /FI "MODULES eq msys-2.0.dll" # Stops any background services that pacman started, if any
-
-.before_cygwin: &before-cygwin
-  # ----------- Cygwin -----------
-
-  # (Choco best practices: https://docs.chocolatey.org/en-us/choco/commands/#scripting-integration-best-practices-style-guide)
-  - choco upgrade cyg-get -y --no-progress --version="'1.2.1'"
-  - choco upgrade 7zip -y --no-progress --version="'19.0'"
-  - refreshenv
-  - cyg-get -help
-  - cyg-get -debug `
-      curl `
-      jq `
-      rsync `
-      tar
-  - Get-ItemProperty HKLM:\SOFTWARE\Cygwin\setup -Name rootdir
-  - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
-  - |
-    function cygwin() {
-      $path_unix = c:\tools\cygwin\bin\cygpath --path "$env:PATH" ;
-      Invoke-CygwinCommand -CygwinDir c:\tools\cygwin -Command ("cd '$PWD'; set -eufx -o pipefail; PATH=`"`$PATH`":'${path_unix}'; " + $Args[0])
-    }
-
-.windows:before-script-shared-cygwin:
-  extends:
-  - .shared_windows_runners
-  before_script:
-    - *before-windows
-    - *before-cygwin
-
-.windows:before-script-diskuv-cygwin:
-  extends:
-  - .diskuv_windows_runners
-  before_script:
-    - *before-windows
-    - *before-cygwin
 
 .windows:before-script-shared-setupmachine:
   extends:

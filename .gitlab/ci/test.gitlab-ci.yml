@@ -7,3 +7,14 @@ test:
   - make -C contributors html ; make -C contributors html O="-W"
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+
+windows-installer:
+  extends:
+    - .windows:before-script-shared-setupmachine
+  stage: test
+  script:
+  # Identity for dkml-compiler git-based patches
+  - git config --global user.email "anyone@example.com"
+
+  - cmake -G Ninja -S . -B build
+  - cmake --build build --target Package-Stage07-Installer

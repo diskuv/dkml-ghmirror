@@ -1,5 +1,9 @@
 # Developers
 
+## Prerequisites
+
+* You must install the [`glab` GitLab CLI](https://gitlab.com/gitlab-org/cli/#installation).
+
 ## Creating a new version
 
 1. If you have a build directory:
