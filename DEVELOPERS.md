@@ -55,6 +55,20 @@ In Visual Studio Code:
    Y:\source\dkml\build\pkg\bump\.ci\sd4\bs\bin\opam.exe list --switch 2.1.0 --root Y:/source/dkml/build/pkg/bump/.ci/o -- $prog $args
    ```
 
+### Stages
+
+#### Package-Stage10-GitPushForTesting
+
+This stage tags and pushes the parent `dkml` project and the `diskuv-opam-repository` project
+to Git.
+
+#### Package-Stage12-PublishAssets
+
+This stage will publish all the source archives (ex. dkml-runtime-common.tar.gz) to GitLab. That way
+the source urls in `diskuv-opam-repository` can be used.
+
+Stop at this stage if you want to use the `Package-WindowsSandbox` target.
+
 ### Dune Build
 
 You can go into directories to build each project you want to edit. For example:
@@ -68,3 +82,33 @@ Y:\source\dkml\build\pkg\bump\.ci\sd4\bs\bin\opam.exe exec --switch 2.1.0 --root
 
 You can do `git commit` in each `build/_deps/*-src` directory. There are `Package-Stage*` targets that will push in changes
 at the appropriate times.
+
+### Iterative Development
+
+> Use with **EXTREME CAUTION**
+
+Each iteration:
+
+1. Run in a Unix shell (`with-dkml bash` on Windows) ... use the correct version number:
+
+   ```sh
+   delete_git_tag() {
+      delete_git_tag_VERSION=$1; shift
+      delete_git_tag_PROJECT=$1; shift
+      git -C $delete_git_tag_PROJECT tag -d $delete_git_tag_VERSION
+      git -C $delete_git_tag_PROJECT push origin --delete $delete_git_tag_VERSION
+   }
+   next_iteration() {
+      next_iteration_VERSION=$1; shift
+      delete_git_tag $next_iteration_VERSION .
+      delete_git_tag $next_iteration_VERSION build/_deps/diskuv-opam-repository-src
+   }
+   next_iteration 9.9.9
+   ```
+
+2. Go to <https://gitlab.com/dkml/distributions/dkml/-/packages> and **delete** the **same** version number if it exists.
+3. Go to <https://gitlab.com/dkml/distributions/dkml/-/releases> and **delete** the **same** version number if it exists.
+4. Run the `Package-Stage12-PublishAssets` target.
+5. Run the `Package-WindowsSandbox` target. Inside it:
+   1. Run `powershell -ExecutionPolicy Bypass tools\install-winget.ps1`
+   2. Run `tools\installer-native.cmd`
