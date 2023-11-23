@@ -8,5 +8,9 @@
         "https://use.fontawesome.com/releases/v5.7.1/css/all.css"
     ],
     "python.pythonPath": "${workspaceFolder}/contributors/envs",
-    "esbonio.sphinx.confDir": "${workspaceFolder}\\contributors"
+    "esbonio.sphinx.confDir": "${workspaceFolder}\\contributors",
+    "ocaml.sandbox": {
+        "kind": "custom",
+        "template": "Y:\\source\\dkml\\build\\pkg\\bump\\.ci\\sd4\\bs\\bin\\opam.exe exec --switch 2.1.0 --root Y:/source/dkml/build/pkg/bump/.ci/o -- $prog $args"
+    }
 }
