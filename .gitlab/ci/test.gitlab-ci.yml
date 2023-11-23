@@ -8,13 +8,46 @@ test:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-windows-installer:
+installer-windows_x86_64:
   extends:
     - .windows:before-script-shared-setupmachine
-  stage: test
+  stage: build
   script:
   # Identity for dkml-compiler git-based patches
   - git config --global user.email "anyone@example.com"
 
   - cmake -G Ninja -S . -B build
   - cmake --build build --target Package-Stage07-Installer
+
+installer-linux_x86_64:
+  extends:
+    - .linux:setup-dkml-no-matrix
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  variables:
+    # We just need manylinux (some ancient Linux) so that linux_x86_64
+    # binaries are portable. All OCaml bits are done by DkSDK.
+    PRIMARY_SWITCH_SKIP_INSTALL: 'true'
+    SKIP_OPAM_MODIFICATIONS: 'true'
+    MANYLINUX: "true"
+    DOCKER_TLS_CERTDIR: "/certs"
+    dockcross_image_custom_prefix: ""
+
+    dkml_host_os: 'linux'
+    opam_root_cacheable: '.ci/o'
+    abi_pattern: 'manylinux2014-linux_x86_64'
+    comment: '(CentOS 7, etc.)'
+    bootstrap_opam_version: '2.2.0-alpha-20221228'
+    dkml_host_abi: 'linux_x86_64'
+    opam_root: '.ci/o'
+    dockcross_image: 'dockcross/manylinux2014-x64'
+    dockcross_run_extra_args: '--platform linux/amd64'
+    in_docker: 'true'
+
+  stage: build
+  dependencies: []
+  script:
+    - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy
+    - .ci/sd4/opamrun/cmdrun cmake -G Ninja -S . -B build
+    - .ci/sd4/opamrun/cmdrun cmake --build build --target Package-Stage07-Installer
