@@ -164,21 +164,11 @@ function(DkMLPublish_PublishAssetsTarget)
     # Only do that somewhat convoluted step for big installers ... the source
     # archives can be "normal" release attachments.
 
-    # Get GitLab private token
-    execute_process(
-        COMMAND ${GLAB_EXECUTABLE} auth status -t
-        ERROR_VARIABLE AUTH_LINE
-        COMMAND_ERROR_IS_FATAL ANY
-    )
-    string(REGEX MATCH "Token: [0-9a-h]+" GITLAB_PRIVATE_TOKEN "${AUTH_LINE}")
-    string(REPLACE "Token: " "" GITLAB_PRIVATE_TOKEN "${GITLAB_PRIVATE_TOKEN}")
-
     macro(_handle_upload LINKTYPE SRCFILE DESTFILE NAME)
         # LINKTYPE: https://docs.gitlab.com/ee/user/project/releases/release_fields.html#link-types
         set(UPLOAD_SRCFILE "${SRCFILE}")
         set(UPLOAD_VERSION "${DKML_VERSION_SEMVER}")
         set(UPLOAD_DESTFILE "${DESTFILE}")
-        set(UPLOAD_TOKEN "${GITLAB_PRIVATE_TOKEN}")
         configure_file(upload.in.cmake ${PUBLISHDIR}/upload-${DESTFILE}.cmake
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             @ONLY)
