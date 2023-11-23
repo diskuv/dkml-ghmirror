@@ -15,7 +15,7 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 REM Once ocaml has a shim:
 REM - ocaml script1/script.ocamlinit
 
-CALL %LOCALAPPDATA%\Programs\DiskuvOCaml\dkmlvars.cmd
+CALL %LOCALAPPDATA%\Programs\DkML\dkmlvars.cmd
 if "%DiskuvOCamlMode%" == "byte" (
     REM Dune as of 3.8.3 requires explicit xxx.bc on the command line or else
     REM it will do -output-complete-exe which requires a C linker
