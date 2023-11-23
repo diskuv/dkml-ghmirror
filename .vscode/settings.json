@@ -3,6 +3,10 @@
         "**/release-zip": true,
 	    "**/build/pkg/bump/.ci/o": true
     },
+    "markdown.styles": [
+        // https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid
+        "https://use.fontawesome.com/releases/v5.7.1/css/all.css"
+    ],
     "python.pythonPath": "${workspaceFolder}/contributors/envs",
     "esbonio.sphinx.confDir": "${workspaceFolder}\\contributors"
 }
