@@ -7,6 +7,20 @@ UPSERT_BINARY_DIR=$(pwd)
 OPAM_EXE=$(command -v opam)
 export OPAMSWITCH=@DKML_VERSION_CMAKEVER@
 
+# If opam root is relative (ex. .ci/o), make it absolute
+STABLE_OPAM_DIR='@CMAKE_CURRENT_BINARY_DIR@'
+if [ -z "${OPAMROOT:-}" ]; then
+    echo 'No OPAMROOT is available. Missing cmdrun or its equivalent.' >&2
+    exit 79
+fi
+case "$OPAMROOT" in
+    /*|?:*) # ex. /a/b/c or C:\Windows
+        ;;
+    *)
+        # shellcheck disable=SC2034
+        OPAMROOT="$STABLE_OPAM_DIR/$OPAMROOT" ;;
+esac
+
 # Especially for Windows, we need the system Git for [opam repository]
 # commands and no other PATH complications.
 #       shellcheck disable=SC1091
