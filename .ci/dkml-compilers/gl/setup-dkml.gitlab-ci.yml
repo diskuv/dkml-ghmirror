@@ -667,7 +667,17 @@ variables:
       # -------------------------------------------------------------------
       # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
 
+      # shellcheck disable=SC2154
+      echo "
+      ================
+      Extend dockcross
+      ================
+      in_docker=${in_docker:-}
+      dockcross_image=${dockcross_image:-}
+      "
+
       if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
+          echo "Doing docker build"
           section_begin docker-build "Summary: docker build -t dkml-dockcross"
 
           install -d .ci/sd4/docker-image
@@ -677,6 +687,7 @@ variables:
 
           section_end docker-build
       fi
+      echo "Done extend dockcross"
 
       # -------------------------------------------------------------------
 
