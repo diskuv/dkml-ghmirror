@@ -666,6 +666,19 @@ variables:
 
       # -------------------------------------------------------------------
 
+      if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
+          section_begin docker-build "Summary: docker build -t dkml-dockcross"
+
+          install -d .ci/sd4/docker-image
+          printf "FROM %s\nENV DEFAULT_DOCKCROSS_IMAGE dkml-dockcross\nRUN apt-get install -y rsync %s && rm -rf /var/lib/apt/lists/*" \
+              "${dockcross_image_custom_prefix:-}${dockcross_image:-}" "${dockcross_packages:-}" >.ci/sd4/docker-image/Dockerfile
+          docker build -t dkml-dockcross .ci/sd4/docker-image
+
+          section_end docker-build
+      fi
+
+      # -------------------------------------------------------------------
+
       section_begin setup-info "Summary: setup-dkml"
 
       SKIP_OPAM_MODIFICATIONS=${SKIP_OPAM_MODIFICATIONS:-false} # default is false

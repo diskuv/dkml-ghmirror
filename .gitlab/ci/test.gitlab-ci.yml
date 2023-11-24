@@ -21,7 +21,7 @@ installer-windows_x86_64:
 
 installer-debian_x86_64:
   extends:
-    - .c-cmake-debian:before
+    - .cmake-with-opam-prereqs-debian:before
   stage: build
   script:
   # Identity for dkml-compiler git-based patches
@@ -54,11 +54,16 @@ installer-linux_x86_64:
     opam_root: '.ci/o'
     dockcross_image: 'dockcross/manylinux2014-x64'
     dockcross_run_extra_args: '--platform linux/amd64'
+    # sqlite-devel: needed by dkml-component-staging-desktop-full > conf-sqlite3
+    dockcross_packages: 'sqlite-devel'
     in_docker: 'true'
 
   stage: build
   dependencies: []
   script:
+    # yum install sqlite-devel
+    # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
+    - docker build -t images/dkml-manylinux2014-x64 .
     - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy QUIET
     - .ci/sd4/opamrun/cmdrun cmake --preset ci-reproduce -G Ninja -D SKIP_CMDRUN=1 -D DKML_HOST_LINUX_DOCKER=0
     - .ci/sd4/opamrun/cmdrun cmake --build --preset ci-reproduce

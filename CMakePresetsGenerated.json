@@ -6,10 +6,10 @@
       "hidden": true,
       "cacheVariables": {
         "dkml-compiler_GIT_TAG": {
-          "value": "d6166d682a65667224fecc8980cf7f37beae9cde"
+          "value": "096b1351923024fad96096b5dd3db9a9acfd44c5"
         },
         "dkml-runtime-common_GIT_TAG": {
-          "value": "a983a30781b09c7434070277cb24e84a0fdda718"
+          "value": "246821c88f4334efe48854f4bbdaa92dcff903cb"
         },
         "dkml-runtime-distribution_GIT_TAG": {
           "value": "de1ad8b64dd61d2206a5d7c30bf32e83658ce925"

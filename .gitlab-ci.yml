@@ -77,7 +77,7 @@ variables:
     - apk add --no-cache git make rsync graphviz
     - pip install -U sphinx sphinx_rtd_theme
 
-.c-cmake-debian:before:
+.cmake-with-opam-prereqs-debian:before:
   image: debian:stable-slim
   variables:
     DEBIAN_FRONTEND: noninteractive # for apt-get
@@ -88,6 +88,8 @@ variables:
     #   ninja-build: CMake configure
     #   build-essential: CMake project(LANGUAGES C)
     #   git: CMake FetchContent()
-    - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git > /dev/null
+    #   unzip: needed by opam
+    #   libsqlite3-dev: needed by dkml-component-staging-desktop-full > conf-sqlite3
+    - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git unzip libsqlite3-dev > /dev/null
     # Install CMake
     - ./dk dksdk.cmake.link
