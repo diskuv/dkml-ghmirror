@@ -2681,6 +2681,31 @@ variables:
       fi
 
       # -------------------------------------------------------------------
+      # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
+
+      # shellcheck disable=SC2154
+      echo "
+      ================
+      Extend dockcross
+      ================
+      in_docker=${in_docker:-}
+      dockcross_image=${dockcross_image:-}
+      "
+
+      if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
+          echo "Doing docker build"
+          section_begin docker-build "Summary: docker build -t dkml-dockcross"
+
+          install -d .ci/sd4/docker-image
+          printf "FROM %s\nENV DEFAULT_DOCKCROSS_IMAGE dkml-dockcross\nRUN apt-get install -y rsync %s && rm -rf /var/lib/apt/lists/*" \
+              "${dockcross_image_custom_prefix:-}${dockcross_image:-}" "${dockcross_packages:-}" >.ci/sd4/docker-image/Dockerfile
+          docker build -t dkml-dockcross .ci/sd4/docker-image
+
+          section_end docker-build
+      fi
+      echo "Done extend dockcross"
+
+      # -------------------------------------------------------------------
 
       section_begin setup-info "Summary: setup-dkml"
 
@@ -4388,6 +4413,31 @@ variables:
           # shellcheck disable=SC1091
           . .ci/sd4/vsenv.sh
       fi
+
+      # -------------------------------------------------------------------
+      # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
+
+      # shellcheck disable=SC2154
+      echo "
+      ================
+      Extend dockcross
+      ================
+      in_docker=${in_docker:-}
+      dockcross_image=${dockcross_image:-}
+      "
+
+      if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
+          echo "Doing docker build"
+          section_begin docker-build "Summary: docker build -t dkml-dockcross"
+
+          install -d .ci/sd4/docker-image
+          printf "FROM %s\nENV DEFAULT_DOCKCROSS_IMAGE dkml-dockcross\nRUN apt-get install -y rsync %s && rm -rf /var/lib/apt/lists/*" \
+              "${dockcross_image_custom_prefix:-}${dockcross_image:-}" "${dockcross_packages:-}" >.ci/sd4/docker-image/Dockerfile
+          docker build -t dkml-dockcross .ci/sd4/docker-image
+
+          section_end docker-build
+      fi
+      echo "Done extend dockcross"
 
       # -------------------------------------------------------------------
 

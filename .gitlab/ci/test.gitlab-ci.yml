@@ -54,8 +54,11 @@ installer-linux_x86_64:
     opam_root: '.ci/o'
     dockcross_image: 'dockcross/manylinux2014-x64'
     dockcross_run_extra_args: '--platform linux/amd64'
-    # sqlite-devel: needed by dkml-component-staging-desktop-full > conf-sqlite3
-    dockcross_packages: 'sqlite-devel'
+    #   Extra packages from [yum].
+    #   sqlite-devel: needed by dkml-component-staging-desktop-full > conf-sqlite3
+    #   libX11-dev: needed by dkml-component-staging-desktop-full > graphics > conf-libX11
+    #   pkgconfig: needed by dkml-component-staging-desktop-full > conf-sqlite3 > conf-pkg-config
+    dockcross_packages: 'sqlite-devel libX11-dev pkgconfig'
     in_docker: 'true'
 
   stage: build

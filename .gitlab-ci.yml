@@ -90,6 +90,8 @@ variables:
     #   git: CMake FetchContent()
     #   unzip: needed by opam
     #   libsqlite3-dev: needed by dkml-component-staging-desktop-full > conf-sqlite3
-    - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git unzip libsqlite3-dev > /dev/null
+    #   libx11-dev: needed by dkml-component-staging-desktop-full > graphics > conf-libX11
+    #   pkg-config: needed by dkml-component-staging-desktop-full > conf-sqlite3 > conf-pkg-config
+    - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git unzip libsqlite3-dev libx11-dev pkg-config > /dev/null
     # Install CMake
     - ./dk dksdk.cmake.link QUIET
