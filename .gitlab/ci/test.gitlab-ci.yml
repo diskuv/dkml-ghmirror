@@ -16,8 +16,19 @@ installer-windows_x86_64:
   # Identity for dkml-compiler git-based patches
   - git config --global user.email "anyone@example.com"
 
-  - cmake -G Ninja -S . -B build -D DKML_GOLDEN_SOURCE_CODE=1
-  - cmake --build build --target Package-Stage07-Installer
+  - cmake --preset ci-reproduce -G Ninja
+  - cmake --build --preset ci-reproduce
+
+installer-debian_x86_64:
+  extends:
+    - .c-cmake-debian:before
+  stage: build
+  script:
+  # Identity for dkml-compiler git-based patches
+  - git config --global user.email "anyone@example.com"
+
+  - .ci/cmake/bin/cmake --preset ci-reproduce -G Ninja -D DKML_HOST_LINUX_DOCKER=0
+  - .ci/cmake/bin/cmake --build --preset ci-reproduce
 
 installer-linux_x86_64:
   extends:
@@ -48,6 +59,6 @@ installer-linux_x86_64:
   stage: build
   dependencies: []
   script:
-    - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy
-    - .ci/sd4/opamrun/cmdrun cmake -G Ninja -S . -B build -D DKML_GOLDEN_SOURCE_CODE=1
-    - .ci/sd4/opamrun/cmdrun cmake --build build --target Package-Stage07-Installer
+    - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy QUIET
+    - .ci/sd4/opamrun/cmdrun cmake --preset ci-reproduce -G Ninja -D SKIP_CMDRUN=1 -D DKML_HOST_LINUX_DOCKER=0
+    - .ci/sd4/opamrun/cmdrun cmake --build --preset ci-reproduce

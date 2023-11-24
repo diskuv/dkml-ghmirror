@@ -27,7 +27,21 @@
 ### Rebuilding an installer
 
 1. Run CMake configure (`cmake -G` or a "configure" button in your CMake-enabled IDE)
-   with `windows_x86_64` or another OS-specific configuration.
+   with the `ci-reproduce` configuration.
+
+   > The `ci-reproduce` target will use [CMakePresetsGenerated.json](./CMakePresetsGenerated.json)
+   > which captures the last git commits of all the [subprojects](./dependencies/fetch-git-projects.cmake)
+   > needed by DkML.
+   >
+   > Other downloads come from `opam install` which has reproducible sources from
+   > `diskuv-opam-repository`.
+   >
+   > TODO: Generate a opam lock file and use whenever `opam install`
+   > is run so that `default` repository is snapshotted. -or- Easier ... just
+   > do a `git` based checkout of the `default` repository ... in fact make it
+   > (`opam-repository`) just like the `diskuv-opam-repository` subproject by
+   > using fetch-git-projects.cmake.
+
 2. Run through the following CMake targets **sequentially**:
    1. `Package-Stage02-DuneFlavor`
    2. `Package-Stage04-FullFlavor`
@@ -43,7 +57,7 @@
    * Delete the `build/pkg/bump` directory
 
 2. Run CMake configure (`cmake -G` or a "configure" button in your CMake-enabled IDE)
-   with `windows_x86_64` or another OS-specific configuration.
+   with the `develop` configuration.
 3. Run one of the `Package-VersionBump-{PRERELEASE,PATCH,MINOR,MAJOR}` targets
 4. Rerun CMake configure (ex. `cmake -G`).
 5. Run through each of the CMake targets **sequentially** starting from `Package-Stage01-` to
@@ -51,6 +65,27 @@
    values obtained from the prior stages, so do not skip any targets. Consult the
    [Errata](#errata)
 6. Finish with the CMake target `-PublishAssets`.
+
+### Try new installer in CI
+
+How about trying a new installer in CI before a [new version is finished](#creating-a-new-version)?
+
+You can:
+
+1. Do a CMake configure so that [CMakePresetsGenerated.json](./CMakePresetsGenerated.json) is updated with
+   the latest git commits.
+2. Do:
+
+   ```sh
+   git commit -m "ci: Try installer" CMakePresetsGenerated.json
+   git push
+   for sub in diskuv-opam-repository dkml-compiler dkml-component-curl dkml-component-desktop dkml-component-ocamlcompiler dkml-component-ocamlrun dkml-component-opam dkml-component-unixutils dkml-install-api dkml-installer-ocaml-byte dkml-installer-ocaml dkml-runtime-apps dkml-runtime-common dkml-runtime-distribution dkml-workflows; do
+      git -C build/_deps/${sub}-src push
+   done
+   ```
+
+This saved git commit approach is the reason why in CI we don't just build `dkml` from `diskuv-opam-repository` ... with
+the git commits saved we can reproduce the installer on external machines and perhaps codesign if it is good.
 
 ## Editing Source Code
 

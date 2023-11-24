@@ -42,6 +42,7 @@ endforeach()
 # short git reference.
 # Also make files containing the shortrefs so they can be used in DEPENDS.
 
+set(generatedCacheVariables)
 foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     FetchContent_GetProperties(${PROJECT})
     if(NOT ${PROJECT}_SOURCE_DIR)
@@ -63,9 +64,18 @@ foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     )
     string(SUBSTRING "${gitref}" 0 6 ${PROJECT}_SHORTREF)
 
+    # Add to CMakePresetsGenerated
+    list(APPEND generatedCacheVariables "        \"${PROJECT}_GIT_TAG\": {
+          \"value\": \"${gitref}\"
+        }")
     # Only write if content has changed
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/depends/${PROJECT}.shortref" CONTENT "${gitref}")
 endforeach()
+
+if(NOT DKML_GOLDEN_SOURCE_CODE)
+    list(JOIN generatedCacheVariables ",\n" DKML_GENERATED_CACHE_VARIABLES)
+    configure_file(CMakePresetsGenerated.in.json "${PROJECT_SOURCE_DIR}/CMakePresetsGenerated.json" @ONLY)
+endif()
 
 # ----------------
 #
@@ -252,8 +262,12 @@ function(add_all_bump_targets)
         add_versionbump_target(BUMP_LEVEL ${BUMP_LEVEL} DKML_VERSION_CMAKEVER_NEW ${cmakever_new})
     endforeach()
 endfunction()
-add_all_bump_targets()
-get_self_modifications()
+if(DKML_GOLDEN_SOURCE_CODE)
+    generate_version_files(DKML_VERSION_CMAKEVER_NEW ${DKML_VERSION_CMAKEVER})
+else()
+    add_all_bump_targets()
+    get_self_modifications()
+endif()
 
 # ----------------
 #
@@ -505,7 +519,21 @@ function(add_RepositoryUpdate_target)
     add_dependencies(Package-Stage08-RepositoryUpdate Package-Archive)
 endfunction()
 
-function(update_Git)
+function(audit_Git)
+    set(noValues)
+    set(singleValues SOURCE_DIR)
+    set(multiValues)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "${noValues}" "${singleValues}" "${multiValues}")
+
+    execute_process(
+        WORKING_DIRECTORY ${ARG_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} rev-parse --quiet --verify HEAD
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE currentCommit)
+    message(STATUS "${ARG_SOURCE_DIR}: git commit ${currentCommit}")
+endfunction()
+
+function(update_Git_to_branch)
     set(noValues)
     set(singleValues SOURCE_DIR BRANCH)
     set(multiValues)
@@ -672,12 +700,20 @@ endfunction()
 
 # ----------------------------------------------------------------------------------
 
-foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
-    FetchContent_GetProperties(${proj})
-    set(srcDir ${${proj}_SOURCE_DIR})
-    set(branch ${${proj}_BRANCH})
-    update_Git(SOURCE_DIR ${srcDir} BRANCH ${branch})
-endforeach()
+if(DKML_GOLDEN_SOURCE_CODE)
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
+        FetchContent_GetProperties(${proj})
+        set(srcDir ${${proj}_SOURCE_DIR})
+        audit_Git(SOURCE_DIR ${srcDir})
+    endforeach()
+else()
+    foreach(proj IN LISTS DKML_PROJECTS_SYNCED)
+        FetchContent_GetProperties(${proj})
+        set(srcDir ${${proj}_SOURCE_DIR})
+        set(branch ${${proj}_BRANCH})
+        update_Git_to_branch(SOURCE_DIR ${srcDir} BRANCH ${branch})
+    endforeach()
+endif()
 
 get_flavor_packages(
     FLAVORS Dune
@@ -721,31 +757,38 @@ set(WITH_COMPILER_SH ${CMAKE_CURRENT_BINARY_DIR}/with-compiler.sh) # Used by gen
 function(add_GenerateLaunchers_target)
     FetchContent_GetProperties(dkml-workflows)
 
-    if(CMAKE_HOST_WIN32)
-        set(setupScript "${POWERSHELL_EXECUTABLE}" "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.ps1")
-    else()
-        set(setupScript "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.ps1")
+    # SECONDARY_SWITCH: Same as dkml-component-desktop's .gitlab-ci.yml [variables:]
+    #
+    # SKIP_OPAM_MODIFICATIONS:
+    # We go further than current (2023-06) dkml-component-desktop by
+    # setup-dkml not installing _any_ switches. We do that entirely with
+    # CMake so we can set the FetchContent based local pins.
+
+    if(NOT SKIP_CMDRUN)
+        if(CMAKE_HOST_WIN32)
+            set(runSetupScript "${POWERSHELL_EXECUTABLE}" "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.ps1"
+                -PC_PROJECT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+                -SECONDARY_SWITCH true
+                -SKIP_OPAM_MODIFICATIONS true)
+        else()
+            set(runSetupScript sh "${dkml-workflows_SOURCE_DIR}/test/pc/setup-dkml-${DKML_TARGET_ABI}.sh"
+                "--PC_PROJECT_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+                --SECONDARY_SWITCH=true
+                --SKIP_OPAM_MODIFICATIONS=true)
+            if(DKML_HOST_LINUX_DOCKER)
+                list(APPEND runSetupScript --in_docker=true)
+            else()
+                list(APPEND runSetupScript --in_docker=false)
+            endif()
+        endif()
+        add_custom_command(
+            OUTPUT ${anyrun_OUTPUTS}
+            COMMENT "Creating [cmdrun] and [opamrun] scripts"
+            COMMAND ${runSetupScript}
+            VERBATIM
+            USES_TERMINAL
+        )
     endif()
-
-    add_custom_command(
-        OUTPUT ${anyrun_OUTPUTS}
-        COMMENT "Creating [cmdrun] and [opamrun] scripts"
-        COMMAND
-        ${setupScript}
-        -PC_PROJECT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
-
-        # Same as dkml-component-desktop's .gitlab-ci.yml [variables:]
-        -SECONDARY_SWITCH true
-
-        # We go further than current (2023-06) dkml-component-desktop by
-        # setup-dkml not installing _any_ switches. We do that entirely with
-        # CMake so we can set the FetchContent based local pins.
-        -SKIP_OPAM_MODIFICATIONS true
-
-        # -DISKUV_OPAM_REPOSITORY main
-        VERBATIM
-        USES_TERMINAL
-    )
 
     FetchContent_GetProperties(dkml-runtime-common)
     configure_file(generate-compiler-launcher.in.sh ${CMAKE_CURRENT_BINARY_DIR}/generate-compiler-launcher.sh
@@ -778,10 +821,18 @@ configure_file(anyrun.in.sh ${CMAKE_CURRENT_BINARY_DIR}/anyrun.sh
     @ONLY NEWLINE_STYLE UNIX)
 
 function(anyrun SCRIPT OUTVAR)
-    if(CMAKE_HOST_WIN32)
-        set(${OUTVAR} ${MSYS2_BASH_RUN} "${CMAKE_CURRENT_BINARY_DIR}/anyrun.sh" ${SCRIPT} PARENT_SCOPE)
+    if(SKIP_CMDRUN)
+        if(CMAKE_HOST_WIN32)
+            set(${OUTVAR} ${MSYS2_BASH_RUN} ${SCRIPT} PARENT_SCOPE)
+        else()
+            set(${OUTVAR} sh -x ${SCRIPT} PARENT_SCOPE)
+        endif()
     else()
-        set(${OUTVAR} "${CMAKE_CURRENT_BINARY_DIR}/anyrun.sh" ${SCRIPT} PARENT_SCOPE)
+        if(CMAKE_HOST_WIN32)
+            set(${OUTVAR} ${MSYS2_BASH_RUN} "${CMAKE_CURRENT_BINARY_DIR}/anyrun.sh" ${SCRIPT} PARENT_SCOPE)
+        else()
+            set(${OUTVAR} "${CMAKE_CURRENT_BINARY_DIR}/anyrun.sh" ${SCRIPT} PARENT_SCOPE)
+        endif()
     endif()
 endfunction()
 
@@ -1459,15 +1510,20 @@ if(NOT DKML_GOLDEN_SOURCE_CODE)
     )
 endif()
 
-# All the stage targets are conditional on having run a Package-VersionBump-XXXX target.
-# That will have adjusted DKML_VERSION_CMAKEVER in version.cmake, and a subsequent
-# `cmake -G` will have created the versioned [dkmlroot] and [semver] files from the
-# now-updated DKML_VERSION_CMAKEVER.
-if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${DKML_VERSION_CMAKEVER}/semver)
+if(DKML_GOLDEN_SOURCE_CODE)
     add_all_stage_targets()
     add_OpamConsoleUpgrade_target()
 else()
-    message(NOTICE "GETTING STARTED: You will need to run one of the Package-VersionBump-* targets, and then rerun CMake configure, before you can see the Package-Stage*-* targets.")
+    # All the stage targets are conditional on having run a Package-VersionBump-XXXX target.
+    # That will have adjusted DKML_VERSION_CMAKEVER in version.cmake, and a subsequent
+    # `cmake -G` will have created the versioned [dkmlroot] and [semver] files from the
+    # now-updated DKML_VERSION_CMAKEVER.
+    if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${DKML_VERSION_CMAKEVER}/semver)
+        add_all_stage_targets()
+        add_OpamConsoleUpgrade_target()
+    else()
+        message(NOTICE "GETTING STARTED: You will need to run one of the Package-VersionBump-* targets, and then rerun CMake configure, before you can see the Package-Stage*-* targets.")
+    endif()
 endif()
 
 # Subdirectories

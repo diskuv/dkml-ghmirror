@@ -46,9 +46,15 @@ function(FetchGit)
             message(FATAL_ERROR "-D FETCH_GIT_EXPORT_TYPE= is not defined or is not 'shell'")
         endif()
     else()
+        if(${name}_GIT_TAG)
+            set(gitTag ${${name}_GIT_TAG})
+        else()
+            set(gitTag ${ARG_GIT_TAG})
+        endif()
+
         FetchContent_Declare(${name}
             GIT_REPOSITORY ${ARG_GIT_REPOSITORY}
-            GIT_TAG ${ARG_GIT_TAG}
+            GIT_TAG ${gitTag}
         )
     endif()
 endfunction()

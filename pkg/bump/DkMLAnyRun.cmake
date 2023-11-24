@@ -24,10 +24,14 @@ endif()
 
 set(anyrun_OPAMEXE ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/bs/bin/opam${CMAKE_EXECUTABLE_SUFFIX})
 set(anyrun_OPAMROOT ${CMAKE_CURRENT_BINARY_DIR}/.ci/o) # $OPAMROOT is also set indirectly in anyrun.sh by [cmdrun] or [opamrun]
-set(anyrun_OUTPUTS
-    ${anyrun_OPAMEXE}
-    ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/cmdrun
-    ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/opamrun)
+if(SKIP_CMDRUN)
+    set(anyrun_OUTPUTS)
+else()
+    set(anyrun_OUTPUTS
+        ${anyrun_OPAMEXE}
+        ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/cmdrun
+        ${CMAKE_CURRENT_BINARY_DIR}/.ci/sd4/opamrun/opamrun)
+endif()
 
 set(MSYS2_BASH ${CMAKE_CURRENT_BINARY_DIR}/msys64/usr/bin/bash.exe)
 set(MSYS2_BASH_RUN

@@ -1,0 +1,12 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ci-generated",
+      "hidden": true,
+      "cacheVariables": {
+@DKML_GENERATED_CACHE_VARIABLES@
+      }
+    }
+  ]
+}

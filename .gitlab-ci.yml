@@ -76,3 +76,18 @@ variables:
   before_script:
     - apk add --no-cache git make rsync graphviz
     - pip install -U sphinx sphinx_rtd_theme
+
+.c-cmake-debian:before:
+  image: debian:stable-slim
+  variables:
+    DEBIAN_FRONTEND: noninteractive # for apt-get
+  before_script:
+    # Update/install system pkgs first, so conda can use latest system pkgs.
+    - apt-get update
+    # Install Ninja and C compiler
+    #   ninja-build: CMake configure
+    #   build-essential: CMake project(LANGUAGES C)
+    #   git: CMake FetchContent()
+    - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git > /dev/null
+    # Install CMake
+    - ./dk dksdk.cmake.link

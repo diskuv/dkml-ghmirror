@@ -1,0 +1,56 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ci-generated",
+      "hidden": true,
+      "cacheVariables": {
+        "dkml-compiler_GIT_TAG": {
+          "value": "0ca9a1d21d2e32c59f4be5dcaf5d3202fd34900c"
+        },
+        "dkml-runtime-common_GIT_TAG": {
+          "value": "9c3d9e32f7487b90dcdbb5e74f77ae1c439c997f"
+        },
+        "dkml-runtime-distribution_GIT_TAG": {
+          "value": "de1ad8b64dd61d2206a5d7c30bf32e83658ce925"
+        },
+        "dkml-runtime-apps_GIT_TAG": {
+          "value": "ce66e3184b7a1bce3d2533a09e5d196d4e09c840"
+        },
+        "dkml-workflows_GIT_TAG": {
+          "value": "85cf6caa81b2c6d9202cc536cbd25a3c2960734b"
+        },
+        "dkml-component-desktop_GIT_TAG": {
+          "value": "182b66ed6f1f648c9dcbc89cf077be89ce7bd865"
+        },
+        "dkml-component-ocamlcompiler_GIT_TAG": {
+          "value": "c8bd9063cf8a4dbcd85b9af93eac9ad6b0fbe308"
+        },
+        "dkml-component-ocamlrun_GIT_TAG": {
+          "value": "dd4bead690f9f67a7487064694c6e2dbde65e361"
+        },
+        "dkml-installer-ocaml_GIT_TAG": {
+          "value": "c58aa0ccd87c248e775ead12d4e29eae89c1c019"
+        },
+        "dkml-installer-ocaml-byte_GIT_TAG": {
+          "value": "6533b83bc1b77fc5295c6076191009dc476cd91d"
+        },
+        "diskuv-opam-repository_GIT_TAG": {
+          "value": "c5078092123f219c2b2be17fa8ee8d940185c46a"
+        },
+        "dkml-install-api_GIT_TAG": {
+          "value": "6988698aee890320f610983e3851fc631bd23ad4"
+        },
+        "dkml-component-curl_GIT_TAG": {
+          "value": "5d1c13dc0f94a06ae88ea3456fd04d6a20c14a9b"
+        },
+        "dkml-component-opam_GIT_TAG": {
+          "value": "a28b5062b53a3f659ac314761c1948f0b16af6ef"
+        },
+        "dkml-component-unixutils_GIT_TAG": {
+          "value": "72ca2a68cad18025dd5558aae3dd6a0e260f4b5b"
+        }
+      }
+    }
+  ]
+}

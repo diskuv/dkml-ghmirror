@@ -1,189 +1,53 @@
 {
-  "version": 3,
+  "version": 4,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 22
   },
+  "include": [
+    "CMakePresetsGenerated.json"
+  ],
   "configurePresets": [
     {
-      "name": "ci-agnostic-configure",
+      "name": "ci-agnostic",
       "description": "ABI-agnostic CI configuration for build and test presets",
       "binaryDir": "build",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "SPHINX_HTML": "ON",
-        "SPHINX_DKBOOKGEN": "ON",
-        "DkSDK_CMAKE_SPHINX_DISKUV_COM": "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "ci-packaging-configure",
+      "name": "ci-reproduce",
       "inherits": [
-        "ci-agnostic-configure"
+        "ci-agnostic",
+        "ci-generated"
       ],
       "cacheVariables": {
-        "BUILD_TESTING": "OFF",
-        "BUILD_DOCUMENTATION": "ON"
+        "DKML_GOLDEN_SOURCE_CODE": "ON"
       }
     },
     {
-      "name": "ci-host-windows_x86",
-      "hidden": true,
-      "binaryDir": "$env{DKSDK_BUILD_DIR}",
-      "cacheVariables": {
-        "CMAKE_MAKE_PROGRAM": "$env{DKSDK_NINJA_PROGRAM}",
-        "ENV-DKSDK_NINJA_PROGRAM": "Set the environment variable DKSDK_NINJA_PROGRAM to the path to ninja.exe",
-        "ENV-DKSDK_BUILD_DIR": "Set the environment variable DKSDK_BUILD_DIR to the build directory. Keep it short to avoid 260-char Windows path limit"
-      }
-    },
-    {
-      "name": "ci-target-windows_x86",
-      "hidden": true,
-      "generator": "Ninja",
-      "architecture": {
-        "value": "x86",
-        "strategy": "external"
-      }
-    },
-    {
-      "name": "ci-host-windows_x86_64",
-      "hidden": true,
-      "binaryDir": "$env{DKSDK_BUILD_DIR}",
-      "cacheVariables": {
-        "DKSDK_HOST_IMPRECISE_C99_FLOAT": "ON",
-        "DKSDK_HOST_IMPRECISE_C99_FLOAT_REASON": "Required for Release config of MSVC 14.26.28801",
-        "CMAKE_MAKE_PROGRAM": "$env{DKSDK_NINJA_PROGRAM}",
-        "ENV-DKSDK_NINJA_PROGRAM": "Set the environment variable DKSDK_NINJA_PROGRAM to the path to ninja.exe",
-        "ENV-DKSDK_BUILD_DIR": "Set the environment variable DKSDK_BUILD_DIR to the build directory. Keep it short to avoid 260-char Windows path limit"
-      }
-    },
-    {
-      "name": "ci-target-windows_x86_64",
-      "hidden": true,
-      "generator": "Ninja",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      }
-    },
-    {
-      "name": "ci-host-linux_x86",
-      "hidden": true
-    },
-    {
-      "name": "ci-target-linux_x86",
-      "hidden": true
-    },
-    {
-      "name": "ci-host-linux_x86_64",
-      "hidden": true
-    },
-    {
-      "name": "ci-target-linux_x86_64",
-      "hidden": true
-    },
-    {
-      "name": "ci-host-darwin_arm64",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_APPLE_SILICON_PROCESSOR": "arm64"
-      }
-    },
-    {
-      "name": "ci-target-darwin_arm64",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "arm64",
-        "CMAKE_EXE_LINKER_FLAGS": "-arch arm64",
-        "CMAKE_MODULE_LINKER_FLAGS": "-arch arm64",
-        "CMAKE_SHARED_LINKER_FLAGS": "-arch arm64",
-        "CMAKE_C_COMPILER": "/usr/bin/clang",
-        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
-      },
-      "environment": {
-        "CMAKE_x_LINKER_FLAGS_REASON": "DkML uses a single target architecture",
-        "CMAKE_x_COMPILER_REASON": "Direct use of /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc (14.0.0) will fail to link with -lm, -lSystem, etc."
-      }
-    },
-    {
-      "name": "ci-host-darwin_x86_64",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_APPLE_SILICON_PROCESSOR": "x86_64"
-      }
-    },
-    {
-      "name": "ci-target-darwin_x86_64",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "x86_64",
-        "CMAKE_EXE_LINKER_FLAGS": "-arch x86_64",
-        "CMAKE_MODULE_LINKER_FLAGS": "-arch x86_64",
-        "CMAKE_SHARED_LINKER_FLAGS": "-arch x86_64",
-        "CMAKE_C_COMPILER": "/usr/bin/clang",
-        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
-      },
-      "environment": {
-        "CMAKE_x_LINKER_FLAGS_REASON": "DkML uses a single target architecture",
-        "CMAKE_x_COMPILER_REASON": "Direct use of /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc (14.0.0) will fail to link with -lm, -lSystem, etc."
-      }
-    },
-    {
-      "name": "ci-darwin_x86_64",
+      "name": "develop",
       "inherits": [
-        "ci-agnostic-configure",
-        "ci-host-darwin_x86_64",
-        "ci-target-darwin_x86_64"
+        "ci-agnostic"
       ],
-      "displayName": "darwin_x86_64",
-      "description": "Builds for darwin_x86_64",
-      "generator": "Ninja"
-    },
-    {
-      "name": "ci-linux_x86_64",
-      "inherits": [
-        "ci-agnostic-configure",
-        "ci-host-linux_x86_64",
-        "ci-target-linux_x86_64"
-      ],
-      "displayName": "linux_x86_64",
-      "description": "Builds for linux_x86_64",
-      "generator": "Ninja"
-    },
-    {
-      "name": "ci-windows_x86_64",
-      "inherits": [
-        "ci-agnostic-configure",
-        "ci-host-windows_x86_64",
-        "ci-target-windows_x86_64"
-      ],
-      "displayName": "windows_x86_64",
-      "description": "Builds for windows_x86_64",
-      "generator": "Ninja"
+      "cacheVariables": {
+        "DKML_GOLDEN_SOURCE_CODE": "OFF"
+      }
     }
   ],
   "buildPresets": [
     {
-      "name": "ci-agnostic-build",
+      "name": "ci-agnostic",
       "hidden": true,
-      "configurePreset": "ci-agnostic-configure",
+      "configurePreset": "ci-agnostic",
       "configuration": "Release"
     },
     {
-      "name": "ci-packaging-build",
-      "hidden": true,
-      "configurePreset": "ci-packaging-configure",
-      "configuration": "Release"
-    },
-    {
-      "name": "ci-packaging",
-      "inherits": "ci-packaging-build",
-      "targets": ["packaging"]
-    },
-    {
-      "name": "ci-all",
-      "inherits": "ci-agnostic-build",
-      "targets": ["all"]
+      "name": "ci-reproduce",
+      "configurePreset": "ci-reproduce",
+      "configuration": "Release",
+      "targets": ["Package-Stage07-Installer"]
     }
   ]
 }
