@@ -37,21 +37,34 @@ include:
   - local: .gitlab/ci/test.gitlab-ci.yml
   - local: .gitlab/ci/windows.gitlab-ci.yml
 
-win32:build:
-  extends: .win32:setup-dkml
-  script:
-    - msys64\usr\bin\bash -lc "ci/build-test.sh"
+# win32:build:
+#   extends: .win32:setup-dkml
+#   script:
+#     - msys64\usr\bin\bash -lc "ci/build-test.sh"
 
-linux:build:
-  extends: .linux:setup-dkml
-  script:
-    - sh ci/build-test.sh
+# linux:build:
+#   extends: .linux:setup-dkml
+#   script:
+#     - sh ci/build-test.sh
 
-# Exclude macOS until you have a https://gitlab.com/gitlab-com/runner-saas-macos-access-requests/-/issues approved!
-macos:build:
-  extends: .macos:setup-dkml
-  script:
-    - sh ci/build-test.sh
+# # Exclude macOS until you have a https://gitlab.com/gitlab-com/runner-saas-macos-access-requests/-/issues approved!
+# macos:build:
+#   extends: .macos:setup-dkml
+#   # prettier-ignore
+#   parallel:
+#     matrix: [
+#       { dkml_host_os: 'darwin',
+#         opam_root_cacheable: '${CI_PROJECT_DIR}/.ci/o',
+#         abi_pattern: 'macos-darwin_all',
+#         gl_image: 'macos-12-xcode-14s',
+#         bootstrap_opam_version: '2.2.0-alpha-20221228',
+#         dkml_host_abi: 'darwin_arm64',
+#         opam_root: '${CI_PROJECT_DIR}/.ci/o' },
+
+#     ]
+#   tags: [saas-macos-medium-m1]
+#   script:
+#     - sh ci/build-test.sh
 
 variables:
   OPAM_SYS_DEPLOY_FOLDER_WINDOWS:  'C:\DkML\OpamSys'

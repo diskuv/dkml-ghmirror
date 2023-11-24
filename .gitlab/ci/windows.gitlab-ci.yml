@@ -63,8 +63,6 @@
 .before_setupmachine: &before-setupmachine
   # ninja needed for 'cmake -G Ninja' (on GitLab Windows SaaS the default generator would be Visual Studio 2019 ... aka. MSBuild)
   - choco upgrade ninja -y --no-progress
-  # glab needed for DkMLPublish.cmake
-  - choco upgrade glab -y --no-progress
 
 .before_msys2: &before-msys2
   # ----------- MSYS2 -----------

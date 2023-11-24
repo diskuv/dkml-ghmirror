@@ -1304,48 +1304,69 @@ function(add_all_stage_targets)
     set(gitPushRemainingTargetDepends)
 
     # Stage 1
-    add_VersionBump_target_for_synced_projects(
-        TARGET Package-Stage01-VersionBump
-        FILTER PRE_DUNE)
+    if(NOT DKML_GOLDEN_SOURCE_CODE)
+        add_VersionBump_target_for_synced_projects(
+            TARGET Package-Stage01-VersionBump
+            FILTER PRE_DUNE)
+    endif()
 
     # Stage 2 and 4
     add_Flavor_targets(
         OUTPUT_LIST_VARIABLE_DUNE duneFlavorOutputs
         OUTPUT_LIST_VARIABLE_FULL fullFlavorOutputs)
-    add_dependencies(Package-Stage02-DuneFlavor Package-Stage01-VersionBump)
+    if(NOT DKML_GOLDEN_SOURCE_CODE)
+        add_dependencies(Package-Stage02-DuneFlavor Package-Stage01-VersionBump)
+    endif()
 
     # Stage 3
-    add_VersionBump_target_for_synced_projects(
-        TARGET Package-Stage03-VersionBump
-        FILTER POST_DUNE
-        DEPENDS ${duneFlavorOutputs})
-    add_dependencies(Package-Stage03-VersionBump Package-Stage02-DuneFlavor)
-    add_dependencies(Package-Stage04-FullFlavor Package-Stage03-VersionBump)
+    if(NOT DKML_GOLDEN_SOURCE_CODE)
+        add_VersionBump_target_for_synced_projects(
+            TARGET Package-Stage03-VersionBump
+            FILTER POST_DUNE
+            DEPENDS ${duneFlavorOutputs})
+        add_dependencies(Package-Stage03-VersionBump Package-Stage02-DuneFlavor)    
+        add_dependencies(Package-Stage04-FullFlavor Package-Stage03-VersionBump)
+    endif()
 
     # Stage 5
     add_Api_target(
         OUTPUT_LIST_VARIABLE apiOutputs
         DEPENDS ${fullFlavorOutputs}
         VERBATIM)
-    add_dependencies(Package-Stage05-Api Package-Stage04-FullFlavor)
+    if(DKML_GOLDEN_SOURCE_CODE)
+        add_dependencies(Package-Stage05-Api Package-Stage02-DuneFlavor)
+    else()
+        add_dependencies(Package-Stage05-Api Package-Stage04-FullFlavor)
+    endif()
 
     # Stage 6
-    get_switch_path(OUTPUT_SWITCH_PATH switchPath)
-    add_PackageUpgrade_target(
-        DEPENDS
-        ${apiOutputs}
-        ${switchPath}/bin/common-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
-        ${switchPath}/bin/package-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
-        OPAMROOT ${anyrun_OPAMROOT}
-        OPAMEXE ${anyrun_OPAMEXE})
-    add_dependencies(Package-Stage06-PackageUpgrade Package-Stage05-Api)
+    if(NOT DKML_GOLDEN_SOURCE_CODE)
+        get_switch_path(OUTPUT_SWITCH_PATH switchPath)
+        add_PackageUpgrade_target(
+            DEPENDS
+            ${apiOutputs}
+            ${switchPath}/bin/common-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
+            ${switchPath}/bin/package-ml-of-installer-generator${CMAKE_EXECUTABLE_SUFFIX}
+            OPAMROOT ${anyrun_OPAMROOT}
+            OPAMEXE ${anyrun_OPAMEXE})
+        add_dependencies(Package-Stage06-PackageUpgrade Package-Stage05-Api)
+    endif()
 
     # Stage 7
     add_Installer_target(
         OUTPUT_LIST_VARIABLE installerOutputs
         DEPENDS ${packageUpgradeOutputs}
         VERBATIM)
-    add_dependencies(Package-Stage07-Installer Package-Stage06-PackageUpgrade)
+    if(DKML_GOLDEN_SOURCE_CODE)
+        add_dependencies(Package-Stage07-Installer Package-Stage05-Api)
+    else()
+        add_dependencies(Package-Stage07-Installer Package-Stage06-PackageUpgrade)
+    endif()
+
+    # Every Stage after is modifications to the source code base.
+    if(DKML_GOLDEN_SOURCE_CODE)
+        return()
+    endif()
 
     # Stage 8
     add_RepositoryUpdate_target(
@@ -1431,10 +1452,12 @@ function(add_all_stage_targets)
 endfunction()
 
 add_GenerateLaunchers_target()
-DkMLPublish_AddArchiveTarget(
-    TARGET Package-Archive
-    PROJECTS ${DKML_PROJECTS_PREDUNE} ${DKML_PROJECTS_POSTDUNE}
-)
+if(NOT DKML_GOLDEN_SOURCE_CODE)
+    DkMLPublish_AddArchiveTarget(
+        TARGET Package-Archive
+        PROJECTS ${DKML_PROJECTS_PREDUNE} ${DKML_PROJECTS_POSTDUNE}
+    )
+endif()
 
 # All the stage targets are conditional on having run a Package-VersionBump-XXXX target.
 # That will have adjusted DKML_VERSION_CMAKEVER in version.cmake, and a subsequent

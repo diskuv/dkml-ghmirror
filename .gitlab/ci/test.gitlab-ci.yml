@@ -16,7 +16,7 @@ installer-windows_x86_64:
   # Identity for dkml-compiler git-based patches
   - git config --global user.email "anyone@example.com"
 
-  - cmake -G Ninja -S . -B build
+  - cmake -G Ninja -S . -B build -D DKML_GOLDEN_SOURCE_CODE=1
   - cmake --build build --target Package-Stage07-Installer
 
 installer-linux_x86_64:
@@ -49,5 +49,5 @@ installer-linux_x86_64:
   dependencies: []
   script:
     - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy
-    - .ci/sd4/opamrun/cmdrun cmake -G Ninja -S . -B build
+    - .ci/sd4/opamrun/cmdrun cmake -G Ninja -S . -B build -D DKML_GOLDEN_SOURCE_CODE=1
     - .ci/sd4/opamrun/cmdrun cmake --build build --target Package-Stage07-Installer

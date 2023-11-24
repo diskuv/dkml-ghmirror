@@ -4,7 +4,39 @@
 
 * You must install the [`glab` GitLab CLI](https://gitlab.com/gitlab-org/cli/#installation).
 
-## Creating a new version
+## Use Cases
+
+### Errata
+
+* For `Stage2-DuneFlavor`, you may need to run it multiple times. The first times you may encounter flakiness:
+
+   ```text
+   [build] [ERROR] Could not update repository "default": "...\\build\\pkg\\bump\\msys64\\usr\\bin\\mv.exe ...\\build\\pkg\\bump\\.ci\\o\\repo\\default.new ...\\build\\pkg\\bump\\.ci\\o\\repo\\default" exited with code 1 "/usr/bin/mv: cannot move '...\build\pkg\bump\.ci\o\repo\default.new' to '...\build\pkg\bump\.ci\o\repo\default': Permission denied"
+   [build] [ERROR] Initial download of repository failed.
+   ```
+
+* For `Stage7-Installer`, you may need to run it twice. The first time you may encounter:
+
+   ```text
+   [build] # File "installer/bin/runner_user.ml", line 1, characters 9-54:
+   [build] # 1 | let () = Dkml_component_ocamlcompiler_common.register ()
+   [build] #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   [build] # Error: Unbound module Dkml_component_ocamlcompiler_common
+   ```
+
+### Rebuilding an installer
+
+1. Run CMake configure (`cmake -G` or a "configure" button in your CMake-enabled IDE)
+   with `windows_x86_64` or another OS-specific configuration.
+2. Run through the following CMake targets **sequentially**:
+   1. `Package-Stage02-DuneFlavor`
+   2. `Package-Stage04-FullFlavor`
+   3. `Package-Stage05-Api`
+   4. `Package-Stage07-Installer`
+
+   Consult the [Errata](#errata).
+
+### Creating a new version
 
 1. If you have a build directory:
 
@@ -14,29 +46,10 @@
    with `windows_x86_64` or another OS-specific configuration.
 3. Run one of the `Package-VersionBump-{PRERELEASE,PATCH,MINOR,MAJOR}` targets
 4. Rerun CMake configure (ex. `cmake -G`).
-5. Run through each of the CMake targets **sequentially** starting from `Package-Stage0-` to
+5. Run through each of the CMake targets **sequentially** starting from `Package-Stage01-` to
    the highest Stage number. Many stages require a re-configuration based on
-   values obtained from the prior stages, so do not skip any targets.
-
-   Errata:
-   1. For Stage2-DuneFlavor, you may need to run it multiple times. The first times you
-      may encounter flakiness:
-
-      ```text
-      [build] [ERROR] Could not update repository "default": "...\\build\\pkg\\bump\\msys64\\usr\\bin\\mv.exe ...\\build\\pkg\\bump\\.ci\\o\\repo\\default.new ...\\build\\pkg\\bump\\.ci\\o\\repo\\default" exited with code 1 "/usr/bin/mv: cannot move '...\build\pkg\bump\.ci\o\repo\default.new' to '...\build\pkg\bump\.ci\o\repo\default': Permission denied"
-      [build] [ERROR] Initial download of repository failed.
-      ```
-
-   2. For Stage7-Installer, you may need to run it twice. The first time you
-      may encounter:
-
-      ```text
-      [build] # File "installer/bin/runner_user.ml", line 1, characters 9-54:
-      [build] # 1 | let () = Dkml_component_ocamlcompiler_common.register ()
-      [build] #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      [build] # Error: Unbound module Dkml_component_ocamlcompiler_common
-      ```
-
+   values obtained from the prior stages, so do not skip any targets. Consult the
+   [Errata](#errata)
 6. Finish with the CMake target `-PublishAssets`.
 
 ## Editing Source Code
@@ -56,6 +69,10 @@ In Visual Studio Code:
    ```
 
 ### Stages
+
+#### Package-Stage07-Installer
+
+This stage creates the installers. This is the last stage when the CMake option `DKML_GOLDEN_SOURCE_CODE` is set.
 
 #### Package-Stage10-GitPushForTesting
 
