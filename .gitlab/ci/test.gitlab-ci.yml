@@ -61,9 +61,6 @@ installer-linux_x86_64:
   stage: build
   dependencies: []
   script:
-    # yum install sqlite-devel
-    # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
-    - docker build -t images/dkml-manylinux2014-x64 .
     - .ci/sd4/opamrun/cmdrun sh ./dk dksdk.cmake.copy QUIET
     - .ci/sd4/opamrun/cmdrun cmake --preset ci-reproduce -G Ninja -D SKIP_CMDRUN=1 -D DKML_HOST_LINUX_DOCKER=0
     - .ci/sd4/opamrun/cmdrun cmake --build --preset ci-reproduce

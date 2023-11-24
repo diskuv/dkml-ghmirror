@@ -92,4 +92,4 @@ variables:
     #   libsqlite3-dev: needed by dkml-component-staging-desktop-full > conf-sqlite3
     - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git unzip libsqlite3-dev > /dev/null
     # Install CMake
-    - ./dk dksdk.cmake.link
+    - ./dk dksdk.cmake.link QUIET

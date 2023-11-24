@@ -665,6 +665,7 @@ variables:
       fi
 
       # -------------------------------------------------------------------
+      # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
 
       if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
           section_begin docker-build "Summary: docker build -t dkml-dockcross"
