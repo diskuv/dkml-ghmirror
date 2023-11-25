@@ -1,0 +1,26 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ci-cleared",
+      "hidden": true,
+      "cacheVariables": {
+        "dkml-compiler_GIT_TAG": "",
+        "dkml-runtime-common_GIT_TAG": "",
+        "dkml-runtime-distribution_GIT_TAG": "",
+        "dkml-runtime-apps_GIT_TAG": "",
+        "dkml-workflows_GIT_TAG": "",
+        "dkml-component-desktop_GIT_TAG": "",
+        "dkml-component-ocamlcompiler_GIT_TAG": "",
+        "dkml-component-ocamlrun_GIT_TAG": "",
+        "dkml-installer-ocaml_GIT_TAG": "",
+        "dkml-installer-ocaml-byte_GIT_TAG": "",
+        "diskuv-opam-repository_GIT_TAG": "",
+        "dkml-install-api_GIT_TAG": "",
+        "dkml-component-curl_GIT_TAG": "",
+        "dkml-component-opam_GIT_TAG": "",
+        "dkml-component-unixutils_GIT_TAG": ""
+      }
+    }
+  ]
+}

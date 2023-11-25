@@ -1,0 +1,12 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ci-cleared",
+      "hidden": true,
+      "cacheVariables": {
+@DKML_CLEARED_CACHE_VARIABLES@
+      }
+    }
+  ]
+}

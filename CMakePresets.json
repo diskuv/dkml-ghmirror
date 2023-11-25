@@ -5,7 +5,8 @@
     "minor": 22
   },
   "include": [
-    "CMakePresetsGenerated.json"
+    "CMakePresetsGenerated.json",
+    "CMakePresetsCleared.json"
   ],
   "configurePresets": [
     {
@@ -36,7 +37,8 @@
     {
       "name": "develop",
       "inherits": [
-        "ci-agnostic"
+        "ci-agnostic",
+        "ci-cleared"
       ],
       "cacheVariables": {
         "DKML_GOLDEN_SOURCE_CODE": "OFF"

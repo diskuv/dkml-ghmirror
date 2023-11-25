@@ -43,6 +43,7 @@ endforeach()
 # Also make files containing the shortrefs so they can be used in DEPENDS.
 
 set(generatedCacheVariables)
+set(clearedCacheVariables)
 foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     FetchContent_GetProperties(${PROJECT})
     if(NOT ${PROJECT}_SOURCE_DIR)
@@ -68,13 +69,16 @@ foreach(PROJECT IN LISTS DKML_PROJECTS_SYNCED DKML_PROJECTS_UNSYNCED)
     list(APPEND generatedCacheVariables "        \"${PROJECT}_GIT_TAG\": {
           \"value\": \"${gitref}\"
         }")
+    list(APPEND clearedCacheVariables "        \"${PROJECT}_GIT_TAG\": \"\"")
     # Only write if content has changed
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/depends/${PROJECT}.shortref" CONTENT "${gitref}")
 endforeach()
 
 if(NOT DKML_GOLDEN_SOURCE_CODE)
     list(JOIN generatedCacheVariables ",\n" DKML_GENERATED_CACHE_VARIABLES)
+    list(JOIN clearedCacheVariables ",\n" DKML_CLEARED_CACHE_VARIABLES)
     configure_file(CMakePresetsGenerated.in.json "${PROJECT_SOURCE_DIR}/CMakePresetsGenerated.json" @ONLY)
+    configure_file(CMakePresetsCleared.in.json "${PROJECT_SOURCE_DIR}/CMakePresetsCleared.json" @ONLY)
 endif()
 
 # ----------------
