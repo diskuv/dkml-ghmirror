@@ -6,7 +6,7 @@ OUTPUT_FILE='@WITH_COMPILER_SH@'
 #       shellcheck disable=SC1091
 . '@dkml-runtime-common_SOURCE_DIR@/unix/crossplatform-functions.sh'
 
-autodetect_compiler "${OUTPUT_FILE}"
+autodetect_compiler --post-transform '@dkml-compiler_SOURCE_DIR@/env/standard-compiler-env-to-ocaml-configure-env.sh' "${OUTPUT_FILE}"
 if [ "${DKML_BUILD_TRACE:-}" = ON ] && [ "${DKML_BUILD_TRACE_LEVEL:-0}" -ge 2 ]; then
   echo "=== ${OUTPUT_FILE} ===" >&2
   cat "${OUTPUT_FILE}" >&2

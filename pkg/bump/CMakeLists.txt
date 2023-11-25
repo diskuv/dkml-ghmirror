@@ -791,6 +791,7 @@ function(add_GenerateLaunchers_target)
     endif()
 
     FetchContent_GetProperties(dkml-runtime-common)
+    FetchContent_GetProperties(dkml-compiler)
     configure_file(generate-compiler-launcher.in.sh ${CMAKE_CURRENT_BINARY_DIR}/generate-compiler-launcher.sh
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         @ONLY NEWLINE_STYLE UNIX)
@@ -806,7 +807,7 @@ function(add_GenerateLaunchers_target)
     add_custom_command(
         OUTPUT ${WITH_COMPILER_SH}
         COMMENT "Creating [with-compiler.sh] script"
-        DEPENDS ${GEN_COMPILER_DEPENDS}
+        DEPENDS ${GEN_COMPILER_DEPENDS} ${CMAKE_CURRENT_BINARY_DIR}/generate-compiler-launcher.sh
         COMMAND ${GEN_COMPILER_COMMAND}
         VERBATIM
         USES_TERMINAL
