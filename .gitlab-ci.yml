@@ -56,7 +56,7 @@ include:
 #       { dkml_host_os: 'darwin',
 #         opam_root_cacheable: '${CI_PROJECT_DIR}/.ci/o',
 #         abi_pattern: 'macos-darwin_all',
-#         gl_image: 'macos-12-xcode-14s',
+#         gl_image: 'macos-12-xcode-14',
 #         bootstrap_opam_version: '2.2.0-alpha-20221228',
 #         dkml_host_abi: 'darwin_arm64',
 #         opam_root: '${CI_PROJECT_DIR}/.ci/o' },
@@ -93,5 +93,16 @@ variables:
     #   libx11-dev: needed by dkml-component-staging-desktop-full > graphics > conf-libX11
     #   pkg-config: needed by dkml-component-staging-desktop-full > conf-sqlite3 > conf-pkg-config
     - apt-get install -qq -o=Dpkg::Use-Pty=0 ninja-build build-essential git unzip libsqlite3-dev libx11-dev pkg-config > /dev/null
+    # Install CMake
+    - ./dk dksdk.cmake.link QUIET
+
+.cmake-with-opam-prereqs-macos:build:
+  tags: [saas-macos-medium-m1]
+  image: macos-12-xcode-14
+  before_script:
+    #   gpatch: needed by opam
+    #   sqlite: {provided by macos}
+    #   git: {already installed by GitLab}
+    - brew install ninja gpatch unzip pkg-config
     # Install CMake
     - ./dk dksdk.cmake.link QUIET

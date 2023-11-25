@@ -46,6 +46,20 @@ installer-debian_x86_64:
   - .ci/cmake/bin/cmake --preset ci-reproduce -G Ninja -D DKML_HOST_LINUX_DOCKER=0
   - .ci/cmake/bin/cmake --build --preset ci-reproduce
 
+installer-darwin_arm64:
+  extends:
+    - .cmake-with-opam-prereqs-macos:build
+    - .installer-unix
+  stage: build
+  variables:
+    HOMEBREW_NO_INSTALL_CLEANUP: 1
+  script:
+  # Identity for dkml-compiler git-based patches
+  - git config --global user.email "anyone@example.com"
+
+  - .ci/cmake/bin/cmake --preset ci-reproduce -G Ninja
+  - .ci/cmake/bin/cmake --build --preset ci-reproduce
+
 installer-linux_x86_64:
   extends:
     - .linux:setup-dkml-no-matrix
