@@ -667,15 +667,6 @@ variables:
       # -------------------------------------------------------------------
       # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
 
-      # shellcheck disable=SC2154
-      echo "
-      ================
-      Extend dockcross
-      ================
-      in_docker=${in_docker:-}
-      dockcross_image=${dockcross_image:-}
-      "
-
       if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
           echo "Doing docker build"
           section_begin docker-build "Summary: docker build -t dkml-dockcross"
@@ -687,7 +678,6 @@ variables:
 
           section_end docker-build
       fi
-      echo "Done extend dockcross"
 
       # -------------------------------------------------------------------
 
@@ -907,7 +897,7 @@ variables:
               section_begin get-dockcross 'Get dockcross binary (ManyLinux)'
               install -d .ci/sd4
               #   shellcheck disable=SC2086
-              docker run ${dockcross_run_extra_args:-} --rm "${dockcross_image_custom_prefix:-}${dockcross_image:-}" >.ci/sd4/dockcross.gen
+              docker run ${dockcross_run_extra_args:-} --rm dkml-dockcross >.ci/sd4/dockcross.gen
 
               # PROBLEM 1
               # ---------
@@ -2683,15 +2673,6 @@ variables:
       # -------------------------------------------------------------------
       # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
 
-      # shellcheck disable=SC2154
-      echo "
-      ================
-      Extend dockcross
-      ================
-      in_docker=${in_docker:-}
-      dockcross_image=${dockcross_image:-}
-      "
-
       if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
           echo "Doing docker build"
           section_begin docker-build "Summary: docker build -t dkml-dockcross"
@@ -2703,7 +2684,6 @@ variables:
 
           section_end docker-build
       fi
-      echo "Done extend dockcross"
 
       # -------------------------------------------------------------------
 
@@ -2923,7 +2903,7 @@ variables:
               section_begin get-dockcross 'Get dockcross binary (ManyLinux)'
               install -d .ci/sd4
               #   shellcheck disable=SC2086
-              docker run ${dockcross_run_extra_args:-} --rm "${dockcross_image_custom_prefix:-}${dockcross_image:-}" >.ci/sd4/dockcross.gen
+              docker run ${dockcross_run_extra_args:-} --rm dkml-dockcross >.ci/sd4/dockcross.gen
 
               # PROBLEM 1
               # ---------
@@ -4417,15 +4397,6 @@ variables:
       # -------------------------------------------------------------------
       # Extend dockcross. https://github.com/dockcross/dockcross#how-to-extend-dockcross-images
 
-      # shellcheck disable=SC2154
-      echo "
-      ================
-      Extend dockcross
-      ================
-      in_docker=${in_docker:-}
-      dockcross_image=${dockcross_image:-}
-      "
-
       if [ "${in_docker:-}" = "true" ] && [ -n "${dockcross_image:-}" ]; then
           echo "Doing docker build"
           section_begin docker-build "Summary: docker build -t dkml-dockcross"
@@ -4437,7 +4408,6 @@ variables:
 
           section_end docker-build
       fi
-      echo "Done extend dockcross"
 
       # -------------------------------------------------------------------
 
@@ -4657,7 +4627,7 @@ variables:
               section_begin get-dockcross 'Get dockcross binary (ManyLinux)'
               install -d .ci/sd4
               #   shellcheck disable=SC2086
-              docker run ${dockcross_run_extra_args:-} --rm "${dockcross_image_custom_prefix:-}${dockcross_image:-}" >.ci/sd4/dockcross.gen
+              docker run ${dockcross_run_extra_args:-} --rm dkml-dockcross >.ci/sd4/dockcross.gen
 
               # PROBLEM 1
               # ---------
