@@ -54,11 +54,12 @@ installer-linux_x86_64:
     opam_root: '.ci/o'
     dockcross_image: 'dockcross/manylinux2014-x64'
     dockcross_run_extra_args: '--platform linux/amd64'
-    #   Extra packages from [yum].
+    #   Extra packages for ManyLinux (_yum). The _apt is for completeness.
     #   sqlite-devel: needed by dkml-component-staging-desktop-full > conf-sqlite3
-    #   libX11-dev: needed by dkml-component-staging-desktop-full > graphics > conf-libX11
+    #   libX11-devel: needed by dkml-component-staging-desktop-full > graphics > conf-libX11
     #   pkgconfig: needed by dkml-component-staging-desktop-full > conf-sqlite3 > conf-pkg-config
-    dockcross_packages: 'sqlite-devel libX11-dev pkgconfig'
+    dockcross_packages_apt: 'libsqlite3-dev libx11-dev pkg-config'
+    dockcross_packages_yum: 'sqlite-devel libX11-devel pkgconfig'
     in_docker: 'true'
 
   stage: build
