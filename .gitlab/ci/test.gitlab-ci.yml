@@ -8,21 +8,36 @@ test:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
+.installer-unix:
+  artifacts:
+    untracked: false
+    when: on_success
+    expire_in: "30 days"
+    paths:
+      - build/pkg/bump/.ci/o/*/share/dkml-installer-ocaml-*/t
+
 installer-windows_x86_64:
   extends:
     - .windows:before-script-shared-setupmachine
   stage: build
   timeout: 3h
+  artifacts:
+    untracked: false
+    when: on_success
+    expire_in: "30 days"
+    paths:
+      - C:/build/pkg/bump/.ci/o/*/share/dkml-installer-ocaml-*/t
   script:
   # Identity for dkml-compiler git-based patches
   - git config --global user.email "anyone@example.com"
 
-  - cmake --preset ci-reproduce -G Ninja
-  - cmake --build --preset ci-reproduce
+  - cmake --preset ci-reproduce-windows-c -G Ninja
+  - cmake --build --preset ci-reproduce-windows-c
 
 installer-debian_x86_64:
   extends:
     - .cmake-with-opam-prereqs-debian:before
+    - .installer-unix
   stage: build
   script:
   # Identity for dkml-compiler git-based patches
@@ -34,6 +49,7 @@ installer-debian_x86_64:
 installer-linux_x86_64:
   extends:
     - .linux:setup-dkml-no-matrix
+    - .installer-unix
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind

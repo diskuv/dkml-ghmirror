@@ -27,6 +27,13 @@
       }
     },
     {
+      "name": "ci-reproduce-windows-c",      
+      "inherits": [
+        "ci-reproduce"
+      ],
+      "binaryDir": "C:\\build"
+    },
+    {
       "name": "develop",
       "inherits": [
         "ci-agnostic"
@@ -46,6 +53,13 @@
     {
       "name": "ci-reproduce",
       "configurePreset": "ci-reproduce",
+      "configuration": "Release",
+      "targets": ["Package-Stage07-Installer"]
+    },
+    {
+      "name": "ci-reproduce-windows-c",
+      "description": "Builds go into C:\\build so paths stay under Windows 260-character limit",
+      "configurePreset": "ci-reproduce-windows-c",
       "configuration": "Release",
       "targets": ["Package-Stage07-Installer"]
     }
