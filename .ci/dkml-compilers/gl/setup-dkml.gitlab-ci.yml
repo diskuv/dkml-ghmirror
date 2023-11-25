@@ -995,7 +995,7 @@ variables:
               --rm \
               \${ARGS:-} \
                -v "\$HOST_PWD":/work \
-              ${dockcross_image_custom_prefix:-}${dockcross_image:-} ${dockcross_entrypoint} "\$@"
+              dkml-dockcross ${dockcross_entrypoint} "\$@"
       else
           HERE=\$(dirname "\$0")
           HERE=\$(cd "\$HERE" && pwd)
@@ -3001,7 +3001,7 @@ variables:
               --rm \
               \${ARGS:-} \
                -v "\$HOST_PWD":/work \
-              ${dockcross_image_custom_prefix:-}${dockcross_image:-} ${dockcross_entrypoint} "\$@"
+              dkml-dockcross ${dockcross_entrypoint} "\$@"
       else
           HERE=\$(dirname "\$0")
           HERE=\$(cd "\$HERE" && pwd)
@@ -4725,7 +4725,7 @@ variables:
               --rm \
               \${ARGS:-} \
                -v "\$HOST_PWD":/work \
-              ${dockcross_image_custom_prefix:-}${dockcross_image:-} ${dockcross_entrypoint} "\$@"
+              dkml-dockcross ${dockcross_entrypoint} "\$@"
       else
           HERE=\$(dirname "\$0")
           HERE=\$(cd "\$HERE" && pwd)
