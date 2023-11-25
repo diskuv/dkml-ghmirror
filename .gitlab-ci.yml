@@ -100,9 +100,13 @@ variables:
   tags: [saas-macos-medium-m1]
   image: macos-12-xcode-14
   before_script:
+    #   ninja: CMake configure
     #   gpatch: needed by opam
-    #   sqlite: {provided by macos}
-    #   git: {already installed by GitLab}
-    - brew install ninja gpatch unzip pkg-config
+    #   unzip: needed by opam
+    #   pkg-config: needed by dkml-component-staging-desktop-full > conf-sqlite3 > conf-pkg-config
+    #   xquartz: needed by graphics > conf-libX11
+    #   sqlite: {provided by macos} needed by dkml-component-staging-desktop-full > conf-sqlite3
+    #   git: {already installed by GitLab} CMake FetchContent()
+    - brew install ninja gpatch unzip pkg-config xquartz
     # Install CMake
     - ./dk dksdk.cmake.link QUIET
