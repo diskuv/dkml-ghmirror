@@ -12,6 +12,7 @@ installer-windows_x86_64:
   extends:
     - .windows:before-script-shared-setupmachine
   stage: build
+  timeout: 3h
   script:
   # Identity for dkml-compiler git-based patches
   - git config --global user.email "anyone@example.com"
